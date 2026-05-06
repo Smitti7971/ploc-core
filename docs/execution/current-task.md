@@ -19,10 +19,10 @@
 - `/docs/guides/frontend.md`
 
 ## Plano de execução
-1. **Seed de Dados**: Inserir 5 usuários de teste no banco via script.
-2. **Backend API**: Criar a rota `GET /api/users` no `index.js`.
-3. **Frontend UI**: Criar uma página de teste com tabela estilizada e campo de busca.
-4. **Deploy e Validação**: Conferir se os dados aparecem corretamente no domínio público.
+1. **Refatoração**: Separar `index.js` em `routes/` e `controllers/`.
+2. **Segurança**: Criar middleware de autenticação (base).
+3. **Limpeza**: Remover endpoints de teste e seed.
+4. **Validação**: Garantir que o Backend continua respondendo após a reorganização.
 
 ## Tentativas
 ### Tentativa 1
@@ -30,7 +30,9 @@
 - resultado: ⏳ Aguardando execução.
 
 ## Status
-- [ ] Inserção de dados de teste (Seed)
-- [ ] Rota `GET /api/users` no Backend
-- [ ] Interface de Tabela com Pesquisa no Frontend
-- [ ] Validação no ambiente de produção
+- [x] Inserção de dados de teste (Seed)
+- [x] Rota `GET /api/users` no Backend
+- [x] Interface de Tabela com Pesquisa no Frontend
+- [ ] Reorganização de Pastas (Refatoração)
+- [ ] Implementação de Middleware de Autenticação (JWT)
+- [ ] Limpeza de Endpoints de Teste
