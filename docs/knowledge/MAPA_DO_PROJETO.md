@@ -23,6 +23,12 @@
 - **DATABASE_URL**: `postgresql://postgres:rHUsZ3zP3HCGbYORvoJUVaG1vGREfuruWj7HlOULgyrmcoIm6GCz9ZzzuzEEM5zn@rmybu33898amwear4xe4qsbc:5432/postgres?schema=public`
 - **Nota**: Manter Prisma v6 enquanto o ambiente Nixpacks não suportar Node >= 22
 
+### ⚙️ Motor de Rotinas (Backend)
+- **Status**: Backend Pronto (API Validada)
+- **Funcionalidades**: Listagem, Criação, Check/Uncheck, Deleção.
+- **Categorias**: Saúde, Finanças, Trabalho, Hábito, Leitura, Meditação, Estudo, Música.
+
+
 ### 📱 Progressive Web App (PWA)
 - **Status**: Ativo & Validado (v1.0.6)
 - **Guia**: [docs/guides/pwa.md](../guides/pwa.md)

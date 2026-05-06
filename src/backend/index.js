@@ -5,6 +5,7 @@ const rateLimit = require('express-rate-limit');
 const prisma = require('./prismaClient');
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
+const taskRoutes = require('./routes/taskRoutes');
 const authMiddleware = require('./middleware/authMiddleware');
 
 // Carregando variáveis de ambiente
@@ -53,6 +54,9 @@ app.use('/api/auth', authRoutes);
 
 // Rotas de Usuários (PROTEGIDAS)
 app.use('/api/users', authMiddleware, userRoutes);
+
+// Rotas de Tarefas e Rotinas (PROTEGIDAS)
+app.use('/api/tasks', authMiddleware, taskRoutes);
 
 // --- INICIALIZAÇÃO ---
 app.listen(port, '0.0.0.0', () => {

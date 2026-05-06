@@ -8,9 +8,34 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
   name      String?
   password  String?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
+  routines  Routine[]
+  tasks     Task[]
+}
+
+model Routine {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  tasks       Task[]
+  createdAt   DateTime @default(now())
+}
+
+model Task {
+  id          Int       @id @default(autoincrement())
+  name        String
+  category    String    // Saude, Financias, Trabalho, etc.
+  completed   Boolean   @default(false)
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+  routineId   Int?
+  routine     Routine?  @relation(fields: [routineId], references: [id])
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
 }
