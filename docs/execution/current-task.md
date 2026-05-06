@@ -1,38 +1,37 @@
 ## Registro de Ações (Heartbeat)
 
-- tipo: integração | frontend | backend
+- tipo: frontend | pwa
 - arquivo afetado: docs/execution/current-task.md
-- motivo: Criar fluxo completo de dados do Banco para o Front-end para validação visual.
+- motivo: Transformar o PLOC Web em um Aplicativo Instalável (PWA).
 
-# Tarefa Atual: Teste de Fluxo de Dados (Full-Stack)
+# Tarefa Atual: Transformação PWA (Mobile Experience)
 
 ## Objetivo
-- Alimentar o banco com dados de teste (Seed).
-- Criar endpoint no Backend para listar usuários.
-- Criar interface no Frontend com tabela e pesquisa para exibir esses dados.
+- Configurar Manifest e Service Worker.
+- Gerar ícones para diferentes dispositivos.
+- Garantir que o site seja "instalável" no celular.
 
 ## Tipo de tarefa
-- Full-Stack / Integração
+- Frontend / Mobile
 
 ## Guia selecionado
-- `/docs/guides/backend.md`
 - `/docs/guides/frontend.md`
+- `/docs/standards/BLUEPRINT_SAAS.md`
 
 ## Plano de execução
-1. **Refatoração**: Separar `index.js` em `routes/` e `controllers/`.
-2. **Segurança**: Criar middleware de autenticação (base).
-3. **Limpeza**: Remover endpoints de teste e seed.
-4. **Validação**: Garantir que o Backend continua respondendo após a reorganização.
+1. **Ativos**: Gerar ícones de 192x192 e 512x512.
+2. **Manifest**: Criar `manifest.json` com as configurações do App (cores, nome, ícones).
+3. **Service Worker**: Criar `sw.js` para gerenciar o cache básico.
+4. **Integração**: Vincular o PWA em todas as páginas HTML (`index`, `login`, `register`, `dashboard`).
+5. **Validação**: Testar no navegador se a opção "Instalar" aparece.
 
 ## Tentativas
 ### Tentativa 1
-- estratégia: Inserção de dados e criação da rota de API.
+- estratégia: Geração de ícone e criação do Manifest.
 - resultado: ⏳ Aguardando execução.
 
 ## Status
-- [x] Inserção de dados de teste (Seed)
-- [x] Rota `GET /api/users` no Backend
-- [x] Interface de Tabela com Pesquisa no Frontend
-- [ ] Reorganização de Pastas (Refatoração)
-- [ ] Implementação de Middleware de Autenticação (JWT)
-- [ ] Limpeza de Endpoints de Teste
+- [ ] Geração de ícones (192x192 e 512x512)
+- [ ] Criação do `manifest.json`
+- [ ] Implementação do `sw.js` (Service Worker)
+- [ ] Vinculação nos arquivos HTML

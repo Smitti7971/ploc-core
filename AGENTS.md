@@ -49,7 +49,7 @@
 ### Ações que exigem confirmação
 - Deletar arquivos
 - Alterar estrutura do projeto
-- Deploy
+- **Deploy** (Antigravity pode disparar, mas deve solicitar aprovação do USER antes)
 
 ---
 
