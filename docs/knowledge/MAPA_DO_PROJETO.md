@@ -24,9 +24,10 @@
 - **Nota**: Manter Prisma v6 enquanto o ambiente Nixpacks não suportar Node >= 22
 
 ### 📱 Progressive Web App (PWA)
-- **Status**: Ativo & Validado (Rich Install UI habilitado)
+- **Status**: Ativo & Validado (v1.0.6)
 - **Guia**: [docs/guides/pwa.md](../guides/pwa.md)
-- **Assets**: `manifest.json`, `sw.js`, `icon-192.png`, `screenshots (625x938, 1584x883)`
+- **Assets**: `manifest.json`, `sw.js (v4)`, `icon-192.png`
+- **Screenshots**: Mobile (`390x844`), Desktop (`1280x800`) - **Padronizado**
 
 
 ## Repositório
