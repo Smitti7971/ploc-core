@@ -1,35 +1,39 @@
-const CACHE_NAME = 'ploc-v1';
+const CACHE_NAME = 'ploc-cache-v2';
 const ASSETS = [
   '/',
-  '/index.html',
   '/login.html',
-  '/register.html',
   '/dashboard.html',
+  '/index.css',
   '/manifest.json',
-  '/assets/icon-512.png'
+  '/assets/icon-192.png'
 ];
 
-// Instalação do Service Worker
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
+      console.log('Cache v2 aberto');
       return cache.addAll(ASSETS);
     })
   );
+  self.skipWaiting(); // Força a ativação imediata
 });
 
-// Ativação e limpeza de cache antigo
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
+    caches.keys().then((cacheNames) => {
       return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('Removendo cache antigo:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
       );
     })
   );
+  self.clients.claim(); // Assume o controle das abas abertas imediatamente
 });
 
-// Interceptação de requisições para servir do cache
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((response) => {
