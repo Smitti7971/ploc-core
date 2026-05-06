@@ -26,7 +26,8 @@
 ### 📱 Progressive Web App (PWA)
 - **Status**: Ativo & Validado (v1.0.6)
 - **Guia**: [docs/guides/pwa.md](../guides/pwa.md)
-- **Assets**: `manifest.json`, `sw.js (v4)`, `icon-192.png`
+- **Assets**: `manifest.json`, `sw.js (v5)`, `icon-192.png`
+
 - **Screenshots**: Mobile (`390x844`), Desktop (`1280x800`) - **Padronizado**
 
 
