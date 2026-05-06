@@ -16,8 +16,16 @@
 ## Protocolo de Execução Pesada (Roadmap & Follow-up)
 - **Roadmap Fiel:** Para tarefas complexas ou deploys, crie um documento em `docs/plans/YYYY-MM-DD-assunto-PLOC.md`.
 - **Execução Passo a Passo:** Execute uma única tarefa por vez.
-- **Follow-up Obrigatório:** Após cada execução, volte ao documento do plano e escreva um resumo (Follow-up) do resultado.
-- **Gestão de Erros:** Se um passo falhar, PARE, analise e refaça a estratégia sem repetir o método que falhou.
+- **Follow-up Permanente e Visual:** 
+    - **AÇÃO OBRIGATÓRIA:** Antes de cada tarefa, leia o Roadmap atual. Após cada tarefa, atualize-o imediatamente.
+    - **INTEGRIDADE DO LOG:** NUNCA apague tentativas anteriores. Se uma tentativa falhar, ela fica lá para sempre como aprendizado.
+    - **REGRA TÉCNICA DE EDIÇÃO:** Ao usar ferramentas de edição em Roadmaps, foque apenas na linha do status (`⏳` ou `🔄`) para não sobrescrever acidentalmente o histórico superior.
+    - **Semântica de Emojis:**
+        - ✅ : SUCESSO FINAL (Tarefa concluída com objetivo atingido).
+        - ⚠️ : SUCESSO PARCIAL (Passo técnico ok, mas objetivo final da tarefa ainda não atingido).
+        - ❌ : FALHA (Erro técnico ou bloqueio).
+        - ⏳ : EM AGUARDO/PLANEJADO.
+        - 🔄 : EM EXECUÇÃO/INVESTIGAÇÃO.
 
 ## Estabilidade e Prevenção de Loops (Anti-Logic Traps)
 - **Detecção de Ação Duplicada:** Se uma chamada de ferramenta com os mesmos argumentos falhar duas vezes, PARE e peça intervenção humana.
@@ -35,7 +43,7 @@
 - **IP:** `72.61.63.84`
 - **User:** `root`
 - **Credenciais:** SEMPRE carregue do arquivo `.env`. NUNCA escreva senhas ou segredos no código.
-- **Estratégia SSH:** Siga a [Estratégia de Fallback SSH](file:///C:/Users/smitt/OneDrive/Área de Trabalho/AntiGravity/ploc/knowledge/ssh_fallback_strategy.md).
+- **Estratégia SSH:** Siga a [Estratégia de Fallback SSH](file:///C:/Users/smitt/OneDrive/Área de Trabalho\AntiGravity/ploc/knowledge/ssh_fallback_strategy.md).
 
 ## Convenções de Código
 - **Padrões Funcionais:** Use padrões de programação funcional para lógica complexa.

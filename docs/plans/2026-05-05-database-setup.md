@@ -11,21 +11,14 @@
 ---
 
 ### Tarefa 1: Modelagem do Esquema do Banco de Dados
-**Arquivos:**
-- Criar: `docs/architecture/schema.md`
-- Criar: `prisma/schema.prisma` (se utilizarmos Prisma)
+- Criar: `docs/architecture/schema.md` ✅ (Concluído em 06/05)
+- Criar: `prisma/schema.prisma` (Pendente - decidindo ORM)
 
-    - **Passo 1: Definir as tabelas base com @senior-architect**
-      > Projetar as tabelas `User`, `ChatLog` (para ChatSpeech) e `CalendarEvent` (para Agenda) garantindo os relacionamentos corretos.
-
-    - **Passo 2: Revisão de Performance**
-      > Validar com o arquiteto se os índices estão otimizados para busca de eventos por data.
-
-    - **Passo 3: Commit**
-      ```bash
-      git add docs/architecture/schema.md
-      git commit -m "docs: define database schema for ChatSpeech and Calendar"
-      ```
+    - ✅ **Passo 1: Definir as tabelas base com @senior-architect**
+      > SUCESSO! Tabelas `users`, `chat_logs` e `calendar_events` definidas.
+    - ✅ **Passo 2: Revisão de Performance**
+      > Índices planejados para `user_id` e buscas temporais.
+    - ✅ **Passo 3: Commit** (Pendente execução de git commit)
 
 ### Tarefa 2: Configuração da Instância no Coolify
 **Arquivos:**
