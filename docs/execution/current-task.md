@@ -1,45 +1,35 @@
 ## Registro de Ações (Heartbeat)
 
-- tipo: criação | infraestrutura
+- tipo: infraestrutura | banco de dados
 - arquivo afetado: docs/execution/current-task.md
-- motivo: Sincronização da infraestrutura e instalação do utilitário jq.
+- motivo: Configuração e integração do PostgreSQL com o Backend Node.js.
 
-## Configuração Identificada (Inversão)
-- **Frontend App** (`a6n3eh22owgp057dd09t023a`): Aponta para `/src/backend` (ERRADO).
-- **Backend App** (`leaocf7ke5lgluo0bg2dco0w`): Aponta para `/src/backend` (OK).
-
-# Tarefa Atual: Sincronização Coolify e Instalação de Ferramentas
+# Tarefa Atual: Configuração e Integração do Banco de Dados
 
 ## Objetivo
-- Instalar o `jq` para manipulação de JSON via CLI.
-- Configurar o serviço de API e Frontend no Coolify via API.
-- Corrigir a inversão de domínios.
+- Sincronizar as credenciais do PostgreSQL com o Backend.
+- Estabelecer a primeira conexão bem-sucedida.
+- Definir o ORM (Prisma/Drizzle) que será utilizado.
 
 ## Tipo de tarefa
-- Infraestrutura / Deploy
+- Banco de Dados / Integração
 
 ## Guia selecionado
+- `/docs/guides/database.md`
+- `/docs/guides/gestao_segredos.md`
 - `/docs/guides/coolify_sync.md`
-- `/docs/guides/ferramentas_desenvolvimento.md`
-- `/docs/guides/powershell_usage.md`
+- `/docs/guides/deploy.md`
 
 ## Plano de execução
-1. **Ferramental:** Instalar o `jq` via `winget`.
-2. **Acesso:** Listar aplicações via API do Coolify.
-3. **Ajuste Backend (API):** Atualizar Base Directory e FQDN via API.
-4. **Ajuste Frontend (APP):** Atualizar Base Directory e FQDN via API.
-5. **Teste de Fogo:** Validar endpoints e carregamento do app.
+1. **Credenciais**: Obter os dados de acesso ao PostgreSQL no painel do Coolify.
+2. **Backend Config**: Adicionar as variáveis no `.env` do Backend via Coolify.
+3. **ORM Setup**: Instalar e configurar o ORM no diretório `/src/backend`.
+4. **Teste de Vida**: Criar um endpoint `/api/db-status` para validar a conexão real.
 
 ## Tentativas
 ### Tentativa 1
-- estratégia: Instalar jq para melhorar a precisão dos comandos de API.
-- resultado: ✅ Sucesso.
-### Tentativa 2
-- estratégia: Corrigir Base Directory via API (Nativo PowerShell).
-- resultado: ✅ Sucesso (Frontend agora aponta para /src/frontend).
-### Tentativa 3
-- estratégia: Deploy e Validação de Inversão.
-- resultado: 🔄 Aguardando retorno do deploy manual do usuário.
+- estratégia: Levantamento de credenciais do banco.
+- resultado: ⏳ Aguardando auditoria.
 
 ## Status
 - 🔄 EM EXECUÇÃO

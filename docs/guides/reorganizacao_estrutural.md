@@ -17,7 +17,11 @@
 3. Mover arquivos.
 4. Atualizar referências de código.
 5. Limpar pastas vazias ou obsoletas.
-6. Testar localmente.
+6. Validar operacionalmente.
+
+## Verificação Final (Obrigatório)
+1. Seguir o [Guia de Validação Operacional](/docs/guides/validacao_operacional.md).
+2. Garantir que os arquivos movidos são servidos corretamente pelo servidor de destino.
 
 ## Erros comuns
 - Esquecer de atualizar o `main` no `package.json`.

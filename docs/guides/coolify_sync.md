@@ -30,5 +30,9 @@
 - Se o deploy falhar, olhar o log de "Container" para ver se o Node deu erro de inicialização.
 - Verificar se o `Start Command` no Coolify está como `npm start`.
 
+## Verificação Final (Obrigatório)
+1. Seguir o [Guia de Validação Operacional](/docs/guides/validacao_operacional.md).
+2. Testar se o `base_directory` reflete a estrutura de arquivos no servidor.
+
 ## Restrições
 - Não alterar variáveis de produção diretamente no Coolify sem documentar no `MAPA_DO_PROJETO.md`.

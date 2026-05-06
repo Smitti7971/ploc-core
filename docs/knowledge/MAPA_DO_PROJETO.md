@@ -1,22 +1,29 @@
-# Mapa do Projeto PLOC 🗺️
+# MAPA DO PROJETO (PLOC) 🗺️
 
-Este é o documento vivo que define o estado atual da infraestrutura. **Toda mudança de deploy ou arquitetura deve ser refletida aqui.**
+## Estado Atual da Infraestrutura (Coolify)
 
-## 🔗 Repositório e Infra
-- **Repositório:** `Smitti7971/ploc-core`
-- **VPS IP:** `72.61.63.84`
-- **Plataforma de Deploy:** Coolify
-- **Aplicação Ativa:** `ploc-backend-v3` (UUID: `leaocf7ke5lgluo0bg2dco0w`)
+### 1. Serviço de Frontend (APP)
+- **App Name**: `assistente-ploc-frontend` (UUID: `a6n3eh22owgp057dd09t023a`)
+- **Domínio**: `https://ploc.midializando.cloud/`
+- **Base Directory**: `/src/frontend`
+- **Build Pack**: `static` (Nginx)
 
-## 🏗️ Arquitetura Atual
-- **Backend:** Node.js + Express (Porta 3000) em `/src/backend`. (API Pura).
-- **Frontend:** HTML/JS independente em `/src/frontend`. (Desacoplado).
-- **Banco de Dados:** PostgreSQL (Configurado no Coolify, conexão pendente de teste).
+### 2. Serviço de Backend (API)
+- **App Name**: `ploc-backend-v3` (UUID: `leaocf7ke5lgluo0bg2dco0w`)
+- **Domínio**: `https://backend.midializando.cloud/`
+- **Base Directory**: `/src/backend`
+- **Build Pack**: `nixpacks` (Node.js)
 
-## ⚠️ Bloqueios e Dívidas Técnicas
-1.  **Domínios Invertidos:** Backend e Frontend com URLs trocadas no Coolify.
-2.  **ORM:** Decidir entre Prisma ou outro método para gerenciar o PostgreSQL.
+### 3. Serviço de Banco de Dados (PostgreSQL)
+- **Service Name**: `postgresql`
+- **Domínio Interno**: `postgresql:5432`
+- **Status**: Rodando (Provido via Coolify)
 
-## 📅 Histórico Recente
-- **2026-05-06:** Implementação do novo padrão de execução e guias de tarefa.
-- **2026-05-06:** Reorganização das pastas `docs/history`, `docs/deleteds` e `docs/standards`.
+## Repositório
+- **Source**: `GitHub (Smitti7971/ploc-core.git)`
+- **Branch**: `main`
+
+## Regras de Governança (MANDATÓRIO) 🛡️
+1. **O MAPA_DO_PROJETO.md deve ser atualizado IMEDIATAMENTE após qualquer mudança na infraestrutura (Coolify, Domínios, Banco de Dados).**
+2. Nenhuma tarefa é encerrada sem a sincronização deste mapa.
+3. Este mapa é a única fonte da verdade para o estado atual da rede.
