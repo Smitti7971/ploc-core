@@ -1,51 +1,67 @@
 # Agent Instructions
 
-## Idioma e Estilo (Brasil)
-- **Idioma:** Toda a documentação, planos de implementação e comentários devem ser escritos em **Português do Brasil (PT-BR)**.
-- **Estilo de Planos:** 
-    - Títulos de Tarefas devem usar `###`.
-    - Subtítulos de Passos devem ser listas indentadas com blockquotes (ex: `    - **Passo N:** > Descrição`).
+## 🔥 BLOCO PRINCIPAL
 
-## Aprovação do Usuário e Permissões
-- **Permissão Obrigatória:** SEMPRE peça permissão explícita antes de executar QUALQUER comando de terminal, rodar scripts ou modificar arquivos. 
-- **Fronteira de Produtividade:** Não realize tarefas "proativas" que não foram solicitadas. Foque em ser um assistente, não um agente autônomo.
+### Fluxo obrigatório de execução
+1. Identificar tipo da tarefa
+2. Selecionar guia correspondente em `/docs/guides`
+3. Ler o guia completo
+4. Criar/atualizar `/docs/execution/current-task.md`
+5. Definir plano de execução
+6. Executar passo a passo
+7. Registrar tentativas e ações
 
-## Governança Arquitetural
-- **Revisão Obrigatória:** Toda criação, modificação ou exclusão de arquivo DEVE ser precedida por uma revisão da skill `@senior-architect`.
+### Uso obrigatório de Guias
+**ANTES de qualquer ação:**
+1. Identificar o tipo da tarefa
+2. Selecionar o guia correspondente
+3. Ler o guia completamente
+4. Seguir o checklist antes de executar qualquer passo
 
-## Protocolo de Execução Pesada (Roadmap & Follow-up)
-- **Roadmap Fiel:** Para tarefas complexas ou deploys, crie um documento em `docs/plans/YYYY-MM-DD-assunto-PLOC.md`.
-- **Execução Passo a Passo:** Execute uma única tarefa por vez.
-- **Follow-up Permanente e Visual:** 
-    - **AÇÃO OBRIGATÓRIA:** Antes de cada tarefa, leia o Roadmap atual. Após cada tarefa, atualize-o imediatamente.
-    - **INTEGRIDADE DO LOG:** NUNCA apague tentativas anteriores. Se uma tentativa falhar, ela fica lá para sempre como aprendizado.
-    - **REGRA TÉCNICA DE EDIÇÃO:** Ao usar ferramentas de edição em Roadmaps, foque apenas na linha do status (`⏳` ou `🔄`) para não sobrescrever acidentalmente o histórico superior.
-    - **Semântica de Emojis:**
-        - ✅ : SUCESSO FINAL (Tarefa concluída com objetivo atingido).
-        - ⚠️ : SUCESSO PARCIAL (Passo técnico ok, mas objetivo final da tarefa ainda não atingido).
-        - ❌ : FALHA (Erro técnico ou bloqueio).
-        - ⏳ : EM AGUARDO/PLANEJADO.
-        - 🔄 : EM EXECUÇÃO/INVESTIGAÇÃO.
+**Antes de executar:**
+1. Criar ou atualizar `current-task.md`
 
-## Estabilidade e Prevenção de Loops (Anti-Logic Traps)
-- **Detecção de Ação Duplicada:** Se uma chamada de ferramenta com os mesmos argumentos falhar duas vezes, PARE e peça intervenção humana.
-- **Critério de "Concluído" Explícito:** Toda tarefa deve ter um estado de sucesso claro. Pare imediatamente ao atingi-lo.
-- **Escada de Fallback:** 
-    1. Tentar correção lógica.
-    2. Tentar ferramenta/método alternativo.
-    3. Abortar e reportar se ambos falharem.
+**Durante execução:**
+1. Registrar tentativas
 
-## Web Search & Scraping Rules
-- **REGRA CRÍTICA:** NÃO use ferramentas baseadas em navegador (Chrome/Scrapping) para buscas ou leitura de conteúdo, A MENOS QUE EXPLICITAMENTE solicitado pelo usuário.
-- Prefira sempre `search_web` ou `read_url_content` (baseado em markdown).
+**Após cada passo:**
+1. Atualizar status
 
-## VPS & Infraestrutura
-- **IP:** `72.61.63.84`
-- **User:** `root`
-- **Credenciais:** SEMPRE carregue do arquivo `.env`. NUNCA escreva senhas ou segredos no código.
-- **Estratégia SSH:** Siga a [Estratégia de Fallback SSH](file:///C:/Users/smitt/OneDrive/Área de Trabalho\AntiGravity/ploc/knowledge/ssh_fallback_strategy.md).
+**Se nenhum guia existir:**
+1. Criar um novo guia ANTES de executar
+2. Seguir o padrão em `/docs/guides/padra_guias.md`
 
-## Convenções de Código
-- **Padrões Funcionais:** Use padrões de programação funcional para lógica complexa.
-- **Componentização:** Mantenha componentes e funções pequenos, atômicos e reutilizáveis.
-- **Documentação Primeiro:** Atualize o `AGENTS.md` ou Knowledge Items (KIs) imediatamente quando novas ferramentas, padrões ou insights críticos do projeto forem estabelecidos.
+---
+
+## 🔒 BLOCO DE CONTROLE
+
+### Regras críticas
+- Nenhuma ação sem consultar um guia
+- Nenhuma execução sem plano definido
+- Proibido executar múltiplos passos ao mesmo tempo
+- Sempre registrar tentativas
+
+---
+
+## ⚠️ BLOCO DE SEGURANÇA
+
+### Ações que exigem confirmação
+- Deletar arquivos
+- Alterar estrutura do projeto
+- Deploy
+
+---
+
+## 🧠 BLOCO DE ORGANIZAÇÃO
+
+### Estrutura do projeto
+**Seguir obrigatoriamente:**
+`/docs/standards/project-structure.md`
+
+### Gestão de Memória e Aprendizado
+- **Histórico:** Ao finalizar uma tarefa, o `current-task.md` DEVE ser movido para `/docs/history/YYYY-MM-DD-nome-da-tarefa.md`.
+- **Deletados:** PROIBIDO excluir arquivos permanentemente. Todo arquivo descartado deve ser movido para `/docs/deleteds/YYYY-MM-DD_nome-original.ext`.
+- **Governança de Documentação:**
+    - **`/docs/standards` (A LEI):** Contém como o projeto *deve* ser (Blueprint/Regras).
+    - **`/docs/knowledge` (A REALIDADE):** Contém como o projeto *está* agora (Mapa do Projeto/Estado Atual).
+- **Estado do Projeto:** O arquivo `/docs/knowledge/MAPA_DO_PROJETO.md` é a única fonte da verdade para o estado atual da infraestrutura.
