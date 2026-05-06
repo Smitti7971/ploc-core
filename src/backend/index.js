@@ -2,8 +2,8 @@ const express = require('express');
 const path = require('path');
 const { PrismaClient } = require('@prisma/client');
 
-// Carregando variáveis de ambiente da raiz
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+// Carregando variáveis de ambiente (o Coolify já injeta as variáveis no processo)
+require('dotenv').config();
 
 const app = express();
 const prisma = new PrismaClient();
@@ -23,7 +23,6 @@ app.get('/api/health', (req, res) => {
 // Endpoint de teste de conexão com o Banco de Dados
 app.get('/api/db-status', async (req, res) => {
   try {
-    // Tenta uma operação simples no banco
     await prisma.$connect();
     const userCount = await prisma.user.count();
     
@@ -45,6 +44,6 @@ app.get('/api/db-status', async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Servidor rodando na porta ${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Servidor rodando em http://0.0.0.0:${port}`);
 });

@@ -1,37 +1,36 @@
 ## Registro de Ações (Heartbeat)
 
-- tipo: infraestrutura | banco de dados
+- tipo: segurança | backend
 - arquivo afetado: docs/execution/current-task.md
-- motivo: Configuração e integração do PostgreSQL com o Backend Node.js.
+- motivo: Blindagem inicial da API e do Banco de Dados.
 
-# Tarefa Atual: Configuração e Integração do Banco de Dados
+# Tarefa Atual: Blindagem e Segurança Inicial (Fase 1)
 
 ## Objetivo
-- Sincronizar as credenciais do PostgreSQL com o Backend.
-- Estabelecer a primeira conexão bem-sucedida.
-- Definir o ORM (Prisma/Drizzle) que será utilizado.
+- Proteger a API contra ataques comuns de cabeçalho e acessos não autorizados.
+- Isolar o banco de dados da rede pública.
+- Implementar controle de tráfego (Rate Limit).
 
 ## Tipo de tarefa
-- Banco de Dados / Integração
+- Segurança / Infraestrutura
 
 ## Guia selecionado
-- `/docs/guides/database.md`
+- `/docs/guides/security.md`
 - `/docs/guides/gestao_segredos.md`
-- `/docs/guides/coolify_sync.md`
-- `/docs/guides/deploy.md`
 
 ## Plano de execução
-1. **Credenciais**: Obter os dados de acesso ao PostgreSQL no painel do Coolify.
-2. **Backend Config**: Adicionar as variáveis no `.env` do Backend via Coolify.
-3. **ORM Setup**: Instalar e configurar o ORM no diretório `/src/backend`.
-4. **Teste de Vida**: Criar um endpoint `/api/db-status` para validar a conexão real.
+1. **Isolamento de Banco**: Remover o mapeamento de portas públicas do PostgreSQL no Coolify.
+2. **Dependências**: Instalar `helmet`, `cors` e `express-rate-limit` no backend.
+3. **Implementação**: Configurar middlewares de segurança no `index.js`.
+4. **Validação**: Testar se a API continua funcional para o frontend e bloqueada para o resto.
 
 ## Tentativas
 ### Tentativa 1
-- estratégia: Levantamento de credenciais do banco.
-- resultado: ⏳ Aguardando auditoria.
+- estratégia: Preparação do ambiente e instalação de pacotes.
+- resultado: ⏳ Aguardando execução.
 
 ## Status
-- [x] Configuração inicial do Prisma 6 (Downgrade para compatibilidade com Node 22.11)
-- [x] Ajuste de Hostname Interno (DATABASE_URL corrigida)
-- [ ] Validação da Conexão Real (Pendente teste de endpoint)
+- [ ] Isolamento do PostgreSQL (Coolify)
+- [ ] Instalação de dependências de segurança
+- [ ] Configuração de Helmet e CORS
+- [ ] Implementação de Rate Limit
