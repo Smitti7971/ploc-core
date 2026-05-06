@@ -1,5 +1,5 @@
 {
-  "id": "/login.html",
+  "id": "ploc-saas-v1",
   "name": "PLOC SaaS",
   "short_name": "PLOC",
   "description": "Sistema de Gestão SaaS Premium",
@@ -13,11 +13,6 @@
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "assets/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
     }
   ]
 }

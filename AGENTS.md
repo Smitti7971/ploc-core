@@ -40,6 +40,7 @@
 - Nenhuma execução sem plano definido
 - Proibido executar múltiplos passos ao mesmo tempo
 - Sempre registrar tentativas
+- **Credenciais:** Sempre pesquisar no arquivo `.env` por Tokens, APIs e Senhas antes de perguntar ao USER.
 - **Sincronização Git:** É OBRIGATÓRIO realizar `git push` após qualquer alteração de código antes de solicitar deploy ou validar ambiente remoto.
 
 ---

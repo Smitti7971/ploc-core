@@ -28,10 +28,15 @@
 ## Tentativas
 ### Tentativa 1
 - estratégia: Geração de ícone e criação do Manifest.
-- resultado: ⏳ Aguardando execução.
+- resultado: ✅ Ícones gerados e Manifest configurado.
+
+### Tentativa 2
+- estratégia: Correção de tamanhos de ícone e Deploy via API.
+- resultado: ✅ Deploy disparado com sucesso via API REST.
 
 ## Status
-- [ ] Geração de ícones (192x192 e 512x512)
-- [ ] Criação do `manifest.json`
-- [ ] Implementação do `sw.js` (Service Worker)
-- [ ] Vinculação nos arquivos HTML
+- [x] Geração de ícones (192x192 e 512x512)
+- [x] Criação do `manifest.json` (Corrigido para 1024px)
+- [x] Implementação do `sw.js` (Service Worker)
+- [x] Vinculação nos arquivos HTML
+- [x] Automação de Deploy via API Coolify
