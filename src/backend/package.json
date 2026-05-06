@@ -4,7 +4,7 @@
   "description": "Backend do SaaS Ploc",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "npx prisma generate && npx prisma migrate deploy && node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
