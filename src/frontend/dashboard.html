@@ -154,6 +154,7 @@
     <div class="container">
         <header>
             <h1>Ploc Database Test</h1>
+            <button onclick="logout()" style="background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; font-family: inherit; font-weight: 600;">Sair</button>
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="Pesquisar por nome ou e-mail..." onkeyup="filterTable()">
             </div>
@@ -186,9 +187,32 @@
         const API_URL = 'https://backend.midializando.cloud/api/users';
         let allUsers = [];
 
+        // --- PROTEÇÃO DA PÁGINA ---
+        const token = localStorage.getItem('ploc_token');
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+
+        function logout() {
+            localStorage.removeItem('ploc_token');
+            localStorage.removeItem('ploc_user');
+            window.location.href = 'login.html';
+        }
+        // --------------------------
+
         async function fetchUsers() {
             try {
-                const response = await fetch(API_URL);
+                const response = await fetch(API_URL, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.status === 401) {
+                    logout(); // Token expirado ou inválido
+                    return;
+                }
+
                 if (!response.ok) throw new Error('Erro ao buscar dados');
                 
                 allUsers = await response.json();
