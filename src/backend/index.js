@@ -1,11 +1,34 @@
 const express = require('express');
-const path = require('path');
-const { PrismaClient } = require('@prisma/client');
+const helmet = require('helmet');
+const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 
-// Carregando variáveis de ambiente (o Coolify já injeta as variáveis no processo)
+// Carregando variáveis de ambiente
 require('dotenv').config();
 
 const app = express();
+
+// --- BLINDAGEM DE SEGURANÇA ---
+app.use(helmet()); // Protege os cabeçalhos HTTP
+
+app.use(cors({
+  origin: ['https://ploc.midializando.cloud', 'http://localhost:5173'], // Domínios autorizados
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Limitador de requisições: 100 pedidos a cada 15 minutos por IP
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  max: 100,
+  message: {
+    message: "Muitas requisições vindas deste IP, tente novamente em 15 minutos.",
+    status: "Error"
+  }
+});
+app.use('/api/', limiter); // Aplica apenas nas rotas de API
+// ------------------------------
+
 const prisma = new PrismaClient();
 const port = process.env.PORT || 3000;
 
