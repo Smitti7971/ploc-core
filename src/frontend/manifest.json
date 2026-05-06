@@ -3,7 +3,7 @@
   "name": "PLOC SaaS",
   "short_name": "PLOC",
   "description": "Sistema de Gestão SaaS Premium",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "start_url": "/login.html",
   "display": "standalone",
   "background_color": "#0f172a",
@@ -18,14 +18,14 @@
   "screenshots": [
     {
       "src": "assets/screenshot-mobile.png",
-      "sizes": "625x938",
+      "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Tela de Login Mobile"
     },
     {
       "src": "assets/screenshot-desktop.png",
-      "sizes": "1584x883",
+      "sizes": "1280x800",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Tela de Login Desktop"
