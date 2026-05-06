@@ -1,36 +1,36 @@
 ## Registro de Ações (Heartbeat)
 
-- tipo: segurança | backend
+- tipo: integração | frontend | backend
 - arquivo afetado: docs/execution/current-task.md
-- motivo: Blindagem inicial da API e do Banco de Dados.
+- motivo: Criar fluxo completo de dados do Banco para o Front-end para validação visual.
 
-# Tarefa Atual: Blindagem e Segurança Inicial (Fase 1)
+# Tarefa Atual: Teste de Fluxo de Dados (Full-Stack)
 
 ## Objetivo
-- Proteger a API contra ataques comuns de cabeçalho e acessos não autorizados.
-- Isolar o banco de dados da rede pública.
-- Implementar controle de tráfego (Rate Limit).
+- Alimentar o banco com dados de teste (Seed).
+- Criar endpoint no Backend para listar usuários.
+- Criar interface no Frontend com tabela e pesquisa para exibir esses dados.
 
 ## Tipo de tarefa
-- Segurança / Infraestrutura
+- Full-Stack / Integração
 
 ## Guia selecionado
-- `/docs/guides/security.md`
-- `/docs/guides/gestao_segredos.md`
+- `/docs/guides/backend.md`
+- `/docs/guides/frontend.md`
 
 ## Plano de execução
-1. **Isolamento de Banco**: Remover o mapeamento de portas públicas do PostgreSQL no Coolify.
-2. **Dependências**: Instalar `helmet`, `cors` e `express-rate-limit` no backend.
-3. **Implementação**: Configurar middlewares de segurança no `index.js`.
-4. **Validação**: Testar se a API continua funcional para o frontend e bloqueada para o resto.
+1. **Seed de Dados**: Inserir 5 usuários de teste no banco via script.
+2. **Backend API**: Criar a rota `GET /api/users` no `index.js`.
+3. **Frontend UI**: Criar uma página de teste com tabela estilizada e campo de busca.
+4. **Deploy e Validação**: Conferir se os dados aparecem corretamente no domínio público.
 
 ## Tentativas
 ### Tentativa 1
-- estratégia: Preparação do ambiente e instalação de pacotes.
+- estratégia: Inserção de dados e criação da rota de API.
 - resultado: ⏳ Aguardando execução.
 
 ## Status
-- [ ] Isolamento do PostgreSQL (Coolify)
-- [ ] Instalação de dependências de segurança
-- [ ] Configuração de Helmet e CORS
-- [ ] Implementação de Rate Limit
+- [ ] Inserção de dados de teste (Seed)
+- [ ] Rota `GET /api/users` no Backend
+- [ ] Interface de Tabela com Pesquisa no Frontend
+- [ ] Validação no ambiente de produção
