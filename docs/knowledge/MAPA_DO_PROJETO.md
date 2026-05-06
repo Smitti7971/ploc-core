@@ -17,7 +17,9 @@
 ### 3. Serviço de Banco de Dados (PostgreSQL)
 - **Service Name**: `postgresql`
 - **Domínio Interno**: `postgresql:5432`
-- **Status**: Rodando (Provido via Coolify)
+- **ORM**: Prisma v6.4.1 (Downgrade aplicado para compatibilidade com Node 22.11)
+- **Status**: Integrado ao Backend via DATABASE_URL
+- **Nota**: Manter Prisma v6 enquanto o ambiente Nixpacks não suportar Node >= 22.12.
 
 ## Repositório
 - **Source**: `GitHub (Smitti7971/ploc-core.git)`
