@@ -4,6 +4,8 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const prisma = require('./prismaClient');
 const userRoutes = require('./routes/userRoutes');
+const authRoutes = require('./routes/authRoutes');
+const authMiddleware = require('./middleware/authMiddleware');
 
 // Carregando variáveis de ambiente
 require('dotenv').config();
@@ -46,8 +48,11 @@ app.get('/api/db-status', async (req, res) => {
   }
 });
 
-// Rotas de Usuários
-app.use('/api/users', userRoutes);
+// Rotas de Autenticação (Login/Cadastro)
+app.use('/api/auth', authRoutes);
+
+// Rotas de Usuários (PROTEGIDAS)
+app.use('/api/users', authMiddleware, userRoutes);
 
 // --- INICIALIZAÇÃO ---
 app.listen(port, '0.0.0.0', () => {
