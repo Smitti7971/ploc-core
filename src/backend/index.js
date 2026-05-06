@@ -2,6 +2,7 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const { PrismaClient } = require('@prisma/client');
 
 // Carregando variáveis de ambiente
 require('dotenv').config();
