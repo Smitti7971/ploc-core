@@ -3,8 +3,8 @@ const path = require('path');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Serve arquivos estáticos da pasta frontend
-app.use(express.static(path.join(__dirname, '../frontend')));
+// Serve arquivos estáticos da pasta public (dentro do backend)
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Endpoint de saúde movido para /api/health
 app.get('/api/health', (req, res) => {
