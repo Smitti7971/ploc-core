@@ -33,4 +33,5 @@
 
 ## Status
 - [x] Configuração inicial do Prisma 6 (Downgrade para compatibilidade com Node 22.11)
-- [ ] Deploy e Validação da Conexão (Pendente de Force Rebuild)
+- [x] Ajuste de Hostname Interno (DATABASE_URL corrigida)
+- [ ] Validação da Conexão Real (Pendente teste de endpoint)

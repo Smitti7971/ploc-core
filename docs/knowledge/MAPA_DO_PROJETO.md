@@ -15,11 +15,13 @@
 - **Build Pack**: `nixpacks` (Node.js)
 
 ### 3. Serviço de Banco de Dados (PostgreSQL)
-- **Service Name**: `postgresql`
-- **Domínio Interno**: `postgresql:5432`
+- **Service Name**: `rmybu33898amwear4xe4qsbc`
+- **Domínio Interno**: `rmybu33898amwear4xe4qsbc:5432`
 - **ORM**: Prisma v6.4.1 (Downgrade aplicado para compatibilidade com Node 22.11)
-- **Status**: Integrado ao Backend via DATABASE_URL
-- **Nota**: Manter Prisma v6 enquanto o ambiente Nixpacks não suportar Node >= 22.12.
+- **POSTGRES_HOST**: `rmybu33898amwear4xe4qsbc`
+- **POSTGRES_DB**: `postgres`
+- **DATABASE_URL**: `postgresql://postgres:rHUsZ3zP3HCGbYORvoJUVaG1vGREfuruWj7HlOULgyrmcoIm6GCz9ZzzuzEEM5zn@rmybu33898amwear4xe4qsbc:5432/postgres?schema=public`
+- **Nota**: Manter Prisma v6 enquanto o ambiente Nixpacks não suportar Node >= 22
 
 ## Repositório
 - **Source**: `GitHub (Smitti7971/ploc-core.git)`
