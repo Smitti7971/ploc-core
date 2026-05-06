@@ -1,42 +1,21 @@
-## Registro de Ações (Heartbeat)
+# 📝 Tarefa Atual: Correção e Otimização do PWA
 
-- tipo: frontend | pwa
-- arquivo afetado: docs/execution/current-task.md
-- motivo: Transformar o PLOC Web em um Aplicativo Instalável (PWA).
+## 🎯 Objetivo
+Resolver erros de assets do PWA (404), habilitar a interface de instalação rica (Rich Install UI) e garantir sincronia de deploy entre Front e Back.
 
-# Tarefa Atual: Transformação PWA (Mobile Experience)
+## 🚀 Status
+- [x] Identificar arquivos faltantes (`index.css` e ícone 512px removidos).
+- [x] Atualizar `sw.js` para a v4 com resiliência a falhas de cache.
+- [x] Capturar screenshots reais (Mobile e Desktop) para o Manifest.
+- [x] Corrigir dimensões exatas no `manifest.json` (Mobile: 625x938, Desktop: 1584x883).
+- [x] Implementar deploy duplo via API Coolify para garantir sincronia.
+- [x] Criar Guia oficial em `docs/guides/pwa.md`.
+- [x] Atualizar `MAPA_DO_PROJETO.md`.
 
-## Objetivo
-- Configurar Manifest e Service Worker.
-- Gerar ícones para diferentes dispositivos.
-- Garantir que o site seja "instalável" no celular.
+## 📌 Notas de Execução
+- O Service Worker foi configurado para usar `Promise.allSettled` no cache, evitando que um asset faltante trave a instalação.
+- As screenshots foram capturadas via subagente de navegador e movidas para `src/frontend/assets/`.
+- O deploy duplo (Back + Front) é essencial pois, embora o PWA seja front, o cache do navegador às vezes exige que o servidor responda com novos headers/arquivos de forma consistente.
 
-## Tipo de tarefa
-- Frontend / Mobile
-
-## Guia selecionado
-- `/docs/guides/frontend.md`
-- `/docs/standards/BLUEPRINT_SAAS.md`
-
-## Plano de execução
-1. **Ativos**: Gerar ícones de 192x192 e 512x512.
-2. **Manifest**: Criar `manifest.json` com as configurações do App (cores, nome, ícones).
-3. **Service Worker**: Criar `sw.js` para gerenciar o cache básico.
-4. **Integração**: Vincular o PWA em todas as páginas HTML (`index`, `login`, `register`, `dashboard`).
-5. **Validação**: Testar no navegador se a opção "Instalar" aparece.
-
-## Tentativas
-### Tentativa 1
-- estratégia: Geração de ícone e criação do Manifest.
-- resultado: ✅ Ícones gerados e Manifest configurado.
-
-### Tentativa 2
-- estratégia: Correção de tamanhos de ícone e Deploy via API.
-- resultado: ✅ Deploy disparado com sucesso via API REST.
-
-## Status
-- [x] Geração de ícones (192x192 e 512x512)
-- [x] Criação do `manifest.json` (Corrigido para 1024px)
-- [x] Implementação do `sw.js` (Service Worker)
-- [x] Vinculação nos arquivos HTML
-- [x] Automação de Deploy via API Coolify
+## ✅ Conclusão
+Tarefa finalizada com sucesso. PWA agora 100% compatível com os padrões modernos do Google Chrome.

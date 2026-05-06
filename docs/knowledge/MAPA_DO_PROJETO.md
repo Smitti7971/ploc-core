@@ -23,6 +23,12 @@
 - **DATABASE_URL**: `postgresql://postgres:rHUsZ3zP3HCGbYORvoJUVaG1vGREfuruWj7HlOULgyrmcoIm6GCz9ZzzuzEEM5zn@rmybu33898amwear4xe4qsbc:5432/postgres?schema=public`
 - **Nota**: Manter Prisma v6 enquanto o ambiente Nixpacks não suportar Node >= 22
 
+### 📱 Progressive Web App (PWA)
+- **Status**: Ativo & Validado (Rich Install UI habilitado)
+- **Guia**: [docs/guides/pwa.md](../guides/pwa.md)
+- **Assets**: `manifest.json`, `sw.js`, `icon-192.png`, `screenshots (625x938, 1584x883)`
+
+
 ## Repositório
 - **Source**: `GitHub (Smitti7971/ploc-core.git)`
 - **Branch**: `main`
