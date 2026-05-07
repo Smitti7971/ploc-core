@@ -461,8 +461,14 @@
                         date: targetColumnDate
                     });
                     closeModal();
+                } else {
+                    const errorData = await response.json();
+                    alert('Erro do Servidor: ' + (errorData.error || 'Falha ao salvar'));
                 }
-            } catch (err) { alert('Erro ao salvar no banco!'); }
+            } catch (err) { 
+                console.error('Erro de Rede:', err);
+                alert('Erro de conexão com o servidor. Verifique o console!'); 
+            }
         }
 
         function renderTaskCard(task) {

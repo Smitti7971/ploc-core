@@ -17,7 +17,7 @@ const port = process.env.PORT || 3000;
 // --- MIDDLEWARES DE SEGURANÇA ---
 app.use(helmet());
 app.use(cors({
-  origin: ['https://ploc.midializando.cloud', 'http://localhost:5173'],
+  origin: ['https://ploc.midializando.cloud', 'http://localhost:5173', 'http://127.0.0.1:5500', 'http://localhost:5500'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
