@@ -37,6 +37,12 @@ Este documento serve como repositório para a visão criativa do PLOC, garantind
 
 ---
 
+## 🛠️ Infraestrutura e Manutenção
+- **Mecanismo de Cache Automático (Cache Busting)**: Implementar versões dinâmicas nos assets (ex: `style.css?v=1.2`) para garantir que os usuários sempre vejam a versão mais recente sem precisar de refresh manual.
+
+
+---
+
 ## 🚀 Funcionalidades Premium (High-End)
 - **Modo Flutuante (Picture-in-Picture)**: Janela flutuante do Ploc que fica sobre outros apps (Desktop) para assistência contínua.
 - **Inteligência Preditiva de Trânsito**: 

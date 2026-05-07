@@ -3,63 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PLOC | Gestão SaaS</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
-    
-    <!-- PWA -->
+    <title>PLOC - O Seu Sócio</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#6366f1">
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js');
-            });
-        }
-    </script>
-
+    <meta name="theme-color" content="#ffffff">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #6366f1;
-            --bg: #0f172a;
-            --text: #f8fafc;
+            --bg: #ffffff;
+            --text: #1e293b;
+            --shadow: rgba(0,0,0,0.05);
         }
-        body, html {
-            height: 100%;
+
+        * {
             margin: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background-color: var(--bg);
-            color: var(--text);
+            padding: 0;
+            box-sizing: border-box;
             font-family: 'Outfit', sans-serif;
         }
-        h1 {
-            font-size: 5rem;
-            letter-spacing: 0.5rem;
-            background: linear-gradient(to right, #818cf8, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 1rem;
+
+        body {
+            background-color: var(--bg);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            color: var(--text);
         }
-        .btn {
-            padding: 1rem 2.5rem;
+
+        /* O PLOC - Esfera Central */
+        .ploc-sphere {
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle at 30% 30%, #6366f1, #4338ca);
+            border-radius: 50%;
+            box-shadow: 0 20px 50px rgba(99, 102, 241, 0.3),
+                        inset -10px -10px 30px rgba(0,0,0,0.2),
+                        inset 10px 10px 30px rgba(255,255,255,0.2);
+            margin-bottom: 40px;
+            animation: float 4s ease-in-out infinite;
+            cursor: pointer;
+            position: relative;
+        }
+
+        /* Olhinhos sutis do Ploc */
+        .ploc-sphere::after, .ploc-sphere::before {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+            top: 40%;
+            animation: blink 5s infinite;
+        }
+        .ploc-sphere::before { left: 35%; }
+        .ploc-sphere::after { right: 35%; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.02); }
+        }
+
+        @keyframes blink {
+            0%, 90%, 100% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
+        }
+
+        /* Input de Texto */
+        .input-container {
+            width: 90%;
+            max-width: 400px;
+            margin-bottom: 30px;
+        }
+
+        .main-input {
+            width: 100%;
+            padding: 18px 25px;
+            border: 2px solid #f1f5f9;
+            border-radius: 20px;
+            font-size: 1.1rem;
+            outline: none;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+            text-align: center;
+        }
+
+        .main-input:focus {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.1);
+        }
+
+        /* Grade de Botões */
+        .routine-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .btn-routine {
+            padding: 15px;
+            border: none;
+            border-radius: 15px;
+            background: #f8fafc;
+            color: var(--text);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            border: 1px solid #f1f5f9;
+        }
+
+        .btn-routine:hover {
             background: var(--primary);
             color: white;
-            text-decoration: none;
-            border-radius: 2rem;
-            font-weight: 600;
-            transition: transform 0.3s;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.2);
         }
-        .btn:hover {
-            transform: scale(1.05);
+
+        .btn-dash {
+            grid-column: span 2;
+            background: #1e293b;
+            color: white;
+        }
+
+        /* Branding sutil */
+        .logo-text {
+            position: absolute;
+            top: 40px;
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: -1px;
         }
     </style>
 </head>
 <body>
-    <h1>PLOC</h1>
-    <a href="login.html" class="btn">Entrar no Sistema</a>
+
+    <div class="logo-text">PLOC</div>
+
+    <div class="ploc-sphere" id="plocMascot"></div>
+
+    <div class="input-container">
+        <input type="text" class="main-input" placeholder="O que aconteceu agora?" id="userInput">
+    </div>
+
+    <div class="routine-grid">
+        <a href="dashboard.html" class="btn-routine btn-dash">🚀 Ir para o Dashboard</a>
+        <button class="btn-routine">🍏 Saúde</button>
+        <button class="btn-routine">💰 Finanças</button>
+        <button class="btn-routine">📖 Leitura</button>
+        <button class="btn-routine">🎯 Trabalho</button>
+    </div>
+
+    <script>
+        // Futura lógica de voz e interação
+        document.getElementById('plocMascot').onclick = () => {
+            alert('PLOC: Estou te ouvindo, parceiro!');
+        }
+    </script>
 </body>
 </html>
