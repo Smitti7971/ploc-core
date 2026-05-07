@@ -1,19 +1,21 @@
 const { Jimp } = require('jimp');
 const path = require('path');
 
-async function checkDimensions() {
-  const mobilePath = path.join(__dirname, "../src/frontend/assets/screenshot-mobile.png");
-  const desktopPath = path.join(__dirname, "../src/frontend/assets/screenshot-desktop.png");
+async function checkDims() {
+    const assets = [
+        { name: 'screenshot-mobile.png', expected: '390x844' },
+        { name: 'screenshot-desktop.png', expected: '1280x800' }
+    ];
 
-  try {
-    const mobile = await Jimp.read(mobilePath);
-    console.log(`Mobile: ${mobile.width}x${mobile.height}`);
-    
-    const desktop = await Jimp.read(desktopPath);
-    console.log(`Desktop: ${desktop.width}x${desktop.height}`);
-  } catch (err) {
-    console.error('Erro ao ler imagens:', err);
-  }
+    for (const asset of assets) {
+        try {
+            const imgPath = path.join('c:/Users/smitt/OneDrive/Área de Trabalho/AntiGravity/ploc/ploc/src/frontend/assets', asset.name);
+            const image = await Jimp.read(imgPath);
+            console.log(`${asset.name}: ${image.width}x${image.height} (Esperado: ${asset.expected})`);
+        } catch (e) {
+            console.error(`Erro ao ler ${asset.name}: ${e.message}`);
+        }
+    }
 }
 
-checkDimensions();
+checkDims();
