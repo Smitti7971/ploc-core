@@ -165,6 +165,12 @@
     </div>
 
     <script>
+        // Verificação de Autenticação
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+
         // Futura lógica de voz e interação
         document.getElementById('plocMascot').onclick = () => {
             alert('PLOC: Estou te ouvindo, parceiro!');

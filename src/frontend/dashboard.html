@@ -272,13 +272,13 @@
 
     <script>
         const API_URL = 'https://backend.midializando.cloud/api/tasks';
-        const token = localStorage.getItem('ploc_token');
+        const token = localStorage.getItem('token');
 
         if (!token) window.location.href = 'login.html';
 
         function logout() {
-            localStorage.removeItem('ploc_token');
-            localStorage.removeItem('ploc_user');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
             window.location.href = 'login.html';
         }
 

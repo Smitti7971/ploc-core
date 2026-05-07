@@ -158,14 +158,14 @@
 
                 if (response.ok) {
                     // SALVAR TOKEN E DADOS DO USUÁRIO
-                    localStorage.setItem('ploc_token', result.token);
-                    localStorage.setItem('ploc_user', JSON.stringify(result.user));
+                    localStorage.setItem('token', result.token);
+                    localStorage.setItem('user', JSON.stringify(result.user));
 
                     messageDiv.className = 'success';
                     messageDiv.style.display = 'block';
-                    messageDiv.innerText = "Login realizado! Redirecionando...";
+                    messageDiv.innerText = "Login realizado! Preparando o PLOC...";
                     
-                    setTimeout(() => window.location.href = 'dashboard.html', 1500);
+                    setTimeout(() => window.location.href = 'index.html', 1000);
                 } else {
                     throw new Error(result.error || 'Falha no login');
                 }
