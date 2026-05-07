@@ -176,9 +176,13 @@
         // Detectar scroll lateral para carregar mais
         const mainContent = document.querySelector('.main-content');
         mainContent.addEventListener('scroll', () => {
-            const scrollRight = mainContent.scrollWidth - mainContent.scrollLeft - mainContent.clientWidth;
-            if (scrollRight < 300) { // Se faltar menos de 300px para o fim
-                for (let i = 0; i < 3; i++) {
+            const scrollTotal = mainContent.scrollWidth;
+            const scrollPos = mainContent.scrollLeft + mainContent.clientWidth;
+            const distanceToEnd = scrollTotal - scrollPos;
+
+            if (distanceToEnd < 1000) { 
+                console.log('Construindo o futuro...');
+                for (let i = 0; i < 5; i++) {
                     lastDate.setDate(lastDate.getDate() + 1);
                     kanbanBoard.appendChild(createDayColumn(new Date(lastDate)));
                 }
