@@ -402,6 +402,7 @@
         const modal = document.getElementById('modalOverlay');
         let lastDate = new Date();
         lastDate.setHours(0,0,0,0);
+        let firstDate = new Date(lastDate);
         
         let editingTaskId = null;
         let targetColumnDate = null;
@@ -671,11 +672,27 @@
         kanbanBoard.addEventListener('scroll', () => {
             const scrollTotal = kanbanBoard.scrollWidth;
             const scrollPos = kanbanBoard.scrollLeft + kanbanBoard.clientWidth;
+            
+            // FUTURO: Carrega mais dias à direita
             if (scrollTotal - scrollPos < 1000) {
                 for (let i = 0; i < 5; i++) {
                     lastDate.setDate(lastDate.getDate() + 1);
                     kanbanBoard.appendChild(createDayColumn(new Date(lastDate)));
                 }
+                loadTasks();
+            }
+
+            // PASSADO: Carrega mais dias à esquerda
+            if (kanbanBoard.scrollLeft < 500) {
+                const oldScrollWidth = kanbanBoard.scrollWidth;
+                for (let i = 0; i < 5; i++) {
+                    firstDate.setDate(firstDate.getDate() - 1);
+                    const col = createDayColumn(new Date(firstDate));
+                    kanbanBoard.prepend(col);
+                }
+                const newScrollWidth = kanbanBoard.scrollWidth;
+                kanbanBoard.scrollLeft += (newScrollWidth - oldScrollWidth);
+                loadTasks();
             }
         });
 
