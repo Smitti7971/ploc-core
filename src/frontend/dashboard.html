@@ -55,7 +55,7 @@
         /* KANBAN ÁREA */
         .main-content {
             flex: 1;
-            padding: 40px;
+            padding: 15px;
             overflow-x: auto;
             display: flex;
             flex-direction: column;
@@ -66,24 +66,35 @@
 
         .kanban-board {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             padding-bottom: 20px;
             flex: 1;
             align-items: flex-start;
+            scroll-snap-type: x mandatory; /* Efeito de encaixe no mobile */
         }
 
         .day-column {
-            min-width: 300px;
+            min-width: 85vw; /* Quase tela cheia no mobile */
             background: #f1f5f9;
             border-radius: 20px;
-            padding: 20px;
+            padding: 15px;
             height: fit-content;
-            max-height: 80vh;
+            max-height: 75vh;
             overflow-y: auto;
             border: 1px solid var(--border);
+            scroll-snap-align: center; /* Centraliza a coluna ao scrollar */
         }
 
-        .day-column h3 { margin-bottom: 20px; color: #64748b; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+        @media (min-width: 768px) {
+            .day-column {
+                min-width: 320px; /* Largura padrão no PC */
+            }
+            .main-content {
+                padding: 40px;
+            }
+        }
+
+        .day-column h3 { margin-bottom: 5px; color: #1e293b; font-size: 1.1rem; font-weight: 700; }
 
         .task-card {
             background: var(--card-bg);
