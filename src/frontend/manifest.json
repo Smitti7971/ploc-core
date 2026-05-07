@@ -3,7 +3,7 @@
   "name": "PLOC SaaS",
   "short_name": "PLOC",
   "description": "Sistema de Gestão SaaS Premium",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "start_url": "/login.html",
   "display": "standalone",
   "background_color": "#0f172a",

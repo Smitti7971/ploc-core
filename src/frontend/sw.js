@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ploc-cache-v5';
+const CACHE_NAME = 'ploc-cache-v6';
 // Removemos dashboard.html do pré-cache para evitar 401 na tela de login
 const ASSETS_TO_PRECACHE = [
   '/',
