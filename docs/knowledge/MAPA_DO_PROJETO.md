@@ -29,14 +29,24 @@
 - **Categorias**: Saúde, Finanças, Trabalho, Hábito, Leitura, Meditação, Estudo, Música.
 
 
-### 📱 Progressive Web App (PWA)
-- **Status**: Ativo & Validado (v1.0.6)
-- **Guia**: [docs/guides/pwa.md](../guides/pwa.md)
-- **Governanca**: [docs/standards/secrets-governance.md](../standards/secrets-governance.md)
-- **Cofre de Ideias**: [docs/knowledge/IDEIAS_DE_IMPLANTACAO.md](../knowledge/IDEIAS_DE_IMPLANTACAO.md)
-- **Assets**: `manifest.json`, `sw.js (v5)`, `icon-192.png`
+### 🧭 Central de Conhecimento (Knowledge)
+- **Tecnologias**: [docs/knowledge/PILHA_TECNOLOGICA.md](PILHA_TECNOLOGICA.md)
+- **Banco de Dados**: [docs/knowledge/MODELO_DE_DADOS.md](MODELO_DE_DADOS.md)
+- **Saúde das APIs**: [docs/knowledge/ESTADO_DAS_APIS.md](ESTADO_DAS_APIS.md)
+- **Ideias**: [docs/knowledge/IDEIAS_DE_IMPLANTACAO.md](IDEIAS_DE_IMPLANTACAO.md)
 
-- **Screenshots**: Mobile (`390x844`), Desktop (`1280x800`) - **Padronizado**
+### 📋 Guias Mestres (Os 4 Pilares do Ploc) 🏛️
+- **Pilar 1: Backend (Lógica)**: [docs/guides/MASTER_LOGICA_BACKEND.md](../guides/MASTER_LOGICA_BACKEND.md)
+- **Pilar 2: Frontend (Visual)**: [docs/guides/MASTER_DESENVOLVIMENTO_VISUAL.md](../guides/MASTER_DESENVOLVIMENTO_VISUAL.md)
+- **Pilar 3: Dados (Biblioteca)**: [docs/guides/MASTER_GESTAO_DE_DADOS.md](../guides/MASTER_GESTAO_DE_DADOS.md)
+- **Pilar 4: Segurança (Cofre)**: [docs/guides/MASTER_SEGURANCA_CREDENCIAIS.md](../guides/MASTER_SEGURANCA_CREDENCIAIS.md)
+
+### 🧭 Guias Auxiliares e Estratégia
+- **Planejamento Estratégico (Mapa de Guerra)**: [docs/guides/MASTER_PLANEJAMENTO_ESTRATEGICO.md](../guides/MASTER_PLANEJAMENTO_ESTRATEGICO.md)
+- **Arquitetura & Estratégia (Método)**: [docs/guides/MASTER_ARQUITETURA_ESTRATEGIA.md](../guides/MASTER_ARQUITETURA_ESTRATEGIA.md)
+- **Experiência Mobile (PWA)**: [docs/guides/MASTER_EXPERIENCIA_MOBILE_PWA.md](../guides/MASTER_EXPERIENCIA_MOBILE_PWA.md)
+- **Deploy & Nuvem (Coolify)**: [docs/guides/MASTER_DEPLOY_COOLIFY.md](../guides/MASTER_DEPLOY_COOLIFY.md)
+- **Operação & Testes (Checklist)**: [docs/guides/MASTER_OPERACOES_TESTES.md](../guides/MASTER_OPERACOES_TESTES.md)
 
 
 ## Repositório

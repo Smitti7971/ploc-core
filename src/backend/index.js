@@ -7,6 +7,7 @@ const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const authMiddleware = require('./middleware/authMiddleware');
+const healthRoutes = require('./routes/healthRoutes');
 
 // Carregando variáveis de ambiente
 require('dotenv').config();
@@ -33,10 +34,13 @@ app.use(express.json());
 
 // --- ROTAS DA API ---
 
-// Rota de saúde
+// Rota de saúde (Antiga)
 app.get('/api/health', (req, res) => {
   res.json({ message: "Ploc Backend está ONLINE! 🚀", status: "Healthy" });
 });
+
+// Nova Rota de Saúde (Padrão Enterprise)
+app.use('/api', healthRoutes);
 
 // Rota de status do banco
 app.get('/api/db-status', async (req, res) => {

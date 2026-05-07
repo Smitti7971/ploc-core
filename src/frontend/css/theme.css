@@ -1,0 +1,48 @@
+/**
+ * Tema Global do Ploc (Cores e Fontes)
+ */
+
+:root {
+    /* Paleta de Cores */
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --bg: #ffffff;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --border: #f1f5f9;
+    
+    /* Estados */
+    --success: #15803d;
+    --success-bg: #dcfce7;
+    --error: #b91c1c;
+    --error-bg: #fee2e2;
+
+    /* Espaçamento e Bordas */
+    --radius: 14px;
+    --shadow: 0 10px 20px rgba(99, 102, 241, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Outfit', sans-serif;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+}
+
+/* Utilitários de Mensagem */
+.message {
+    margin-top: 20px;
+    font-size: 0.9rem;
+    padding: 12px;
+    border-radius: 10px;
+    display: none;
+}
+
+.message.error { background: var(--error-bg); color: var(--error); }
+.message.success { background: var(--success-bg); color: var(--success); }

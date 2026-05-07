@@ -5,22 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PLOC - Entrar</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/theme.css">
     <style>
-        :root {
-            --primary: #6366f1;
-            --bg: #ffffff;
-            --text: #1e293b;
-            --border: #f1f5f9;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        /* Estilos específicos desta página */
         body { 
-            background: var(--bg); 
             display: flex; 
             justify-content: center; 
             align-items: center; 
             height: 100vh; 
-            color: var(--text);
         }
 
         .login-container {
@@ -35,11 +27,10 @@
             font-weight: 800;
             letter-spacing: -2px;
             margin-bottom: 10px;
-            color: var(--text);
         }
 
         .subtitle {
-            color: #64748b;
+            color: var(--text-muted);
             font-size: 0.95rem;
             margin-bottom: 40px;
         }
@@ -54,7 +45,7 @@
             font-size: 0.85rem;
             font-weight: 600;
             margin-bottom: 8px;
-            color: #64748b;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -62,7 +53,7 @@
         input {
             width: 100%;
             padding: 15px 20px;
-            border-radius: 14px;
+            border-radius: var(--radius);
             border: 1px solid var(--border);
             background: #f8fafc;
             font-size: 1rem;
@@ -79,7 +70,7 @@
         button {
             width: 100%;
             padding: 16px;
-            border-radius: 14px;
+            border-radius: var(--radius);
             border: none;
             background: #1e293b;
             color: white;
@@ -93,13 +84,13 @@
         button:hover {
             background: var(--primary);
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+            box-shadow: var(--shadow);
         }
 
         .footer-links {
             margin-top: 30px;
             font-size: 0.9rem;
-            color: #64748b;
+            color: var(--text-muted);
         }
 
         .footer-links a {
@@ -107,18 +98,6 @@
             text-decoration: none;
             font-weight: 600;
         }
-
-        #message {
-            margin-top: 20px;
-            font-size: 0.9rem;
-            padding: 12px;
-            border-radius: 10px;
-            display: none;
-        }
-        
-        .error { background: #fee2e2; color: #b91c1c; }
-        .success { background: #dcfce7; color: #15803d; }
-
     </style>
 </head>
 <body>
@@ -139,47 +118,36 @@
             <button type="submit">Entrar no Reino</button>
         </form>
 
-        <div id="message"></div>
+        <div id="message" class="message"></div>
 
         <div class="footer-links">
             Não tem uma conta? <a href="#">Começar agora</a>
         </div>
     </div>
 
-    <script>
-        const API_URL = 'https://backend.midializando.cloud/api/auth/login';
+    <script type="module">
+        import { authService } from './js/api/auth.js';
+
+        const loginForm = document.getElementById('loginForm');
         const messageDiv = document.getElementById('message');
 
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const data = {
-                email: document.getElementById('email').value,
-                password: document.getElementById('password').value
-            };
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
 
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
+                messageDiv.style.display = 'none';
+                const result = await authService.login(email, password);
 
-                const result = await response.json();
-
-                if (response.ok) {
-                    localStorage.setItem('token', result.token);
-                    localStorage.setItem('user', JSON.stringify(result.user));
-
-                    messageDiv.className = 'success';
-                    messageDiv.style.display = 'block';
-                    messageDiv.innerText = "Login realizado! Preparando o PLOC...";
-                    
-                    setTimeout(() => window.location.href = 'index.html', 1000);
-                } else {
-                    throw new Error(result.error || 'Falha no login');
-                }
+                messageDiv.className = 'message success';
+                messageDiv.style.display = 'block';
+                messageDiv.innerText = "Login realizado! Preparando o PLOC...";
+                
+                setTimeout(() => window.location.href = 'index.html', 1000);
             } catch (error) {
-                messageDiv.className = 'error';
+                messageDiv.className = 'message error';
                 messageDiv.style.display = 'block';
                 messageDiv.innerText = error.message;
             }
