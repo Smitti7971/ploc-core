@@ -32,6 +32,8 @@
 ### 📱 Progressive Web App (PWA)
 - **Status**: Ativo & Validado (v1.0.6)
 - **Guia**: [docs/guides/pwa.md](../guides/pwa.md)
+- **Governanca**: [docs/standards/secrets-governance.md](../standards/secrets-governance.md)
+- **Cofre de Ideias**: [docs/knowledge/IDEIAS_DE_IMPLANTACAO.md](../knowledge/IDEIAS_DE_IMPLANTACAO.md)
 - **Assets**: `manifest.json`, `sw.js (v5)`, `icon-192.png`
 
 - **Screenshots**: Mobile (`390x844`), Desktop (`1280x800`) - **Padronizado**
