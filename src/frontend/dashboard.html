@@ -4,42 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PLOC - Dashboard Kanban</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #6366f1;
-            --bg: #f8fafc;
-            --sidebar-bg: #1e293b;
+            --bg: #ffffff;
+            --sidebar-bg: rgba(15, 23, 42, 0.9);
             --card-bg: #ffffff;
-            --text: #1e293b;
-            --border: #e2e8f0;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --border: #f1f5f9;
+            --shadow: rgba(0, 0, 0, 0.05);
+            
+            /* Cores de Categorias */
+            --cat-plant: #22c55e;
+            --cat-work: #3b82f6;
+            --cat-home: #f59e0b;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
-        body { background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
+        body { background: var(--bg); display: flex; height: 100vh; overflow: hidden; color: var(--text-main); }
 
-        /* SIDEBAR RETROATIVA */
+        /* SIDEBAR PREMIUM (GLASS) */
         .sidebar {
             position: fixed;
-            left: -200px; /* Escondida */
+            left: -220px;
             top: 0;
-            width: 240px;
+            width: 260px;
             height: 100%;
             background: var(--sidebar-bg);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(12px);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
             z-index: 1000;
             display: flex;
             flex-direction: column;
-            padding: 20px;
-            box-shadow: 10px 0 30px rgba(0,0,0,0.1);
+            padding: 30px;
+            box-shadow: 15px 0 50px rgba(0,0,0,0.15);
+            border-right: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* Gatilho invisível para abrir */
         .sidebar-trigger {
             position: fixed;
             left: 0;
             top: 0;
-            width: 20px;
+            width: 15px;
             height: 100%;
             z-index: 1001;
         }
@@ -48,109 +56,304 @@
             left: 0;
         }
 
-        .sidebar h2 { color: white; margin-bottom: 30px; font-weight: 800; }
-        .nav-link { color: #94a3b8; text-decoration: none; padding: 12px; border-radius: 10px; margin-bottom: 10px; transition: 0.3s; }
-        .nav-link:hover { background: rgba(255,255,255,0.1); color: white; }
+        .sidebar h2 { 
+            color: white; 
+            margin-bottom: 40px; 
+            font-weight: 800; 
+            letter-spacing: -1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .sidebar h2::before {
+            content: '';
+            width: 12px;
+            height: 12px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: inline-block;
+        }
 
-        /* KANBAN ÁREA */
+        .nav-link { 
+            color: #94a3b8; 
+            text-decoration: none; 
+            padding: 14px 18px; 
+            border-radius: 12px; 
+            margin-bottom: 8px; 
+            transition: 0.3s; 
+            font-weight: 400;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .nav-link:hover { 
+            background: rgba(255,255,255,0.08); 
+            color: white; 
+            transform: translateX(5px);
+        }
+        
+        .nav-link.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* ÁREA PRINCIPAL */
         .main-content {
             flex: 1;
-            padding: 15px;
+            padding: 20px;
             overflow-x: auto;
+            display: flex;
+            flex-direction: column;
+            -webkit-overflow-scrolling: touch;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .main-content:active { cursor: grabbing; }
+
+        header { 
+            margin-bottom: 30px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            padding: 10px 5px;
+        }
+        
+        header h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
+        #userGreeting { font-size: 0.9rem; color: var(--text-sub); }
+
+        /* KANBAN BOARD */
+        .kanban-board {
+            display: flex;
+            gap: 15px;
+            padding-bottom: 30px;
+            flex: 1;
+            align-items: flex-start;
+            scroll-snap-type: x mandatory;
+        }
+
+        .day-column {
+            min-width: 85vw;
+            background: #f8fafc;
+            border-radius: 24px;
+            padding: 20px;
+            height: fit-content;
+            max-height: 80vh;
+            border: 1px solid var(--border);
+            scroll-snap-align: center;
             display: flex;
             flex-direction: column;
         }
 
-        header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
-        header h1 { font-size: 1.8rem; font-weight: 600; }
-
-        .kanban-board {
-            display: flex;
-            gap: 15px;
-            padding-bottom: 20px;
-            flex: 1;
-            align-items: flex-start;
-            scroll-snap-type: x mandatory; /* Efeito de encaixe no mobile */
-        }
-
-        .day-column {
-            min-width: 85vw; /* Quase tela cheia no mobile */
-            background: #f1f5f9;
-            border-radius: 20px;
-            padding: 15px;
-            height: fit-content;
-            max-height: 75vh;
-            overflow-y: auto;
-            border: 1px solid var(--border);
-            scroll-snap-align: center; /* Centraliza a coluna ao scrollar */
-        }
-
         @media (min-width: 768px) {
-            .day-column {
-                min-width: 320px; /* Largura padrão no PC */
-            }
-            .main-content {
-                padding: 40px;
-            }
+            .day-column { min-width: 320px; }
+            .main-content { padding: 40px; }
+            header h1 { font-size: 2rem; }
         }
 
-        .day-column h3 { margin-bottom: 5px; color: #1e293b; font-size: 1.1rem; font-weight: 700; }
+        .column-header {
+            margin-bottom: 20px;
+        }
 
+        .column-header h3 { 
+            color: var(--text-main); 
+            font-size: 1.2rem; 
+            font-weight: 800; 
+            margin-bottom: 2px;
+        }
+        
+        .column-header span { 
+            color: var(--text-sub); 
+            font-size: 0.8rem; 
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* CARDS PREMIUM */
         .task-card {
             background: var(--card-bg);
-            padding: 15px;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px var(--shadow);
-            margin-bottom: 15px;
+            padding: 20px;
+            border-radius: 18px;
+            box-shadow: 0 4px 12px var(--shadow);
+            margin-bottom: 12px;
             cursor: grab;
-            transition: 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             border: 1px solid transparent;
+            position: relative;
+            overflow: hidden;
         }
 
-        .task-card:hover { transform: scale(1.02); border-color: var(--primary); }
-        .task-card:active { cursor: grabbing; }
+        .task-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary);
+            opacity: 0.3;
+        }
 
-        .task-card .tag { font-size: 0.7rem; padding: 4px 8px; border-radius: 5px; background: #e0e7ff; color: #4338ca; font-weight: 600; margin-bottom: 8px; display: inline-block; }
-        .task-card p { font-size: 0.95rem; color: var(--text); line-height: 1.4; }
+        .task-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+            border-color: rgba(99, 102, 241, 0.2);
+        }
 
-        /* Scroll Customizado */
-        .main-content::-webkit-scrollbar { height: 8px; }
-        .main-content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .task-card.cat-plant::before { background: var(--cat-plant); opacity: 1; }
+        .task-card.cat-work::before { background: var(--cat-work); opacity: 1; }
+
+        .task-card .tag { 
+            font-size: 0.65rem; 
+            padding: 4px 10px; 
+            border-radius: 20px; 
+            background: #f1f5f9; 
+            color: var(--text-sub); 
+            font-weight: 700; 
+            margin-bottom: 10px; 
+            display: inline-block;
+            text-transform: uppercase;
+        }
+        
+        .task-card p { 
+            font-size: 1rem; 
+            color: var(--text-main); 
+            line-height: 1.5;
+            font-weight: 400;
+        }
+
+        /* MODAL PREMIUM */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .modal {
+            background: white;
+            width: 90%;
+            max-width: 450px;
+            padding: 30px;
+            border-radius: 28px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.2);
+        }
+
+        .modal h2 { margin-bottom: 20px; font-weight: 800; }
+        .modal input, .modal textarea, .modal select {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: #f8fafc;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .modal-buttons { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-save { flex: 1; background: var(--primary); color: white; padding: 15px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; }
+        .btn-cancel { background: #f1f5f9; color: var(--text-sub); padding: 15px; border-radius: 12px; border: none; cursor: pointer; }
+
+        .add-task-btn {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 2px dashed #e2e8f0;
+            border-radius: 15px;
+            color: #94a3b8;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: auto;
+        }
+
+        .add-task-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .task-card .time {
+            font-size: 0.75rem;
+            color: var(--primary);
+            font-weight: 700;
+            margin-left: auto;
+        }
+
+        .task-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+
     </style>
 </head>
 <body>
 
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h2 id="modalTitle">Nova Tarefa</h2>
+            <input type="text" id="taskTitle" placeholder="O que vamos fazer?">
+            <div style="display: flex; gap: 10px;">
+                <input type="time" id="taskTime">
+                <select id="taskCategory">
+                    <option value="cat-plant">🌱 Planta</option>
+                    <option value="cat-work">💼 Trabalho</option>
+                    <option value="cat-home">🏠 Casa</option>
+                </select>
+            </div>
+            <textarea id="taskDesc" placeholder="Detalhes (opcional)" rows="3"></textarea>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+                <button class="btn-save" onclick="saveTask()">Salvar Tarefa</button>
+            </div>
+        </div>
+    </div>
+
     <div class="sidebar-trigger"></div>
     <aside class="sidebar">
         <h2>PLOC</h2>
-        <a href="index.html" class="nav-link">🏠 Início (O Ploc)</a>
-        <a href="#" class="nav-link">🗓️ Calendário</a>
-        <a href="#" class="nav-link">⚙️ Configurações</a>
+        <nav>
+            <a href="index.html" class="nav-link"><span>🏠</span> Início</a>
+            <a href="#" class="nav-link active"><span>🗓️</span> Calendário</a>
+            <a href="#" class="nav-link"><span>💡</span> Ideias</a>
+            <a href="#" class="nav-link"><span>⚙️</span> Ajustes</a>
+        </nav>
         <div style="margin-top: auto;">
-            <a href="login.html" class="nav-link" onclick="logout()">🚪 Sair</a>
+            <a href="login.html" class="nav-link" onclick="logout()"><span>🚪</span> Sair</a>
         </div>
     </aside>
 
     <main class="main-content">
         <header>
-            <h1>Minhas Rotinas</h1>
-            <div id="userGreeting">Olá, Smitti!</div>
+            <div>
+                <span>Seu sócio diz:</span>
+                <h1>Dia de florescer.</h1>
+            </div>
+            <div id="userGreeting">Smitti • Hoje</div>
         </header>
 
         <div class="kanban-board" id="kanbanBoard">
-            <!-- COLUNAS DOS DIAS GERADAS DINAMICAMENTE -->
+            <!-- COLUNAS GERADAS PELO JS -->
         </div>
     </main>
 
     <script>
         const kanbanBoard = document.getElementById('kanbanBoard');
-        let lastDate = new Date(); // Começa em hoje
+        const modal = document.getElementById('modalOverlay');
+        let lastDate = new Date();
         lastDate.setHours(0,0,0,0);
+        
+        let editingTaskId = null;
+        let targetColumnDate = null;
 
         const DAYS_BR = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
         const MONTHS_BR = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-        // Função para criar uma coluna de dia
         function createDayColumn(date) {
             const col = document.createElement('div');
             col.className = 'day-column';
@@ -161,38 +364,114 @@
             const monthName = MONTHS_BR[date.getMonth()];
 
             col.innerHTML = `
-                <h3>${dayName}</h3>
-                <span style="color: #94a3b8; font-size: 0.8rem;">${dayNum} ${monthName}</span>
-                <div class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)" style="min-height: 100px; margin-top: 15px;">
+                <div class="column-header">
+                    <h3>${dayName}</h3>
+                    <span>${dayNum} de ${monthName}</span>
                 </div>
+                <div class="drop-zone" style="min-height: 150px; flex: 1;"></div>
+                <button class="add-task-btn" onclick="openModal('${date.toISOString()}')">+ Adicionar</button>
             `;
             
-            // Adicionar Drag & Drop na drop-zone
-            col.querySelector('.drop-zone').addEventListener('dragover', allowDrop);
-            col.querySelector('.drop-zone').addEventListener('drop', drop);
+            const dz = col.querySelector('.drop-zone');
+            dz.addEventListener('dragover', (e) => e.preventDefault());
+            dz.addEventListener('drop', drop);
 
             return col;
         }
 
-        // Carregar os primeiros 7 dias
+        function openModal(dateStr) {
+            editingTaskId = null;
+            targetColumnDate = dateStr;
+            document.getElementById('modalTitle').innerText = 'Nova Tarefa';
+            document.getElementById('taskTitle').value = '';
+            document.getElementById('taskTime').value = '';
+            document.getElementById('taskDesc').value = '';
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        function saveTask() {
+            const title = document.getElementById('taskTitle').value;
+            const time = document.getElementById('taskTime').value;
+            const category = document.getElementById('taskCategory').value;
+            const desc = document.getElementById('taskDesc').value;
+
+            if (!title) return alert('Dê um nome para a tarefa!');
+
+            const taskObj = {
+                id: editingTaskId || 'task-' + Date.now(),
+                title, time, category, desc,
+                date: targetColumnDate
+            };
+
+            renderTaskCard(taskObj);
+            closeModal();
+        }
+
+        function renderTaskCard(task) {
+            // Se já existe, removemos para re-renderizar
+            const existing = document.getElementById(task.id);
+            if (existing) existing.remove();
+
+            const card = document.createElement('div');
+            card.className = `task-card ${task.category}`;
+            card.draggable = true;
+            card.id = task.id;
+            card.dataset.date = task.date;
+            
+            card.innerHTML = `
+                <div class="task-header">
+                    <span class="tag">${task.category.replace('cat-', '')}</span>
+                    <span class="time">${task.time || ''}</span>
+                </div>
+                <p>${task.title}</p>
+            `;
+
+            card.addEventListener('dragstart', (e) => e.dataTransfer.setData("text", e.target.id));
+            
+            // Encontrar a coluna correta pela data
+            const columns = document.querySelectorAll('.day-column');
+            columns.forEach(col => {
+                if (col.dataset.date === task.date) {
+                    col.querySelector('.drop-zone').appendChild(card);
+                }
+            });
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            const taskId = ev.dataTransfer.getData("text");
+            const dropZone = ev.target.closest('.drop-zone');
+            if (dropZone) {
+                const card = document.getElementById(taskId);
+                const col = dropZone.closest('.day-column');
+                
+                // ATUALIZAR DATA DO CARD AO ARRASTAR
+                card.dataset.date = col.dataset.date;
+                dropZone.appendChild(card);
+                
+                console.log(`Tarefa ${taskId} movida para ${col.dataset.date}`);
+            }
+        }
+
         function initBoard() {
             for (let i = 0; i < 7; i++) {
-                const newDate = new Date(lastDate);
-                newDate.setDate(lastDate.getDate() + i);
+                const newDate = new Date();
+                newDate.setDate(newDate.getDate() + i);
+                newDate.setHours(0,0,0,0);
                 kanbanBoard.appendChild(createDayColumn(newDate));
                 if (i === 6) lastDate = newDate;
             }
         }
 
-        // Detectar scroll lateral para carregar mais
         const mainContent = document.querySelector('.main-content');
         mainContent.addEventListener('scroll', () => {
             const scrollTotal = mainContent.scrollWidth;
             const scrollPos = mainContent.scrollLeft + mainContent.clientWidth;
-            const distanceToEnd = scrollTotal - scrollPos;
-
-            if (distanceToEnd < 1000) { 
-                console.log('Construindo o futuro...');
+            if (scrollTotal - scrollPos < 1000) {
                 for (let i = 0; i < 5; i++) {
                     lastDate.setDate(lastDate.getDate() + 1);
                     kanbanBoard.appendChild(createDayColumn(new Date(lastDate)));
@@ -200,19 +479,34 @@
             }
         });
 
-        // Funções de Drag & Drop
-        function allowDrop(ev) { ev.preventDefault(); }
-        function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
-        function drop(ev) {
-            ev.preventDefault();
-            var data = ev.dataTransfer.getData("text");
-            var dropZone = ev.target.closest('.drop-zone');
-            if (dropZone) {
-                dropZone.appendChild(document.getElementById(data));
-                const col = dropZone.closest('.day-column');
-                console.log('Movido para:', col.querySelector('h3').innerText, col.dataset.date);
-            }
-        }
+        // SCROLL POR ARRASTE (DESKTOP)
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        mainContent.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.task-card')) return; // Não scrollar se estiver arrastando um card
+            isDown = true;
+            mainContent.classList.add('active');
+            startX = e.pageX - mainContent.offsetLeft;
+            scrollLeft = mainContent.scrollLeft;
+        });
+
+        mainContent.addEventListener('mouseleave', () => {
+            isDown = false;
+        });
+
+        mainContent.addEventListener('mouseup', () => {
+            isDown = false;
+        });
+
+        mainContent.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - mainContent.offsetLeft;
+            const walk = (x - startX) * 2; // Velocidade do scroll
+            mainContent.scrollLeft = scrollLeft - walk;
+        });
 
         function logout() {
             localStorage.clear();

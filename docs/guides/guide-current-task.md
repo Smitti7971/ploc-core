@@ -1,39 +1,38 @@
 ## Registro de Ações (Heartbeat)
 
-- tipo: criação | modificação | deleção
-- arquivo afetado: AGENTS.md, docs/guides/reorganizacao_estrutural.md, docs/execution/current-task.md
-- motivo: Implementação de novo fluxo de trabalho e preparação para reorganização.
+Toda ação deve registrar:
 
-# Tarefa Atual: Arrumar a Casa (Separar API e APP)
+- tipo: criação | modificação | deleção
+- arquivo afetado
+- motivo
+
+# Tarefa Atual [nome da tarefa]
 
 ## Objetivo
-- Renomear `src/backend` para `src/api`.
-- Renomear `src/frontend` para `src/app`.
-- Mover o frontend de dentro do backend para a pasta `app`.
-- Garantir que o backend seja puramente uma API (remover `express.static`).
+- descrição clara do que precisa ser feito
 
 ## Tipo de tarefa
-- Reorganização Estrutural
+- deploy | backend | debugging | etc
 
 ## Guia selecionado
-- `/docs/guides/reorganizacao_estrutural.md`
+- nome do guia
 
 ## Plano de execução
-1. **Preparação:** Validar que o estado atual está commitado (Já realizado anteriormente).
-2. **Renomeação:** Usar comandos de sistema para renomear `src/backend` para `src/api`.
-3. **Reorganização de Conteúdo:**
-    - Criar `src/app`.
-    - Mover `src/api/public/index.html` para `src/app/index.html`.
-    - Remover pasta `src/api/public`.
-4. **Atualização de Código:**
-    - Modificar `src/api/index.js` para remover lógica de arquivos estáticos.
-    - Atualizar `src/api/package.json` (se necessário).
-5. **Teste:** Verificar se o servidor em `src/api` inicia corretamente.
+1. passo 1 
+2. passo
+3. passo
 
 ## Tentativas
 ### Tentativa 1
-- estratégia: Executar plano passo a passo via terminal.
-- resultado: ⏳ Aguardando início.
+- estratégia:
+- resultado esperado:
+- resultado obtido:
+- status: ⏳ | 🔄 | ✅ | ❌
+
+### Tentativa 2
+- estratégia:
+- resultado esperado:
+- resultado obtido:
+- status: ⏳ | 🔄 | ✅ | ❌
 
 ## Status
-- 🔄 EM EXECUÇÃO

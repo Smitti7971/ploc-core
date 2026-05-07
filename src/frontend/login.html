@@ -3,118 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login PLOC | Acessar Sistema</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
-    
-    <!-- PWA -->
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="assets/icon-192.png">
-    <meta name="theme-color" content="#6366f1">
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js');
-            });
-        }
-    </script>
-    
+    <title>PLOC - Entrar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --bg: #0f172a;
-            --card-bg: #1e293b;
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --border: #334155;
+            --bg: #ffffff;
+            --text: #1e293b;
+            --border: #f1f5f9;
         }
 
-        body {
-            font-family: 'Outfit', sans-serif;
-            background-color: var(--bg);
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { 
+            background: var(--bg); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
             color: var(--text);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
         }
 
-        .login-card {
+        .login-container {
             width: 100%;
             max-width: 400px;
-            background: var(--card-bg);
-            padding: 2.5rem;
-            border-radius: 1.5rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            border: 1px solid var(--border);
+            padding: 40px;
             text-align: center;
         }
 
-        h1 {
-            margin-bottom: 0.5rem;
+        .logo {
             font-size: 2.5rem;
-            background: linear-gradient(to right, #818cf8, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            letter-spacing: -2px;
+            margin-bottom: 10px;
+            color: var(--text);
         }
 
-        p { color: var(--text-muted); margin-bottom: 2rem; }
+        .subtitle {
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 40px;
+        }
 
-        .form-group { text-align: left; margin-bottom: 1.2rem; }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
 
-        label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted); }
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
 
         input {
             width: 100%;
-            padding: 0.8rem 1rem;
-            background: var(--bg);
+            padding: 15px 20px;
+            border-radius: 14px;
             border: 1px solid var(--border);
-            border-radius: 0.8rem;
-            color: var(--text);
+            background: #f8fafc;
             font-size: 1rem;
-            box-sizing: border-box;
-            transition: all 0.3s;
+            transition: 0.3s;
+            outline: none;
         }
 
         input:focus {
-            outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
         }
 
         button {
             width: 100%;
-            padding: 1rem;
-            background: var(--primary);
-            color: white;
+            padding: 16px;
+            border-radius: 14px;
             border: none;
-            border-radius: 0.8rem;
+            background: #1e293b;
+            color: white;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.3s;
-            margin-top: 1rem;
+            transition: 0.3s;
+            margin-top: 10px;
         }
 
-        button:hover { background: var(--primary-hover); }
+        button:hover {
+            background: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+        }
 
-        .footer-link { margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted); }
+        .footer-links {
+            margin-top: 30px;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
 
-        .footer-link a { color: var(--primary); text-decoration: none; font-weight: 600; }
+        .footer-links a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
 
-        #message { margin-top: 1rem; font-size: 0.9rem; border-radius: 0.5rem; padding: 0.8rem; display: none; }
-        .error { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
-        .success { background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
+        #message {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            padding: 12px;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .error { background: #fee2e2; color: #b91c1c; }
+        .success { background: #dcfce7; color: #15803d; }
+
     </style>
 </head>
 <body>
 
-    <div class="login-card">
-        <h1>PLOC</h1>
-        <p>Acesse seu dashboard administrativo.</p>
+    <div class="login-container">
+        <div class="logo">PLOC</div>
+        <p class="subtitle">Bem-vindo ao seu novo sócio de rotinas.</p>
 
         <form id="loginForm">
             <div class="form-group">
@@ -125,23 +136,22 @@
                 <label>Senha</label>
                 <input type="password" id="password" placeholder="••••••••" required>
             </div>
-            <button type="submit">Entrar no Sistema</button>
+            <button type="submit">Entrar no Reino</button>
         </form>
 
         <div id="message"></div>
 
-        <div class="footer-link">
-            Ainda não tem conta? <a href="register.html">Cadastre-se</a>
+        <div class="footer-links">
+            Não tem uma conta? <a href="#">Começar agora</a>
         </div>
     </div>
 
     <script>
         const API_URL = 'https://backend.midializando.cloud/api/auth/login';
+        const messageDiv = document.getElementById('message');
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const messageDiv = document.getElementById('message');
-            
             const data = {
                 email: document.getElementById('email').value,
                 password: document.getElementById('password').value
@@ -157,7 +167,6 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    // SALVAR TOKEN E DADOS DO USUÁRIO
                     localStorage.setItem('token', result.token);
                     localStorage.setItem('user', JSON.stringify(result.user));
 
