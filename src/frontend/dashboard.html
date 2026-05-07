@@ -103,15 +103,10 @@
         .main-content {
             flex: 1;
             padding: 20px;
-            overflow-x: auto;
             display: flex;
             flex-direction: column;
-            -webkit-overflow-scrolling: touch;
-            cursor: grab;
-            user-select: none;
+            overflow: hidden; /* Evita scroll no header */
         }
-
-        .main-content:active { cursor: grabbing; }
 
         header { 
             margin-bottom: 30px; 
@@ -124,15 +119,20 @@
         header h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
         #userGreeting { font-size: 0.9rem; color: var(--text-sub); }
 
-        /* KANBAN BOARD */
         .kanban-board {
             display: flex;
             gap: 15px;
             padding-bottom: 30px;
             flex: 1;
             align-items: flex-start;
+            overflow-x: auto;
             scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            cursor: grab;
+            user-select: none;
         }
+
+        .kanban-board:active { cursor: grabbing; }
 
         .day-column {
             min-width: 85vw;
@@ -668,10 +668,9 @@
             loadTasks(); // Carregar do banco após criar as colunas
         }
 
-        const mainContent = document.querySelector('.main-content');
-        mainContent.addEventListener('scroll', () => {
-            const scrollTotal = mainContent.scrollWidth;
-            const scrollPos = mainContent.scrollLeft + mainContent.clientWidth;
+        kanbanBoard.addEventListener('scroll', () => {
+            const scrollTotal = kanbanBoard.scrollWidth;
+            const scrollPos = kanbanBoard.scrollLeft + kanbanBoard.clientWidth;
             if (scrollTotal - scrollPos < 1000) {
                 for (let i = 0; i < 5; i++) {
                     lastDate.setDate(lastDate.getDate() + 1);
@@ -685,25 +684,25 @@
         let startX;
         let scrollLeft;
 
-        mainContent.addEventListener('mousedown', (e) => {
+        kanbanBoard.addEventListener('mousedown', (e) => {
             if (e.target.closest('.task-card') || e.target.closest('button')) return;
             isDown = true;
-            mainContent.style.cursor = 'grabbing';
-            startX = e.pageX - mainContent.offsetLeft;
-            scrollLeft = mainContent.scrollLeft;
+            kanbanBoard.style.cursor = 'grabbing';
+            startX = e.pageX - kanbanBoard.offsetLeft;
+            scrollLeft = kanbanBoard.scrollLeft;
         });
 
         window.addEventListener('mouseup', () => {
             isDown = false;
-            mainContent.style.cursor = 'grab';
+            kanbanBoard.style.cursor = 'grab';
         });
 
         window.addEventListener('mousemove', (e) => {
             if (!isDown) return;
             e.preventDefault();
-            const x = e.pageX - mainContent.offsetLeft;
+            const x = e.pageX - kanbanBoard.offsetLeft;
             const walk = (x - startX) * 2; 
-            mainContent.scrollLeft = scrollLeft - walk;
+            kanbanBoard.scrollLeft = scrollLeft - walk;
         });
 
         function logout() {
