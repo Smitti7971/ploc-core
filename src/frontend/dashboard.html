@@ -127,48 +127,75 @@
         </header>
 
         <div class="kanban-board" id="kanbanBoard">
-            <!-- COLUNAS DOS DIAS -->
-            <div class="day-column" ondrop="drop(event)" ondragover="allowDrop(event)" data-day="monday">
-                <h3>Segunda</h3>
-                <div class="task-card" draggable="true" ondragstart="drag(event)" id="task-1">
-                    <span class="tag">🌱 Plantas</span>
-                    <p>Regar o Lírio da Paz (Manhã)</p>
-                </div>
-            </div>
-
-            <div class="day-column" ondrop="drop(event)" ondragover="allowDrop(event)" data-day="tuesday">
-                <h3>Terça</h3>
-                <div class="task-card" draggable="true" ondragstart="drag(event)" id="task-2">
-                    <span class="tag">🏠 Casa</span>
-                    <p>Limpar filtros do ar</p>
-                </div>
-            </div>
-
-            <div class="day-column" data-day="wednesday">
-                <h3>Quarta</h3>
-            </div>
-
-            <div class="day-column" data-day="thursday">
-                <h3>Quinta</h3>
-            </div>
-
-            <div class="day-column" data-day="friday">
-                <h3>Sexta</h3>
-            </div>
+            <!-- COLUNAS DOS DIAS GERADAS DINAMICAMENTE -->
         </div>
     </main>
 
     <script>
+        const kanbanBoard = document.getElementById('kanbanBoard');
+        let lastDate = new Date(); // Começa em hoje
+        lastDate.setHours(0,0,0,0);
+
+        const DAYS_BR = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+        const MONTHS_BR = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+        // Função para criar uma coluna de dia
+        function createDayColumn(date) {
+            const col = document.createElement('div');
+            col.className = 'day-column';
+            col.dataset.date = date.toISOString();
+            
+            const dayName = DAYS_BR[date.getDay()];
+            const dayNum = date.getDate();
+            const monthName = MONTHS_BR[date.getMonth()];
+
+            col.innerHTML = `
+                <h3>${dayName}</h3>
+                <span style="color: #94a3b8; font-size: 0.8rem;">${dayNum} ${monthName}</span>
+                <div class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)" style="min-height: 100px; margin-top: 15px;">
+                </div>
+            `;
+            
+            // Adicionar Drag & Drop na drop-zone
+            col.querySelector('.drop-zone').addEventListener('dragover', allowDrop);
+            col.querySelector('.drop-zone').addEventListener('drop', drop);
+
+            return col;
+        }
+
+        // Carregar os primeiros 7 dias
+        function initBoard() {
+            for (let i = 0; i < 7; i++) {
+                const newDate = new Date(lastDate);
+                newDate.setDate(lastDate.getDate() + i);
+                kanbanBoard.appendChild(createDayColumn(newDate));
+                if (i === 6) lastDate = newDate;
+            }
+        }
+
+        // Detectar scroll lateral para carregar mais
+        const mainContent = document.querySelector('.main-content');
+        mainContent.addEventListener('scroll', () => {
+            const scrollRight = mainContent.scrollWidth - mainContent.scrollLeft - mainContent.clientWidth;
+            if (scrollRight < 300) { // Se faltar menos de 300px para o fim
+                for (let i = 0; i < 3; i++) {
+                    lastDate.setDate(lastDate.getDate() + 1);
+                    kanbanBoard.appendChild(createDayColumn(new Date(lastDate)));
+                }
+            }
+        });
+
+        // Funções de Drag & Drop
         function allowDrop(ev) { ev.preventDefault(); }
         function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
         function drop(ev) {
             ev.preventDefault();
             var data = ev.dataTransfer.getData("text");
-            var column = ev.target.closest('.day-column');
-            if (column) {
-                column.appendChild(document.getElementById(data));
-                console.log('Tarefa movida para:', column.dataset.day);
-                // Aqui depois faremos o fetch para o backend salvar a data
+            var dropZone = ev.target.closest('.drop-zone');
+            if (dropZone) {
+                dropZone.appendChild(document.getElementById(data));
+                const col = dropZone.closest('.day-column');
+                console.log('Movido para:', col.querySelector('h3').innerText, col.dataset.date);
             }
         }
 
@@ -176,6 +203,8 @@
             localStorage.clear();
             window.location.href = 'login.html';
         }
+
+        initBoard();
     </script>
 </body>
 </html>
