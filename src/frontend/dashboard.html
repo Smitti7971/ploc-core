@@ -203,8 +203,30 @@
             border-color: rgba(99, 102, 241, 0.2);
         }
 
-        .task-card.cat-plant::before { background: var(--cat-plant); opacity: 1; }
-        .task-card.cat-work::before { background: var(--cat-work); opacity: 1; }
+        .badge-now {
+            background: #ef4444;
+            color: white;
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 800;
+            animation: pulse 2s infinite;
+        }
+
+        .badge-next {
+            background: #f59e0b;
+            color: white;
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 800;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
 
         .task-header {
             display: flex;
@@ -509,12 +531,28 @@
             card.id = task.id;
             card.dataset.date = task.date;
             
+            // Lógica de Feedback de Tempo (Simplificada)
+            const now = new Date();
+            const isToday = new Date(task.date).toDateString() === now.toDateString();
+            let timeBadge = '';
+            
+            if (isToday && task.time) {
+                const [h, m] = task.time.split(':').map(Number);
+                const taskFullDate = new Date();
+                taskFullDate.setHours(h, m, 0, 0);
+                
+                const diff = (taskFullDate - now) / (1000 * 60); // em minutos
+                if (diff > 0 && diff < 60) timeBadge = '<span class="badge-next">PRÓXIMO</span>';
+                else if (Math.abs(diff) < 15) timeBadge = '<span class="badge-now">AGORA</span>';
+            }
+
             card.innerHTML = `
                 <div class="task-header">
                     <span class="tag">${task.category.replace('cat-', '')}</span>
                     <div style="display: flex; align-items: center; gap: 8px;">
+                        ${timeBadge}
                         <span class="time">${task.time || ''}</span>
-                        <button class="delete-task-btn" onclick="deleteTask(event, ${task.id})">✕</button>
+                        <button class="delete-task-btn" title="Apagar" onclick="deleteTask(event, ${task.id})">✕</button>
                     </div>
                 </div>
                 <p>${task.title}</p>
@@ -529,6 +567,45 @@
                 }
             });
         }
+
+        // --- FUNÇÃO DE TESTE DE ESTRESSE (GERADOR DE CAOS) ---
+        window.generateChaos = async function(count = 50) {
+            console.log(`🚀 Iniciando Gerador de Caos: ${count} tarefas...`);
+            const categories = ['cat-plant', 'cat-work', 'cat-health', 'cat-finance'];
+            const titles = ['Fazer café', 'Dominar o mundo', 'Pagar contas', 'Plantar bananeira', 'Reunião Ploc', 'Debugar código'];
+            
+            for (let i = 0; i < count; i++) {
+                const randomDay = Math.floor(Math.random() * 7);
+                const targetDate = new Date();
+                targetDate.setDate(targetDate.getDate() + randomDay);
+                targetDate.setHours(0,0,0,0);
+
+                const taskData = {
+                    name: titles[Math.floor(Math.random() * titles.length)] + ' #' + (i + 1),
+                    scheduledTime: `${Math.floor(Math.random() * 24).toString().padStart(2, '0')}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`,
+                    category: categories[Math.floor(Math.random() * categories.length)],
+                    description: 'Gerado automaticamente pelo teste de estresse.',
+                    scheduledDate: targetDate.toISOString()
+                };
+
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(taskData)
+                }).then(r => r.json()).then(t => renderTaskCard({
+                    id: t.id,
+                    title: t.name,
+                    time: t.scheduledTime,
+                    category: t.category,
+                    desc: t.description,
+                    date: targetDate.toISOString()
+                }));
+            }
+            console.log('✅ Caos gerado com sucesso!');
+        };
 
         async function deleteTask(event, taskId) {
             event.stopPropagation(); // Evita abrir edição se clicarmos no X
