@@ -372,6 +372,7 @@
             <a href="index.html" class="nav-link"><span>🏠</span> Início</a>
             <a href="#" class="nav-link active"><span>🗓️</span> Calendário</a>
             <a href="#" class="nav-link"><span>💡</span> Ideias</a>
+            <a href="#" class="nav-link" onclick="generateChaos(30)" style="color: #f59e0b; font-weight: 700;"><span>💣</span> Modo Caos</a>
             <a href="#" class="nav-link"><span>⚙️</span> Ajustes</a>
         </nav>
         <div style="margin-top: auto;">
@@ -685,26 +686,23 @@
         let scrollLeft;
 
         mainContent.addEventListener('mousedown', (e) => {
-            if (e.target.closest('.task-card')) return; // Não scrollar se estiver arrastando um card
+            if (e.target.closest('.task-card') || e.target.closest('button')) return;
             isDown = true;
-            mainContent.classList.add('active');
+            mainContent.style.cursor = 'grabbing';
             startX = e.pageX - mainContent.offsetLeft;
             scrollLeft = mainContent.scrollLeft;
         });
 
-        mainContent.addEventListener('mouseleave', () => {
+        window.addEventListener('mouseup', () => {
             isDown = false;
+            mainContent.style.cursor = 'grab';
         });
 
-        mainContent.addEventListener('mouseup', () => {
-            isDown = false;
-        });
-
-        mainContent.addEventListener('mousemove', (e) => {
+        window.addEventListener('mousemove', (e) => {
             if (!isDown) return;
             e.preventDefault();
             const x = e.pageX - mainContent.offsetLeft;
-            const walk = (x - startX) * 2; // Velocidade do scroll
+            const walk = (x - startX) * 2; 
             mainContent.scrollLeft = scrollLeft - walk;
         });
 
