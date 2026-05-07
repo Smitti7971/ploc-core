@@ -206,6 +206,31 @@
         .task-card.cat-plant::before { background: var(--cat-plant); opacity: 1; }
         .task-card.cat-work::before { background: var(--cat-work); opacity: 1; }
 
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .delete-task-btn {
+            background: none;
+            border: none;
+            color: var(--text-sub);
+            opacity: 0.3;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0 5px;
+            transition: all 0.2s;
+            line-height: 1;
+        }
+
+        .delete-task-btn:hover {
+            opacity: 1;
+            color: #ef4444;
+            transform: scale(1.2);
+        }
+
         .task-card .tag { 
             font-size: 0.65rem; 
             padding: 4px 10px; 
@@ -213,7 +238,6 @@
             background: #f1f5f9; 
             color: var(--text-sub); 
             font-weight: 700; 
-            margin-bottom: 10px; 
             display: inline-block;
             text-transform: uppercase;
         }
@@ -488,7 +512,10 @@
             card.innerHTML = `
                 <div class="task-header">
                     <span class="tag">${task.category.replace('cat-', '')}</span>
-                    <span class="time">${task.time || ''}</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="time">${task.time || ''}</span>
+                        <button class="delete-task-btn" onclick="deleteTask(event, ${task.id})">✕</button>
+                    </div>
                 </div>
                 <p>${task.title}</p>
             `;
@@ -501,6 +528,24 @@
                     col.querySelector('.drop-zone').appendChild(card);
                 }
             });
+        }
+
+        async function deleteTask(event, taskId) {
+            event.stopPropagation(); // Evita abrir edição se clicarmos no X
+            if (!confirm('Tem certeza que deseja apagar esta tarefa?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/${taskId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    document.getElementById(taskId).remove();
+                } else {
+                    alert('Erro ao deletar tarefa no servidor');
+                }
+            } catch (err) { alert('Erro de conexão ao deletar'); }
         }
 
         async function drop(ev) {
