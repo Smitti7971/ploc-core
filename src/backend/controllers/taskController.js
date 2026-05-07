@@ -13,12 +13,15 @@ exports.getTasks = async (req, res) => {
 };
 
 exports.createTask = async (req, res) => {
-  const { name, category } = req.body;
+  const { name, description, category, scheduledDate, scheduledTime } = req.body;
   try {
     const newTask = await prisma.task.create({
       data: {
         name,
+        description,
         category,
+        scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
+        scheduledTime,
         userId: req.user.id
       }
     });
@@ -28,8 +31,9 @@ exports.createTask = async (req, res) => {
   }
 };
 
-exports.toggleTask = async (req, res) => {
+exports.updateTask = async (req, res) => {
   const { id } = req.params;
+  const { name, description, category, scheduledDate, scheduledTime, completed } = req.body;
   try {
     const task = await prisma.task.findUnique({ where: { id: parseInt(id) } });
     
@@ -40,8 +44,12 @@ exports.toggleTask = async (req, res) => {
     const updatedTask = await prisma.task.update({
       where: { id: parseInt(id) },
       data: { 
-        completed: !task.completed,
-        completedAt: !task.completed ? new Date() : null
+        name,
+        description,
+        category,
+        scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
+        scheduledTime,
+        completed
       }
     });
     res.json(updatedTask);

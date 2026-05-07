@@ -343,6 +343,9 @@
     </main>
 
     <script>
+        const API_URL = 'https://backend.midializando.cloud/api/tasks';
+        const token = localStorage.getItem('token');
+
         const kanbanBoard = document.getElementById('kanbanBoard');
         const modal = document.getElementById('modalOverlay');
         let lastDate = new Date();
@@ -353,6 +356,31 @@
 
         const DAYS_BR = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
         const MONTHS_BR = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+        // Redirecionar se não estiver logado
+        if (!token) window.location.href = 'login.html';
+
+        async function loadTasks() {
+            try {
+                const response = await fetch(API_URL, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const tasks = await response.json();
+                tasks.forEach(task => {
+                    // Converter datas do banco para o formato ISO sem horas para bater com as colunas
+                    const taskDate = new Date(task.scheduledDate);
+                    taskDate.setHours(0,0,0,0);
+                    renderTaskCard({
+                        id: task.id,
+                        title: task.name,
+                        desc: task.description,
+                        category: task.category,
+                        time: task.scheduledTime,
+                        date: taskDate.toISOString()
+                    });
+                });
+            } catch (err) { console.error('Erro ao carregar tarefas:', err); }
+        }
 
         function createDayColumn(date) {
             const col = document.createElement('div');
@@ -393,7 +421,7 @@
             modal.style.display = 'none';
         }
 
-        function saveTask() {
+        async function saveTask() {
             const title = document.getElementById('taskTitle').value;
             const time = document.getElementById('taskTime').value;
             const category = document.getElementById('taskCategory').value;
@@ -401,18 +429,43 @@
 
             if (!title) return alert('Dê um nome para a tarefa!');
 
-            const taskObj = {
-                id: editingTaskId || 'task-' + Date.now(),
-                title, time, category, desc,
-                date: targetColumnDate
+            const taskData = {
+                name: title,
+                scheduledTime: time,
+                category: category,
+                description: desc,
+                scheduledDate: targetColumnDate
             };
 
-            renderTaskCard(taskObj);
-            closeModal();
+            try {
+                const method = editingTaskId ? 'PUT' : 'POST';
+                const url = editingTaskId ? `${API_URL}/${editingTaskId}` : API_URL;
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(taskData)
+                });
+
+                if (response.ok) {
+                    const savedTask = await response.json();
+                    renderTaskCard({
+                        id: savedTask.id,
+                        title: savedTask.name,
+                        time: savedTask.scheduledTime,
+                        category: savedTask.category,
+                        desc: savedTask.description,
+                        date: targetColumnDate
+                    });
+                    closeModal();
+                }
+            } catch (err) { alert('Erro ao salvar no banco!'); }
         }
 
         function renderTaskCard(task) {
-            // Se já existe, removemos para re-renderizar
             const existing = document.getElementById(task.id);
             if (existing) existing.remove();
 
@@ -432,7 +485,6 @@
 
             card.addEventListener('dragstart', (e) => e.dataTransfer.setData("text", e.target.id));
             
-            // Encontrar a coluna correta pela data
             const columns = document.querySelectorAll('.day-column');
             columns.forEach(col => {
                 if (col.dataset.date === task.date) {
@@ -441,19 +493,29 @@
             });
         }
 
-        function drop(ev) {
+        async function drop(ev) {
             ev.preventDefault();
             const taskId = ev.dataTransfer.getData("text");
             const dropZone = ev.target.closest('.drop-zone');
             if (dropZone) {
                 const card = document.getElementById(taskId);
                 const col = dropZone.closest('.day-column');
+                const newDate = col.dataset.date;
                 
-                // ATUALIZAR DATA DO CARD AO ARRASTAR
-                card.dataset.date = col.dataset.date;
-                dropZone.appendChild(card);
-                
-                console.log(`Tarefa ${taskId} movida para ${col.dataset.date}`);
+                // PERSISTIR NO BANCO
+                try {
+                    await fetch(`${API_URL}/${taskId}`, {
+                        method: 'PUT',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ scheduledDate: newDate })
+                    });
+                    
+                    card.dataset.date = newDate;
+                    dropZone.appendChild(card);
+                } catch (err) { console.error('Erro ao mover tarefa:', err); }
             }
         }
 
@@ -465,6 +527,7 @@
                 kanbanBoard.appendChild(createDayColumn(newDate));
                 if (i === 6) lastDate = newDate;
             }
+            loadTasks(); // Carregar do banco após criar as colunas
         }
 
         const mainContent = document.querySelector('.main-content');
