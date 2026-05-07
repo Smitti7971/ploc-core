@@ -37,5 +37,6 @@ model Task {
   routineId   Int?
   routine     Routine?  @relation(fields: [routineId], references: [id])
   createdAt   DateTime  @default(now())
+  scheduledDate DateTime @default(now())
   completedAt DateTime?
 }
