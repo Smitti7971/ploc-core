@@ -365,20 +365,24 @@
                 const response = await fetch(API_URL, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                const tasks = await response.json();
-                tasks.forEach(task => {
-                    // Converter datas do banco para o formato ISO sem horas para bater com as colunas
-                    const taskDate = new Date(task.scheduledDate);
-                    taskDate.setHours(0,0,0,0);
-                    renderTaskCard({
-                        id: task.id,
-                        title: task.name,
-                        desc: task.description,
-                        category: task.category,
-                        time: task.scheduledTime,
-                        date: taskDate.toISOString()
+                const result = await response.json();
+                
+                if (response.ok && Array.isArray(result)) {
+                    result.forEach(task => {
+                        const taskDate = new Date(task.scheduledDate);
+                        taskDate.setHours(0,0,0,0);
+                        renderTaskCard({
+                            id: task.id,
+                            title: task.name,
+                            desc: task.description,
+                            category: task.category,
+                            time: task.scheduledTime,
+                            date: taskDate.toISOString()
+                        });
                     });
-                });
+                } else {
+                    console.error('Erro na API:', result.error || 'Resposta inválida');
+                }
             } catch (err) { console.error('Erro ao carregar tarefas:', err); }
         }
 

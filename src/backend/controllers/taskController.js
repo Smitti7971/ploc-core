@@ -8,7 +8,7 @@ exports.getTasks = async (req, res) => {
     });
     res.json(tasks);
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao buscar tarefas' });
+    res.status(500).json({ error: 'Erro ao buscar tarefas', details: error.message });
   }
 };
 
