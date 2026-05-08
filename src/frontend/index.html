@@ -7,7 +7,7 @@
     <title>PLOC - O Seu Sócio</title>
     
     <!-- PWA Settings -->
-    <link rel="manifest" href="/manifest.json?v=17">
+    <link rel="manifest" href="/manifest.json?v=18">
     <meta name="theme-color" content="#0f172a">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -87,27 +87,42 @@
     <div id="app"></div>
 
     <script>
-        // Força a limpeza de caches antigos se a versão mudar
-        const APP_VERSION = 'v17';
-        if (localStorage.getItem('ploc_version') !== APP_VERSION) {
+        // Automação de Atualização Total
+        const APP_VERSION = 'v18';
+        const currentVersion = localStorage.getItem('ploc_version');
+
+        if (currentVersion !== APP_VERSION) {
+            console.log('Detectada Nova Versão:', APP_VERSION, '- Limpando Caches...');
+            
+            // 1. Limpa Cache Storage do Navegador
             caches.keys().then(names => {
                 for (let name of names) caches.delete(name);
             });
+
+            // 2. Desregistra Service Workers
             navigator.serviceWorker.getRegistrations().then(registrations => {
-                for (let registration of registrations) registration.unregister();
+                for (let registration of registrations) {
+                    registration.unregister();
+                }
             });
+
+            // 3. Atualiza marcador e REINICIA o app
             localStorage.setItem('ploc_version', APP_VERSION);
-            console.log('Cache Purged for Version', APP_VERSION);
+            
+            // Delay curto para garantir a limpeza antes do reload
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 500);
         }
 
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=17')
+            navigator.serviceWorker.register('sw.js?v=18')
                 .then(() => console.log('Service Worker Registered'))
                 .catch(err => console.log('Service Worker Failed', err));
         }
     </script>
     <!-- Voltando para módulo para permitir o uso do apiClient -->
-    <script type="module" src="/js/main.js?v=17"></script>
+    <script type="module" src="/js/main.js?v=18"></script>
 </body>
 
 </html>
