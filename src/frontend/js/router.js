@@ -54,4 +54,4 @@ export const router = async () => {
 
 // Listener para mudanças na URL
 window.addEventListener('hashchange', router);
-window.addEventListener('load', router);
+
