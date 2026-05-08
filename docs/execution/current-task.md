@@ -1,44 +1,20 @@
-# Tarefa: Deploy e Validação da Arquitetura Modular Frontend 🚀
+# Tarefa Atual: Migração para Arquitetura SPA (Single Page Application) 🏗️
 
-## 📋 Status
-- **Responsável**: Antigravity
-- **Data**: 2026-05-08
-- **Estado**: Em Execução (Aguardando Telemetria)
+## 📅 Data: 2026-05-08
+## 🎯 Status: Em Execução 🚀
 
----
-
-## 🎯 Objetivo
-Realizar o deploy da nova estrutura modular do Frontend, garantindo que o desacoplamento de CSS/JS e a conversão para REMs não quebraram as funcionalidades críticas (Login e Kanban).
-
----
-
-## 🏗️ Fases da Tarefa
-
-### 1. Entender ✅
-- [x] Analisar a necessidade de separação de preocupações (SoC).
-- [x] Mapear unidades REM para responsividade mobile.
-
-### 2. Preparar ✅
-- [x] Extrair CSS para `css/*.css`.
-- [x] Extrair JS para `js/*.js`.
-- [x] Atualizar `sw.js` para a versão v11.
-
-### 3. Executar ✅
-- [x] `git commit` e `git push` das alterações.
-- [x] Sincronizar `MAPA_DO_PROJETO.md`.
-
-### 4. Resultado (Aguardando ⏳)
-- [ ] Validar Health Check da API (`/health`).
-- [ ] Validar carregamento do Frontend via Browser (Subagent).
-- [ ] Analisar Logs de Erros (Se houver).
-
-### 5. Validar (Pendente ❌)
-- [ ] Confirmar integridade das conexões.
-- [ ] Encerramento da tarefa e limpeza.
+### 📝 Checklist de Progresso:
+- [x] Alinhamento com o Blueprint e Guia de Construção ✅
+- [x] Criação do Plano Estratégico (DRAFT-spa-migration) ✅
+- [ ] Criação do Shell Central (index.html) ⏳
+- [ ] Implementação do Roteador (main.js) ⏳
+- [ ] Componentização: Landing Page ⏳
+- [ ] Componentização: Login ⏳
+- [ ] Componentização: Register ⏳
+- [ ] Componentização: Dashboard ⏳
+- [ ] Validação e Deploy ⏳
 
 ---
-
-## 📈 Telemetria e Logs
-- **Gatilho de Deploy**: 03:13:06 UTC
-- **Janela de Espera (180s)**: Fim previsto para 03:16:06 UTC
-- **Status Inicial**: Sucesso no Push.
+## 📓 Notas de Execução:
+- A migração será feita de forma incremental para não quebrar a produção durante o processo.
+- Primeiro transformaremos o `index.html` e o `main.js`, depois migraremos cada "página" como um componente.

@@ -1,37 +1,53 @@
-import { Avatar } from './components/Avatar.js';
-import { Modal } from './components/Modal.js';
-import { LoginForm } from './components/LoginForm.js';
+import { LandingView } from './components/LandingView.js';
+import { LoginView } from './components/LoginView.js';
+import { RegisterView } from './components/RegisterView.js';
+import { DashboardView } from './components/DashboardView.js';
 import { authService } from './api/auth.js';
 
 /**
- * Maestro do Palco (Main Logic)
+ * Maestro SPA (Router & Controller)
  */
+const Router = {
+    routes: {
+        'landing': LandingView,
+        'login': LoginView,
+        'register': RegisterView,
+        'dashboard': DashboardView
+    },
 
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Inicializa o Ploc (Avatar)
-    Avatar.init('avatar-anchor');
+    appElement: document.getElementById('app'),
 
-    // 2. Verifica se o usuário está logado
-    const user = authService.getUser();
-    const greetingEl = document.getElementById('ploc-greeting');
+    async navigate(route) {
+        const view = this.routes[route];
+        if (!view) return this.navigate('landing');
 
-    if (!user) {
-        // --- CENÁRIO: DESLOGADO ---
-        Avatar.setState(Avatar.states.SLEEPING);
-        greetingEl.innerText = "Ploc está dormindo...";
-
-        // Abre o Modal de Login (Não deixa fechar clicando fora para forçar o login)
-        setTimeout(() => {
-            Modal.open(LoginForm.render(), false); 
-            LoginForm.initEvents();
-        }, 800);
-
-    } else {
-        // --- CENÁRIO: LOGADO ---
-        Avatar.setState(Avatar.states.WORKING);
-        greetingEl.innerText = `Olá, ${user.name || 'Sócio'}! Ploc está trabalhando.`;
+        // Limpar e Injetar
+        this.appElement.innerHTML = view.render();
         
-        // Em breve: Aqui liberamos as sidebars e o input de chat
-        console.log("✅ Usuário autenticado. Palco liberado.");
+        // Inicializar Lógica da View
+        if (view.init) await view.init();
+        
+        console.log(`🚀 Navegou para: ${route}`);
+    },
+
+    init() {
+        // Ouvir eventos de navegação customizados
+        window.addEventListener('navigate', (e) => {
+            this.navigate(e.detail);
+        });
+
+        // Verificação Inicial de Rota
+        const user = authService.getUser();
+        if (user) {
+            this.navigate('dashboard');
+        } else {
+            this.navigate('landing');
+        }
     }
+};
+
+// Iniciar quando o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', () => {
+    Router.appElement = document.getElementById('app');
+    Router.init();
 });

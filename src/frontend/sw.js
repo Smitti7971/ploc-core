@@ -1,28 +1,23 @@
-const CACHE_NAME = 'ploc-cache-v11';
+const CACHE_NAME = 'ploc-pwa-v12'; // Versão SPA
 // Lista completa de arquivos vitais para o funcionamento offline
 const ASSETS_TO_PRECACHE = [
-  '/',
-  '/index.html',
-  '/login.html',
-  '/register.html',
-  '/dashboard.html',
-  '/manifest.json',
-  '/css/theme.css',
-  '/css/login.css',
-  '/css/register.css',
-  '/css/dashboard.css',
-  '/css/landing.css',
-  '/js/config.js',
-  '/js/ui.js',
-  '/js/main.js',
-  '/js/login.js',
-  '/js/register.js',
-  '/js/dashboard.js',
-  '/js/api/client.js',
-  '/js/api/auth.js',
-  '/assets/icon-192.png',
-  '/assets/screenshot-mobile.png',
-  '/assets/screenshot-desktop.png'
+    './',
+    './index.html',
+    './css/theme.css',
+    './css/app.css',
+    './css/landing.css',
+    './css/login.css',
+    './css/dashboard.css',
+    './js/main.js',
+    './js/ui.js',
+    './js/api/client.js',
+    './js/api/auth.js',
+    './js/components/Avatar.js',
+    './js/components/LandingView.js',
+    './js/components/LoginView.js',
+    './js/components/RegisterView.js',
+    './js/components/DashboardView.js',
+    './manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
