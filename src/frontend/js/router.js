@@ -4,8 +4,8 @@
 
 const routes = {
     'landing': async () => {
-        const { renderLanding } = await import('./components/LandingPage.js');
-        return renderLanding();
+        const { renderLandingPage } = await import('./components/LandingPage.js');
+        return renderLandingPage();
     },
     'login': async () => {
         const { renderLogin } = await import('./components/LoginPage.js');
@@ -25,19 +25,21 @@ export const router = async () => {
     const app = document.getElementById('app');
     if (!app) return;
 
-    const hash = window.location.hash.slice(1) || 'dashboard';
+    const hash = window.location.hash.slice(1) || 'landing';
     
     // Lógica básica de proteção de rota
     const token = localStorage.getItem('token');
     // REMOVIDO: Não forçar login para ver o dashboard premium
-    // if (hash === 'dashboard' && !token) {
-    //     window.location.hash = '#login';
-    //     return;
-    // }
 
     // Se estiver logado, não precisa ver landing/login/register
     if (token && (hash === 'landing' || hash === 'login' || hash === 'register')) {
         window.location.hash = '#dashboard';
+        return;
+    }
+
+    // Ponto de entrada padrão
+    if (!hash || hash === '') {
+        window.location.hash = '#landing';
         return;
     }
 
