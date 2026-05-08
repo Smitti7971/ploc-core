@@ -119,10 +119,15 @@ export const renderLandingPage = () => {
         <div style="display: flex; flex-direction: column; align-items: center; position: relative; z-index: 5;">
             <!-- O PLOC Central (Ponto de Montagem) -->
             <div id="ploc-avatar-mount"></div>
-            <div id="text-trigger" style="margin-top: 0.5rem; cursor: pointer; display: flex; gap: 8px; transition: all 0.4s ease; padding: 10px;">
-                <span class="dot" style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; animation: dotWave 1.5s infinite 0s;"></span>
-                <span class="dot" style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; animation: dotWave 1.5s infinite 0.3s;"></span>
-                <span class="dot" style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; animation: dotWave 1.5s infinite 0.6s;"></span>
+            <div id="text-trigger" style="
+                margin-top: 2rem; cursor: pointer; display: flex; gap: 6px; 
+                transition: all 0.4s ease; padding: 0.5rem 1.2rem;
+                background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 20px; backdrop-filter: blur(10px);
+            ">
+                <span class="dot" style="width: 6px; height: 6px; background: rgba(255,255,255,0.3); border-radius: 50%;"></span>
+                <span class="dot" style="width: 6px; height: 6px; background: rgba(255,255,255,0.3); border-radius: 50%;"></span>
+                <span class="dot" style="width: 6px; height: 6px; background: rgba(255,255,255,0.3); border-radius: 50%;"></span>
             </div>
             <div id="input-container" style="height: 0; opacity: 0; overflow: hidden; transition: all 0.5s ease; transform: translateY(-10px); width: min(90vw, 320px);">
                 <input type="text" id="ploc-input" placeholder="O que deseja, mestre?" style="width: 100%; margin-top: 0.5rem; padding: 1.2rem 1.5rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; background: rgba(255,255,255,0.03); backdrop-filter: blur(15px); color: #fff; outline: none;">
