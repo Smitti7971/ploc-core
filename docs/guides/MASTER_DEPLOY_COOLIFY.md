@@ -1,48 +1,35 @@
-# GUIA MESTRE: Deploy e Nuvem (Coolify) ☁️🚀
+# GUIA MESTRE: Deploy Simplificado (Coolify) ☁️🚀
 
-## A Lógica das Engrenagens
-Imagine que o Ploc é uma planta que vive em uma estufa na nuvem (o Servidor VPS). Para atualizar essa planta, seguimos este caminho:
+Este é o fluxo obrigatório e simplificado para atualizações do Ploc. Nenhuma etapa deve ser pulada.
 
-1.  **O Repositório (GitHub)**: É o nosso "cartório". Toda mudança de código oficial deve ser registrada lá (via `git push`).
-2.  **O Gerente (Coolify)**: É um painel que vigia o GitHub. Quando ele vê uma mudança, ele automaticamente reconstrói o seu aplicativo.
-3.  **O Ambiente (Nixpacks/Static)**:
-    *   **Backend**: Usa o motor **Nixpacks** (Node.js) para rodar o cérebro do Ploc.
-    *   **Frontend**: Usa o motor **Static** (Nginx) para entregar as páginas visuais.
+## 🛠️ O Fluxo de 4 Passos
 
----
+### 1. UPLOAD PARA O GIT (O Registro)
+Antes de qualquer ação na nuvem, o código local deve ser enviado para o repositório oficial.
+- **Ação do Agente**: Executar `git add .`, `git commit` e `git push`.
+- **Objetivo**: Garantir que o Coolify puxe a versão mais recente.
 
-## 🛠️ Como eu (Agente) controlo isso?
+### 2. INÍCIO DO DEPLOY (O Gatilho)
+O Agente dispara o comando para o Coolify iniciar a reconstrução do container.
+- **Ação do Agente**: Executar o comando `curl` via API na porta 8000 usando o UUID correto.
+- **UUIDs de Referência**: 
+  - Backend: `leaocf7ke5lgluo0bg2dco0w`
+  - Frontend: `a6n3eh22owgp057dd09t023a`
 
-Eu uso um "Controle Remoto" chamado **API do Coolify**. Isso me permite pedir para o servidor reiniciar ou mudar de pasta sem que você precise abrir o painel preto do Coolify.
+### 3. CONFIRMAÇÃO MANUAL (O Olho do Dono)
+**PAUSA OBRIGATÓRIA.** O Agente não deve prosseguir automaticamente.
+- **Ação**: O Agente deve notificar o Smitti que o deploy foi disparado e **aguardar um "OK" ou confirmação manual** do usuário sobre o estado do deploy (via painel ou percepção).
 
-### Comandos de Controle (Bastidores):
-- **Disparar Deploy**: `curl -X GET ".../deploy?uuid=..."` (Força o servidor a ler o código novo). Porta **8000**.
-- **Consultar Status (Linha Direta)**: `curl -s ".../deployments/{deployment_uuid}"` (Única forma 100% confiável de ver o progresso real). Porta **8000**.
-- **Verificar Saúde (Telemetria)**: Pergunte para o Smitti se o deploy foi confirmado, aguarde ele confirmar e somente então acesse o health check.
-
----
-
-## ⚠️ O que pode dar errado? (E como nos protegemos)
-
-1.  **Caminho Errado (Base Directory)**: Se eu disser para o Coolify olhar a pasta `/src`, mas o código estiver em `/src/backend`, ele vai ficar perdido.
-    *   *Proteção*: Sempre conferimos o `MAPA_DO_PROJETO.md` antes de qualquer deploy.
-2.  **Portas Fechadas**: Se o motor do carro (Node) estiver na porta 3000, mas o gerente (Coolify) estiver procurando na porta 3001, o site não abre.
-    *   *Proteção*: Padronizamos o Ploc para usar sempre a **Porta 3000**.
-3.  **Segredos Vazados**: Nunca salvamos senhas no código. Usamos o cofre `.env`.
+### 4. CHECAGEM (A Validação Final)
+Após a confirmação, o Agente realiza o teste de saúde.
+- **Ação**: Validar os endpoints de saúde e logs para garantir que não há erros silenciosos.
+- **Endpoints**:
+  - `https://backend.midializando.cloud/health`
+  - `https://ploc.midializando.cloud/`
 
 ---
 
-## Checklist para o Arquiteto (Smitti)
-- [ ] O código já está no GitHub? (Eu farei o `git push`).
-- [ ] O UUID do aplicativo está correto no Mapa?
-- [ ] O servidor tem acesso ao banco de dados? (Checamos no `ESTADO_DAS_APIS.md`).
-
----
-
-## 💡 Lições de Batalha (Evolução Contínua)
-*Espaço reservado para anotar práticas eficazes e erros evitados durante as execuções.*
-
-- **[2026-05-07]**: A API do Coolify v4 para disparos de deploy (Webhook/CURL) responde na porta **8000** (ex: `http://IP:8000/api/v1/deploy`).
-- **[2026-05-07]**: CUIDADO COM FALSOS POSITIVOS! O status `queued` não garante que o código novo subiu. Sempre audite os timestamps nos logs de execução (`/logs`) para confirmar que a instância foi reiniciada após o build.
-- **[2026-05-07]**: Use sempre o UUID presente no `MAPA_DO_PROJETO.md` e no `.env`. Ignorar UUIDs em arquivos de histórico antigos.
-- [2026-05-08]: **PRISMA CRASH (CRÍTICO)**: Se o container entrar em loop de `restarting` após o deploy, adicione `binaryTargets = ["native", "debian-openssl-3.0.x"]` no `schema.prisma`. Isso garante que o motor do banco de dados seja gerado corretamente para o ambiente Linux do Coolify.
+## 💡 Lições de Batalha (Não Esquecer!)
+- **PRISMA**: Sempre garantir que o `binaryTargets` no `schema.prisma` inclua `debian-openssl-3.0.x` para evitar crash em produção.
+- **PORTAS**: Backend (3000) | Frontend (80).
+- **SEGURANÇA**: Senhas apenas no `.env`. Nunca no Mapa do Projeto ou no código.

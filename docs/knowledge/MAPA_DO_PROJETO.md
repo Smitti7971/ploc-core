@@ -17,11 +17,11 @@
 ### 3. Serviço de Banco de Dados (PostgreSQL)
 - **Service Name**: `rmybu33898amwear4xe4qsbc`
 - **Domínio Interno**: `rmybu33898amwear4xe4qsbc:5432`
-- **ORM**: Prisma v6.4.1 (Downgrade aplicado para compatibilidade com Node 22.11)
+- **ORM**: Prisma v6.19.3
 - **POSTGRES_HOST**: `rmybu33898amwear4xe4qsbc`
 - **POSTGRES_DB**: `postgres`
-- **DATABASE_URL**: `postgresql://postgres:rHUsZ3zP3HCGbYORvoJUVaG1vGREfuruWj7HlOULgyrmcoIm6GCz9ZzzuzEEM5zn@rmybu33898amwear4xe4qsbc:5432/postgres?schema=public`
-- **Nota**: Manter Prisma v6 enquanto o ambiente Nixpacks não suportar Node >= 22
+- **DATABASE_URL**: `postgresql://postgres:********************************@rmybu33898amwear4xe4qsbc:5432/postgres?schema=public`
+- **Nota**: Manter Prisma v6 para estabilidade operacional.
 
 ### ⚙️ Motor de Rotinas (Backend)
 - **Status**: Backend Pronto (API Validada)
