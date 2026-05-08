@@ -1,7 +1,9 @@
 FROM nginx:stable-alpine
 
-# Copia os arquivos da RAIZ para o diretório do Nginx
+# Copia TODOS os arquivos necessários da raiz
 COPY index.html /usr/share/nginx/html/
+COPY manifest.json /usr/share/nginx/html/
+COPY sw.js /usr/share/nginx/html/
 COPY js /usr/share/nginx/html/js
 COPY css /usr/share/nginx/html/css
 
@@ -15,6 +17,7 @@ RUN echo 'server { \
         try_files $uri $uri/ /index.html; \
     } \
     location ~* \.(js|css|json|png|jpg|jpeg|gif|ico|svg)$ { \
+        add_header Content-Type $content_type; \
         try_files $uri =404; \
     } \
 }' > /etc/nginx/conf.d/default.conf
