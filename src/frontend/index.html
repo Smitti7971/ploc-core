@@ -15,8 +15,21 @@
     <div id="app"></div>
 
     <script>
+        // Força a limpeza de caches antigos se a versão mudar
+        const APP_VERSION = 'v14';
+        if (localStorage.getItem('ploc_version') !== APP_VERSION) {
+            caches.keys().then(names => {
+                for (let name of names) caches.delete(name);
+            });
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                for (let registration of registrations) registration.unregister();
+            });
+            localStorage.setItem('ploc_version', APP_VERSION);
+            console.log('Cache Purged for Version', APP_VERSION);
+        }
+
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
+            navigator.serviceWorker.register('sw.js?v=14')
                 .then(() => console.log('Service Worker Registered'))
                 .catch(err => console.log('Service Worker Failed', err));
         }
