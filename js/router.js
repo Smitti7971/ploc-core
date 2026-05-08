@@ -25,14 +25,15 @@ export const router = async () => {
     const app = document.getElementById('app');
     if (!app) return;
 
-    const hash = window.location.hash.slice(1) || 'landing';
+    const hash = window.location.hash.slice(1) || 'dashboard';
     
     // Lógica básica de proteção de rota
     const token = localStorage.getItem('token');
-    if (hash === 'dashboard' && !token) {
-        window.location.hash = '#login';
-        return;
-    }
+    // REMOVIDO: Não forçar login para ver o dashboard premium
+    // if (hash === 'dashboard' && !token) {
+    //     window.location.hash = '#login';
+    //     return;
+    // }
 
     // Se estiver logado, não precisa ver landing/login/register
     if (token && (hash === 'landing' || hash === 'login' || hash === 'register')) {
@@ -40,7 +41,7 @@ export const router = async () => {
         return;
     }
 
-    const renderFunc = routes[hash] || routes['landing'];
+    const renderFunc = routes[hash] || routes['dashboard'];
     
     try {
         app.innerHTML = ''; // Limpa o palco
