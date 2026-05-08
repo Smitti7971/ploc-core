@@ -34,7 +34,7 @@ export const renderSettingsPage = () => {
             title: 'SUPORTE',
             items: [
                 { icon: 'help', label: 'Ajuda & FAQ', detail: '' },
-                { icon: 'info', label: 'Sobre o Ploc', detail: 'Versão v0.2.0' }
+                { icon: 'info', label: 'Sobre o Ploc', detail: 'Versão v0.2.1' }
             ]
         }
     ];
