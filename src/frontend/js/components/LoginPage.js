@@ -40,6 +40,15 @@ export const renderLogin = () => {
                 <button type="submit" style="background: #000; color: #fff; border: none; padding: 1.1rem; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; margin-top: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                     Entrar no Ploc
                 </button>
+
+                ${(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? `
+                <div style="margin-top: 1rem; padding: 1rem; background: #fefce8; border: 1px solid #fef08a; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 0.7rem; font-weight: 900; color: #854d0e; margin-bottom: 0.5rem; letter-spacing: 1px;">MODO COMPUTADOR (LOCAL)</div>
+                    <button id="btn-local-dev" type="button" style="background: #854d0e; color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                        Acesso Rápido Admin
+                    </button>
+                </div>
+                ` : ''}
             </form>
 
             <p style="margin-top: 2rem; text-align: center; color: #64748b; font-size: 0.95rem;">
@@ -58,6 +67,15 @@ export const renderLogin = () => {
             input.onfocus = () => input.style.borderColor = '#000';
             input.onblur = () => input.style.borderColor = '#e2e8f0';
         });
+
+        const btnLocal = container.querySelector('#btn-local-dev');
+        if (btnLocal) {
+            btnLocal.onclick = () => {
+                form.querySelector('[name="email"]').value = 'admin@ploc.com';
+                form.querySelector('[name="password"]').value = 'admin123'; // Assumindo padrão local
+                form.dispatchEvent(new Event('submit'));
+            };
+        }
 
         form.onsubmit = async (e) => {
             e.preventDefault();
