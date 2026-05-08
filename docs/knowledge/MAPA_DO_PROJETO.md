@@ -7,8 +7,8 @@
 - **Domínio**: `https://ploc.midializando.cloud/`
 - **Base Directory**: `/src/frontend`
 - **Build Pack**: `static` (Nginx)
-- **Arquitetura**: Modular (SoC: HTML / CSS em REM / JS Módulos)
-- **PWA Version**: v11 (Cache Refatorado)
+- **Arquitetura**: Single Page Application (SPA Shell)
+- **PWA Version**: v12 (Arquitetura SPA)
 
 ### 2. Serviço de Backend (API)
 - **App Name**: `ploc-backend-v3` (UUID: `leaocf7ke5lgluo0bg2dco0w`)
@@ -32,10 +32,16 @@
 
 ### 🎨 Arquitetura Frontend (Enterprise)
 - **Design System**: Baseado em REM (Root EM) para escalabilidade total.
-- **Separation of Concerns**: Lógica extraída para `js/` e Estilos para `css/`.
-- **Comunicação**: Centralizada via `apiClient` (Segurança JWT).
-- **Service Worker**: Cache persistente v11 (Otimizado para PWA).
+- **Separation of Concerns**: Lógica extraída para componentes JS e Estilos para `css/`.
+- **Arquitetura SPA**: Roteamento dinâmico via `js/main.js` (Zero Page Reload).
+- **Service Worker**: Cache persistente v12 (Otimizado para SPA).
 
+
+### 📊 Estado de Saúde (Operacional - 2026-05-08) 🟢
+- **Frontend**: ✅ ATIVO (Nginx servindo SPA v12).
+- **Backend**: ✅ ATIVO (Servidor Node.js respondendo na porta 3000).
+- **Banco de Dados**: ✅ CONECTADO (Prisma v6 operando com PostgreSQL).
+- **Segurança**: ✅ VALIDADA (Correção do JWT_SECRET em produção).
 
 ### 🧭 Central de Conhecimento (Knowledge)
 - **Tecnologias**: [docs/knowledge/PILHA_TECNOLOGICA.md](PILHA_TECNOLOGICA.md)

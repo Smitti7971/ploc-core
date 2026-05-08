@@ -6,13 +6,16 @@
 ### 📝 Checklist de Progresso:
 - [x] Alinhamento com o Blueprint e Guia de Construção ✅
 - [x] Criação do Plano Estratégico (DRAFT-spa-migration) ✅
-- [ ] Criação do Shell Central (index.html) ⏳
-- [ ] Implementação do Roteador (main.js) ⏳
-- [ ] Componentização: Landing Page ⏳
-- [ ] Componentização: Login ⏳
-- [ ] Componentização: Register ⏳
-- [ ] Componentização: Dashboard ⏳
-- [ ] Validação e Deploy ⏳
+- [x] Criação do Shell Central (index.html) ✅
+- [ ] **Fase de Implementação SPA:**
+    - [x] Criar estrutura de diretórios (`js/components/`) ✅
+    - [x] Implementar Roteador Central (`js/router.js`) ✅
+    - [x] Migrar Landing Page para `js/components/LandingPage.js` ✅
+    - [x] Integrar Roteador no `main.js` ✅
+    - [x] Criar Componente de Login (`js/components/LoginPage.js`) ✅
+    - [x] Criar Componente de Registro (`js/components/RegisterPage.js`) ✅
+    - [x] Criar Componente de Dashboard (`js/components/DashboardPage.js`) ✅
+- [ ] Validação e Deploy (Aguardar 180s após deploy para check de saúde) ⏳
 
 ---
 ## 📓 Notas de Execução:

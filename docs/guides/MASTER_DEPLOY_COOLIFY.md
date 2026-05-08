@@ -16,12 +16,13 @@ O Agente dispara o comando para o Coolify iniciar a reconstrução do container.
   - Backend: `leaocf7ke5lgluo0bg2dco0w`
   - Frontend: `a6n3eh22owgp057dd09t023a`
 
-### 3. CONFIRMAÇÃO MANUAL (O Olho do Dono)
-**PAUSA OBRIGATÓRIA.** O Agente não deve prosseguir automaticamente.
-- **Ação**: O Agente deve notificar o Smitti que o deploy foi disparado e **aguardar um "OK" ou confirmação manual** do usuário sobre o estado do deploy (via painel ou percepção).
+### 3. AUDITORIA DE LOGS (A Telemetria Ativa)
+Em vez de apenas esperar, o Agente deve validar o sucesso através dos logs:
+- **Sucesso no Backend**: Procurar por "Servidor rodando" e "Conexão estabelecida com sucesso".
+- **Sucesso no Frontend**: Procurar por "start worker processes" do Nginx.
 
 ### 4. CHECAGEM (A Validação Final)
-Após a confirmação, o Agente realiza o teste de saúde.
+Após auditar os logs, realizar o teste de fumaça final.
 - **Ação**: Validar os endpoints de saúde e logs para garantir que não há erros silenciosos.
 - **Endpoints**:
   - `https://backend.midializando.cloud/health`

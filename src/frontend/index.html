@@ -3,36 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PLOC - O Seu Sócio</title>
-    
-    <!-- PWA Config -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0a0a0b">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    
-    <!-- Design System Base -->
+    <title>PLOC - Mobile First</title>
     <link rel="stylesheet" href="css/theme.css">
-    
-    <!-- Estilos Globais de Componentes -->
-    <link rel="stylesheet" href="css/components/avatar.css">
-    <link rel="stylesheet" href="css/components/modals.css">
-
-    <!-- Estilos de Telas (Lazy Loaded ou Globais) -->
-    <link rel="stylesheet" href="css/landing.css">
-    <link rel="stylesheet" href="css/login.css">
-    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/app.css">
 </head>
-<body class="spa-shell">
-
-    <!-- Container Principal do App -->
-    <div id="app">
-        <div id="app-loading">Carregando o Ploc...</div>
-    </div>
-
-    <!-- Script de Inicialização -->
+<body>
+    <div id="app"></div>
+    
+    <!-- Voltando para módulo para permitir o uso do apiClient -->
     <script type="module" src="js/main.js"></script>
-
 </body>
 </html>

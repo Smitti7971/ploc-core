@@ -1,17 +1,5 @@
-/**
- * Configuração Global do Frontend Ploc
- */
-const CONFIG = {
-    // URL base da API (Mude aqui para afetar todo o projeto)
-    API_URL: 'https://backend.midializando.cloud/api',
-    
-    // Versão do Sistema
-    VERSION: '1.0.8',
-    
-    // Configurações de UI
-    DEFAULT_CATEGORY: 'cat-plant',
+// ⚙️ Configurações Globais do PLOC (Modo Híbrido: Local -> Nuvem)
+export const CONFIG = {
+    // Apontando para a produção mesmo estando em casa para validar a ponte
+    API_BASE_URL: 'https://backend.midializando.cloud/api'
 };
-
-// Congelar para evitar alterações acidentais
-Object.freeze(CONFIG);
-export default CONFIG;
