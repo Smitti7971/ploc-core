@@ -8,19 +8,19 @@
   "description": "Seu assistente pessoal e sócio de produtividade.",
   "icons": [
     {
-      "src": "https://ploc.midializando.cloud/icon-192.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://ploc.midializando.cloud/icon-512.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ],
   "screenshots": [
     {
-      "src": "https://ploc.midializando.cloud/screenshot.png",
+      "src": "/screenshot.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",

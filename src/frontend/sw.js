@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ploc-v15';
+const CACHE_NAME = 'ploc-v16';
 const ASSETS = [
   '/',
   '/index.html',
@@ -10,7 +10,10 @@ const ASSETS = [
   '/js/components/DashboardPage.js',
   '/js/components/CalendarPage.js',
   '/js/components/KanbanPage.js',
-  '/js/components/SettingsPage.js'
+  '/js/components/SettingsPage.js',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/screenshot.png'
 ];
 
 // Instalação e Cache
