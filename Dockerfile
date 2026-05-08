@@ -1,9 +1,11 @@
 FROM nginx:stable-alpine
 
-# Copia os arquivos da pasta frontend para o diretório do Nginx
-COPY src/frontend /usr/share/nginx/html
+# Copia os arquivos da RAIZ para o diretório do Nginx
+COPY index.html /usr/share/nginx/html/
+COPY js /usr/share/nginx/html/js
+COPY css /usr/share/nginx/html/css
 
-# Configuração para SPA e tipos de arquivos corretos
+# Configuração para SPA
 RUN echo 'server { \
     listen 80; \
     server_name localhost; \
@@ -13,7 +15,6 @@ RUN echo 'server { \
         try_files $uri $uri/ /index.html; \
     } \
     location ~* \.(js|css|json|png|jpg|jpeg|gif|ico|svg)$ { \
-        add_header Content-Type $content_type; \
         try_files $uri =404; \
     } \
 }' > /etc/nginx/conf.d/default.conf
