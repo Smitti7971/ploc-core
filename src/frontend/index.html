@@ -7,8 +7,9 @@
     <title>PLOC - O Seu Sócio</title>
     
     <!-- PWA Settings -->
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="/manifest.json?v=17">
     <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="/icon-192.png">
@@ -87,7 +88,7 @@
 
     <script>
         // Força a limpeza de caches antigos se a versão mudar
-        const APP_VERSION = 'v16';
+        const APP_VERSION = 'v17';
         if (localStorage.getItem('ploc_version') !== APP_VERSION) {
             caches.keys().then(names => {
                 for (let name of names) caches.delete(name);
@@ -100,13 +101,13 @@
         }
 
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=16')
+            navigator.serviceWorker.register('sw.js?v=17')
                 .then(() => console.log('Service Worker Registered'))
                 .catch(err => console.log('Service Worker Failed', err));
         }
     </script>
     <!-- Voltando para módulo para permitir o uso do apiClient -->
-    <script type="module" src="/js/main.js?v=16"></script>
+    <script type="module" src="/js/main.js?v=17"></script>
 </body>
 
 </html>
