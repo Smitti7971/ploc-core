@@ -1,14 +1,14 @@
 FROM nginx:stable-alpine
 
 # Copia TODOS os arquivos necessários da raiz
-COPY index.html /usr/share/nginx/html/
+COPY ploc.html /usr/share/nginx/html/index.html
 COPY manifest.json /usr/share/nginx/html/
 COPY sw.js /usr/share/nginx/html/
 COPY *.png /usr/share/nginx/html/
 COPY js /usr/share/nginx/html/js
 COPY css /usr/share/nginx/html/css
 
-# Configuração para SPA
+# Configuração para SPA (agora servindo o novo ploc.html como index)
 RUN echo 'server { \
     listen 80; \
     server_name localhost; \
