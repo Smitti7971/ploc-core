@@ -18,15 +18,15 @@
     - O frontend atual continuará servindo o que está no cache até que o novo backend responda.
 
 ## 3. O Que Executar (Ação) 🛠️
-- [ ] Passo 1: Sincronização Git (Commit & Push) ✅/⚠️/❌
-- [ ] Passo 2: Disparo de Deploy no Coolify ✅/⚠️/❌
-- [ ] Passo 3: Monitoramento de Logs e Sentinela (180s) ✅/⚠️/❌
+- [✅] Passo 1: Sincronização Git (Commit & Push) ✅
+- [✅] Passo 2: Disparo de Deploy no Coolify ✅
+- [ ] Passo 3: Monitoramento de Logs e Sentinela (180s) ⚠️ [Em espera]
 - [ ] Passo 4: Validação de Saúde (Live Health Check) ✅/⚠️/❌
 
 ### Logs de Heartbeat 💓
-- `Passo 1`: [Aguardando início]
-- `Passo 2`: [Aguardando início]
-- `Passo 3`: [Aguardando início]
+- `Passo 1`: ✅ [Sucesso] Código sincronizado com GitHub (Branch: main).
+- `Passo 2`: ✅ [Sucesso] Deploy disparado via API. Deployment ID: fgypu3klpga1o6fqkq3uopf5.
+- `Passo 3`: ⚠️ [Sentinela] Build concluído com sucesso às 01:06. Iniciando contagem de 180s para validação de saúde real.
 - `Passo 4`: [Aguardando início]
 
 ## 4. Resultado Esperado (Visão) 👁️
