@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ploc-v18';
+const CACHE_NAME = 'ploc-v19';
 const ASSETS = [
   '/',
   '/index.html',
@@ -16,17 +16,23 @@ const ASSETS = [
   '/screenshot.png'
 ];
 
-// Instalação e Cache
+// Instalação Robusta
 self.addEventListener('install', (event) => {
+  console.log('SW: Instalando Versão', CACHE_NAME);
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
+      // Tenta baixar um por um para não quebrar se um falhar
+      return Promise.allSettled(
+        ASSETS.map(url => {
+          return cache.add(url).catch(err => console.error('SW: Erro ao cachear:', url, err));
+        })
+      );
     })
   );
   self.skipWaiting();
 });
 
-// Ativação e Limpeza de Cache Antigo
+// Ativação e Limpeza
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -36,19 +42,19 @@ self.addEventListener('activate', (event) => {
     })
   );
   self.clients.claim();
+  console.log('SW: Ativo e Pronto');
 });
 
-// Estratégia: Network First para garantir que mudanças no JS apareçam
+// Estratégia Fetch
 self.addEventListener('fetch', (event) => {
-  // Se for uma navegação (URL sem extensão), servir o index.html (SPA logic)
   if (event.request.mode === 'navigate') {
-    event.respondWith(fetch('/index.html'));
+    event.respondWith(fetch('/index.html').catch(() => caches.match('/index.html')));
     return;
   }
 
   event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
     })
   );
 });
