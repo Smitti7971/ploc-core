@@ -10,8 +10,10 @@
 - [x] Criação do Login Interativo (Gatilhos lineares e transição) ✅
 - [x] Correção da responsividade do menu inferior ✅
 - [ ] **Fase de Deploy:**
-    - [ ] Sincronização Git (Commit e Push) ⏳
-    - [ ] Monitoramento do Deploy no Coolify ⏳
+    - [x] Sincronização Git (Commit e Push) ✅
+    - [x] Disparo do Gatilho Front via API (CURL) ✅
+    - [x] Disparo do Gatilho Back via API (CURL) ✅
+    - [ ] Auditoria de Logs e Sucesso dos Builds (Front & Back) ⏳
     - [ ] Validação de Saúde do Serviço (Aguardar 180s) ⏳
 - [ ] **Fase de Teste Real:**
     - [ ] Teste em dispositivo móvel (Navegação e Modais) ⏳
