@@ -14,8 +14,8 @@
 
 ## Endpoints de Validação
 
-- **API Health**: `https://api.ploc.midializando.cloud/api/health`
-- **DB Status**: `https://api.ploc.midializando.cloud/api/db-status`
+- **API Health**: `https://backend.midializando.cloud/api/health`
+- **DB Status**: `https://backend.midializando.cloud/api/db-status`
 - **Coolify API**: `http://72.61.63.84:8000/api/v1/health`
 
 ---

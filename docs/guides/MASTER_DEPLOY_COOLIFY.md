@@ -16,8 +16,9 @@ Imagine que o Ploc é uma planta que vive em uma estufa na nuvem (o Servidor VPS
 Eu uso um "Controle Remoto" chamado **API do Coolify**. Isso me permite pedir para o servidor reiniciar ou mudar de pasta sem que você precise abrir o painel preto do Coolify.
 
 ### Comandos de Controle (Bastidores):
-- **Disparar Deploy**: `curl -X GET ".../deploy?uuid=..."` (Força o servidor a ler o código novo).
-- **Verificar Saúde**: `curl -s ".../applications"` (Me diz se o servidor está vivo ou se deu erro).
+- **Disparar Deploy**: `curl -X GET ".../deploy?uuid=..."` (Força o servidor a ler o código novo). Porta **8000**.
+- **Consultar Status (Linha Direta)**: `curl -s ".../deployments/{deployment_uuid}"` (Única forma 100% confiável de ver o progresso real). Porta **8000**.
+- **Verificar Saúde (Telemetria)**: `curl -s ".../applications/{uuid}/logs"` (Obrigatório ler os logs 180s (3 min) após o deploy para validar sucesso real). Porta **8000**.
 
 ---
 
@@ -41,4 +42,6 @@ Eu uso um "Controle Remoto" chamado **API do Coolify**. Isso me permite pedir pa
 ## 💡 Lições de Batalha (Evolução Contínua)
 *Espaço reservado para anotar práticas eficazes e erros evitados durante as execuções.*
 
-- **[2026-05-07]**: O uso da API do Coolify via PowerShell automatiza o deploy e reduz erros manuais.
+- **[2026-05-07]**: A API do Coolify v4 para disparos de deploy (Webhook/CURL) responde na porta **8000** (ex: `http://IP:8000/api/v1/deploy`).
+- **[2026-05-07]**: CUIDADO COM FALSOS POSITIVOS! O status `queued` não garante que o código novo subiu. Sempre audite os timestamps nos logs de execução (`/logs`) para confirmar que a instância foi reiniciada após o build.
+- **[2026-05-07]**: Use sempre o UUID presente no `MAPA_DO_PROJETO.md` e no `.env`. Ignorar UUIDs em arquivos de histórico antigos.

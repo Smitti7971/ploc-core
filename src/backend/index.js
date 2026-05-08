@@ -2,7 +2,7 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-const prisma = require('./prismaClient');
+const prisma = require('./config/database'); // Unificado para o Singleton
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
 const taskRoutes = require('./routes/taskRoutes');
@@ -32,9 +32,30 @@ app.use('/api/', limiter);
 
 app.use(express.json());
 
-// --- ROTAS DA API ---
+// --- ROTAS DE SAÚDE (Redundância para Coolify) ---
 
-// Rota de saúde (Antiga)
+const DEPLOY_ID = process.env.COOLIFY_DEPLOY_UUID || 'local-dev';
+
+// Raiz (Muitos Health Checks batem aqui)
+app.get('/', (req, res) => {
+  res.json({ 
+    message: "Ploc API is ALIVE! 🚀", 
+    status: "Healthy", 
+    deploy_id: DEPLOY_ID,
+    timestamp: new Date() 
+  });
+});
+
+// /health (Padrão Coolify/Docker)
+app.get('/health', (req, res) => {
+  res.json({ 
+    message: "Ploc Backend está ONLINE! 🚀", 
+    status: "Healthy",
+    deploy_id: DEPLOY_ID
+  });
+});
+
+// /api/health (Antiga)
 app.get('/api/health', (req, res) => {
   res.json({ message: "Ploc Backend está ONLINE! 🚀", status: "Healthy" });
 });

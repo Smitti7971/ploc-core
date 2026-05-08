@@ -9,7 +9,8 @@
 4. **Plano Operacional (Rigidez)**: Criar o `/docs/execution/current-task.md` seguindo as **5 Fases do MASTER_PLANEJAMENTO_ESTRATEGICO.md**:
    - (1. Entender, 2. Preparar, 3. Executar, 4. Resultado, 5. Validar).
 5. **Execução**: Executar um passo de cada vez, registrando o sucesso/falha no `current-task.md`.
-   - **OBRIGATÓRIO**: Atualizar o `current-task.md` IMEDIATAMENTE após cada passo, usando o formato de emojis (✅, ⚠️, ❌) e descrevendo a tentativa, importante, não delete as tentativas, apenas adicione novas.
+   - **OBRIGATÓRIO**: Atualizar o `current-task.md` IMEDIATAMENTE após cada passo, usando o formato de emojis (✅, ⚠️, ❌).
+   - **REGRA DE TELEMETRIA**: Após qualquer deploy, é obrigatório aguardar 180s (3 min) e analisar os logs do servidor via API para validar a saúde do serviço antes de finalizar a tarefa.
 6. **Validação**: Realizar testes operacionais (logs, fumaça, funcionalidade).
 7. **Sincronia e Evolução**: 
    - Atualizar o `MAPA_DO_PROJETO.md` se necessário.
@@ -29,7 +30,8 @@
 - Nenhuma execução sem plano definido na `current-task.md`.
 - Proibido executar múltiplos passos técnicos ao mesmo tempo.
 - **Credenciais:** Sempre pesquisar no arquivo `.env` antes de perguntar ao USER.
-- **Sincronização Git:** É OBRIGATÓRIO realizar `git push` após qualquer alteração de código.
+- **Sincronização Git**: É OBRIGATÓRIO realizar `git push` após qualquer alteração de código.
+- **SEGURANÇA DE DEPLOY**: É terminantemente proibido usar o histórico de deploys (listagem) como prova de sucesso. A validação deve ser feita EXCLUSIVAMENTE via consulta direta ao ID do deploy ativo e verificação de saúde do container.
 
 ---
 
