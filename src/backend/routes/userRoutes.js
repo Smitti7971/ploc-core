@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 
-// Rota para listar usuários
-router.get('/', userController.getAllUsers);
+// Rota para obter perfil do usuário logado
+router.get('/me', userController.getMe);
 
-// Rota de seed (TEMPORÁRIA)
-router.get('/seed', userController.seedUsers);
+// Rota para listar usuários (Adm/Debug)
+router.get('/', userController.getAllUsers);
 
 module.exports = router;

@@ -19,6 +19,15 @@ export const authService = {
         }
     },
 
+    async register(name, email, password) {
+        try {
+            const result = await apiClient.post('/auth/register', { name, email, password });
+            return result;
+        } catch (error) {
+            throw error;
+        }
+    },
+
     logout() {
         localStorage.removeItem('token');
         localStorage.removeItem('user');

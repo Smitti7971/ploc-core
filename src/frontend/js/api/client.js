@@ -1,11 +1,6 @@
-/**
- * Mensageiro Central da API (Client)
- * 
- * Este arquivo centraliza todas as chamadas para o Backend.
- * Ninguém no Frontend deve usar fetch() diretamente, apenas através deste cliente.
- */
+import CONFIG from '../config.js';
 
-const API_BASE_URL = 'https://backend.midializando.cloud/api';
+const API_BASE_URL = CONFIG.API_URL;
 
 export const apiClient = {
     /**

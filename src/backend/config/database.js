@@ -8,6 +8,11 @@ const { PrismaClient } = require('@prisma/client');
  * Todos os "Ajudantes" (Services) devem usar este arquivo para falar com o banco.
  */
 
+if (!process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
+  console.error('❌ ERRO CRÍTICO: Variável DATABASE_URL não encontrada!');
+  process.exit(1);
+}
+
 const prisma = new PrismaClient();
 
 // Teste de conexão inicial

@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'ploc_secret_key_123';
+const authConfig = require('../config/auth');
+const JWT_SECRET = authConfig.jwtSecret;
 
 module.exports = (req, res, next) => {
   try {
@@ -9,7 +10,7 @@ module.exports = (req, res, next) => {
       return res.status(401).json({ error: "Acesso negado. Token não fornecido." });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: [authConfig.algorithm] });
     req.user = decoded;
     next();
   } catch (error) {

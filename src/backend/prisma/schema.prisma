@@ -23,9 +23,11 @@ model Routine {
   name        String
   description String?
   userId      Int
-  user        User     @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   tasks       Task[]
   createdAt   DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Task {
@@ -35,11 +37,15 @@ model Task {
   category      String    // Saude, Financias, Trabalho, etc.
   completed     Boolean   @default(false)
   userId        Int
-  user          User      @relation(fields: [userId], references: [id])
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   routineId     Int?
-  routine       Routine?  @relation(fields: [routineId], references: [id])
+  routine       Routine?  @relation(fields: [routineId], references: [id], onDelete: SetNull)
   createdAt     DateTime  @default(now())
   scheduledDate DateTime  @default(now())
   scheduledTime String?   // Horário (ex: "08:00")
   completedAt   DateTime?
+
+  @@index([userId])
+  @@index([routineId])
+  @@index([completed])
 }

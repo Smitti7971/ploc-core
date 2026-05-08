@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -9,16 +10,35 @@ const taskRoutes = require('./routes/taskRoutes');
 const authMiddleware = require('./middleware/authMiddleware');
 const healthRoutes = require('./routes/healthRoutes');
 
-// Carregando variáveis de ambiente
-require('dotenv').config();
-
 const app = express();
 const port = process.env.PORT || 3000;
 
+// --- LOGGER DE ACESSO (Customizado) ---
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - ${res.statusCode} (${duration}ms)`);
+  });
+  next();
+});
+
+// --- CONFIGURAÇÃO DE BORDA (Proxy/Coolify) ---
+app.set('trust proxy', 1);
+
 // --- MIDDLEWARES DE SEGURANÇA ---
 app.use(helmet());
+
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'https://ploc.midializando.cloud',
+  'http://localhost:5173',
+  'http://127.0.0.1:5500',
+  'http://localhost:5500'
+].filter(Boolean);
+
 app.use(cors({
-  origin: ['https://ploc.midializando.cloud', 'http://localhost:5173', 'http://127.0.0.1:5500', 'http://localhost:5500'],
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -30,7 +50,8 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-app.use(express.json());
+// Limite de 10kb para evitar payloads gigantes (DOS)
+app.use(express.json({ limit: '10kb' }));
 
 // --- ROTAS DE SAÚDE (Redundância para Coolify) ---
 
@@ -83,7 +104,31 @@ app.use('/api/users', authMiddleware, userRoutes);
 // Rotas de Tarefas e Rotinas (PROTEGIDAS)
 app.use('/api/tasks', authMiddleware, taskRoutes);
 
-// --- INICIALIZAÇÃO ---
+// --- GESTÃO DE ERROS GLOBAL (Rede de Proteção) ---
+app.use((err, req, res, next) => {
+  console.error('❌ Erro Não Tratado:', err.stack);
+  res.status(500).json({ 
+    message: "Ocorreu um erro interno no servidor 😭", 
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error'
+  });
+});
+
 app.listen(port, '0.0.0.0', () => {
   console.log(`Servidor rodando em http://0.0.0.0:${port}`);
 });
+
+// --- GRACEFUL SHUTDOWN (Desligamento Suave) ---
+const gracefulShutdown = async (signal) => {
+  console.log(`\nEncerrando servidor (Sinal: ${signal})... 🛑`);
+  try {
+    await prisma.$disconnect();
+    console.log('✅ Banco de Dados: Desconectado com segurança.');
+    process.exit(0);
+  } catch (err) {
+    console.error('❌ Erro durante o desligamento:', err);
+    process.exit(1);
+  }
+};
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

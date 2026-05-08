@@ -1,11 +1,25 @@
-const CACHE_NAME = 'ploc-cache-v9';
-// Removemos dashboard.html do pré-cache para evitar 401 na tela de login
+const CACHE_NAME = 'ploc-cache-v11';
+// Lista completa de arquivos vitais para o funcionamento offline
 const ASSETS_TO_PRECACHE = [
   '/',
   '/index.html',
   '/login.html',
   '/register.html',
+  '/dashboard.html',
   '/manifest.json',
+  '/css/theme.css',
+  '/css/login.css',
+  '/css/register.css',
+  '/css/dashboard.css',
+  '/css/landing.css',
+  '/js/config.js',
+  '/js/ui.js',
+  '/js/main.js',
+  '/js/login.js',
+  '/js/register.js',
+  '/js/dashboard.js',
+  '/js/api/client.js',
+  '/js/api/auth.js',
   '/assets/icon-192.png',
   '/assets/screenshot-mobile.png',
   '/assets/screenshot-desktop.png'
@@ -14,7 +28,7 @@ const ASSETS_TO_PRECACHE = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Cache v5 - Pré-carregando apenas arquivos públicos');
+      console.log('Cache v10 - Pré-carregando sistema completo');
       return Promise.allSettled(
         ASSETS_TO_PRECACHE.map(url => cache.add(url))
       );
