@@ -1,14 +1,6 @@
-// ⚙️ Configurações Globais do PLOC (Modo Híbrido Dinâmico)
+// ⚙️ Configurações Globais do PLOC
 export const CONFIG = {
-    // Detecta automaticamente se deve usar o backend local ou a produção
-    get API_BASE_URL() {
-        const isLocal = window.location.hostname === 'localhost' || 
-                        window.location.hostname === '127.0.0.1' || 
-                        window.location.protocol === 'file:';
-        
-        return isLocal 
-            ? 'http://localhost:3000/api' 
-            : 'https://backend.midializando.cloud/api';
-    },
+    // Apontando sempre para a produção para usar o banco de dados real, mesmo em desenvolvimento local
+    API_BASE_URL: 'https://backend.midializando.cloud/api',
     VERSION: '1.2.0'
 };

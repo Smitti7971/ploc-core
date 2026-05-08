@@ -23,31 +23,55 @@ export const renderDashboard = () => {
             </div>
         </header>
 
-        <main style="flex: 1; padding: 2rem; display: flex; flex-direction: column; gap: 2rem; overflow-y: auto;">
-            <section>
-                <h2 style="font-size: 1.8rem; font-weight: 900; letter-spacing: -1px; margin-bottom: 0.5rem;">Seu Painel</h2>
-                <p style="color: #64748b;">A estrutura SPA está pronta. O Kanban será integrado aqui em breve.</p>
-            </section>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                <div style="padding: 1.5rem; background: #f8fafc; border-radius: 16px; border: 1px solid #f1f5f9;">
-                    <div style="font-size: 0.8rem; font-weight: 700; color: #94a3b8; margin-bottom: 0.5rem; letter-spacing: 1px;">TAREFAS HOJE</div>
-                    <div style="font-size: 2rem; font-weight: 900;">0</div>
-                </div>
-                <div style="padding: 1.5rem; background: #f8fafc; border-radius: 16px; border: 1px solid #f1f5f9;">
-                    <div style="font-size: 0.8rem; font-weight: 700; color: #94a3b8; margin-bottom: 0.5rem; letter-spacing: 1px;">HÁBITOS</div>
-                    <div style="font-size: 2rem; font-weight: 900;">0</div>
-                </div>
+        <main style="flex: 1; padding: 2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rem; text-align: center;">
+            <div style="margin-bottom: 1rem;">
+                <h2 style="font-size: 1.8rem; font-weight: 900; letter-spacing: -1px; margin: 0;">Status do Sistema</h2>
+                <p style="color: #64748b; margin-top: 0.5rem;">Verificando conexão com o banco de dados real...</p>
             </div>
 
-            <div style="flex: 1; border: 2px dashed #e2e8f0; border-radius: 20px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-weight: 600;">
-                Espaço reservado para o Kanban Modular
+            <!-- Indicador de Conexão -->
+            <div id="conn-status" style="width: 80px; height: 80px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; transition: all 0.5s ease; box-shadow: 0 0 0 8px rgba(226, 232, 240, 0.2);">
+                <div id="conn-inner" style="width: 20px; height: 20px; border-radius: 50%; background: #fff; animation: pulse 2s infinite;"></div>
             </div>
+
+            <div id="conn-text" style="font-weight: 700; font-size: 0.9rem; letter-spacing: 1px; color: #94a3b8; text-transform: uppercase;">
+                Testando...
+            </div>
+
+            <style>
+                @keyframes pulse {
+                    0% { transform: scale(0.95); opacity: 0.5; }
+                    50% { transform: scale(1.05); opacity: 1; }
+                    100% { transform: scale(0.95); opacity: 0.5; }
+                }
+            </style>
         </main>
     `;
 
-    // Lógica do Logout
-    setTimeout(() => {
+    // Lógica de Teste de Conexão
+    setTimeout(async () => {
+        const statusCircle = container.querySelector('#conn-status');
+        const statusText = container.querySelector('#conn-text');
+        
+        try {
+            // Chamada real para a API
+            const response = await apiClient.get('/health');
+            
+            if (response && response.status === "Healthy") {
+                statusCircle.style.background = '#22c55e'; // Verde
+                statusCircle.style.boxShadow = '0 0 25px rgba(34, 197, 94, 0.4)';
+                statusText.innerText = 'CONECTADO';
+                statusText.style.color = '#22c55e';
+            } else {
+                throw new Error();
+            }
+        } catch (error) {
+            statusCircle.style.background = '#ef4444'; // Vermelho
+            statusCircle.style.boxShadow = '0 0 25px rgba(239, 68, 68, 0.4)';
+            statusText.innerText = 'DESCONECTADO';
+            statusText.style.color = '#ef4444';
+        }
+
         const btnLogout = container.querySelector('#btn-logout');
         if (btnLogout) {
             btnLogout.onclick = () => {
