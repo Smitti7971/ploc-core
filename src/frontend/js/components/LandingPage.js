@@ -1,7 +1,5 @@
-/**
- * Componente: LandingPage
- * O "Palácio" do Ploc: Interface Premium com Lógica de Login/Cadastro Interativa
- */
+import { createPlocAvatar } from './PlocAvatar.js';
+
 export const renderLandingPage = () => {
     const container = document.createElement('div');
 
@@ -119,18 +117,8 @@ export const renderLandingPage = () => {
         </div>
 
         <div style="display: flex; flex-direction: column; align-items: center; position: relative; z-index: 5;">
-            <!-- O PLOC Central -->
-            <div id="ploc-core" style="
-                width: 120px; height: 120px; background: linear-gradient(145deg, #f1f5f9, #cbd5e1);
-                border-radius: 50%; box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 2px 2px 5px rgba(255,255,255,0.8);
-                cursor: pointer; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-                display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.3);
-            ">
-                <div style="display: flex; gap: 14px;">
-                    <div class="ploc-eye" style="width: 8px; height: 20px; background: #1e293b; border-radius: 10px; animation: plocBlink 4s infinite;"></div>
-                    <div class="ploc-eye" style="width: 8px; height: 20px; background: #1e293b; border-radius: 10px; animation: plocBlink 4s infinite;"></div>
-                </div>
-            </div>
+            <!-- O PLOC Central (Ponto de Montagem) -->
+            <div id="ploc-avatar-mount"></div>
             <div id="text-trigger" style="margin-top: 0.5rem; cursor: pointer; display: flex; gap: 8px; transition: all 0.4s ease; padding: 10px;">
                 <span class="dot" style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; animation: dotWave 1.5s infinite 0s;"></span>
                 <span class="dot" style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; animation: dotWave 1.5s infinite 0.3s;"></span>
@@ -178,6 +166,12 @@ export const renderLandingPage = () => {
     `;
 
     setTimeout(() => {
+        // Montar o Avatar Interativo
+        const mount = container.querySelector('#ploc-avatar-mount');
+        if (mount) {
+            mount.appendChild(createPlocAvatar());
+        }
+
         const loginTrigger = container.querySelector('#login-trigger');
         const loginModal = container.querySelector('#login-modal');
         const loginCard = container.querySelector('#login-card');
