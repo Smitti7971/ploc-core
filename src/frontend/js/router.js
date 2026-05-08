@@ -18,6 +18,18 @@ const routes = {
     'dashboard': async () => {
         const { renderDashboard } = await import('./components/DashboardPage.js');
         return renderDashboard();
+    },
+    'calendar': async () => {
+        const { renderCalendarPage } = await import('./components/CalendarPage.js');
+        return renderCalendarPage();
+    },
+    'settings': async () => {
+        const { renderSettingsPage } = await import('./components/SettingsPage.js');
+        return renderSettingsPage();
+    },
+    'kanban': async () => {
+        const { renderKanbanPage } = await import('./components/KanbanPage.js');
+        return renderKanbanPage();
     }
 };
 

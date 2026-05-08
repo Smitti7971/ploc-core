@@ -17,12 +17,12 @@ export const renderLandingPage = () => {
     const menuItems = [
         { icon: 'dashboard', label: 'Dashboard' },
         { icon: 'calendar_today', label: 'Calendário' },
-        { icon: 'settings', label: 'Configurações' },
-        { icon: 'schedule', label: 'Rotinas' },
-        { icon: 'home', label: 'Home' },
-        { icon: 'person', label: 'Perfil' },
+        { icon: 'hub', label: 'Social' },
+        { icon: 'repeat', label: 'Rotinas' },
+        { icon: 'view_kanban', label: 'Kanban' },
         { icon: 'notifications', label: 'Alertas' },
-        { icon: 'mail', label: 'Mensagens' }
+        { icon: 'mail', label: 'Mensagens' },
+        { icon: 'settings', label: 'Configurações' }
     ];
 
     container.innerHTML = `
@@ -143,7 +143,7 @@ export const renderLandingPage = () => {
         <!-- Painel Inferior -->
 
         <div id="bottom-panel" style="
-            position: absolute; bottom: -900px; left: 0; width: 100%; background: rgba(255, 255, 255, 0.04);
+            position: absolute; bottom: -200px; left: 0; width: 100%; background: rgba(255, 255, 255, 0.04);
             backdrop-filter: blur(35px); border-radius: 0; border: 1px solid rgba(255, 255, 255, 0.1);
             border-bottom: none; padding: 3rem 5%; transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
             z-index: 100; box-shadow: 0 -20px 50px rgba(0,0,0,0.5);
@@ -162,7 +162,7 @@ export const renderLandingPage = () => {
             </div>
         </div>
 
-        <div id="footer-trigger" style="position: absolute; bottom: 0; left: 0; width: 100%; height: 60px; cursor: pointer; z-index: 50;"></div>
+        <div id="footer-trigger" style="position: absolute; bottom: 0; left: 0; width: 100%; height: 60px; cursor: pointer; z-index: 200;"></div>
 
         <style>
             @keyframes plocBlink { 0%, 90%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
@@ -265,10 +265,37 @@ export const renderLandingPage = () => {
 
         const togglePanel = () => {
             isPanelOpen = !isPanelOpen;
-            bottomPanel.style.bottom = isPanelOpen ? '0' : '-900px';
+            bottomPanel.style.bottom = isPanelOpen ? '0' : '-200px';
         };
 
+        // Ativando cliques nos itens do menu
+        const menuBtns = container.querySelectorAll('.menu-btn');
+        menuBtns.forEach((btn, index) => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const item = menuItems[index];
+                if (item.label === 'Dashboard') {
+                    window.location.hash = '#dashboard';
+                } else if (item.label === 'Rotinas') {
+                    window.location.hash = '#routines';
+                    if (isPanelOpen) togglePanel();
+                } else if (item.label === 'Calendário') {
+                    window.location.hash = '#calendar';
+                } else if (item.label === 'Configurações') {
+                    window.location.hash = '#settings';
+                } else if (item.label === 'Kanban') {
+                    window.location.hash = '#kanban';
+                } else {
+                    console.log('Navegando para:', item.label);
+                }
+            };
+        });
+
+        const panelHandle = container.querySelector('#panel-handle');
+        panelHandle.onclick = (e) => { e.stopPropagation(); togglePanel(); };
+
         footerTrigger.onclick = (e) => { e.stopPropagation(); togglePanel(); };
+
         container.onclick = (e) => {
             if (isPanelOpen && !bottomPanel.contains(e.target)) togglePanel();
             if (isInputOpen && !inputWrapper.contains(e.target) && e.target !== trigger) {

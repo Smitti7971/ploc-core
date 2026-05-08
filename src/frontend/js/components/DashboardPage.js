@@ -21,8 +21,8 @@ export const renderDashboard = () => {
                     <h1 style="font-size: 1.5rem; margin: 0; font-weight: 800; letter-spacing: 2px;">OLÁ, MESTRE</h1>
                     <p style="color: #64748b; font-size: 0.8rem; margin: 0.5rem 0 0 0;">Seu sócio está pronto para agir.</p>
                 </div>
-                <div style="width: 45px; height: 45px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1);">
-                    <span class="material-symbols-rounded">person</span>
+                <div id="go-home" style="width: 45px; height: 45px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">
+                    <span class="material-symbols-rounded">home</span>
                 </div>
             </header>
 
@@ -66,6 +66,15 @@ export const renderDashboard = () => {
             </div>
         </div>
     `;
+
+    setTimeout(() => {
+        const goHome = container.querySelector('#go-home');
+        if (goHome) {
+            goHome.onclick = () => {
+                window.location.hash = '#landing';
+            };
+        }
+    }, 0);
 
     return container;
 };
