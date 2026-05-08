@@ -5,10 +5,10 @@
 ### 1. Serviço de Frontend (APP)
 - **App Name**: `assistente-ploc-frontend` (UUID: `a6n3eh22owgp057dd09t023a`)
 - **Domínio**: `https://ploc.midializando.cloud/`
-- **Base Directory**: `/src/frontend`
-- **Build Pack**: `static` (Nginx)
-- **Arquitetura**: Single Page Application (SPA Shell)
-- **PWA Version**: v12 (Arquitetura SPA)
+- **Base Directory**: `/` (Raiz do projeto)
+- **Build Pack**: `Dockerfile` (Nginx:stable-alpine personalizado)
+- **Arquitetura**: SPA (Single Page Application) servida via Nginx
+- **PWA Version**: v14 (Blindagem de Cache & Caminhos Absolutos)
 
 ### 2. Serviço de Backend (API)
 - **App Name**: `ploc-backend-v3` (UUID: `leaocf7ke5lgluo0bg2dco0w`)

@@ -13,10 +13,10 @@
     - [x] Sincronização Git (Commit e Push) ✅
     - [x] Disparo do Gatilho Front via API (CURL) ✅
     - [x] Disparo do Gatilho Back via API (CURL) ✅
-    - [ ] Auditoria de Logs e Sucesso dos Builds (Front & Back) ⏳
-    - [ ] Validação de Saúde do Serviço (Aguardar 180s) ⏳
-- [ ] **Fase de Teste Real:**
-    - [ ] Teste em dispositivo móvel (Navegação e Modais) ⏳
+    - [x] Auditoria de Logs e Sucesso dos Builds (Front & Back) ✅
+    - [x] Validação de Saúde do Serviço (Aguardar 180s) ✅
+- [x] **Fase de Teste Real:**
+    - [x] Teste em dispositivo móvel (Navegação e Modais) ✅
 
 ---
 ## 📓 Notas de Execução:

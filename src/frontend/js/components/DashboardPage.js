@@ -6,9 +6,10 @@ export const renderDashboard = () => {
     const container = document.createElement('div');
     
     Object.assign(container.style, {
-        width: '100vw', height: '100vh',
+        position: 'fixed',
+        top: '0', left: '0', right: '0', bottom: '0',
         background: 'linear-gradient(135deg, #0f172a 0%, #020617 100%)',
-        position: 'fixed', top: '0', left: '0', zIndex: '9999',
+        zIndex: '9999',
         display: 'flex', justifyContent: 'center', alignItems: 'center',
         overflow: 'hidden', fontFamily: 'Inter, system-ui, sans-serif'
     });
@@ -135,7 +136,7 @@ export const renderDashboard = () => {
                 <span class="dot" style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; animation: dotWave 1.5s infinite 0.3s;"></span>
                 <span class="dot" style="width: 10px; height: 10px; background: #38bdf8; border-radius: 50%; animation: dotWave 1.5s infinite 0.6s;"></span>
             </div>
-            <div id="input-container" style="height: 0; opacity: 0; overflow: hidden; transition: all 0.5s ease; transform: translateY(-10px); width: 320px;">
+            <div id="input-container" style="height: 0; opacity: 0; overflow: hidden; transition: all 0.5s ease; transform: translateY(-10px); width: min(90vw, 320px);">
                 <input type="text" id="ploc-input" placeholder="O que deseja, mestre?" style="width: 100%; margin-top: 0.5rem; padding: 1.2rem 1.5rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; background: rgba(255,255,255,0.03); backdrop-filter: blur(15px); color: #fff; outline: none;">
             </div>
         </div>
