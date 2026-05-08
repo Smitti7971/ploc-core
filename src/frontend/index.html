@@ -79,7 +79,7 @@
 
     <script>
         // Força a limpeza de caches antigos se a versão mudar
-        const APP_VERSION = 'v14';
+        const APP_VERSION = 'v15';
         if (localStorage.getItem('ploc_version') !== APP_VERSION) {
             caches.keys().then(names => {
                 for (let name of names) caches.delete(name);
@@ -92,13 +92,13 @@
         }
 
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=14')
+            navigator.serviceWorker.register('sw.js?v=15')
                 .then(() => console.log('Service Worker Registered'))
                 .catch(err => console.log('Service Worker Failed', err));
         }
     </script>
     <!-- Voltando para módulo para permitir o uso do apiClient -->
-    <script type="module" src="/js/main.js"></script>
+    <script type="module" src="/js/main.js?v=15"></script>
 </body>
 
 </html>
