@@ -4,6 +4,7 @@ FROM nginx:stable-alpine
 COPY index.html /usr/share/nginx/html/
 COPY manifest.json /usr/share/nginx/html/
 COPY sw.js /usr/share/nginx/html/
+COPY *.png /usr/share/nginx/html/
 COPY js /usr/share/nginx/html/js
 COPY css /usr/share/nginx/html/css
 
