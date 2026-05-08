@@ -7,7 +7,7 @@
     <title>PLOC - O Seu Sócio</title>
     
     <!-- PWA Settings -->
-    <link rel="manifest" href="/manifest.json?v=0.1.9">
+    <link rel="manifest" href="/manifest.json?v=0.2.0">
     <meta name="theme-color" content="#0f172a">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -87,42 +87,47 @@
     <div id="app"></div>
 
     <script>
-        // Automação de Atualização Total
-        const APP_VERSION = 'v0.1.9';
+        // Automação de Atualização Total - Motor v0.2.0 (Implacável)
+        const APP_VERSION = 'v0.2.0';
         const currentVersion = localStorage.getItem('ploc_version');
 
-        if (currentVersion !== APP_VERSION) {
-            console.log('Detectada Nova Versão:', APP_VERSION, '- Limpando Caches...');
+        if (currentVersion && currentVersion !== APP_VERSION) {
+            console.log('🚀 Nova versão detectada:', APP_VERSION);
             
-            // 1. Limpa Cache Storage do Navegador
-            caches.keys().then(names => {
-                for (let name of names) caches.delete(name);
-            });
+            async function purgeAndReload() {
+                try {
+                    // 1. Limpa Cache Storage
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                    console.log('✅ Caches deletados');
 
-            // 2. Desregistra Service Workers
-            navigator.serviceWorker.getRegistrations().then(registrations => {
-                for (let registration of registrations) {
-                    registration.unregister();
+                    // 2. Mata Service Workers
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    await Promise.all(registrations.map(reg => reg.unregister()));
+                    console.log('✅ Service Workers removidos');
+
+                    // 3. Atualiza marcador e Reinicia
+                    localStorage.setItem('ploc_version', APP_VERSION);
+                    window.location.reload(true);
+                } catch (err) {
+                    console.error('Erro na atualização:', err);
+                    localStorage.setItem('ploc_version', APP_VERSION);
+                    window.location.reload(true);
                 }
-            });
-
-            // 3. Atualiza marcador e REINICIA o app
+            }
+            purgeAndReload();
+        } else {
             localStorage.setItem('ploc_version', APP_VERSION);
-            
-            // Delay curto para garantir a limpeza antes do reload
-            setTimeout(() => {
-                window.location.reload(true);
-            }, 500);
         }
 
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=0.1.9')
+            navigator.serviceWorker.register('sw.js?v=0.2.0')
                 .then(() => console.log('Service Worker Registered'))
                 .catch(err => console.log('Service Worker Failed', err));
         }
     </script>
     <!-- Voltando para módulo para permitir o uso do apiClient -->
-    <script type="module" src="/js/main.js?v=0.1.9"></script>
+    <script type="module" src="/js/main.js?v=0.2.0"></script>
 </body>
 
 </html>
