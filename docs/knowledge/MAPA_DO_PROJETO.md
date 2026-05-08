@@ -7,6 +7,8 @@
 - **Domínio**: `https://ploc.midializando.cloud/`
 - **Base Directory**: `/src/frontend`
 - **Build Pack**: `static` (Nginx)
+- **Arquitetura**: Modular (SoC: HTML / CSS em REM / JS Módulos)
+- **PWA Version**: v11 (Cache Refatorado)
 
 ### 2. Serviço de Backend (API)
 - **App Name**: `ploc-backend-v3` (UUID: `leaocf7ke5lgluo0bg2dco0w`)
@@ -27,6 +29,12 @@
 - **Status**: Backend Pronto (API Validada)
 - **Funcionalidades**: Listagem, Criação, Check/Uncheck, Deleção.
 - **Categorias**: Saúde, Finanças, Trabalho, Hábito, Leitura, Meditação, Estudo, Música.
+
+### 🎨 Arquitetura Frontend (Enterprise)
+- **Design System**: Baseado em REM (Root EM) para escalabilidade total.
+- **Separation of Concerns**: Lógica extraída para `js/` e Estilos para `css/`.
+- **Comunicação**: Centralizada via `apiClient` (Segurança JWT).
+- **Service Worker**: Cache persistente v11 (Otimizado para PWA).
 
 
 ### 🧭 Central de Conhecimento (Knowledge)
