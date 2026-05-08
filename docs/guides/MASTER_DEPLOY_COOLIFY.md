@@ -18,7 +18,7 @@ Eu uso um "Controle Remoto" chamado **API do Coolify**. Isso me permite pedir pa
 ### Comandos de Controle (Bastidores):
 - **Disparar Deploy**: `curl -X GET ".../deploy?uuid=..."` (Força o servidor a ler o código novo). Porta **8000**.
 - **Consultar Status (Linha Direta)**: `curl -s ".../deployments/{deployment_uuid}"` (Única forma 100% confiável de ver o progresso real). Porta **8000**.
-- **Verificar Saúde (Telemetria)**: `curl -s ".../applications/{uuid}/logs"` (Obrigatório ler os logs 180s (3 min) após o deploy para validar sucesso real). Porta **8000**.
+- **Verificar Saúde (Telemetria)**: Pergunte para o Smitti se o deploy foi confirmado, aguarde ele confirmar e somente então acesse o health check.
 
 ---
 
@@ -45,3 +45,4 @@ Eu uso um "Controle Remoto" chamado **API do Coolify**. Isso me permite pedir pa
 - **[2026-05-07]**: A API do Coolify v4 para disparos de deploy (Webhook/CURL) responde na porta **8000** (ex: `http://IP:8000/api/v1/deploy`).
 - **[2026-05-07]**: CUIDADO COM FALSOS POSITIVOS! O status `queued` não garante que o código novo subiu. Sempre audite os timestamps nos logs de execução (`/logs`) para confirmar que a instância foi reiniciada após o build.
 - **[2026-05-07]**: Use sempre o UUID presente no `MAPA_DO_PROJETO.md` e no `.env`. Ignorar UUIDs em arquivos de histórico antigos.
+- [2026-05-08]: **PRISMA CRASH (CRÍTICO)**: Se o container entrar em loop de `restarting` após o deploy, adicione `binaryTargets = ["native", "debian-openssl-3.0.x"]` no `schema.prisma`. Isso garante que o motor do banco de dados seja gerado corretamente para o ambiente Linux do Coolify.

@@ -1,4 +1,4 @@
-const prisma = require('../prismaClient');
+const prisma = require('../config/database');
 
 exports.getTasks = async (req, res) => {
   try {

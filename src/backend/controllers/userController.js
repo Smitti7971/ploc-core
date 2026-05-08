@@ -1,4 +1,4 @@
-const prisma = require('../prismaClient');
+const prisma = require('../config/database');
 
 // Listar todos os usuários
 exports.getAllUsers = async (req, res) => {
