@@ -8,7 +8,7 @@
 - **Base Directory**: `/` (Raiz do projeto)
 - **Build Pack**: `Dockerfile` (Nginx:stable-alpine personalizado)
 - **Arquitetura**: SPA (Single Page Application) servida via Nginx
-- **PWA Version**: v14 (Blindagem de Cache & Caminhos Absolutos)
+- **PWA Version**: v15 (Blindagem de Cache 2.0 & Stale-While-Revalidate) ✅
 
 ### 2. Serviço de Backend (API)
 - **App Name**: `ploc-backend-v3` (UUID: `leaocf7ke5lgluo0bg2dco0w`)

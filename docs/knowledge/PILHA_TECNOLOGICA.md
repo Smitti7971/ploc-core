@@ -38,7 +38,7 @@
 ## ☁️ Infraestrutura (Coolify)
 
 - **Backend**: Dockerfile (Node 22-slim) ✅
-- **Frontend**: Static App (Nginx)
+- **Frontend**: Dockerfile (Nginx:stable-alpine) ✅
 - **Banco**: PostgreSQL 16+
 
 ---

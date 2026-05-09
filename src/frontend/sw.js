@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ploc-v0.0.3';
+const CACHE_NAME = 'ploc-v0.0.4';
 const ASSETS = [
   '/',
   '/index.html',
@@ -45,7 +45,7 @@ self.addEventListener('activate', (event) => {
   console.log('SW: Ativo e Pronto');
 });
 
-// Estratégia Fetch
+// Estratégia Fetch: Stale-While-Revalidate (Cache primeiro, mas atualiza em background)
 self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
     event.respondWith(fetch('/index.html').catch(() => caches.match('/index.html')));
@@ -53,8 +53,18 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+    caches.match(event.request).then((cachedResponse) => {
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && event.request.method === 'GET') {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        }
+        return networkResponse;
+      }).catch(() => null);
+
+      return cachedResponse || fetchPromise;
     })
   );
 });

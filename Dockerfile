@@ -13,7 +13,16 @@ RUN echo 'server { \
         add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"; \
         try_files $uri $uri/ /index.html; \
     } \
-    location ~* \.(js|css|json|png|jpg|jpeg|gif|ico|svg)$ { \
+    location ~* (sw\.js|manifest\.json)$ { \
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"; \
+        add_header Service-Worker-Allowed /; \
+        try_files $uri =404; \
+    } \
+    location ~* \.(js|css)$ { \
+        add_header Cache-Control "public, max-age=2592000"; \
+        try_files $uri =404; \
+    } \
+    location ~* \.(png|jpg|jpeg|gif|ico|svg|woff2)$ { \
         add_header Cache-Control "public, max-age=31536000"; \
         try_files $uri =404; \
     } \
