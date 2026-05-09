@@ -4,8 +4,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -13,7 +13,6 @@ model User {
   email     String    @unique
   name      String?
   password  String?
-  avatar    String?   // URL ou Base64 da foto de perfil
   createdAt DateTime  @default(now())
   routines  Routine[]
   tasks     Task[]

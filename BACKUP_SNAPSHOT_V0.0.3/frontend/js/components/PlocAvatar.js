@@ -7,7 +7,7 @@ export const createPlocAvatar = (containerId) => {
     let eyesElements = [];
     
     const ploc = document.createElement('div');
-    ploc.id = 'ploc-core';
+    ploc.id = 'ploc-avatar-container';
     Object.assign(ploc.style, {
         position: 'relative',
         width: '120px',
@@ -200,17 +200,6 @@ export const createPlocAvatar = (containerId) => {
         if (mode === 'sleeping') updateMode('working');
         else if (mode === 'working') updateMode('active');
         else updateMode('sleeping');
-    };
-
-    // Exporta controles para uso global (Diagnóstico, etc)
-    window.plocControls = {
-        speak,
-        updateMode,
-        nextMode: () => {
-            if (mode === 'sleeping') updateMode('working');
-            else if (mode === 'working') updateMode('active');
-            else updateMode('sleeping');
-        }
     };
 
     // Inicializa (Silencioso na primeira carga)

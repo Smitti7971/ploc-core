@@ -96,15 +96,6 @@ app.get('/api/db-status', async (req, res) => {
 });
 
 // Rotas de Autenticação (Login/Cadastro)
-// Rota de Diagnóstico para o Ploc
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'Healthy', 
-    message: 'Ploc Backend está ONLINE! 🚀',
-    timestamp: new Date().toISOString()
-  });
-});
-
 app.use('/api/auth', authRoutes);
 
 // Rotas de Usuários (PROTEGIDAS)

@@ -75,9 +75,9 @@ export const renderLogin = () => {
                 const response = await apiClient.post('/auth/login', data);
                 
                 if (response.token) {
-                    localStorage.setItem('ploc_token', response.token);
-                    localStorage.setItem('ploc_user', JSON.stringify(response.user));
-                    window.location.hash = '#landing'; // Volta para a home logado
+                    localStorage.setItem('token', response.token);
+                    localStorage.setItem('user', JSON.stringify(response.user));
+                    window.location.hash = '#dashboard';
                 }
             } catch (error) {
                 errorDiv.innerText = error.message;

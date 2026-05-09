@@ -1,109 +1,78 @@
-/**
- * Componente: SettingsPage
- * Interface de Configurações Premium do Ploc
- */
-export const renderSettingsPage = () => {
-    const container = document.createElement('div');
-
-    Object.assign(container.style, {
-        width: '100%', minHeight: '100vh',
-        background: '#020617',
-        color: '#fff',
-        fontFamily: 'Inter, system-ui, sans-serif',
-        padding: '2rem',
-        paddingBottom: '100px'
-    });
-
-    const settingsGroups = [
-        {
-            title: 'CONTA',
-            items: [
-                { icon: 'person', label: 'Perfil do Usuário', detail: 'Nome, E-mail, Avatar' },
-                { icon: 'lock', label: 'Segurança', detail: 'Senha e Autenticação' }
-            ]
-        },
-        {
-            title: 'APLICATIVO',
-            items: [
-                { icon: 'notifications', label: 'Notificações', detail: 'Alertas e Lembretes' },
-                { icon: 'palette', label: 'Aparência', detail: 'Tema e Cores' },
-                { icon: 'language', label: 'Idioma', detail: 'Português (BR)' }
-            ]
-        },
-        {
-            title: 'SUPORTE',
-            items: [
-                { icon: 'help', label: 'Ajuda & FAQ', detail: '' },
-                { icon: 'info', label: 'Sobre o Ploc', detail: 'Versão v0.2.3' }
-            ]
-        }
-    ];
-
-    container.innerHTML = `
-        <div style="max-width: 600px; margin: 0 auto;">
-            <!-- Header -->
-            <header style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 3rem;">
-                <div id="settings-back" style="cursor: pointer; opacity: 0.6; transition: 0.3s;">
-                    <span class="material-symbols-rounded">arrow_back_ios</span>
+export const SettingsPage = {
+    render: () => {
+        const user = JSON.parse(localStorage.getItem('ploc_user') || '{}');
+        
+        return `
+            <div id="settings-container" style="
+                min-height: 100vh; background: #0f172a; color: #fff;
+                display: flex; flex-direction: column; align-items: center;
+                padding: 2rem; font-family: 'Outfit', sans-serif;
+            ">
+                <!-- Header -->
+                <div style="width: 100%; max-width: 600px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 3rem;">
+                    <div id="back-to-ploc" style="cursor: pointer; display: flex; align-items: center; gap: 0.5rem; color: #38bdf8; font-weight: 700;">
+                        <span class="material-symbols-rounded">arrow_back</span>
+                        <span>VOLTAR</span>
+                    </div>
+                    <span style="font-weight: 900; letter-spacing: 3px; color: rgba(255,255,255,0.3);">SETTINGS</span>
                 </div>
-                <h1 style="font-size: 1.2rem; margin: 0; font-weight: 800; letter-spacing: 4px;">CONFIGURAÇÕES</h1>
-            </header>
 
-            <!-- Lista de Configurações -->
-            <div style="display: flex; flex-direction: column; gap: 2.5rem;">
-                ${settingsGroups.map(group => `
-                    <section>
-                        <h2 style="font-size: 0.7rem; color: #38bdf8; letter-spacing: 2px; font-weight: 800; margin-bottom: 1rem;">${group.title}</h2>
+                <!-- Perfil Card -->
+                <div style="
+                    width: 100%; max-width: 600px; background: rgba(255,255,255,0.03);
+                    border: 1px solid rgba(255,255,255,0.05); border-radius: 24px;
+                    padding: 2.5rem; display: flex; flex-direction: column; align-items: center;
+                    backdrop-filter: blur(20px);
+                ">
+                    <div style="
+                        width: 100px; height: 100px; border-radius: 50%;
+                        background: linear-gradient(145deg, #38bdf8, #1d4ed8);
+                        display: flex; align-items: center; justify-content: center;
+                        margin-bottom: 1.5rem; box-shadow: 0 0 30px rgba(56, 189, 248, 0.3);
+                        border: 4px solid #0f172a;
+                    ">
+                        <span class="material-symbols-rounded" style="font-size: 3.5rem; color: #fff;">person</span>
+                    </div>
+
+                    <h2 style="margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px;">${user.name || 'Mestre Ploc'}</h2>
+                    <p style="margin: 0.5rem 0 2rem; color: #64748b; font-size: 0.9rem;">${user.email || 'contato@ploc.com'}</p>
+
+                    <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.05); margin-bottom: 2rem;"></div>
+
+                    <!-- Campos (Simulação) -->
+                    <div style="width: 100%; display: flex; flex-direction: column; gap: 1.5rem;">
                         <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                            ${group.items.map(item => `
-                                <div class="setting-item" style="
-                                    background: rgba(255,255,255,0.02); padding: 1.2rem; border-radius: 16px;
-                                    display: flex; align-items: center; gap: 1.2rem; cursor: pointer;
-                                    border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s ease;
-                                ">
-                                    <span class="material-symbols-rounded" style="color: #64748b;">${item.icon}</span>
-                                    <div style="flex: 1;">
-                                        <p style="margin: 0; font-size: 0.9rem; font-weight: 600;">${item.label}</p>
-                                        ${item.detail ? `<p style="margin: 0.2rem 0 0 0; font-size: 0.7rem; color: #64748b;">${item.detail}</p>` : ''}
-                                    </div>
-                                    <span class="material-symbols-rounded" style="font-size: 1.2rem; opacity: 0.3;">chevron_right</span>
-                                </div>
-                            `).join('')}
+                            <label style="font-size: 0.7rem; font-weight: 700; color: #38bdf8; letter-spacing: 1px;">NOME DE USUÁRIO</label>
+                            <input type="text" value="${user.name || ''}" disabled style="
+                                background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
+                                padding: 1rem; border-radius: 12px; color: #fff; font-family: inherit;
+                            ">
                         </div>
-                    </section>
-                `).join('')}
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            <label style="font-size: 0.7rem; font-weight: 700; color: #38bdf8; letter-spacing: 1px;">E-MAIL</label>
+                            <input type="text" value="${user.email || ''}" disabled style="
+                                background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
+                                padding: 1rem; border-radius: 12px; color: #fff; font-family: inherit;
+                            ">
+                        </div>
+                    </div>
+
+                    <button id="save-settings" style="
+                        width: 100%; margin-top: 2.5rem; padding: 1.2rem;
+                        background: #38bdf8; border: none; border-radius: 12px;
+                        color: #0f172a; font-weight: 800; letter-spacing: 1px;
+                        cursor: pointer; transition: transform 0.2s;
+                    ">SALVAR ALTERAÇÕES</button>
+                </div>
             </div>
-
-            <!-- Botão Sair -->
-            <button id="btn-logout" style="
-                width: 100%; margin-top: 4rem; padding: 1.2rem; border-radius: 16px;
-                background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2);
-                color: #ef4444; font-weight: 700; letter-spacing: 2px; cursor: pointer;
-                transition: all 0.3s ease;
-            ">SAIR DA CONTA</button>
-        </div>
-
-        <style>
-            .setting-item:hover {
-                background: rgba(255,255,255,0.05);
-                border-color: rgba(56, 189, 248, 0.3);
-                transform: translateX(5px);
-            }
-            #btn-logout:hover {
-                background: #ef4444;
-                color: #fff;
-            }
-        </style>
-    `;
-
-    setTimeout(() => {
-        const btnBack = container.querySelector('#settings-back');
-        if (btnBack) {
-            btnBack.onclick = () => {
+        `;
+    },
+    afterRender: (container) => {
+        const backBtn = container.querySelector('#back-to-ploc');
+        if (backBtn) {
+            backBtn.onclick = () => {
                 window.location.hash = '#landing';
             };
         }
-    }, 0);
-
-    return container;
+    }
 };

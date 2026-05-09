@@ -11,25 +11,16 @@ const routes = {
         const { renderLogin } = await import('./components/LoginPage.js');
         return renderLogin();
     },
-    'register': async () => {
-        const { renderRegister } = await import('./components/RegisterPage.js');
-        return renderRegister();
-    },
     'dashboard': async () => {
         const { renderDashboard } = await import('./components/DashboardPage.js');
         return renderDashboard();
     },
-    'calendar': async () => {
-        const { renderCalendarPage } = await import('./components/CalendarPage.js');
-        return renderCalendarPage();
-    },
     'settings': async () => {
-        const { renderSettingsPage } = await import('./components/SettingsPage.js');
-        return renderSettingsPage();
-    },
-    'kanban': async () => {
-        const { renderKanbanPage } = await import('./components/KanbanPage.js');
-        return renderKanbanPage();
+        const { SettingsPage } = await import('./components/SettingsPage.js');
+        const container = document.createElement('div');
+        container.innerHTML = SettingsPage.render();
+        setTimeout(() => SettingsPage.afterRender(container), 0);
+        return container;
     }
 };
 
@@ -38,35 +29,24 @@ export const router = async () => {
     if (!app) return;
 
     const hash = window.location.hash.slice(1) || 'landing';
-    
-    // Lógica básica de proteção de rota
-    const token = localStorage.getItem('token');
-    // REMOVIDO: Não forçar login para ver o dashboard premium
-
-    // Se estiver logado, não precisa ver landing/login/register
-    if (token && (hash === 'landing' || hash === 'login' || hash === 'register')) {
-        window.location.hash = '#dashboard';
-        return;
-    }
-
-    // Ponto de entrada padrão
-    if (!hash || hash === '') {
-        window.location.hash = '#landing';
-        return;
-    }
-
-    const renderFunc = routes[hash] || routes['dashboard'];
+    const renderFunc = routes[hash] || routes['landing'];
     
     try {
-        app.innerHTML = ''; // Limpa o palco
+        app.innerHTML = ''; 
         const view = await renderFunc();
-        app.appendChild(view);
+        if (view instanceof HTMLElement) {
+            app.appendChild(view);
+        }
     } catch (error) {
         console.error('Erro ao carregar rota:', error);
         app.innerHTML = `<div style="padding: 2rem; color: red;">Erro ao carregar a página: ${error.message}</div>`;
     }
 };
 
-// Listener para mudanças na URL
+// Listeners
 window.addEventListener('hashchange', router);
+window.addEventListener('load', router);
 
+export const navigateTo = (hash) => {
+    window.location.hash = hash;
+};
