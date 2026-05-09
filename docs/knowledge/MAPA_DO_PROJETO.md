@@ -14,7 +14,7 @@
 - **App Name**: `ploc-backend-v3` (UUID: `leaocf7ke5lgluo0bg2dco0w`)
 - **Domínio**: `https://backend.midializando.cloud/`
 - **Base Directory**: `/src/backend`
-- **Build Pack**: `nixpacks` (Node.js)
+- **Build Pack**: `Dockerfile` (Node:22-slim personalizado) ✅
 
 ### 3. Serviço de Banco de Dados (PostgreSQL)
 - **Service Name**: `rmybu33898amwear4xe4qsbc`
@@ -55,11 +55,25 @@
 - **Pilar 3: Dados (Biblioteca)**: [docs/guides/MASTER_GESTAO_DE_DADOS.md](../guides/MASTER_GESTAO_DE_DADOS.md)
 - **Pilar 4: Segurança (Cofre)**: [docs/guides/MASTER_SEGURANCA_CREDENCIAIS.md](../guides/MASTER_SEGURANCA_CREDENCIAIS.md)
 
+## 🛡️ FONTE DA VERDADE (Credenciais & Infraestrutura)
+
+| Componente | Chave | Valor / Referência |
+| :--- | :--- | :--- |
+| **VPS** | IP | `72.61.63.84` |
+| **Coolify** | Dashboard | `smitti.j@gmail.com` |
+| **Backend** | UUID | `leaocf7ke5lgluo0bg2dco0w` |
+| **Frontend** | UUID | `a6n3eh22owgp057dd09t023a` |
+| **Banco de Dados** | Internal Host | `rmybu33898amwear4xe4qsbc` |
+| **Database URL** | Prisma URL | `postgresql://postgres:***@rmybu33898...:5432/postgres?schema=public` |
+| **Segurança** | JWT_SECRET | `ploc_super_secret_key_2026_safe` |
+
+> [!IMPORTANT]
+> Este arquivo é a autoridade máxima. Em caso de divergência com o painel Coolify, os dados aqui contidos devem ser priorizados ou corrigidos imediatamente.
+
 ### 🧭 Guias Auxiliares e Estratégia
 - **Planejamento Estratégico (Mapa de Guerra)**: [docs/guides/MASTER_PLANEJAMENTO_ESTRATEGICO.md](../guides/MASTER_PLANEJAMENTO_ESTRATEGICO.md)
 - **Arquitetura & Estratégia (Método)**: [docs/guides/MASTER_ARQUITETURA_ESTRATEGIA.md](../guides/MASTER_ARQUITETURA_ESTRATEGIA.md)
 - **Experiência Mobile (PWA)**: [docs/guides/MASTER_EXPERIENCIA_MOBILE_PWA.md](../guides/MASTER_EXPERIENCIA_MOBILE_PWA.md)
-- **Deploy & Nuvem (Coolify)**: [docs/guides/MASTER_DEPLOY_COOLIFY.md](../guides/MASTER_DEPLOY_COOLIFY.md)
 - **Operação & Testes (Checklist)**: [docs/guides/MASTER_OPERACOES_TESTES.md](../guides/MASTER_OPERACOES_TESTES.md)
 
 
