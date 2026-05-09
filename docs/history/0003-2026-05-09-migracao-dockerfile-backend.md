@@ -1,8 +1,8 @@
 # CURRENT TASK: Migração do Backend para Dockerfile e Centralização de Verdade 🐳🛡️
 
 ## 1. Entender (Intenção) 🧠
-- **O quê**: Remover o Nixpacks do Backend (API) e substituí-lo por um Dockerfile manual. Simultaneamente, consolidar todas as credenciais no `MAPA_DO_PROJETO.md` como Fonte da Verdade.
-- **Por quê**: Atender à solicitação do usuário de eliminar o Nixpacks e garantir que a infraestrutura seja documentada de forma imutável e centralizada.
+- **O quê**: Migrar o Backend (API) para o padrão Dockerfile manual. Simultaneamente, consolidar todas as credenciais no `MAPA_DO_PROJETO.md` como Fonte da Verdade.
+- **Por quê**: Atender à solicitação do usuário de eliminar o sistema de build anterior e garantir que a infraestrutura seja documentada de forma imutável e centralizada.
 - **Metáfora**: "Estamos trocando o motor genérico da balsa por um motor customizado de alta performance, e registrando o manual de manutenção no cofre central."
 
 ## 2. Preparar (Logística) 🎒

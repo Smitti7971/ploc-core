@@ -22,7 +22,7 @@
 - Logs sem erros de inicialização ou Prisma.
 
 ## ⚠️ Riscos Identificados
-- Erros de `Prisma Client` devido ao ambiente de build do Coolify (Nixpacks).
+- Erros de `Prisma Client` devido ao ambiente de build do Coolify (Sistema Legado).
 - Variáveis de ambiente faltando no Coolify (JWT_SECRET, DATABASE_URL).
 - Latência na propagação do deploy.
 

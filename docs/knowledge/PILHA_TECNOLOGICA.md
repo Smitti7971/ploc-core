@@ -37,7 +37,7 @@
 
 ## ☁️ Infraestrutura (Coolify)
 
-- **Backend**: Nixpacks (Node 22)
+- **Backend**: Dockerfile (Node 22-slim) ✅
 - **Frontend**: Static App (Nginx)
 - **Banco**: PostgreSQL 16+
 

@@ -6,9 +6,9 @@ Este documento serve como guia definitivo para iniciar novos projetos SaaS utili
 1. **Banco de Dados**: Criar PostgreSQL no Coolify.
    - Anotar o `Internal Hostname` (ex: `rmybu33898...`).
    - Desabilitar `Public Access` após a migração inicial por segurança.
-2. **Backend**: Criar aplicação Node.js (Nixpacks).
+2. **Backend**: Criar aplicação via Dockerfile (Configuração Manual).
    - Configurar `DATABASE_URL` usando o host interno.
-   - Definir `NIXPACKS_NODE_VERSION=22`.
+   - Garantir que o `Dockerfile` esteja na raiz do serviço.
 3. **Frontend**: Criar aplicação estática (Nginx).
 
 ## Fase 2: Configuração de Backend (O Coração)
