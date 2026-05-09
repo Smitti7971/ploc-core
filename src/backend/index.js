@@ -83,6 +83,15 @@ app.get('/health', (req, res) => {
 // Nova Rota de Saúde (Padrão Enterprise)
 app.use('/api', healthRoutes);
 
+// Rota de Diagnóstico Simplificada para o Frontend
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'Healthy', 
+    message: 'Ploc Backend está ONLINE! 🚀',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Rota de status do banco
 app.get('/api/db-status', async (req, res) => {
   try {
