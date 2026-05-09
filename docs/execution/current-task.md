@@ -1,42 +1,26 @@
-# Tarefa: Estabilização de Identidade & Deploy Total (PLOC SPA) 🚀
+# Plano Operacional: Faxina de Segurança e Centralização 🧹🔒
 
-## 📝 Descrição
-Implementar a Cápsula Camaleão, Carrossel Infinito e a nova SettingsPage, garantindo a estabilidade do roteador e realizando o deploy sincronizado (Front + Back) na infraestrutura Coolify.
+## Checklist Técnico
 
-## 📅 Data: 2026-05-08
+### Fase 1: Deleção de Arquivos Fantasmas (Raiz)
+- [x] Deletar `index.html` da raiz.
+- [x] Deletar `sw.js` da raiz.
+- [x] Deletar `manifest.json` da raiz.
+- [x] Deletar `icon-192.png` da raiz.
+- [x] Deletar `icon-512.png` da raiz.
+- [x] Deletar diretório `js/` da raiz.
+- [x] Deletar diretório `css/` da raiz.
 
-## 🕹️ Fases do Plano
+### Fase 2: Padronização e Configuração
+- [x] Atualizar `src/frontend/js/config.js` com modo ONLINE fixo e versão `v0.0.3`.
+- [x] Atualizar `src/frontend/index.html` com o título `PLOC - O Seu Sócio`.
 
-### (1) Entender & Mapear 🧠
-- [x] Analisar erros de roteamento e referências órfãs (`btnDash`). ✅
-- [x] Identificar chaves de autenticação (`ploc_token`). ✅
-- [x] Mapear UUIDs de deploy no Coolify. ✅
+### Fase 3: Validação e Encerramento
+- [x] Verificar se os arquivos em `src/frontend/` permanecem íntegros.
+- [x] Sincronizar `MAPA_DO_PROJETO.md` (se necessário).
+- [x] Reportar conclusão.
 
-### (2) Preparar & Ajustar 🛠️
-- [x] Unificar padrões do roteador para suportar funções e objetos. ✅
-- [x] Corrigir `ReferenceError` na LandingPage. ✅
-- [x] Sincronizar `localStorage` na LoginPage. ✅
-- [x] Criar `SettingsPage.js` estruturada. ✅
-
-### (3) Executar & Construir 🏗️
-- [x] Implementar Looping Infinito no Carrossel de Rotinas. ✅
-- [x] Implementar Cápsula Camaleão com botões invertidos (Sair/Config). ✅
-- [x] Realizar `git push` de todas as alterações (Back + Front). ✅
-- [x] Disparar deploy via API Coolify (Porta 8000). ✅
-
-### (4) Resultado & Telemetria 📊
-- [x] Aguardar conclusão do build (Backend com fix CORS). ✅
-- [ ] Validar logs do Backend (`q6kk07d73iufqcel2zuctx7i`). ⏳
-- [ ] Verificar desaparecimento do erro CORS no console. ⏳
-- [x] Validar logs do Frontend (`f2tbgpa9qsi65exdixnqzlg4`). ✅
-
-### (5) Validar & Evoluir ✅
-- [ ] Teste de fumaça na Landing Page Online. ⏳
-- [ ] Teste de navegação para Settings Online. ⏳
-- [ ] Atualizar `MAPA_DO_PROJETO.md`. ⏳
-
----
-
-## 🚀 Status da Execução
-- **Estado Atual**: Aguardando Telemetria do Fix CORS (Fase 4).
-- **Gatilhos de Deploy**: CORS Fix disparado às 21:55 (Hora Local).
+## Telemetria de Execução
+- **Início**: 2026-05-09 19:00 (Local Time)
+- **Fim**: 2026-05-09 19:01 (Local Time)
+- **Status**: Concluído com Sucesso. 🟢
