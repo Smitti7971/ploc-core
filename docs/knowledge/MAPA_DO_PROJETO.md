@@ -25,6 +25,12 @@
 - **DATABASE_URL**: `postgresql://postgres:********************************@rmybu33898amwear4xe4qsbc:5432/postgres?schema=public`
 - **Nota**: Manter Prisma v6 para estabilidade operacional.
 
+### 4. Infraestrutura Local (Desenvolvimento)
+- **DB**: PostgreSQL 16 (Docker Compose)
+- **Hostname**: `localhost:5432`
+- **Workflow**: Híbrido (Local Migrations -> Production Deploy) ✅
+
+
 ### ⚙️ Motor de Rotinas (Backend)
 - **Status**: Backend Pronto (API Validada)
 - **Funcionalidades**: Listagem, Criação, Check/Uncheck, Deleção.
@@ -75,6 +81,7 @@
 - **Arquitetura & Estratégia (Método)**: [docs/guides/MASTER_ARQUITETURA_ESTRATEGIA.md](../guides/MASTER_ARQUITETURA_ESTRATEGIA.md)
 - **Experiência Mobile (PWA)**: [docs/guides/MASTER_EXPERIENCIA_MOBILE_PWA.md](../guides/MASTER_EXPERIENCIA_MOBILE_PWA.md)
 - **Operação & Testes (Checklist)**: [docs/guides/MASTER_OPERACOES_TESTES.md](../guides/MASTER_OPERACOES_TESTES.md)
+- **Desenvolvimento Híbrido (ON/OFF)**: [docs/guides/MASTER_DESENVOLVIMENTO_HIBRIDO.md](../guides/MASTER_DESENVOLVIMENTO_HIBRIDO.md) ✅
 
 
 ## Repositório

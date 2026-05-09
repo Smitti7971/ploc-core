@@ -1,0 +1,16 @@
+services:
+  ploc-db-local:
+    image: postgres:16-alpine
+    container_name: ploc-db-local
+    environment:
+      POSTGRES_USER: devuser
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: ploc_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - ploc_data_local:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  ploc_data_local:
