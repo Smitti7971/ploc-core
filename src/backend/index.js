@@ -27,7 +27,10 @@ app.use((req, res, next) => {
 app.set('trust proxy', 1);
 
 // --- MIDDLEWARES DE SEGURANÇA ---
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false
+}));
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
@@ -39,13 +42,14 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: allowedOrigins,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true
 }));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
-  max: 100,
+  max: 300, // Aumentado para evitar bloqueios em testes intensos
   message: { message: "Muitas requisições, tente novamente em 15 minutos.", status: "Error" }
 });
 app.use('/api/', limiter);
@@ -76,11 +80,6 @@ app.get('/health', (req, res) => {
   });
 });
 
-// /api/health (Antiga)
-app.get('/api/health', (req, res) => {
-  res.json({ message: "Ploc Backend está ONLINE! 🚀", status: "Healthy" });
-});
-
 // Nova Rota de Saúde (Padrão Enterprise)
 app.use('/api', healthRoutes);
 
@@ -93,16 +92,6 @@ app.get('/api/db-status', async (req, res) => {
   } catch (error) {
     res.status(500).json({ status: "Error", error: error.message });
   }
-});
-
-// Rotas de Autenticação (Login/Cadastro)
-// Rota de Diagnóstico para o Ploc
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'Healthy', 
-    message: 'Ploc Backend está ONLINE! 🚀',
-    timestamp: new Date().toISOString()
-  });
 });
 
 app.use('/api/auth', authRoutes);
