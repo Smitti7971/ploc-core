@@ -14,11 +14,11 @@
 - **Proteção**: Backup das configurações atuais no `.env`.
 
 ## 3. O Que Executar (Ação) 🛠️
-- [ ] Passo 1: Criação do `src/backend/Dockerfile` 🛠️
-- [ ] Passo 2: Atualização do `MAPA_DO_PROJETO.md` com a Seção "Fonte da Verdade" 🛡️
-- [ ] Passo 3: Sincronização Git (Commit & Push) 🚀
-- [ ] Passo 4: Notificação para Mudança no Coolify (Manual pelo USER) 📢
-- [ ] Passo 5: Validação de Saúde (180s após Deploy) ✅
+- [x] Passo 1: Criação do `src/backend/Dockerfile` ✅
+- [x] Passo 2: Atualização do `MAPA_DO_PROJETO.md` com a Seção "Fonte da Verdade" ✅
+- [x] Passo 3: Sincronização Git (Commit & Push) ✅
+- [x] Passo 4: Notificação para Mudança no Coolify (Manual pelo USER) ✅
+- [x] Passo 5: Validação de Saúde (180s após Deploy) ✅
 
 ## 4. Resultado Esperado (Visão) 👁️
 - Backend rodando via Dockerfile em `https://backend.midializando.cloud/`.
