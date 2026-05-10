@@ -1,5 +1,5 @@
 import { createPlocAvatar } from '../../shared/components/PlocAvatar.js';
-import { apiClient } from '../../shared/api/client.js';
+import { apiClient } from '../../shared/api/client.js?v=0.0.9';
 import { initChatLogic } from '../chat/ChatWidget.js';
 
 /**
