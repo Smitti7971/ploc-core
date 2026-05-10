@@ -1,7 +1,7 @@
 FROM nginx:stable-alpine
 
 # Copia TODOS os arquivos da pasta frontend para o servidor
-COPY src/frontend /usr/share/nginx/html
+COPY apps/frontend /usr/share/nginx/html
 
 # Configuração robusta para SPA
 RUN echo 'server { \
