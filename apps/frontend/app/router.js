@@ -4,34 +4,34 @@
 
 const routes = {
     'landing': async () => {
-        const { renderLandingPage } = await import('../features/auth/LandingPage.js');
+        const { renderLandingPage } = await import('../features/auth/LandingPage.js?v=0.0.7');
         return renderLandingPage();
     },
     'login': async () => {
-        const { renderLogin } = await import('../features/auth/LoginPage.js');
+        const { renderLogin } = await import('../features/auth/LoginPage.js?v=0.0.7');
         return renderLogin();
     },
     'dashboard': async () => {
-        const { renderDashboard } = await import('../features/dashboard/DashboardPage.js');
+        const { renderDashboard } = await import('../features/dashboard/DashboardPage.js?v=0.0.7');
         return renderDashboard();
     },
     'calendar': async () => {
-        const { renderCalendarPage } = await import('../features/calendar/CalendarPage.js');
+        const { renderCalendarPage } = await import('../features/calendar/CalendarPage.js?v=0.0.7');
         return renderCalendarPage();
     },
     'kanban': async () => {
-        const { renderKanbanPage } = await import('../features/tasks/KanbanPage.js');
+        const { renderKanbanPage } = await import('../features/tasks/KanbanPage.js?v=0.0.7');
         return renderKanbanPage();
     },
     'settings': async () => {
-        const { SettingsPage } = await import('../features/settings/SettingsPage.js');
+        const { SettingsPage } = await import('../features/settings/SettingsPage.js?v=0.0.7');
         const container = document.createElement('div');
         container.innerHTML = SettingsPage.render();
         setTimeout(() => SettingsPage.afterRender(container), 0);
         return container;
     },
     'routines': async () => {
-        const { renderRoutinesPage } = await import('../features/routines/RoutinesPage.js');
+        const { renderRoutinesPage } = await import('../features/routines/RoutinesPage.js?v=0.0.7');
         return renderRoutinesPage();
     }
 };

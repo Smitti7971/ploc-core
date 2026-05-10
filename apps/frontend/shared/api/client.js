@@ -1,4 +1,4 @@
-import { CONFIG } from '../config/config.js';
+import { CONFIG } from '../config/config.js?v=0.0.7';
 
 /**
  * Client API unificado para o PLOC SPA
