@@ -1,16 +1,13 @@
-const CACHE_NAME = 'ploc-v0.0.4';
+const CACHE_NAME = 'ploc-v0.0.6';
 const ASSETS = [
   './',
   'index.html',
   'css/theme.css',
   'css/app.css',
-  'js/main.js',
-  'js/router.js',
-  'js/components/LandingPage.js',
-  'js/components/DashboardPage.js',
-  'js/components/CalendarPage.js',
-  'js/components/KanbanPage.js',
-  'js/components/SettingsPage.js',
+  'app/main.js',
+  'app/router.js',
+  'shared/config/config.js',
+  'shared/api/client.js',
   'icon-192.png',
   'icon-512.png',
   'screenshot.png'
