@@ -2,12 +2,14 @@ const express = require('express');
 const router = express.Router();
 const aiOrchestrator = require('../ai/orchestrator/AIOrchestrator');
 
+const authMiddleware = require('../middleware/authMiddleware');
+
 /**
  * @route POST /api/ai/chat
  * @desc Envia uma mensagem para o assistente de IA
  * @access Private
  */
-router.post('/chat', async (req, res) => {
+router.post('/chat', authMiddleware, async (req, res) => {
     try {
         const { message, fillerText, isPissedOff } = req.body;
         if (!message) {
@@ -30,7 +32,7 @@ const { Readable } = require('stream');
 /**
  * @route GET /api/ai/tts
  * @desc Transforma texto em áudio ultra-realista via Streaming (OpenAI TTS)
- * @access Private
+ * @access Public (Para permitir mensagens de boas-vindas e erro)
  */
 router.get('/tts', async (req, res) => {
     try {

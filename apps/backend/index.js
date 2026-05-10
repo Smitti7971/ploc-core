@@ -118,8 +118,8 @@ app.use('/api/tasks', authMiddleware, taskRoutes);
 app.use('/api/routines', authMiddleware, routineRoutes);
 app.get('/api/ping-routines', (req, res) => res.json({ message: "Routine route is registered! 🚀" }));
 
-// Rotas de IA (PROTEGIDAS)
-app.use('/api/ai', authMiddleware, aiRoutes);
+// Rotas de IA (Proteção agora é interna por rota)
+app.use('/api/ai', aiRoutes);
 
 // --- GESTÃO DE ERROS GLOBAL (Rede de Proteção) ---
 app.use((err, req, res, next) => {
