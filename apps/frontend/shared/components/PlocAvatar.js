@@ -415,8 +415,14 @@ export const createPlocAvatar = (config = {}) => {
         if (clickCount >= 3) {
             // Cutucou demais: Ativa modo de raiva por 30 segundos
             isPissedOff = true;
+            ploc.classList.add('ploc-pissed');
+            
             clearTimeout(pissedOffTimeout);
-            pissedOffTimeout = setTimeout(() => { isPissedOff = false; clickCount = 0; }, 30000); 
+            pissedOffTimeout = setTimeout(() => { 
+                isPissedOff = false; 
+                clickCount = 0; 
+                ploc.classList.remove('ploc-pissed');
+            }, 30000); 
             
             stopAllAudio();
             const randomPoke = Math.floor(Math.random() * 25) + 1;

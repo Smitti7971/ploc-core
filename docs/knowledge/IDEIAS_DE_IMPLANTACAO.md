@@ -38,6 +38,7 @@ Este documento serve como repositório para a visão criativa do PLOC, garantind
         - Se o usuário ficar clicando/tocando no Ploc repetidamente, ele se irrita.
         - Toca áudios cacheáveis agressivos de imediato: *"Ei, tira o dedo de mim!", "Não sou brinquedo!", "Quer brigar?"* (Pool de ~50 frases aleatórias).
         - A irritação contamina o próximo Prompt da LLM. Se perguntado após ser cutucado, ele responde com tédio ou raiva: *"Mano, me deixa em paz, eu ainda tô sendo compilado. O que você quer?"*
+        - **Animações Físicas de Humor**: No futuro, adicionar CSS/JS para o Ploc tremer de raiva, ficar avermelhado, ou tentar "fugir" do cursor/dedo na tela quando estiver muito estressado.
     - *Análise Biométrica e Sentimental de Voz*:
         - O Ploc reconhece a "assinatura de voz" do dono da conta.
         - *Modo Privacidade*: Se detectar vozes de terceiros ou se a voz não for reconhecida, o Ploc entra em modo silencioso e exibe "Desligado para privacidade".
