@@ -8,9 +8,13 @@ Para criar novas lógicas e testar sem depender da internet:
 
 1.  **Subir o Banco Local**:
     ```powershell
-    docker-compose up -d
+    npm run db:up
     ```
-2.  **Configurar o `.env` (Raiz e Backend)**:
+2.  **Rodar o Frontend**:
+    ```powershell
+    npm run dev:front
+    ```
+    *Nota: Agora usamos **Caminhos Relativos**, permitindo que o Live Server ou o comando acima funcionem sem erros de 404.*
     Garanta que a sua `DATABASE_URL` local seja:
     `postgresql://devuser:devpassword@localhost:5432/ploc_dev?schema=public`
 3.  **Aplicar Mudanças de Schema**:
@@ -34,6 +38,7 @@ Para enviar suas criações para o mundo:
     O deploy no Coolify lerá a pasta `prisma/migrations` e aplicará as mesmas mudanças no banco da nuvem. **Você não precisa fazer nada manual no servidor.**
 
 ## 🛡️ Regras de Ouro
+- **Caminhos Relativos**: NUNCA use `/` no início de links de CSS/JS no `index.html` ou `sw.js`.
 - **NUNCA** mude o `provider = "postgresql"` no schema.prisma.
 - **NUNCA** remova o `.env` do `.gitignore`.
 - O banco local (`ploc-db-local`) é persistente. Se você desligar o PC, os dados continuam lá.

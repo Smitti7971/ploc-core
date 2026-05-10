@@ -1,19 +1,19 @@
 const CACHE_NAME = 'ploc-v0.0.4';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/css/theme.css',
-  '/css/app.css',
-  '/js/main.js',
-  '/js/router.js',
-  '/js/components/LandingPage.js',
-  '/js/components/DashboardPage.js',
-  '/js/components/CalendarPage.js',
-  '/js/components/KanbanPage.js',
-  '/js/components/SettingsPage.js',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/screenshot.png'
+  './',
+  'index.html',
+  'css/theme.css',
+  'css/app.css',
+  'js/main.js',
+  'js/router.js',
+  'js/components/LandingPage.js',
+  'js/components/DashboardPage.js',
+  'js/components/CalendarPage.js',
+  'js/components/KanbanPage.js',
+  'js/components/SettingsPage.js',
+  'icon-192.png',
+  'icon-512.png',
+  'screenshot.png'
 ];
 
 // Instalação Robusta
@@ -48,7 +48,7 @@ self.addEventListener('activate', (event) => {
 // Estratégia Fetch: Stale-While-Revalidate (Cache primeiro, mas atualiza em background)
 self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
-    event.respondWith(fetch('/index.html').catch(() => caches.match('/index.html')));
+    event.respondWith(fetch('index.html').catch(() => caches.match('index.html')));
     return;
   }
 

@@ -1,4 +1,12 @@
 {
+  "name": "ploc-monorepo",
+  "version": "1.0.0",
+  "scripts": {
+    "dev:front": "npx serve src/frontend",
+    "dev:back": "cd src/backend && npm run dev",
+    "db:up": "docker-compose up -d",
+    "db:down": "docker-compose down"
+  },
   "dependencies": {
     "jimp": "^1.6.1"
   }
