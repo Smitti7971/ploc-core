@@ -25,6 +25,11 @@ Este documento serve como repositório para a visão criativa do PLOC, garantind
     - O humor do Ploc muda com base na performance do usuário.
     - *Modo "Orgulhoso"*: Recompensas e elogios para alta produtividade.
     - *Modo "Brabo/Desistente"*: Psicologia reversa e cobranças duras para baixa performance (ex: "Desliguei os lembretes porque você não se importa").
+    - *Mudança Dinâmica de Persona (Contextual Persona Shift)*:
+        - O Ploc hackeia o próprio prompt de sistema (AIOrchestrator) para se adaptar à "Rotina Ativa" do momento do usuário.
+        - *Treino*: Ativa o modo Coach (frases de maromba, cobrança dura, foco em suor).
+        - *Meditação*: Ativa o modo Zen (frases curtas, calmas, foco em respiração).
+        - O sistema injeta um bloco `[MODE OVERRIDE]` no final do Super Prompt base, alterando a diretriz de tom instantaneamente.
     - *Estados Emocionais (Tamagotchi Style)*: O Ploc pode ficar "triste" ou "doente" se o usuário falhar em suas rotinas.
     - *Metamorfose Física*: A aparência do corpo do Ploc muda com base nos hábitos (ex: fica forte se o usuário treina, gordo/magro com base na alimentação).
     - *Animações de Preparação Contextual*: Ploc demonstra estar "se arrumando" (arrumando mala, penteando cabelo) quando detecta compromissos iminentes na agenda.
@@ -34,6 +39,11 @@ Este documento serve como repositório para a visão criativa do PLOC, garantind
         - *Modo Privacidade*: Se detectar vozes de terceiros ou se a voz não for reconhecida, o Ploc entra em modo silencioso e exibe "Desligado para privacidade".
         - *Escuta Empática*: O sistema analisa tom, ritmo e volume para detectar o humor (triste, feliz, cansado) e adapta o diálogo (ex: "Notei sua voz diferente, quer conversar?").
     - **Desafios de Validação**: Exigir uma prova visual (vídeo/foto) para reativar funcionalidades (ex: vídeo bebendo água ou foto na academia).
+- **Arsenal de Saudações Contextuais (Latência Zero)**: 
+    - Biblioteca de centenas de áudios curtos (fillers e saudações) categorizados por contexto.
+    - **Categorização Comportamental**: O sistema detecta padrões do usuário (ex: esquecimento de chaves, atrasos frequentes, alta produtividade) e faz o download em segundo plano (background fetch) de uma "bateria" de áudios específicos para aquele tema.
+    - **Personalidade Reativa**: O Ploc acorda com frases específicas sobre os problemas ou vitórias atuais do usuário (ex: "Pegou a chave hoje?" ou "Ontem você foi fera, vamos manter o ritmo?").
+    - **Smart Buffer**: Pré-carregamento dinâmico de lotes de saudações para garantir resposta instantânea sem sobrecarregar o carregamento inicial do app.
 
 ---
 
@@ -72,10 +82,21 @@ Este documento serve como repositório para a visão criativa do PLOC, garantind
 
 ---
 
-## 🕵️ Modo "Tocaia" e Monitoramento
-- **Assistente de Saudade / Monitor**: O Ploc pode ficar de "vigia" a pedido do usuário.
-    - **Integração WhatsApp**: Monitorar quando um contato específico fica online para avisar o momento exato de puxar conversa (ex: "Ela ficou online agora, a hora é essa!").
-    - **Multitarefa Interno**: O Ploc atua como um assistente que fica "na espreita" realizando múltiplas verificações enquanto o usuário faz outras coisas.
+## 🛒 Marketplace de Rotinas (O "Netflix" dos Hábitos)
+- **Rotinas Assinadas**: Marketplace onde profissionais validados (Treinadores, Médicos, Professores, Mentores) vendem suas rotinas personalizadas.
+- **Conteúdo Híbrido (Vídeo + Execução)**: 
+    - Cada tarefa gerada pela rotina pode vir acompanhada de um vídeo curto do especialista explicando a execução ou motivando o usuário.
+    - Exemplo: Uma tarefa de "Agachamento" abre um mini-player com o vídeo do treinador executando a técnica correta.
+- **Encaixe Inteligente**: A rotina comprada é automaticamente "fatiada" e encaixada nos horários livres do usuário, respeitando sua agenda atual e preferências de dias.
+- **Monetização para Criadores**: Especialistas podem criar, hospedar e vender suas "receitas de vida" e metodologias de produtividade dentro da plataforma PLOC.
 
 ---
+
+## 🕵️ Modo "Tocaia" e Monitoramento
+- **Assistente de Saudade / Monitor**: O Ploc pode ficar de "vigia" a pedido do usuário.
+- **Integração WhatsApp**: Monitorar quando um contato específico fica online para avisar o momento exato de puxar conversa (ex: "Ela ficou online agora, a hora é essa!").
+- **Multitarefa Interno**: O Ploc atua como um assistente que fica "na espreita" realizando múltiplas verificações enquanto o usuário faz outras coisas.
+
+---
+
 *Documento em constante evolução. Registre aqui antes de codar.*

@@ -1,0 +1,83 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Priority {
+  BAIXA
+  MEDIA
+  ALTA
+}
+
+enum TaskStatus {
+  PENDENTE
+  EM_ANDAMENTO
+  CONCLUIDO
+  CANCELADO
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  name      String?
+  password  String?
+  avatar    String?   // URL ou Base64 da foto de perfil
+  createdAt DateTime  @default(now())
+  routines  Routine[]
+  tasks     Task[]
+}
+
+model Routine {
+  id          Int      @id @default(autoincrement())
+  name        String
+  category    String   // TREINO, ESTUDO, TRABALHO, etc
+  description String?
+  config      Json?    // Estrutura para dias da semana, horários, etc
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks       Task[]
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+model RoutineTemplate {
+  id          Int      @id @default(autoincrement())
+  name        String
+  category    String
+  description String?
+  config      Json     // Configuração padrão sugerida
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model Task {
+  id            Int        @id @default(autoincrement())
+  name          String
+  description   String?    // Detalhes da tarefa
+  category      String     // Saude, Financias, Trabalho, etc.
+  priority      Priority   @default(MEDIA)
+  status        TaskStatus @default(PENDENTE)
+  tags          String?    // Tags separadas por vírgula
+  completed     Boolean    @default(false)
+  userId        Int
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  routineId     Int?
+  routine       Routine?   @relation(fields: [routineId], references: [id], onDelete: SetNull)
+  createdAt     DateTime   @default(now())
+  scheduledDate DateTime   @default(now())
+  scheduledTime String?    // Horário (ex: "08:00")
+  completedAt   DateTime?
+
+  @@index([userId])
+  @@index([routineId])
+  @@index([completed])
+  @@index([status])
+  @@index([priority])
+}

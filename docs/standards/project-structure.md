@@ -4,12 +4,15 @@ Este documento é a lei de organização do repositório. NENHUM arquivo deve se
 
 ## 📂 Hierarquia Principal
 
-### `/src` (Código Fonte)
-- **`/src/backend`**: Lógica do servidor Express, APIs, Banco de Dados.
-    - `/src/backend/api`: Endpoints e rotas.
-    - `/src/backend/models`: Esquemas de dados.
-    - `/src/backend/services`: Lógica de integração (OpenAI, Google, etc).
-- **`/src/frontend`**: Aplicação de interface (HTML/JS/Framework).
+### `/apps` (Aplicações)
+- **`/apps/backend`**: Lógica do servidor Express, APIs, Camada de Agentes.
+- **`/apps/frontend`**: Interface SPA (HTML/JS).
+
+### `/packages` (Módulos Compartilhados)
+- **`/packages/shared`**: DTOs, Constantes e Utils comuns.
+- **`/packages/schemas`**: Validações de dados (Zod/Contratos).
+- **`/packages/database`**: Configurações de Banco de Dados e Prisma.
+- **`/packages/ai-core`**: Orquestração e lógica base de IA.
 
 ### `/docs` (Documentação e Gestão)
 - **`/docs/execution`**: Apenas para o arquivo `current-task.md` em execução.

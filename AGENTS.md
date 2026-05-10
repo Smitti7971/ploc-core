@@ -30,7 +30,7 @@
 - Nenhuma execução sem plano definido na `current-task.md`.
 - Proibido executar múltiplos passos técnicos ao mesmo tempo.
 - **Credenciais:** Sempre pesquisar no arquivo `.env` antes de perguntar ao USER.
-- **Sincronização Git**: É OBRIGATÓRIO realizar `git push` após qualquer alteração de código.
+- **Sincronização Git**: O `git push` deve ser realizado **APENAS** sob solicitação explícita ou conforme definido no **Guia Mestre de Deploy** (Lotes validados).
 - **SEGURANÇA DE DEPLOY**: É terminantemente proibido usar o histórico de deploys (listagem) como prova de sucesso. A validação deve ser feita EXCLUSIVAMENTE via consulta direta ao ID do deploy ativo e verificação de saúde do container.
 
 ---

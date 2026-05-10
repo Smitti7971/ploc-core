@@ -3,17 +3,13 @@
 ## Estado Atual da Infraestrutura (Coolify)
 
 ### 1. Serviço de Frontend (APP)
-- **App Name**: `assistente-ploc-frontend` (UUID: `a6n3eh22owgp057dd09t023a`)
-- **Domínio**: `https://ploc.midializando.cloud/`
-- **Base Directory**: `/` (Raiz do projeto)
+- **Base Directory**: `/apps/frontend`
 - **Build Pack**: `Dockerfile` (Nginx:stable-alpine personalizado)
 - **Arquitetura**: SPA (Single Page Application) servida via Nginx
-- **PWA Version**: v15 (Blindagem 2.0, Stale-While-Revalidate & Caminhos Relativos) ✅
+- **PWA Version**: v16 (Design System v1, Blindagem 2.0, Stale-While-Revalidate) ✅
 
 ### 2. Serviço de Backend (API)
-- **App Name**: `ploc-backend-v3` (UUID: `leaocf7ke5lgluo0bg2dco0w`)
-- **Domínio**: `https://backend.midializando.cloud/`
-- **Base Directory**: `/src/backend`
+- **Base Directory**: `/apps/backend`
 - **Build Pack**: `Dockerfile` (Node:22-slim personalizado) ✅
 
 ### 3. Serviço de Banco de Dados (PostgreSQL)
@@ -36,18 +32,25 @@
 - **Funcionalidades**: Listagem, Criação, Check/Uncheck, Deleção.
 - **Categorias**: Saúde, Finanças, Trabalho, Hábito, Leitura, Meditação, Estudo, Música.
 
-### 🎨 Arquitetura Frontend (Enterprise)
-- **Design System**: Baseado em REM (Root EM) para escalabilidade total.
-- **Separation of Concerns**: Lógica extraída para componentes JS e Estilos para `css/`.
-- **Arquitetura SPA**: Roteamento dinâmico via `js/main.js` (Zero Page Reload).
-- **Service Worker**: Cache persistente v12 (Otimizado para SPA).
+### 🎨 Arquitetura Frontend (Modular & Feature-Based)
+- **Design System v1**: Centralizado em `apps/frontend/css/app.css` (Única Fonte da Verdade). ✅
+- **Feature-Based Architecture**: Organização por domínios em `apps/frontend/features/` (auth, chat, dashboard, reminders, settings, tasks). ✅
+- **Shared Layer**: Componentes e utilitários globais em `apps/frontend/shared/` (api, components, config). ✅
+- **Core App**: Ponto de entrada e roteamento em `apps/frontend/app/` (main.js, router.js). ✅
+- **Zero Page Reload**: SPA com roteamento dinâmico e carregamento sob demanda. ✅
+
+### 🧠 AI Layer (Cognitive Architecture)
+- **Orchestrator**: `apps/backend/ai/orchestrator/AIOrchestrator.js` gerencia intenções e ferramentas. ✅
+- **Granular Tools**: Sistema de ferramentas independentes em `apps/backend/ai/tools/` (create-task, list-tasks, etc.). ✅
+- **Behaviors**: Gestão de prompts de comportamento em `apps/backend/ai/prompts/behaviors/`. ✅
+- **Event-Driven**: Comunicação assíncrona via `apps/backend/events/EventEmitter.js`. ✅
 
 
-### 📊 Estado de Saúde (Operacional - 2026-05-08) 🟢
-- **Frontend**: ✅ ATIVO (Nginx servindo SPA v12).
+### 📊 Estado de Saúde (Operacional - 2026-05-10) 🟢
+- **Frontend**: ✅ ATIVO (Design System v1 implementado em todos os módulos).
 - **Backend**: ✅ ATIVO (Servidor Node.js respondendo na porta 3000).
 - **Banco de Dados**: ✅ CONECTADO (Prisma v6 operando com PostgreSQL).
-- **Segurança**: ✅ VALIDADA (Correção do JWT_SECRET em produção).
+- **Segurança**: ✅ VALIDADA (CORS e JWT configurados).
 
 ### 🧭 Central de Conhecimento (Knowledge)
 - **Tecnologias**: [docs/knowledge/PILHA_TECNOLOGICA.md](PILHA_TECNOLOGICA.md)
