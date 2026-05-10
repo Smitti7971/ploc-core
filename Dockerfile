@@ -19,7 +19,7 @@ RUN echo 'server { \
         try_files $uri =404; \
     } \
     location ~* \.(js|css)$ { \
-        add_header Cache-Control "public, max-age=2592000"; \
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"; \
         try_files $uri =404; \
     } \
     location ~* \.(png|jpg|jpeg|gif|ico|svg|woff2)$ { \

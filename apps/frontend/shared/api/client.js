@@ -4,9 +4,9 @@ import { CONFIG } from '../config/config.js?v=0.0.7';
  * Client API unificado para o PLOC SPA
  */
 export const apiClient = {
-    baseURL: CONFIG.API_BASE_URL,
+    baseURL: 'https://backend.midializando.cloud/api',
     async request(endpoint, options = {}) {
-        const url = `${CONFIG.API_BASE_URL}${endpoint}`;
+        const url = `https://backend.midializando.cloud/api${endpoint}`;
         const token = localStorage.getItem('ploc_token'); // Chave unificada: ploc_token
         
         const headers = {
