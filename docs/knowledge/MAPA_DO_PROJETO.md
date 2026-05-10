@@ -6,7 +6,7 @@
 - **Base Directory**: `/apps/frontend`
 - **Build Pack**: `Dockerfile` (Nginx:stable-alpine personalizado)
 - **Arquitetura**: SPA (Single Page Application) servida via Nginx
-- **PWA Version**: v16 (Design System v1, Blindagem 2.0, Stale-While-Revalidate) ✅
+- **Versão**: v0.0.9-FINAL (Blindagem 2.0, No-Cache Policy, Auto-Purge) ✅
 
 ### 2. Serviço de Backend (API)
 - **Base Directory**: `/apps/backend`
@@ -47,10 +47,10 @@
 
 
 ### 📊 Estado de Saúde (Operacional - 2026-05-10) 🟢
-- **Frontend**: ✅ ATIVO (Design System v1 implementado em todos os módulos).
-- **Backend**: ✅ ATIVO (Servidor Node.js respondendo na porta 3000).
+- **Frontend**: ✅ ATIVO (v0.0.9-FINAL estável, cache neutralizado).
+- **Backend**: ✅ ATIVO (CORS validado, Voz/TTS pública integrada).
 - **Banco de Dados**: ✅ CONECTADO (Prisma v6 operando com PostgreSQL).
-- **Segurança**: ✅ VALIDADA (CORS e JWT configurados).
+- **Segurança**: ✅ VALIDADA (JWT funcional, Mixed Content eliminado).
 
 ### 🧭 Central de Conhecimento (Knowledge)
 - **Tecnologias**: [docs/knowledge/PILHA_TECNOLOGICA.md](PILHA_TECNOLOGICA.md)
