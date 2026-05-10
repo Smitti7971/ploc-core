@@ -8,7 +8,7 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     
     <!-- PWA Settings -->
-    <link rel="manifest" href="manifest.json?v=0.0.4">
+    <link rel="manifest" href="manifest.json?v=0.0.5">
     <meta name="theme-color" content="#0f172a">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -89,7 +89,7 @@
 
     <script>
         // Automação de Atualização Total - Motor v0.2.0 (Implacável)
-        const APP_VERSION = 'v0.0.4';
+        const APP_VERSION = 'v0.0.5';
         const currentVersion = localStorage.getItem('ploc_version');
 
         if (currentVersion && currentVersion !== APP_VERSION) {
@@ -122,13 +122,13 @@
         }
 
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=0.0.4')
+            navigator.serviceWorker.register('sw.js?v=0.0.5')
                 .then(() => console.log('Service Worker Registered'))
                 .catch(err => console.log('Service Worker Failed', err));
         }
     </script>
     <!-- Voltando para módulo para permitir o uso do apiClient -->
-    <script type="module" src="app/main.js?v=0.0.4"></script>
+    <script type="module" src="app/main.js?v=0.0.5"></script>
 </body>
 
 </html>
