@@ -1,7 +1,7 @@
 /**
  * Componente: LoginPage
  */
-import { apiClient } from '../../shared/api/client.js';
+import { apiClient } from '../../shared/api/client.js?v=0.0.9';
 
 export const renderLogin = () => {
     const container = document.createElement('div');

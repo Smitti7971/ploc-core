@@ -1,5 +1,5 @@
-import { createPlocAvatar } from '../../shared/components/PlocAvatar.js';
-import { initChatLogic } from '../chat/ChatWidget.js';
+import { createPlocAvatar } from '../../shared/components/PlocAvatar.js?v=0.0.9';
+import { initChatLogic } from '../chat/ChatWidget.js?v=0.0.9';
 
 export const renderDashboard = () => {
     const container = document.createElement('div');

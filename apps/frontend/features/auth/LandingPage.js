@@ -1,6 +1,6 @@
-import { createPlocAvatar } from '../../shared/components/PlocAvatar.js';
+import { createPlocAvatar } from '../../shared/components/PlocAvatar.js?v=0.0.9';
 import { apiClient } from '../../shared/api/client.js?v=0.0.9';
-import { initChatLogic } from '../chat/ChatWidget.js';
+import { initChatLogic } from '../chat/ChatWidget.js?v=0.0.9';
 
 /**
  * Landing Page - A "cara" do PLOC AI

@@ -1,6 +1,6 @@
-import { createPlocAvatar } from '../../shared/components/PlocAvatar.js';
-import { apiClient } from '../../shared/api/client.js';
-import { initChatLogic } from '../chat/ChatWidget.js';
+import { createPlocAvatar } from '../../shared/components/PlocAvatar.js?v=0.0.9';
+import { apiClient } from '../../shared/api/client.js?v=0.0.9';
+import { initChatLogic } from '../chat/ChatWidget.js?v=0.0.9';
 
 /**
  * Calendar Page - Visualização de Compromissos e Tarefas
