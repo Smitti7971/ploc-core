@@ -11,7 +11,7 @@
 | **Git** | `2.54.0.windows.1` | Controle de Versão |
 | **Prisma CLI** | `7.8.0` | Interface de Banco de Dados |
 
-## 🧠 Backend (src/backend)
+## 🧠 Backend (apps/backend)
 
 ### Core
 - **Framework**: `express ^4.18.2`
@@ -28,7 +28,9 @@
 ### Utilidades
 - **Configuração**: `dotenv ^17.4.2`
 
-## 🎨 Frontend (src/frontend)
+## 🎨 Frontend (apps/frontend)
+- **Política de Cache**: `Cache-Control: no-store` (Nginx) ✅
+- **Automação**: Cache-Busting via Query String (`?v=N.N.N`) ✅
 
 - **Estrutura**: HTML5
 - **Estilos**: Vanilla CSS (CSS Moderno)
