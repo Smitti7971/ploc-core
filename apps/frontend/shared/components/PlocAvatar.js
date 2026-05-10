@@ -422,7 +422,7 @@ export const createPlocAvatar = (config = {}) => {
                 isPissedOff = false; 
                 clickCount = 0; 
                 ploc.classList.remove('ploc-pissed');
-            }, 30000); 
+            }, 8000); 
             
             stopAllAudio();
             const randomPoke = Math.floor(Math.random() * 25) + 1;
