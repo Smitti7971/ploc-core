@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ploc-v0.0.6';
+const CACHE_NAME = 'ploc-v0.0.7';
 const ASSETS = [
   './',
   'index.html',
