@@ -9,12 +9,12 @@ const aiOrchestrator = require('../ai/orchestrator/AIOrchestrator');
  */
 router.post('/chat', async (req, res) => {
     try {
-        const { message, fillerText } = req.body;
+        const { message, fillerText, isPissedOff } = req.body;
         if (!message) {
             return res.status(400).json({ error: 'Mensagem é obrigatória' });
         }
 
-        const response = await aiOrchestrator.process(req.user.id, message, fillerText);
+        const response = await aiOrchestrator.process(req.user.id, message, fillerText, isPissedOff);
         res.json(response);
     } catch (error) {
         console.error('❌ Erro na AI Layer:', error);

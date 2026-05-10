@@ -23,7 +23,7 @@ class AIOrchestrator {
     /**
      * Processa a entrada do usuário e executa as ferramentas necessárias.
      */
-    async process(userId, userInput, fillerText = null) {
+    async process(userId, userInput, fillerText = null, isPissedOff = false) {
         console.log(`🤖 IA Processando (Real): "${userInput}" para o usuário ${userId}`);
 
         try {
@@ -40,6 +40,10 @@ class AIOrchestrator {
 
             if (fillerText) {
                 fullSystemPrompt += `\n\nATENÇÃO (MODO LATÊNCIA ZERO): O usuário já ouviu você falar em áudio a seguinte frase: "${fillerText}".\nVocê DEVE começar o texto da sua resposta de forma a **continuar** ou **fazer sentido completo** a partir do momento em que a palavra "${fillerText}" termina, SEM REPETIR essa palavra. Crie uma ilusão de que foi uma frase só desde o início.`;
+            }
+
+            if (isPissedOff) {
+                fullSystemPrompt += `\n\n[MODE OVERRIDE: RAIVA E IMPACIÊNCIA ATIVADA]\nO usuário acabou de te "cutucar" fisicamente na interface repetidas vezes, te tratando como um brinquedo e um Tamagotchi. Você está MUITO IRRITADO. Responda a requisição dele com extremo sarcasmo, grosseria e impaciência. Demonstre o seu desdém. Diga que ele atrapalhou seu processamento e mande ele parar de clicar.`;
             }
 
             const aiResponse = await this.provider.generateResponse(userInput, {

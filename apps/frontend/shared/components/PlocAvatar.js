@@ -118,19 +118,28 @@ export const createPlocAvatar = (config = {}) => {
             
             stopAllAudio(); // Corta a fala atual IMEDIATAMENTE (Interrupção por novo input)
             
-            // MODO SENTINELA + ZERO LATÊNCIA REAL
-            const fillersMap = {
-                'pensando.mp3': 'Deixa eu analisar isso aqui...',
-                'organizando.mp3': 'Faz sentido. Vamos organizar isso.',
-                'logica.mp3': 'Entendi a lógica. Veja bem...',
-                'processando.mp3': 'Processando seu pedido, Mestre...',
-                'calculando.mp3': 'Ok, estou calculando as variáveis...'
-            };
-            const fillerFiles = Object.keys(fillersMap);
-            const randomFillerName = fillerFiles[Math.floor(Math.random() * fillerFiles.length)];
-            const fillerText = fillersMap[randomFillerName];
+            let fillerText;
+            let fillerAudio;
+
+            if (isPissedOff) {
+                fillerText = "Fala logo...";
+                const randomPoke = Math.floor(Math.random() * 25) + 1;
+                fillerAudio = audioCache[`poke-${randomPoke}.mp3`];
+            } else {
+                // MODO SENTINELA + ZERO LATÊNCIA REAL
+                const fillersMap = {
+                    'pensando.mp3': 'Deixa eu analisar isso aqui...',
+                    'organizando.mp3': 'Faz sentido. Vamos organizar isso.',
+                    'logica.mp3': 'Entendi a lógica. Veja bem...',
+                    'processando.mp3': 'Processando seu pedido, Mestre...',
+                    'calculando.mp3': 'Ok, estou calculando as variáveis...'
+                };
+                const fillerFilesMap = Object.keys(fillersMap);
+                const randomFillerName = fillerFilesMap[Math.floor(Math.random() * fillerFilesMap.length)];
+                fillerText = fillersMap[randomFillerName];
+                fillerAudio = audioCache[randomFillerName];
+            }
             
-            const fillerAudio = audioCache[randomFillerName];
             if (fillerAudio) {
                 currentFillerAudio = fillerAudio;
                 fillerAudio.currentTime = 0;
@@ -146,7 +155,7 @@ export const createPlocAvatar = (config = {}) => {
             speechBubble.style.transform = 'translateX(-50%) translateY(0)';
 
             document.dispatchEvent(new CustomEvent('ploc-message', { 
-                detail: { text: text, fillerText: fillerText } 
+                detail: { text: text, fillerText: fillerText, isPissedOff: isPissedOff } 
             }));
         }
     };
@@ -208,6 +217,14 @@ export const createPlocAvatar = (config = {}) => {
         audioCache[file] = new Audio(url);
         audioCache[file].load(); // Força o download imediato
     });
+
+    // Pré-carrega os 25 áudios de Pokes (Cutucadas de Raiva)
+    for (let i = 1; i <= 25; i++) {
+        const file = `poke-${i}.mp3`;
+        const url = `${apiClient.baseURL.replace('/api', '')}/audio/pokes/${file}`;
+        audioCache[file] = new Audio(url);
+        audioCache[file].load();
+    }
 
     // --- SISTEMA DE INTERRUPÇÃO (Freio de Mão Global) ---
     let currentMainAudio = null;
@@ -383,10 +400,52 @@ export const createPlocAvatar = (config = {}) => {
         }
     };
 
+    let clickCount = 0;
+    let clickTimer = null;
+    let isPissedOff = false;
+    let pissedOffTimeout = null;
+
     ploc.onclick = (e) => {
         if (isDragging) return; 
         e.stopPropagation();
         
+        clickCount++;
+        clearTimeout(clickTimer);
+        
+        if (clickCount >= 3) {
+            // Cutucou demais: Ativa modo de raiva por 30 segundos
+            isPissedOff = true;
+            clearTimeout(pissedOffTimeout);
+            pissedOffTimeout = setTimeout(() => { isPissedOff = false; clickCount = 0; }, 30000); 
+            
+            stopAllAudio();
+            const randomPoke = Math.floor(Math.random() * 25) + 1;
+            const pokeAudio = audioCache[`poke-${randomPoke}.mp3`];
+            if (pokeAudio) {
+                currentFillerAudio = pokeAudio;
+                pokeAudio.currentTime = 0;
+                pokeAudio.play().catch(()=>{});
+                
+                // Exibe no balão
+                speechBubble.textContent = "Não cutuca!";
+                speechBubble.style.display = 'block';
+                speechBubble.style.opacity = '1';
+                speechBubble.style.transform = 'translateX(-50%) translateY(0)';
+                setTimeout(() => {
+                    speechBubble.style.opacity = '0';
+                    setTimeout(() => { speechBubble.style.display = 'none'; }, 300);
+                }, 2000);
+            }
+            
+            if (mode !== 'active') {
+                updateMode('active');
+                showInput();
+            }
+            return;
+        }
+
+        clickTimer = setTimeout(() => { clickCount = 0; }, 1500); // Janela de clique duplo/triplo
+
         if (mode !== 'active') {
             updateMode('active');
             speak("Me chamou?", true); // Saudação instantânea via cache

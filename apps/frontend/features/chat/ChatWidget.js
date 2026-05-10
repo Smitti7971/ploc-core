@@ -18,8 +18,9 @@ export const initChatLogic = () => {
         }
         
         try {
+            const isPissedOff = e.detail.isPissedOff || false;
             // Chama a API do PLOC (OpenAI)
-            const data = await apiClient.post('/ai/chat', { message: userMessage, fillerText: fillerText });
+            const data = await apiClient.post('/ai/chat', { message: userMessage, fillerText: fillerText, isPissedOff: isPissedOff });
             
             // Reage dependendo da resposta
             if (data.name) {
