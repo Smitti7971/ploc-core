@@ -5,7 +5,8 @@
     "dev:front": "npx serve apps/frontend",
     "dev:back": "cd apps/backend && npm run dev",
     "db:up": "docker-compose up -d",
-    "db:down": "docker-compose down"
+    "db:down": "docker-compose down",
+    "db:reset": "cd apps/backend && node scripts/reset-db.js"
   },
   "dependencies": {
     "jimp": "^1.6.1"

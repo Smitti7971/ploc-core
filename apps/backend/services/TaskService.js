@@ -6,13 +6,11 @@ const taskRepository = require('../repositories/TaskRepository');
  */
 class TaskService {
     async getUserTasks(userId) {
-        const uid = parseInt(userId);
-        return taskRepository.findAllByUserId(uid);
+        return taskRepository.findAllByUserId(userId);
     }
 
     async createNewTask(userId, taskData) {
-        const uid = parseInt(userId);
-        console.log(`[AUDITORIA] Criando tarefa para o Usuário ID: ${uid} (Tipo: ${typeof uid})`);
+        console.log(`[AUDITORIA] Criando tarefa para o Usuário ID: ${userId} (Tipo: ${typeof userId})`);
         
         const { name, description, category, scheduledDate, scheduledTime, priority, status, tags } = taskData;
         
@@ -41,16 +39,15 @@ class TaskService {
             tags,
             scheduledDate: parsedDate,
             scheduledTime,
-            userId: uid
+            userId: userId
         });
     }
 
     async updateExistingTask(userId, taskId, updateData) {
-        const uid = parseInt(userId);
         const tid = parseInt(taskId);
         const task = await taskRepository.findById(tid);
         
-        if (!task || task.userId !== uid) {
+        if (!task || task.userId !== userId) {
             throw new Error('Acesso negado ou tarefa não encontrada');
         }
 
@@ -89,11 +86,10 @@ class TaskService {
     }
 
     async removeTask(userId, taskId) {
-        const uid = parseInt(userId);
         const tid = parseInt(taskId);
         const task = await taskRepository.findById(tid);
         
-        if (!task || task.userId !== uid) {
+        if (!task || task.userId !== userId) {
             throw new Error('Acesso negado ou tarefa não encontrada');
         }
 

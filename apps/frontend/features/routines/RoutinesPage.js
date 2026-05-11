@@ -1,7 +1,8 @@
-import { apiClient } from '../../shared/api/client.js?v=0.0.9';
+import { apiClient } from '../../shared/api/client.js?v=0.1.3';
 
-export const renderRoutinesPage = () => {
-    const container = document.createElement('div');
+const RoutinesPage = {
+    render: async () => {
+        const container = document.createElement('div');
     container.className = 'page-container';
     container.style.cssText = `
         padding: 1.5rem; min-height: 100vh; color: #fff;
@@ -217,7 +218,7 @@ export const renderRoutinesPage = () => {
         };
 
         btnConfirmAdopt.onclick = async () => {
-            if (selectedDays.length === 0) return alert("Mestre, selecione pelo menos um dia! 😉");
+            if (selectedDays.length === 0) return alert("Por favor, selecione pelo menos um dia! 😉");
             
             try {
                 btnConfirmAdopt.innerText = "ATIVANDO...";
@@ -260,5 +261,8 @@ export const renderRoutinesPage = () => {
         loadTemplates();
     }, 0);
 
-    return container;
+        return container;
+    }
 };
+
+export default RoutinesPage;

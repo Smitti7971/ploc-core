@@ -1,11 +1,11 @@
 {
-  "name": "PLOC - O Seu Sócio",
+  "name": "PLOC AI - Seu Sócio Inteligente",
   "short_name": "PLOC",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#38bdf8",
-  "description": "Seu assistente pessoal e sócio de produtividade.",
+  "description": "O assistente pessoal que gerencia suas rotinas, treinos e produtividade com inteligência.",
   "icons": [
     {
       "src": "icon-192.png",
@@ -24,7 +24,7 @@
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Ploc Dashboard"
+      "label": "Ploc Dashboard Mobile"
     }
   ]
 }

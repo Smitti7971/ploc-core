@@ -1,0 +1,8 @@
+{
+  "name": "ploc-minio",
+  "project_uuid": "usabqksth1d7cjwidra64s6t",
+  "environment_name": "production",
+  "server_uuid": "oqlvae72ncg31bbvjwbqq0qt",
+  "destination_uuid": "jwayyxjibmevjz8whec2lj4p",
+  "docker_compose_raw": "dmVyc2lvbjogJzMuOCcKc2VydmljZXM6CiAgbWluaW86CiAgICBpbWFnZTogJ21pbmlvL21pbmlvOmxhdGVzdCcKICAgIGNvbnRhaW5lcl9uYW1lOiBwbG9jLW1pbmlvCiAgICBwb3J0czoKICAgICAgLSAnOTAwMDo5MDAwJwogICAgICAtICc5MDAxOjkwMDEnCiAgICBlbnZpcm9ubWVudDoKICAgICAgTUlOSU9fUk9PVF9VU0VSOiBwbG9jX2FkbWluCiAgICAgIE1JTklPX1JPT1RfUEFTU1dPUkQ6IHBsb2Nfc2VjcmV0X3Bhc3N3b3JkXzIwMjYKICAgIHZvbHVtZXM6CiAgICAgIC0gJ3Bsb2NfbWluaW9fZGF0YTovZGF0YScKICAgIGNvbW1hbmQ6ICdzZXJ2ZXIgL2RhdGEgLS1jb25zb2xlLWFkZHJlc3MgIjo5MDAxIicKdm9sdW1lczoKICBwbG9jX21pbmlvX2RhdGE6"
+}

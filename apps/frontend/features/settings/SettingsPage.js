@@ -1,78 +1,89 @@
 export const SettingsPage = {
-    render: () => {
-        const user = JSON.parse(localStorage.getItem('ploc_user') || '{}');
-        
-        return `
-            <div id="settings-container" style="
-                min-height: 100vh; background: #0f172a; color: #fff;
-                display: flex; flex-direction: column; align-items: center;
-                padding: 2rem; font-family: 'Outfit', sans-serif;
-            ">
+    render: async () => {
+        const container = document.createElement('div');
+        container.id = 'system-settings-page-root';
+        container.style.cssText = `
+            min-height: 100vh; background: #070a13; color: #fff;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 1.5rem; font-family: 'Inter', sans-serif;
+            animation: fadeIn 0.4s ease;
+        `;
+
+        container.innerHTML = `
+            <div style="width: 100%; max-width: 500px;">
                 <!-- Header -->
-                <div style="width: 100%; max-width: 600px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 3rem;">
-                    <div id="back-to-ploc" style="cursor: pointer; display: flex; align-items: center; gap: 0.5rem; color: #38bdf8; font-weight: 700;">
+                <header style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3rem;">
+                    <div id="btn-back-system" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; cursor: pointer;">
                         <span class="material-symbols-rounded">arrow_back</span>
-                        <span>VOLTAR</span>
                     </div>
-                    <span style="font-weight: 900; letter-spacing: 3px; color: rgba(255,255,255,0.3);">SETTINGS</span>
+                    <h1 style="font-size: 0.8rem; font-weight: 900; letter-spacing: 3px; margin: 0; color: #475569;">SISTEMA</h1>
+                    <div style="width: 40px;"></div>
+                </header>
+
+                <!-- System Options -->
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    ${createSystemItem('TEMA', 'LUXURY DARK', 'palette')}
+                    ${createSystemItem('NOTIFICAÇÕES', 'ATIVADAS', 'notifications')}
+                    ${createSystemItem('IDIOMA', 'PORTUGUÊS (BR)', 'language')}
+                    ${createSystemItem('VOZ DO PLOC', 'ATIVADA', 'mic')}
+                    ${createSystemItem('SINCRONIZAÇÃO', 'AUTOMÁTICA', 'sync')}
                 </div>
 
-                <!-- Perfil Card -->
-                <div style="
-                    width: 100%; max-width: 600px; background: rgba(255,255,255,0.03);
-                    border: 1px solid rgba(255,255,255,0.05); border-radius: 24px;
-                    padding: 2.5rem; display: flex; flex-direction: column; align-items: center;
-                    backdrop-filter: blur(20px);
-                ">
-                    <div style="
-                        width: 100px; height: 100px; border-radius: 50%;
-                        background: linear-gradient(145deg, #38bdf8, #1d4ed8);
-                        display: flex; align-items: center; justify-content: center;
-                        margin-bottom: 1.5rem; box-shadow: 0 0 30px rgba(56, 189, 248, 0.3);
-                        border: 4px solid #0f172a;
-                    ">
-                        <span class="material-symbols-rounded" style="font-size: 3.5rem; color: #fff;">person</span>
-                    </div>
-
-                    <h2 style="margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px;">${user.name || 'Mestre Ploc'}</h2>
-                    <p style="margin: 0.5rem 0 2rem; color: #64748b; font-size: 0.9rem;">${user.email || 'contato@ploc.com'}</p>
-
-                    <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.05); margin-bottom: 2rem;"></div>
-
-                    <!-- Campos (Simulação) -->
-                    <div style="width: 100%; display: flex; flex-direction: column; gap: 1.5rem;">
-                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                            <label style="font-size: 0.7rem; font-weight: 700; color: #38bdf8; letter-spacing: 1px;">NOME DE USUÁRIO</label>
-                            <input type="text" value="${user.name || ''}" disabled style="
-                                background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
-                                padding: 1rem; border-radius: 12px; color: #fff; font-family: inherit;
-                            ">
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                            <label style="font-size: 0.7rem; font-weight: 700; color: #38bdf8; letter-spacing: 1px;">E-MAIL</label>
-                            <input type="text" value="${user.email || ''}" disabled style="
-                                background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
-                                padding: 1rem; border-radius: 12px; color: #fff; font-family: inherit;
-                            ">
-                        </div>
-                    </div>
-
-                    <button id="save-settings" style="
-                        width: 100%; margin-top: 2.5rem; padding: 1.2rem;
-                        background: #38bdf8; border: none; border-radius: 12px;
-                        color: #0f172a; font-weight: 800; letter-spacing: 1px;
-                        cursor: pointer; transition: transform 0.2s;
-                    ">SALVAR ALTERAÇÕES</button>
+                <div style="margin-top: 4rem; text-align: center;">
+                    <p style="color: #1e293b; font-size: 0.6rem; font-weight: 900; letter-spacing: 2px;">PLOC OS v0.1.3</p>
                 </div>
             </div>
+
+            <style>
+                .system-item {
+                    background: rgba(255,255,255,0.03);
+                    border: 1px solid rgba(255,255,255,0.05);
+                    border-radius: 16px;
+                    padding: 1.2rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 1.2rem;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                }
+                .system-item:hover {
+                    background: rgba(255,255,255,0.06);
+                    border-color: rgba(56, 189, 248, 0.2);
+                    transform: translateX(5px);
+                }
+                .system-icon {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 12px;
+                    background: rgba(56, 189, 248, 0.1);
+                    color: #38bdf8;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+            </style>
         `;
-    },
-    afterRender: (container) => {
-        const backBtn = container.querySelector('#back-to-ploc');
-        if (backBtn) {
-            backBtn.onclick = () => {
-                window.location.hash = '#landing';
-            };
-        }
+
+        setTimeout(() => {
+            const btnBack = container.querySelector('#btn-back-system');
+            btnBack.onclick = () => window.location.hash = '#landing';
+        }, 0);
+
+        return container;
     }
 };
+
+function createSystemItem(label, value, icon) {
+    return `
+        <div class="system-item">
+            <div class="system-icon">
+                <span class="material-symbols-rounded">${icon}</span>
+            </div>
+            <div style="flex: 1;">
+                <div style="font-size: 0.55rem; font-weight: 900; color: #475569; letter-spacing: 1.5px; margin-bottom: 2px;">${label}</div>
+                <div style="font-size: 0.9rem; font-weight: 700; color: #fff;">${value}</div>
+            </div>
+            <span class="material-symbols-rounded" style="color: #1e293b; font-size: 1.2rem;">chevron_right</span>
+        </div>
+    `;
+}

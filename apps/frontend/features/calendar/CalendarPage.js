@@ -1,11 +1,10 @@
-import { createPlocAvatar } from '../../shared/components/PlocAvatar.js?v=0.0.9';
-import { apiClient } from '../../shared/api/client.js?v=0.0.9';
-import { initChatLogic } from '../chat/ChatWidget.js?v=0.0.9';
+import { apiClient } from '../../shared/api/client.js?v=0.1.3';
 
 /**
  * Calendar Page - Visualização de Compromissos e Tarefas
  */
-export const renderCalendarPage = () => {
+const CalendarPage = {
+    render: async () => {
     const container = document.createElement('div');
     container.className = 'page-container';
     container.style.cssText = `
@@ -77,7 +76,18 @@ export const renderCalendarPage = () => {
                         <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(145deg, var(--accent), #1d4ed8); display: flex; align-items: center; justify-content: center;">
                             <span class="material-symbols-rounded" style="font-size: 1rem;">person</span>
                         </div>
-                        <span style="font-size: 0.7rem; font-weight: 700;">${JSON.parse(localStorage.getItem('ploc_user') || '{}').name?.split(' ')[0] || 'MESTRE'}</span>
+                        <span style="font-size: 0.7rem; font-weight: 700;">
+                            ${(() => {
+                                try {
+                                    const u = localStorage.getItem('ploc_user');
+                                    if (u && u !== 'undefined') {
+                                        const userObj = JSON.parse(u);
+                                        return userObj.username || userObj.name?.split(' ')[0] || 'Usuário';
+                                    }
+                                    return 'Usuário';
+                                } catch (e) { return 'Usuário'; }
+                            })()}
+                        </span>
                     </div>
                     <div id="capsule-actions" style="display: none; align-items: center; gap: 0.6rem; width: 100%; justify-content: space-around;">
                         <div id="do-logout" class="flex-center" style="width: 42px; height: 22px; border-radius: 12px; background: #ef4444;">
@@ -177,17 +187,11 @@ export const renderCalendarPage = () => {
             </div>
         </div>
 
-        <!-- O Avatar estará sempre presente para controle -->
-        <div id="avatar-container" style="position: fixed; bottom: 2rem; right: 2rem; z-index: 100;"></div>
     `;
 
     // Lógica da Página
     setTimeout(async () => {
-        const avatarContainer = container.querySelector('#avatar-container');
-        if (avatarContainer) {
-            avatarContainer.appendChild(createPlocAvatar());
-            initChatLogic();
-        }
+        // O Mascote Único agora é gerenciado pelo roteador
 
         const btnBack = container.querySelector('#btn-back-landing');
         if (btnBack) btnBack.onclick = () => window.location.hash = '#landing';
@@ -335,7 +339,7 @@ export const renderCalendarPage = () => {
                             scheduledDate: newDate
                         });
                         loadTasks(); // Recarrega tudo
-                        if (window.plocControls) window.plocControls.speak("Tarefa reposicionada, mestre!");
+                        if (window.plocControls) window.plocControls.speak("Tarefa reposicionada!");
                     } catch (err) {
                         console.error("Erro ao mover tarefa:", err);
                     }
@@ -435,7 +439,7 @@ export const renderCalendarPage = () => {
                     container.querySelectorAll('.btn-delete-task').forEach(btn => {
                         btn.onclick = async (e) => {
                             e.stopPropagation();
-                            if (confirm("Mestre, deseja mesmo eliminar esta tarefa?")) {
+                            if (confirm("Deseja mesmo eliminar esta tarefa?")) {
                                 try {
                                     await apiClient.delete(`/tasks/${btn.dataset.id}`);
                                     loadTasks();
@@ -640,7 +644,7 @@ export const renderCalendarPage = () => {
         };
 
         btnDeleteModal.onclick = async () => {
-            if (confirm("Mestre, deseja mesmo eliminar esta tarefa?")) {
+            if (confirm("Deseja mesmo eliminar esta tarefa?")) {
                 try {
                     await apiClient.delete(`/tasks/${editingTaskId}`);
                     closeModal();
@@ -658,7 +662,7 @@ export const renderCalendarPage = () => {
 
         btnSave.onclick = async () => {
             const taskName = quickInput.value.trim();
-            if (!taskName) return alert("Mestre, dê um nome para a tarefa! 😉");
+            if (!taskName) return alert("Dê um nome para a tarefa! 😉");
 
             const payload = {
                 name: taskName,
@@ -695,10 +699,13 @@ export const renderCalendarPage = () => {
         // Escuta por novas tarefas criadas pela IA
         document.addEventListener('ploc-task-created', () => {
             loadTasks();
-            if (window.plocControls) window.plocControls.speak("Calendário atualizado, mestre!");
+            if (window.plocControls) window.plocControls.speak("Calendário atualizado!");
         });
 
     }, 0);
 
-    return container;
+        return container;
+    }
 };
+
+export default CalendarPage;

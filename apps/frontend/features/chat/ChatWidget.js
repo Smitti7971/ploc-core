@@ -1,4 +1,4 @@
-import { apiClient } from '../../shared/api/client.js?v=0.0.9';
+import { apiClient } from '../../shared/api/client.js?v=0.1.3';
 
 /**
  * ChatLogic
@@ -13,7 +13,7 @@ export const initChatLogic = () => {
 
         if (!token) {
             window.plocControls.updateMode('active');
-            window.plocControls.speak("Mestre, para eu te ajudar com inteligência total, você precisa entrar primeiro! 😉");
+            window.plocControls.speak("Para eu te ajudar com inteligência total, você precisa entrar primeiro! 😉");
             return;
         }
         
@@ -34,7 +34,7 @@ export const initChatLogic = () => {
             } else {
                 // Resposta de texto comum (skipFiller = true)
                 window.plocControls.updateMode('active');
-                window.plocControls.speak(data.message || "Entendido, mestre!", false, true);
+                window.plocControls.speak(data.message || "Entendido!", false, true);
             }
         } catch (error) {
             console.error('Erro no Chat:', error);

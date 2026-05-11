@@ -22,14 +22,30 @@ enum TaskStatus {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
-  name      String?
-  password  String?
-  avatar    String?   // URL ou Base64 da foto de perfil
-  createdAt DateTime  @default(now())
-  routines  Routine[]
-  tasks     Task[]
+  id                   String    @id @default(uuid())
+  name                 String?
+  username             String?   @unique
+  email                String    @unique
+  password             String?
+  phone                String?
+  birthDate            DateTime? // birth_date
+  gender               String?
+  profilePhoto         String?   // profile_photo (Avatar)
+  timezone             String?   @default("UTC")
+  language             String?   @default("pt-BR")
+  country              String?
+  city                 String?
+  onboardingCompleted  Boolean   @default(false)
+  aiPersonality        String?   // Estilo da IA
+  aiGoal               String?   // Objetivo principal
+  planType             String?   @default("FREE")
+  accountStatus        String?   @default("ACTIVE")
+  lastLoginAt          DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  
+  routines             Routine[]
+  tasks                Task[]
 }
 
 model Routine {
@@ -38,7 +54,7 @@ model Routine {
   category    String   // TREINO, ESTUDO, TRABALHO, etc
   description String?
   config      Json?    // Estrutura para dias da semana, horários, etc
-  userId      Int
+  userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   tasks       Task[]
   isActive    Boolean  @default(true)
@@ -66,7 +82,7 @@ model Task {
   status        TaskStatus @default(PENDENTE)
   tags          String?    // Tags separadas por vírgula
   completed     Boolean    @default(false)
-  userId        Int
+  userId        String
   user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   routineId     Int?
   routine       Routine?   @relation(fields: [routineId], references: [id], onDelete: SetNull)

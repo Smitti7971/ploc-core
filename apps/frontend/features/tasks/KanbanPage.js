@@ -2,7 +2,8 @@
  * Componente: KanbanPage
  * Quadro Kanban Premium do Ploc
  */
-export const renderKanbanPage = () => {
+const KanbanPage = {
+    render: async () => {
     const container = document.createElement('div');
     container.className = 'kanban-container';
 
@@ -55,5 +56,8 @@ export const renderKanbanPage = () => {
         }
     }, 0);
 
-    return container;
+        return container;
+    }
 };
+
+export default KanbanPage;

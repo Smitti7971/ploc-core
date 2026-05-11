@@ -1,5 +1,10 @@
 # Agent Instructions
 
+## 🧭 Governança de Conhecimento
+1. **Fonte da Verdade**: O arquivo `docs/knowledge/MAPA_DO_PROJETO.md` é a autoridade máxima.
+2. **Histórico e Auditoria**: Arquivos em `archives/history/` e `archives/deleteds/` são registros fósseis. **NUNCA** use-os como referência para novos designs ou lógicas.
+3. **Plano de Voo**: Toda tarefa complexa deve começar com um `docs/execution/current-task.md`.
+
 ## 🔥 BLOCO PRINCIPAL
 
 ### Fluxo obrigatório de execução

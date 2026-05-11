@@ -17,6 +17,29 @@ class UserService {
         return user;
     }
 
+    async updateProfile(userId, data) {
+        // Campos que não podem ser alterados diretamente por esta rota
+        const { id, password, email, createdAt, updatedAt, ...safeData } = data;
+        
+        // Converte birthDate para objeto Date se presente
+        if (safeData.birthDate) {
+            safeData.birthDate = new Date(safeData.birthDate);
+        }
+
+        // Remove campos nulos ou indefinidos
+        Object.keys(safeData).forEach(key => {
+            if (safeData[key] === null || safeData[key] === undefined || safeData[key] === '') {
+                delete safeData[key];
+            }
+        });
+
+        return userRepository.update(userId, safeData);
+    }
+
+    async deleteAccount(id) {
+        return await userRepository.delete(id);
+    }
+
     async seedTestData() {
         const users = [
             { name: 'Smitti Admin', email: 'admin@ploc.com' },

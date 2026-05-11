@@ -4,35 +4,32 @@
 
 const routes = {
     'landing': async () => {
-        const { renderLandingPage } = await import('../features/auth/LandingPage.js?v=0.0.9');
-        return renderLandingPage();
-    },
-    'login': async () => {
-        const { renderLogin } = await import('../features/auth/LoginPage.js?v=0.0.9');
-        return renderLogin();
+        const { default: LandingPage } = await import('../features/auth/LandingPage.js?v=0.1.3');
+        return LandingPage.render();
     },
     'dashboard': async () => {
-        const { renderDashboard } = await import('../features/dashboard/DashboardPage.js?v=0.0.9');
-        return renderDashboard();
+        const { default: DashboardPage } = await import('../features/dashboard/DashboardPage.js?v=0.1.3');
+        return DashboardPage.render();
     },
     'calendar': async () => {
-        const { renderCalendarPage } = await import('../features/calendar/CalendarPage.js?v=0.0.9');
-        return renderCalendarPage();
+        const { default: CalendarPage } = await import('../features/calendar/CalendarPage.js?v=0.1.3');
+        return CalendarPage.render();
     },
     'kanban': async () => {
-        const { renderKanbanPage } = await import('../features/tasks/KanbanPage.js?v=0.0.9');
-        return renderKanbanPage();
+        const { default: KanbanPage } = await import('../features/tasks/KanbanPage.js?v=0.1.3');
+        return KanbanPage.render();
     },
     'settings': async () => {
-        const { SettingsPage } = await import('../features/settings/SettingsPage.js?v=0.0.9');
-        const container = document.createElement('div');
-        container.innerHTML = SettingsPage.render();
-        setTimeout(() => SettingsPage.afterRender(container), 0);
-        return container;
+        const { SettingsPage } = await import('../features/settings/SettingsPage.js?v=0.1.3');
+        return SettingsPage.render();
+    },
+    'user-settings': async () => {
+        const { UserSettingsPage } = await import('../features/settings/UserSettingsPage.js?v=0.1.3');
+        return UserSettingsPage.render();
     },
     'routines': async () => {
-        const { renderRoutinesPage } = await import('../features/routines/RoutinesPage.js?v=0.0.9');
-        return renderRoutinesPage();
+        const { default: RoutinesPage } = await import('../features/routines/RoutinesPage.js?v=0.1.3');
+        return RoutinesPage.render();
     }
 };
 
@@ -41,13 +38,32 @@ export const router = async () => {
     if (!app) return;
 
     const hash = window.location.hash.slice(1) || 'landing';
+    
+    // Lista de rotas que exigem autenticação
+    const protectedRoutes = ['dashboard', 'calendar', 'kanban', 'settings', 'user-settings', 'routines'];
+    const token = localStorage.getItem('ploc_token');
+
+    if (protectedRoutes.includes(hash) && !token) {
+        console.warn('Acesso negado: Token não encontrado.');
+        window.location.hash = '#landing';
+        return;
+    }
+
     const renderFunc = routes[hash] || routes['landing'];
     
     try {
         app.innerHTML = ''; 
         const view = await renderFunc();
-        if (view instanceof HTMLElement) {
+        
+        if (typeof view === 'string') {
+            app.innerHTML = view;
+        } else if (view instanceof HTMLElement) {
             app.appendChild(view);
+        }
+
+        // Atualiza a interface do Mascote Único APÓS a página estar no DOM
+        if (window.updatePlocUI) {
+            window.updatePlocUI(hash);
         }
     } catch (error) {
         console.error('Erro ao carregar rota:', error);

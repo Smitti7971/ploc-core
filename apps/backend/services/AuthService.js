@@ -10,7 +10,7 @@ const authConfig = require('../config/auth');
 class AuthService {
     async registerUser({ name, email, password }) {
         const cleanEmail = email?.trim().toLowerCase();
-        const cleanName = name?.trim();
+        const cleanName = name?.trim() || 'Mestre';
 
         if (!cleanEmail || !password || password.trim() === '') {
             throw new Error('Email e senha válidos são obrigatórios');

@@ -8,6 +8,7 @@ const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 const authMiddleware = require('./middleware/authMiddleware');
 const healthRoutes = require('./routes/healthRoutes');
 const routineRoutes = require('./routes/routineRoutes');
@@ -16,6 +17,8 @@ const path = require('path');
 
 const app = express();
 app.use('/audio', express.static(path.join(__dirname, 'public/audio')));
+app.use(express.static(path.join(__dirname, '../frontend')));
+
 const port = process.env.PORT || 3000;
 
 // --- LOGGER DE ACESSO (Customizado) ---
@@ -120,6 +123,12 @@ app.get('/api/ping-routines', (req, res) => res.json({ message: "Routine route i
 
 // Rotas de IA (Proteção agora é interna por rota)
 app.use('/api/ai', aiRoutes);
+
+// Rotas de Upload e Storage
+app.use('/api', uploadRoutes);
+app.post('/api/test-post', (req, res) => res.json({ message: "POST Direto funcionando! 🚀" }));
+
+console.log('✅ Rota de Upload Registrada em: /api/upload');
 
 // --- GESTÃO DE ERROS GLOBAL (Rede de Proteção) ---
 app.use((err, req, res, next) => {

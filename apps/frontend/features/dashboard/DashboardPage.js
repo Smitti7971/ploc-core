@@ -1,174 +1,347 @@
-import { createPlocAvatar } from '../../shared/components/PlocAvatar.js?v=0.0.9';
-import { initChatLogic } from '../chat/ChatWidget.js?v=0.0.9';
+import { apiClient } from '../../shared/api/client.js?v=0.1.3';
 
-export const renderDashboard = () => {
-    const container = document.createElement('div');
-    container.className = 'dashboard-container';
+const DashboardPage = {
+    render: async () => {
+        const container = document.createElement('div');
+        container.className = 'dashboard-container';
+        Object.assign(container.style, {
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            width: '100vw',
+            height: '100vh',
+            background: '#020617',
+            overflow: 'hidden',
+            margin: '0',
+            padding: '0',
+            border: 'none',
+            zIndex: '10'
+        });
 
-    // Recupera dados do usuário
-    const user = JSON.parse(localStorage.getItem('ploc_user') || '{}');
-    const userName = user.name || 'MESTRE';
+        // Recupera dados do usuário
+        let user = {};
+        try {
+            const storedUser = localStorage.getItem('ploc_user');
+            if (storedUser && storedUser !== 'undefined') {
+                user = JSON.parse(storedUser);
+            }
+        } catch (e) {
+            console.error('Erro ao recuperar usuário:', e);
+            user = {};
+        }
 
-    container.innerHTML = `
-        <div style="max-width: 600px; margin: 0 auto;">
-            <!-- Header do Dashboard -->
-            <header class="dashboard-header" style="display: flex; align-items: center; gap: 1rem;">
-                <div id="btn-back-landing" class="flex-center" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.05); cursor: pointer;">
-                    <span class="material-symbols-rounded">arrow_back</span>
-                </div>
-                <div style="flex: 1;">
-                    <h1 style="font-size: 1.5rem; margin: 0; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">
-                        OLÁ, ${userName.split(' ')[0]}
-                    </h1>
-                    <p style="color: var(--text-dim); font-size: 0.8rem; margin: 0.5rem 0 0 0;">Seu sócio está pronto para agir.</p>
-                </div>
+        container.innerHTML = `
+            <style>
+                /* Reset Radical para garantir o Viewport */
+                html, body { 
+                    margin: 0 !important; 
+                    padding: 0 !important; 
+                    overflow: hidden !important; 
+                    width: 100% !important; 
+                    height: 100% !important; 
+                    background: #020617;
+                }
+                * { box-sizing: border-box; }
                 
-                <!-- Cápsula Camaleão (Transformável) -->
-                <div id="capsule-container" class="glass-pill" style="
-                    display: flex; align-items: center; padding: 0.4rem;
-                    cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-                    position: relative; min-width: 100px; justify-content: space-between;
-                ">
-                    <!-- Estado Inicial: Foto e Nome -->
-                    <div id="capsule-user" class="flex-center" style="gap: 0.8rem; padding: 0 0.6rem;">
-                        <div style="
-                            width: 32px; height: 32px; border-radius: 50%;
-                            background: linear-gradient(145deg, var(--accent), #1d4ed8);
-                            display: flex; align-items: center; justify-content: center;
-                            overflow: hidden;
-                        ">
-                            <span class="material-symbols-rounded" style="font-size: 1.1rem;">person</span>
-                        </div>
-                        <span style="font-size: 0.75rem; font-weight: 700; letter-spacing: 1px;">${userName.split(' ')[0]}</span>
-                    </div>
+                #dashboard-carousel::-webkit-scrollbar { display: none; }
+                @keyframes bounceX {
+                    0%, 100% { transform: translate(0, -50%); }
+                    50% { transform: translate(10px, -50%); }
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+            </style>
 
-                    <div id="capsule-actions" style="display: none; align-items: center; gap: 0.6rem; width: 100%; justify-content: space-around;">
-                        <div id="do-logout" class="flex-center" style="width: 42px; height: 22px; border-radius: 12px; background: #ef4444;">
-                            <span style="font-size: 0.55rem; font-weight: 800; color: #fff;">SAIR</span>
-                        </div>
-                        <div id="go-routines" class="flex-center" style="width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.1);">
-                            <span class="material-symbols-rounded" style="font-size: 1rem; color: #eab308;">auto_awesome</span>
-                        </div>
-                        <div id="go-settings" class="flex-center" style="width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.1);">
-                            <span class="material-symbols-rounded" style="font-size: 1rem; color: var(--accent);">settings</span>
-                        </div>
-                    </div>
-                </div>
-            </header>
+            <!-- Botão de Retorno (Top Left) -->
+            <button id="btn-return-landing" style="
+                position: fixed; top: 20px; left: 20px; z-index: 100;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                color: #fff; width: 45px; height: 45px; border-radius: 50%;
+                display: flex; align-items: center; justify-content: center;
+                cursor: pointer; transition: all 0.3s;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            " onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+                <span class="material-symbols-rounded">arrow_back</span>
+            </button>
 
-            <!-- Cards de Resumo -->
-            <div class="grid-2" style="margin-bottom: 2rem;">
-                <div id="btn-routines-card" class="stat-card accent" style="cursor: pointer;">
-                    <span class="material-symbols-rounded" style="color: var(--accent); margin-bottom: 1rem;">schedule</span>
-                    <h3 style="margin: 0; font-size: 0.8rem; color: var(--accent);">ROTINAS</h3>
-                    <p style="font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0 0 0;">--</p>
-                </div>
-                <div class="stat-card">
-                    <span class="material-symbols-rounded" style="color: var(--text-dim); margin-bottom: 1rem;">notifications_active</span>
-                    <h3 style="margin: 0; font-size: 0.8rem; color: var(--text-dim);">ALERTAS</h3>
-                    <p style="font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0 0 0;">03</p>
-                </div>
-            </div>
-
-            <!-- CENTRO DE INTELIGÊNCIA: O PLOC AVATAR -->
-            <div id="ploc-avatar-container" class="flex-center" style="
-                margin: 2rem 0; height: 180px; position: relative;
-                animation: fadeIn 1s ease;
+            <div id="dashboard-carousel" style="
+                width: 100vw; height: 100vh; 
+                display: flex; overflow-x: auto; 
+                scroll-snap-type: x mandatory;
+                scroll-behavior: smooth;
+                -ms-overflow-style: none; scrollbar-width: none;
             ">
-                <!-- O Avatar será injetado aqui via JS -->
-            </div>
-
-            <div id="ploc-status-text" style="text-align: center; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 3rem; letter-spacing: 1px;">
-                CLIQUE NO <span style="color: var(--accent); font-weight: 800;">PLOC</span> PARA CONVERSAR
-            </div>
-
-            <!-- Lista de Atividades Recentes -->
-            <section>
-                <h2 style="font-size: 1rem; margin-bottom: 1.5rem; letter-spacing: 2px;">ATIVIDADES RECENTES</h2>
-                <div class="flex-column" style="gap: 1rem;">
-                    <div class="activity-item">
-                        <div style="width: 10px; height: 10px; background: #22c55e; border-radius: 50%;"></div>
-                        <span style="font-size: 0.9rem;">Meta diária de hidratação batida!</span>
+                <!-- SLIDE 0: FINANÇAS -->
+                <section id="slide-financas" style="
+                    flex-shrink: 0;
+                    width: 100vw; height: 100vh; 
+                    scroll-snap-align: start;
+                    display: flex; align-items: center; justify-content: center;
+                    background: radial-gradient(circle at center, rgba(34, 197, 94, 0.05) 0%, transparent 70%);
+                    overflow: hidden;
+                    position: relative;
+                ">
+                    <h2 style="font-size: 3.5rem; font-weight: 950; letter-spacing: 15px; color: #fff; text-transform: uppercase; opacity: 0.15; filter: blur(1px); white-space: nowrap;">FINANÇAS</h2>
+                    <div style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); opacity: 0.2; animation: bounceX 2s infinite;">
+                        <span class="material-symbols-rounded" style="font-size: 1.5rem; color: #fff;">chevron_right</span>
                     </div>
-                </div>
-            </section>
-        </div>
-    `;
+                </section>
 
-    // Injeta o Avatar e Inicializa Lógica de IA
-    const avatarContainer = container.querySelector('#ploc-avatar-container');
-    const plocAvatar = createPlocAvatar();
-    avatarContainer.appendChild(plocAvatar);
+                <!-- SLIDE 1: LABORATÓRIO -->
+                <section id="slide-laboratorio" style="
+                    flex-shrink: 0;
+                    width: 100vw; height: 100vh; 
+                    scroll-snap-align: start;
+                    scroll-snap-stop: always;
+                    display: flex; flex-direction: column; 
+                    align-items: center; justify-content: flex-start; 
+                    gap: 1.5rem; padding: 2rem 1rem;
+                    position: relative;
+                    overflow: hidden;
+                ">
+                    <h1 style="color: var(--accent); letter-spacing: 2px; font-size: 1rem; font-weight: 900; margin: 1rem 0;">LABORATÓRIO</h1>
+                    
+                    <div id="upload-section" style="display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 320px; align-items: center;">
+                        <input type="file" id="file-input" style="display: none;" accept="image/*">
+                        <button id="btn-upload-trigger" class="glass-pill" style="padding: 1rem; width: 100%; border: 1px dashed var(--accent); color: var(--accent); font-weight: 800; cursor: pointer; font-size: 0.8rem;">
+                            <span class="material-symbols-rounded" style="vertical-align: middle; margin-right: 8px;">upload_file</span>
+                            ENVIAR FOTO
+                        </button>
+                    </div>
 
-    initChatLogic(); // Inicializa a ponte cognitiva
+                    <div id="preview-section" style="display: none; flex-direction: column; gap: 1.5rem; width: 100%; max-width: 320px; align-items: center; animation: fadeIn 0.5s ease;">
+                        <div id="image-frame" style="width: 200px; height: 200px; border-radius: 20px; overflow: hidden; border: 2px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3);">
+                            <img id="image-display" src="" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                        <div style="width: 100%; display: flex; gap: 0.8rem;">
+                            <button id="btn-change-trigger" style="flex: 1; background: rgba(255,255,255,0.05); color: #fff; padding: 0.8rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                                <span class="material-symbols-rounded" style="font-size: 1rem;">cached</span> TROCAR
+                            </button>
+                            <button id="btn-delete-image" style="flex: 1; background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 0.8rem; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                                <span class="material-symbols-rounded" style="font-size: 1rem;">delete</span> EXCLUIR
+                            </button>
+                        </div>
+                    </div>
 
-    setTimeout(() => {
-        // --- LÓGICA DA CÁPSULA CAMALEÃO ---
-        const capsule = container.querySelector('#capsule-container');
-        const capUser = container.querySelector('#capsule-user');
-        const capActions = container.querySelector('#capsule-actions');
-        const btnLogout = container.querySelector('#do-logout');
-        const btnSettings = container.querySelector('#go-settings');
+                    <div id="status-message" style="color: #64748b; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Aguardando...</div>
+                    
+                    <div style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%) rotate(180deg); opacity: 0.2; animation: bounceX 2s infinite;">
+                        <span class="material-symbols-rounded" style="font-size: 1.5rem; color: #fff;">chevron_right</span>
+                    </div>
+                    <div style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); opacity: 0.2; animation: bounceX 2s infinite;">
+                        <span class="material-symbols-rounded" style="font-size: 1.5rem; color: #fff;">chevron_right</span>
+                    </div>
+                </section>
 
-        if (capsule) {
-            capsule.onclick = (e) => {
-                e.stopPropagation();
-                const isOpen = capActions.style.display === 'flex';
-                if (!isOpen) {
-                    capUser.style.display = 'none';
-                    capActions.style.display = 'flex';
-                    capsule.style.minWidth = '100px';
-                } else {
-                    capUser.style.display = 'flex';
-                    capActions.style.display = 'none';
-                    capsule.style.minWidth = '100px';
+                <!-- SLIDE 2: TREINO -->
+                <section id="slide-treino" style="
+                    flex-shrink: 0;
+                    width: 100vw; height: 100vh; 
+                    scroll-snap-align: start;
+                    scroll-snap-stop: always;
+                    display: flex; align-items: center; justify-content: center;
+                    background: radial-gradient(circle at center, rgba(56, 189, 248, 0.05) 0%, transparent 70%);
+                    overflow: hidden;
+                    position: relative;
+                ">
+                    <div style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%) rotate(180deg); opacity: 0.2; animation: bounceX 2s infinite;">
+                        <span class="material-symbols-rounded" style="font-size: 1.5rem; color: #fff;">chevron_right</span>
+                    </div>
+                    <h2 style="font-size: 3.5rem; font-weight: 950; letter-spacing: 15px; color: #fff; text-transform: uppercase; opacity: 0.15; filter: blur(1px); white-space: nowrap;">TREINO</h2>
+                    <div style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); opacity: 0.2; animation: bounceX 2s infinite;">
+                        <span class="material-symbols-rounded" style="font-size: 1.5rem; color: #fff;">chevron_right</span>
+                    </div>
+                </section>
+
+                <!-- SLIDE 3: SAUDE -->
+                <section id="slide-saude" style="
+                    flex-shrink: 0;
+                    width: 100vw; height: 100vh; 
+                    scroll-snap-align: start;
+                    scroll-snap-stop: always;
+                    display: flex; align-items: center; justify-content: center;
+                    background: radial-gradient(circle at center, rgba(239, 68, 68, 0.05) 0%, transparent 70%);
+                    overflow: hidden;
+                    position: relative;
+                ">
+                    <div style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%) rotate(180deg); opacity: 0.2; animation: bounceX 2s infinite;">
+                        <span class="material-symbols-rounded" style="font-size: 1.5rem; color: #fff;">chevron_right</span>
+                    </div>
+                    <h2 style="font-size: 3.5rem; font-weight: 950; letter-spacing: 15px; color: #fff; text-transform: uppercase; opacity: 0.15; filter: blur(1px); white-space: nowrap;">SAÚDE</h2>
+                    <div style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); opacity: 0.2; animation: bounceX 2s infinite;">
+                        <span class="material-symbols-rounded" style="font-size: 1.5rem; color: #fff;">chevron_right</span>
+                    </div>
+                </section>
+
+                <!-- SLIDE 4: DIETA -->
+                <section id="slide-dieta" style="
+                    flex-shrink: 0;
+                    width: 100vw; height: 100vh; 
+                    scroll-snap-align: start;
+                    scroll-snap-stop: always;
+                    display: flex; align-items: center; justify-content: center;
+                    background: radial-gradient(circle at center, rgba(249, 115, 22, 0.05) 0%, transparent 70%);
+                    overflow: hidden;
+                    position: relative;
+                ">
+                    <div style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%) rotate(180deg); opacity: 0.2; animation: bounceX 2s infinite;">
+                        <span class="material-symbols-rounded" style="font-size: 1.5rem; color: #fff;">chevron_right</span>
+                    </div>
+                    <h2 style="font-size: 3.5rem; font-weight: 950; letter-spacing: 15px; color: #fff; text-transform: uppercase; opacity: 0.15; filter: blur(1px); white-space: nowrap;">DIETA</h2>
+                    <div style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); opacity: 0.2; animation: bounceX 2s infinite;">
+                        <span class="material-symbols-rounded" style="font-size: 1.5rem; color: #fff;">chevron_right</span>
+                    </div>
+                </section>
+
+                <!-- SLIDE 5: PLANTAS -->
+                <section id="slide-plantas" style="
+                    flex-shrink: 0;
+                    width: 100vw; height: 100vh; 
+                    scroll-snap-align: start;
+                    scroll-snap-stop: always;
+                    display: flex; flex-direction: column; 
+                    align-items: center; justify-content: flex-start; 
+                    gap: 1.5rem; padding: 2rem 1rem;
+                    background: radial-gradient(circle at center, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
+                    overflow-y: auto;
+                    position: relative;
+                ">
+                    <h1 style="color: #10b981; letter-spacing: 2px; font-size: 1rem; font-weight: 900; margin: 1rem 0;">BOTÂNICA</h1>
+                    
+                    <!-- Grid de Plantas -->
+                    <div id="plants-grid" style="
+                        display: grid; 
+                        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
+                        gap: 1rem; width: 100%; max-width: 600px;
+                        padding: 1rem;
+                    ">
+                        <!-- Card de Exemplo -->
+                        <div class="glass-card" style="
+                            background: rgba(255,255,255,0.03); 
+                            border: 1px solid rgba(16, 185, 129, 0.2);
+                            border-radius: 15px; padding: 1rem;
+                            display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+                        ">
+                            <div style="width: 50px; height: 50px; background: rgba(16, 185, 129, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <span class="material-symbols-rounded" style="color: #10b981;">potted_plant</span>
+                            </div>
+                            <span style="color: #fff; font-size: 0.8rem; font-weight: 700;">Suculenta</span>
+                            <span style="color: #64748b; font-size: 0.6rem;">Status: Saudável</span>
+                        </div>
+
+                        <!-- Botão Adicionar -->
+                        <div id="btn-add-plant" style="
+                            border: 2px dashed rgba(16, 185, 129, 0.3);
+                            border-radius: 15px; padding: 1rem;
+                            display: flex; flex-direction: column; align-items: center; justify-content: center;
+                            gap: 0.5rem; cursor: pointer; min-height: 110px;
+                            transition: all 0.3s;
+                        " onmouseover="this.style.background='rgba(16, 185, 129, 0.05)'" onmouseout="this.style.background='transparent'">
+                            <span class="material-symbols-rounded" style="color: #10b981; font-size: 2rem;">add_circle</span>
+                            <span style="color: #10b981; font-size: 0.7rem; font-weight: 800;">ADICIONAR</span>
+                        </div>
+                    </div>
+
+                    <div style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%) rotate(180deg); opacity: 0.2; animation: bounceX 2s infinite;">
+                        <span class="material-symbols-rounded" style="font-size: 1.5rem; color: #fff;">chevron_right</span>
+                    </div>
+                </section>
+            </div>
+        `;
+
+        setTimeout(() => {
+            const carousel = container.querySelector('#dashboard-carousel');
+            const fileInput = container.querySelector('#file-input');
+            const btnTrigger = container.querySelector('#btn-upload-trigger');
+            const btnChange = container.querySelector('#btn-change-trigger');
+            const btnDelete = container.querySelector('#btn-delete-image');
+            const btnReturn = container.querySelector('#btn-return-landing');
+            const uploadSection = container.querySelector('#upload-section');
+            const previewSection = container.querySelector('#preview-section');
+            const imgDisplay = container.querySelector('#image-display');
+            const statusMsg = container.querySelector('#status-message');
+
+            // Centraliza no slide PLANTAS (Slide 5) ao carregar para facilitar testes
+            if (carousel) {
+                carousel.scrollLeft = 5 * window.innerWidth;
+            }
+
+            const updateStatus = (msg, color = '#64748b') => {
+                statusMsg.textContent = msg;
+                statusMsg.style.color = color;
+            };
+
+            const handleFileUpload = async (file) => {
+                try {
+                    updateStatus('ENVIANDO PARA O MINIO...', 'var(--accent)');
+                    const response = await apiClient.uploadFile(file, '/upload');
+                    if (response && response.url) {
+                        imgDisplay.src = response.url;
+                        uploadSection.style.display = 'none';
+                        previewSection.style.display = 'flex';
+                        updateStatus('UPLOAD CONCLUÍDO!', '#22c55e');
+                    }
+                } catch (error) {
+                    updateStatus(`ERRO: ${error.message}`, '#ef4444');
                 }
             };
-            document.addEventListener('click', () => {
-                capUser.style.display = 'flex';
-                capActions.style.display = 'none';
-                capsule.style.minWidth = '120px';
-            });
-        }
 
-        if (btnLogout) {
-            btnLogout.onclick = () => {
-                localStorage.removeItem('ploc_token');
-                localStorage.removeItem('ploc_user');
-                window.location.hash = '#landing';
-                window.location.reload();
-            };
-        }
+            if (btnTrigger) btnTrigger.onclick = () => fileInput.click();
+            if (btnChange) btnChange.onclick = () => fileInput.click();
+            if (fileInput) {
+                fileInput.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) handleFileUpload(file);
+                };
+            }
 
-        if (btnSettings) {
-            btnSettings.onclick = () => {
-                window.location.hash = '#settings';
-            };
-        }
+            if (btnDelete) {
+                btnDelete.onclick = () => {
+                    imgDisplay.src = '';
+                    previewSection.style.display = 'none';
+                    uploadSection.style.display = 'flex';
+                    fileInput.value = '';
+                    updateStatus('IMAGEM REMOVIDA.', '#64748b');
+                };
+            }
 
-        const btnGoRoutines = container.querySelector('#go-routines');
-        if (btnGoRoutines) {
-            btnGoRoutines.onclick = (e) => {
-                e.stopPropagation();
-                window.location.hash = '#routines';
-            };
-        }
+            if (btnReturn) {
+                btnReturn.onclick = () => window.location.hash = '#landing';
+            }
 
-        const btnRoutinesCard = container.querySelector('#btn-routines-card');
-        if (btnRoutinesCard) {
-            btnRoutinesCard.onclick = () => {
-                window.location.hash = '#routines';
-            };
-        }
+            // Lógica para o laboratório de PLANTAS
+            const btnAddPlant = container.querySelector('#btn-add-plant');
+            const plantsGrid = container.querySelector('#plants-grid');
 
-        const btnBackLanding = container.querySelector('#btn-back-landing');
-        if (btnBackLanding) {
-            btnBackLanding.onclick = () => {
-                window.location.hash = '#landing';
-            };
-        }
+            if (btnAddPlant && plantsGrid) {
+                btnAddPlant.onclick = () => {
+                    const newCard = document.createElement('div');
+                    newCard.className = 'glass-card';
+                    newCard.style.cssText = `
+                        background: rgba(255,255,255,0.03); 
+                        border: 1px solid rgba(16, 185, 129, 0.2);
+                        border-radius: 15px; padding: 1rem;
+                        display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+                        animation: fadeIn 0.5s ease;
+                    `;
+                    newCard.innerHTML = `
+                        <div style="width: 50px; height: 50px; background: rgba(16, 185, 129, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <span class="material-symbols-rounded" style="color: #10b981;">nature</span>
+                        </div>
+                        <span style="color: #fff; font-size: 0.8rem; font-weight: 700;">Nova Planta</span>
+                        <span style="color: #64748b; font-size: 0.6rem;">Status: Teste</span>
+                    `;
+                    plantsGrid.insertBefore(newCard, btnAddPlant);
+                };
+            }
+        }, 100);
 
-    }, 0);
-
-    return container;
+        return container;
+    }
 };
+
+export default DashboardPage;

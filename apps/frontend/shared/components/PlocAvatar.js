@@ -1,4 +1,4 @@
-import { apiClient } from '../api/client.js?v=0.0.9';
+import { apiClient } from '../api/client.js?v=0.1.3';
 
 /**
  * Componente: PlocAvatar
@@ -15,57 +15,10 @@ export const createPlocAvatar = (config = {}) => {
     ploc.id = 'ploc-core';
     ploc.className = 'ploc-core';
     
-    if (isLanding) {
-        ploc.style.cssText = `
-            position: relative; margin: 0 auto;
-            width: 80px; height: 80px;
-            display: flex; align-items: center; justify-content: center;
-            transform: scale(1.2); z-index: 100;
-        `;
-    } else {
-        ploc.style.cssText = `
-            position: fixed; bottom: 2rem; right: 2rem; cursor: grab;
-            width: 80px; height: 80px;
-            display: flex; align-items: center; justify-content: center;
-            transform: scale(0.7); z-index: 9999; transition: transform 0.1s ease, opacity 0.5s ease;
-            touch-action: none; border-radius: 50%;
-        `;
-
-        ploc.onpointerdown = (e) => {
-            isDragging = true;
-            const rect = ploc.getBoundingClientRect();
-            offsetX = e.clientX - rect.left;
-            offsetY = e.clientY - rect.top;
-            ploc.style.cursor = 'grabbing';
-            ploc.style.transition = 'none'; // Fluidez total no drag
-            ploc.setPointerCapture(e.pointerId);
-        };
-
-        ploc.onpointermove = (e) => {
-            if (!isDragging) return;
-            
-            let x = e.clientX - offsetX;
-            let y = e.clientY - offsetY;
-
-            // Limites do Viewport (evita sair da tela)
-            const margin = 20;
-            const rect = ploc.getBoundingClientRect();
-            x = Math.max(margin, Math.min(x, window.innerWidth - rect.width - margin));
-            y = Math.max(margin, Math.min(y, window.innerHeight - rect.height - margin));
-
-            ploc.style.left = x + 'px';
-            ploc.style.top = y + 'px';
-            ploc.style.bottom = 'auto';
-            ploc.style.right = 'auto';
-        };
-
-        ploc.onpointerup = (e) => {
-            isDragging = false;
-            ploc.style.cursor = 'grab';
-            ploc.style.transition = 'transform 0.3s ease';
-            ploc.releasePointerCapture(e.pointerId);
-        };
-    }
+    ploc.style.cssText = `
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; touch-action: none;
+    `;
 
     // Elemento para Balão de Fala
     const speechBubble = document.createElement('div');
@@ -82,26 +35,90 @@ export const createPlocAvatar = (config = {}) => {
     `;
     ploc.appendChild(speechBubble);
 
-    // Campo de Entrada (Input de Chat) - Agora com blindagem total
+    // Campo de Entrada (Input de Chat)
     const chatInput = document.createElement('input');
     chatInput.type = 'text';
-    chatInput.className = 'ploc-chat-input';
-    chatInput.placeholder = 'Diga algo...';
-    chatInput.autocomplete = 'off';
-    chatInput.spellcheck = false;
-    chatInput.style.cssText = `
-        position: absolute; top: 120%; left: calc(50% - 90px); 
-        transform: translateY(-10px); opacity: 0; pointer-events: none;
-        background: rgba(255,255,255,0.05); border: 1px solid var(--accent);
-        padding: 0.8rem 1rem; border-radius: 15px; color: #fff; font-size: 0.8rem;
-        outline: none; backdrop-filter: blur(20px); width: 180px;
-        text-align: center; font-weight: 600; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-        transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        z-index: 10001; display: none;
-    `;
-    ploc.appendChild(chatInput);
+    chatInput.id = 'ploc-chat-input';
+    chatInput.name = 'ploc-chat-input';
+        chatInput.className = 'ploc-chat-input';
+        chatInput.placeholder = 'Diga algo...';
+        chatInput.autocomplete = 'off';
+        chatInput.spellcheck = false;
+        chatInput.style.cssText = `
+            position: absolute; top: 120%; left: calc(50% - 90px); 
+            transform: translateY(-10px); opacity: 0; pointer-events: none;
+            background: rgba(255,255,255,0.05); border: 1px solid var(--accent);
+            padding: 0.8rem 1rem; border-radius: 15px; color: #fff; font-size: 0.8rem;
+            outline: none; backdrop-filter: blur(20px); width: 180px;
+            text-align: center; font-weight: 600; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 10001; display: none;
+        `;
+        ploc.appendChild(chatInput);
+
+        chatInput.onkeypress = (e) => {
+            if (e.key === 'Enter' && chatInput.value.trim()) {
+                const text = chatInput.value.trim();
+                chatInput.value = '';
+                
+                stopAllAudio();
+                
+                let fillerText;
+                let fillerAudio;
+
+                if (isPissedOff) {
+                    fillerText = "Fala logo...";
+                    const randomPoke = Math.floor(Math.random() * 25) + 1;
+                    fillerAudio = audioCache[`poke-${randomPoke}.mp3`];
+                } else {
+                    const userName = (() => {
+                        try {
+                            const u = JSON.parse(localStorage.getItem('ploc_user') || '{}');
+                            return u.username || u.name?.split(' ')[0] || 'amigo';
+                        } catch (e) { return 'amigo'; }
+                    })();
+
+                    const fillersMap = {
+                        'pensando.mp3': `Deixa eu analisar isso aqui, ${userName}...`,
+                        'organizando.mp3': 'Faz sentido. Vamos organizar isso.',
+                        'logica.mp3': 'Entendi a lógica. Veja bem...',
+                        'processando.mp3': `Processando seu pedido, ${userName}...`,
+                        'calculando.mp3': 'Ok, estou calculando as variáveis...'
+                    };
+                    const fillerFilesMap = Object.keys(fillersMap);
+                    const randomFillerName = fillerFilesMap[Math.floor(Math.random() * fillerFilesMap.length)];
+                    fillerText = fillersMap[randomFillerName];
+                    fillerAudio = audioCache[randomFillerName];
+                }
+                
+                if (fillerAudio) {
+                    currentFillerAudio = fillerAudio;
+                    fillerAudio.currentTime = 0;
+                    fillerAudio.play().catch(() => {});
+                }
+                
+                eyesElements.forEach(({ eye }) => eye.classList.add('ploc-thinking'));
+                
+                speechBubble.textContent = fillerText;
+                speechBubble.style.display = 'block';
+                speechBubble.style.opacity = '1';
+                speechBubble.style.transform = 'translateX(-50%) translateY(0)';
+
+                document.dispatchEvent(new CustomEvent('ploc-message', { 
+                    detail: { text: text, fillerText: fillerText, isPissedOff: isPissedOff } 
+                }));
+            }
+        };
+
+    // Label de Acessibilidade
+    const label = document.createElement('label');
+    label.setAttribute('for', 'ploc-chat-input');
+    label.innerText = 'Conversar com o Ploc';
+    label.style.display = 'none';
+    ploc.appendChild(label);
 
     const showInput = () => {
+        if (!chatInput) return;
         chatInput.style.display = 'block';
         setTimeout(() => {
             chatInput.style.pointerEvents = 'all';
@@ -109,55 +126,6 @@ export const createPlocAvatar = (config = {}) => {
             chatInput.style.transform = 'translateY(0)';
             chatInput.focus({ preventScroll: true });
         }, 50);
-    };
-
-    chatInput.onkeypress = (e) => {
-        if (e.key === 'Enter' && chatInput.value.trim()) {
-            const text = chatInput.value.trim();
-            chatInput.value = '';
-            
-            stopAllAudio(); // Corta a fala atual IMEDIATAMENTE (Interrupção por novo input)
-            
-            let fillerText;
-            let fillerAudio;
-
-            if (isPissedOff) {
-                fillerText = "Fala logo...";
-                const randomPoke = Math.floor(Math.random() * 25) + 1;
-                fillerAudio = audioCache[`poke-${randomPoke}.mp3`];
-            } else {
-                // MODO SENTINELA + ZERO LATÊNCIA REAL
-                const fillersMap = {
-                    'pensando.mp3': 'Deixa eu analisar isso aqui...',
-                    'organizando.mp3': 'Faz sentido. Vamos organizar isso.',
-                    'logica.mp3': 'Entendi a lógica. Veja bem...',
-                    'processando.mp3': 'Processando seu pedido, Mestre...',
-                    'calculando.mp3': 'Ok, estou calculando as variáveis...'
-                };
-                const fillerFilesMap = Object.keys(fillersMap);
-                const randomFillerName = fillerFilesMap[Math.floor(Math.random() * fillerFilesMap.length)];
-                fillerText = fillersMap[randomFillerName];
-                fillerAudio = audioCache[randomFillerName];
-            }
-            
-            if (fillerAudio) {
-                currentFillerAudio = fillerAudio;
-                fillerAudio.currentTime = 0;
-                fillerAudio.play().catch(() => {});
-            }
-            
-            eyesElements.forEach(({ eye }) => eye.classList.add('ploc-thinking'));
-            
-            // Exibe o balão com o filler IMEDIATAMENTE
-            speechBubble.textContent = fillerText;
-            speechBubble.style.display = 'block';
-            speechBubble.style.opacity = '1';
-            speechBubble.style.transform = 'translateX(-50%) translateY(0)';
-
-            document.dispatchEvent(new CustomEvent('ploc-message', { 
-                detail: { text: text, fillerText: fillerText, isPissedOff: isPissedOff } 
-            }));
-        }
     };
 
     // Olhos e Camadas permanecem similares, mas com escala ajustada
@@ -189,18 +157,25 @@ export const createPlocAvatar = (config = {}) => {
 
     const eyesContainer = document.createElement('div');
     eyesContainer.className = 'flex-center';
-    eyesContainer.style.gap = '14px';
+    eyesContainer.style.gap = '10%'; // Gap proporcional ao tamanho do Ploc
+    eyesContainer.style.width = '100%';
+    eyesContainer.style.height = '100%';
 
     for (let i = 0; i < 2; i++) {
         const eye = document.createElement('div');
         eye.className = 'ploc-eye';
         eye.style.cssText = `
-            width: 14px; height: 22px; background: var(--accent); 
-            border-radius: 10px; transition: all 0.3s ease;
+            width: 12%; height: 18%; background: var(--accent); 
+            border-radius: 50% / 30%; transition: all 0.3s ease;
             transform-origin: center; position: relative;
         `;
         const pupil = document.createElement('div');
         pupil.className = 'ploc-pupil';
+        pupil.style.cssText = `
+            width: 30%; height: 30%; background: #000; 
+            border-radius: 50%; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); opacity: 0;
+        `;
         eye.appendChild(pupil);
         eyesElements.push({ eye, pupil });
         eyesContainer.appendChild(eye);
@@ -385,7 +360,7 @@ export const createPlocAvatar = (config = {}) => {
         if (mode === 'sleeping') {
             ploc.style.opacity = '0.4';
             eyesElements.forEach(({ eye }) => {
-                eye.style.height = '4px';
+                eye.style.height = '4%'; // Proporcional
                 eye.style.borderRadius = '10px';
                 eye.classList.remove('ploc-eye-blink');
             });
@@ -393,8 +368,8 @@ export const createPlocAvatar = (config = {}) => {
         } else {
             ploc.style.opacity = '1';
             eyesElements.forEach(({ eye }) => {
-                eye.style.height = '22px';
-                eye.style.borderRadius = '10px';
+                eye.style.height = '18%'; // Proporcional
+                eye.style.borderRadius = '50% / 30%';
                 eye.classList.add('ploc-eye-blink');
             });
         }

@@ -7,11 +7,10 @@ const taskRepository = require('../repositories/TaskRepository');
  */
 class RoutineService {
     async getUserRoutines(userId) {
-        return routineRepository.findAllByUserId(parseInt(userId));
+        return routineRepository.findAllByUserId(userId);
     }
 
     async createRoutine(userId, data) {
-        const uid = parseInt(userId);
         const { name, category, description, config } = data;
 
         if (!name || !category || !config || !config.days) {
@@ -23,7 +22,7 @@ class RoutineService {
             category,
             description,
             config,
-            userId: uid
+            userId: userId
         });
 
         // Projetar tarefas iniciais para as próximas 4 semanas
@@ -97,10 +96,9 @@ class RoutineService {
 
     async removeRoutine(userId, routineId) {
         const rid = parseInt(routineId);
-        const uid = parseInt(userId);
         const routine = await routineRepository.findById(rid);
 
-        if (!routine || routine.userId !== uid) {
+        if (!routine || routine.userId !== userId) {
             throw new Error('Acesso negado ou rotina não encontrada');
         }
 
