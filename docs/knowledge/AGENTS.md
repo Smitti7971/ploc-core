@@ -4,27 +4,27 @@
 1. **Fonte da Verdade**: O arquivo `docs/knowledge/MAPA_DO_PROJETO.md` é a autoridade máxima.
 2. **Histórico e Auditoria**: Arquivos em `archives/history/` e `archives/deleteds/` são registros fósseis. **NUNCA** use-os como referência para novos designs ou lógicas.
 3. **Plano de Voo**: Toda tarefa complexa deve começar com um `docs/execution/current-task.md`.
+4. **Regras de Nomenclatura**:
+   - Pastas: `kebab-case` (ex: `user-services`).
+   - Arquivos JS: `camelCase` (ex: `authController.js`).
+   - Documentação: `UPPER_CASE` para arquivos mestres, `kebab-case` para o resto.
 
 ## 🔥 BLOCO PRINCIPAL
 
 ### Fluxo obrigatório de execução
-1. **Alinhamento**: Ler `MAPA_DO_PROJETO.md` e `BLUEPRINT_SAAS.md` para entender o contexto macro.
-2. **Co-Criação e Estratégia (DRAFT)**: Antes de qualquer código, criar um rascunho em `/docs/plans` detalhando a **Lógica** e as **Engrenagens**.
-3. **Aprovação**: Aguardar o "OK" consciente do USER sobre a lógica proposta.
-4. **Plano Operacional (Rigidez)**: Criar o `/docs/execution/current-task.md` seguindo as **5 Fases do MASTER_PLANEJAMENTO_ESTRATEGICO.md**:
-   - (1. Entender, 2. Preparar, 3. Executar, 4. Resultado, 5. Validar).
-5. **Execução**: Executar um passo de cada vez, registrando o sucesso/falha no `current-task.md`.
-   - **OBRIGATÓRIO**: Atualizar o `current-task.md` IMEDIATAMENTE após cada passo, usando o formato de emojis (✅, ⚠️, ❌).
-   - **REGRA DE TELEMETRIA**: Após qualquer deploy, é obrigatório aguardar 180s (3 min) e analisar os logs do servidor via API para validar a saúde do serviço antes de finalizar a tarefa.
-6. **Validação**: Realizar testes operacionais (logs, fumaça, funcionalidade).
-7. **Sincronia e Evolução**: 
-   - Atualizar o `MAPA_DO_PROJETO.md` se necessário.
-   - **IMPORTANTE**: Se uma nova prática eficaz ou um erro comum foi descoberto, atualizar o **Guia Mestre** correspondente na seção "Lições de Batalha".
-8. **Finalização e Melhoria**: 
-   - **Auditoria de Deslizes**: Analisar a execução em busca de "engasgos" (falta de informação, erros de ferramenta, atrasos).
-   - **Conserto Imediato**: Se um deslize foi causado por falta de clareza, atualizar o Guia Mestre correspondente na hora.
-   - Mover o `current-task.md` para o histórico indexado (`/docs/history`).
-   - Mover o rascunho de estratégia (`/docs/plans/DRAFT-xxx.md`) para `/docs/deleteds`.
+1. **Alinhamento**: Ler todos os arquivos de **Knowledge** (`MAPA_DO_PROJETO.md`, `PILHA_TECNOLOGICA.md`, `FERRAMENTAS.md`, `MODELO_DE_DADOS.md`, `ESTADO_DAS_APIS.md`) para entender o contexto total, restrições e modelos.
+2. **Auditoria de Terreno**: Antes de qualquer DRAFT, validar fisicamente o filesystem (usar `ls`, `grep`, `run_command`) para garantir que os arquivos citados na documentação existem e estão operantes.
+3. **Co-Criação e Estratégia (DRAFT)**: Criar um rascunho em `/docs/plans` detalhando a Lógica.
+   - **REGRA DE OURO**: Proibido sugerir bibliotecas (React, Tailwind, etc). Manter **Vanilla JS SPA** e **Mídia Stateless (MinIO)**.
+4. **Aprovação**: Aguardar o "OK" consciente do USER sobre a lógica proposta.
+5. **Plano Operacional (Rigidez)**: Criar o `/docs/execution/current-task.md` seguindo rigorosamente as **5 Fases** detalhadas no [MASTER_PLANEJAMENTO_ESTRATEGICO.md](../guides/MASTER_PLANEJAMENTO_ESTRATEGICO.md).
+6. **Execução**: Executar um passo de cada vez, registrando o sucesso/falha no `current-task.md` com emojis.
+7. **Validação de Saúde (Telemetria)**:
+   - Seguir rigorosamente o protocolo de pós-voo detalhado no [MASTER_DEPLOY_COOLIFY.md](../guides/MASTER_DEPLOY_COOLIFY.md).
+8. **Sincronia e Finalização**: 
+   - Atualizar todos os arquivos de **Knowledge** afetados pela tarefa (`MAPA_DO_PROJETO.md`, `PILHA_TECNOLOGICA.md`, `FERRAMENTAS.md`, `MODELO_DE_DADOS.md`, `ESTADO_DAS_APIS.md`).
+   - Mover `current-task.md` para `/docs/history`.
+   - Mover rascunhos para `docs/knowledge/archives/deleteds/`.
 
 ---
 

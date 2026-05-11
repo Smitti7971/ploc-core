@@ -6,7 +6,8 @@ import { apiClient } from '../../shared/api/client.js?v=0.1.3';
 const LandingPage = {
     render: async () => {
         const token = localStorage.getItem('ploc_token');
-        const user = token ? JSON.parse(localStorage.getItem('ploc_user') || '{}') : null;
+        const plocUserRaw = localStorage.getItem('ploc_user');
+        const user = (token && plocUserRaw && plocUserRaw !== 'undefined') ? JSON.parse(plocUserRaw) : null;
 
         const menuItems = [
             { icon: 'dashboard', route: '#dashboard' },
@@ -154,7 +155,9 @@ const LandingPage = {
                                 <span style="font-size: 0.85rem; color: #fff; font-weight: 800; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
                                     ${(() => {
                     try {
-                        const userData = JSON.parse(localStorage.getItem('ploc_user') || '{}');
+                        const userDataRaw = localStorage.getItem('ploc_user');
+                        if (!userDataRaw || userDataRaw === 'undefined') return 'USUÁRIO';
+                        const userData = JSON.parse(userDataRaw);
                         return userData.username || userData.name?.split(' ')[0] || 'USUÁRIO';
                     } catch (e) { return 'USUÁRIO'; }
                 })()}

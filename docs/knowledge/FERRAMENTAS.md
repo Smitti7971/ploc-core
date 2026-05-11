@@ -1,13 +1,19 @@
 # FERRAMENTAS INSTALADAS 🛠️
 
 ## Utilitários de CLI
-- **jq (v1.8.1)**: Instalado via `winget`. Usado para processamento de JSON em chamadas de API.
-- **curl (nativo)**: Usado para requisições HTTP.
-- **winget (v1.28.240)**: Gerenciador de pacotes principal do Windows.
+- **jq (v1.8.1)** ✅ (validado via CMD)
+- **curl (v8.13.0)** ✅ (validado via CMD)
+- **winget (v1.28.240)** ✅ (validado via CMD)
 
 ## Ambiente de Desenvolvimento
-- **PowerShell**: Shell principal para automação e comandos de infraestrutura.
-- **Git**: Controle de versão sincronizado com GitHub.
+- **PowerShell (v5.1.22621)** ✅ (validado via CMD)
+- **Git (v2.54.0.windows.1)** ✅ (validado via CMD)
+- **Node.js (v25.9.0)** ✅ (validado via CMD)
+- **NPM (v11.12.1)** ✅ (validado via CMD)
+- **Prisma CLI (v7.8.0)** ✅ (validado via CMD)
+- **VS Code Extension: Live Server** ✅ (confirmado pelo usuário)
+- **PWA (Progressive Web App)** ✅ (validado: manifest.json e sw.js ativos)
 
 ## Notas de Configuração
-- O `jq` exige reinicialização do terminal/IDE após a instalação para ser reconhecido no PATH.
+- O `jq` está configurado no PATH e funcional.
+- O ambiente utiliza o Prisma CLI global/npx para gestão do banco de dados.

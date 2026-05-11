@@ -1,36 +1,28 @@
-# GUIA MESTRE: Deploy Simplificado (Coolify) ☁️🚀
+# GUIA MESTRE: Deploy Simplificado (Coolify) ☁️🚀 ✅ (validado: 2026-05-11)
 
-Este é o fluxo obrigatório e simplificado para atualizações do Ploc. Nenhuma etapa deve ser pulada.
+Este é o fluxo obrigatório para atualizações do Ploc em produção.
 
 ## 🛠️ O Fluxo de 4 Passos
 
-### 1. UPLOAD PARA O GIT (O Registro)
-Antes de qualquer ação na nuvem, o código local deve ser enviado para o repositório oficial.
-- **Ação do Agente**: Executar `git add .`, `git commit` e `git push`.
-- **Objetivo**: Garantir que o Coolify puxe a versão mais recente.
+### 1. SINCRONIA GIT (O Registro)
+Antes de qualquer ação, o código deve estar na `main` do GitHub.
+- **Ação**: `git add .`, `git commit -m "feat:..."`, `git push`.
 
-### 2. INÍCIO DO DEPLOY (O Gatilho)
-O Agente dispara o comando para o Coolify iniciar a reconstrução do container.
-- **Ação do Agente**: Executar o comando `curl` via API na porta 8000 usando o UUID correto.
-- **UUIDs de Referência**: 
-  - Backend: `leaocf7ke5lgluo0bg2dco0w`
-  - Frontend: `a6n3eh22owgp057dd09t023a`
+### 2. DISPARO DO DEPLOY (Gatilho API)
+Usar os UUIDs reais validados no Levantamento Coolify:
+- **Backend API**: `leaocf7ke5lgluo0bg2dco0w`
+- **Frontend SPA**: `a6n3eh22owgp057dd09t023a`
+- **Comando**: `curl -X GET "https://coolify.midializando.cloud/api/v1/deploy?uuid=[UUID]&force=true"` (Requer API Key).
 
-### 3. AUDITORIA DE LOGS (A Telemetria Ativa)
-Em vez de apenas esperar, o Agente deve validar o sucesso através dos logs:
-- **Sucesso no Backend**: Procurar por "Servidor rodando" e "Conexão estabelecida com sucesso".
-- **Sucesso no Frontend**: Procurar por "start worker processes" do Nginx.
 
-### 4. CHECAGEM (A Validação Final)
-Após auditar os logs, realizar o teste de fumaça final.
-- **Ação**: Validar os endpoints de saúde e logs para garantir que não há erros silenciosos.
-- **Endpoints**:
-  - `https://backend.midializando.cloud/health`
-  - `https://ploc.midializando.cloud/`
+### 3. REGISTRO DE LOGS E VERSÕES  🛡️
+
+- **Registro**: Atualizar o `CHANGELOG.md` com versão do PLOC e registro das atualizações realizadas, para essa versão.  
+
 
 ---
 
-## 💡 Lições de Batalha (Não Esquecer!)
-- **PRISMA**: Sempre garantir que o `binaryTargets` no `schema.prisma` inclua `debian-openssl-3.0.x` para evitar crash em produção.
-- **PORTAS**: Backend (3000) | Frontend (80).
-- **SEGURANÇA**: Senhas apenas no `.env`. Nunca no Mapa do Projeto ou no código.
+## 💡 Lições de Batalha
+- **BinaryTargets**: O `schema.prisma` deve incluir `debian-openssl-3.0.x`.
+- **Domínios**: Sempre usar `.cloud` (conforme verificado no Coolify).
+- **Cache**: O deploy do frontend limpa o cache do servidor, mas o usuário pode precisar de Refresh forçado (F5).

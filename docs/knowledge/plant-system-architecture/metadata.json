@@ -1,0 +1,13 @@
+{
+  "title": "Arquitetura do Sistema de Diário de Plantas Pro",
+  "summary": "Documentação técnica da estrutura de dados e regras de negócio para o sistema de monitoramento botânico integrado ao calendário e IA.",
+  "category": "Architecture",
+  "tags": ["Database", "Postgres", "Prisma", "Plants", "Timeline", "IA"],
+  "lastUpdated": "2026-05-11T13:44:00Z",
+  "references": [
+    "Diretrizes do Usuário: ATUALIZAÇÃO OBRIGATÓRIA — SISTEMA DE DIÁRIO DE PLANTAS"
+  ],
+  "artifacts": [
+    "docs/knowledge/plant-system-architecture/artifacts/schema_design.md"
+  ]
+}
