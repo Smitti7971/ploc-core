@@ -33,6 +33,7 @@
 - **Categorias**: Saúde, Finanças, Trabalho, Hábito, Leitura, Meditação, Estudo, Música.
 
 ### 🎨 Arquitetura Frontend (Modular & Feature-Based)
+- **Landing Page (SUPREMA)**: Ponto de entrada, casa do Ploc, centro de interação primária e onde será centralizado as funcionalidades do projeto. ✅
 - **Design System v1**: Centralizado em `apps/frontend/css/app.css` (Única Fonte da Verdade). ✅
 - **Feature-Based Architecture**: Organização por domínios em `apps/frontend/features/` (auth, chat, dashboard, reminders, settings, tasks). ✅
 - **Shared Layer**: Componentes e utilitários globais em `apps/frontend/shared/` (api, components, config). ✅

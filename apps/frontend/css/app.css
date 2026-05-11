@@ -14,8 +14,15 @@
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 * {
@@ -24,7 +31,8 @@
     outline: none;
 }
 
-html, body {
+html,
+body {
     margin: 0;
     padding: 0;
     width: 100%;
@@ -42,8 +50,16 @@ html, body {
 }
 
 /* Utilitários Globais */
-.flex-center { display: flex; align-items: center; justify-content: center; }
-.flex-column { display: flex; flex-direction: column; }
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flex-column {
+    display: flex;
+    flex-direction: column;
+}
 
 .glass-card {
     background: var(--glass);
@@ -62,21 +78,37 @@ html, body {
 }
 
 /* Scrollbar minimalista */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
 
 /* Auth Components */
 .auth-container {
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    height: 100vh; padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding: 2rem;
     background: var(--bg-deep);
 }
 
 .auth-card {
-    width: 100%; max-width: 400px;
+    width: 100%;
+    max-width: 400px;
     padding: 2.5rem;
 }
 
@@ -84,106 +116,222 @@ html, body {
     width: 100%;
     background: rgba(255, 255, 255, 0.03);
     border: 1.5px solid rgba(255, 255, 255, 0.1);
-    padding: 1.1rem; border-radius: 12px;
-    color: #fff; font-size: 1rem;
-    outline: none; transition: all 0.2s;
+    padding: 1.1rem;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.2s;
 }
-.auth-input:focus { border-color: var(--accent); background: rgba(255, 255, 255, 0.05); }
+
+.auth-input:focus {
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.05);
+}
 
 .auth-button {
     width: 100%;
-    background: var(--accent); color: var(--bg-deep);
-    border: none; padding: 1.1rem; border-radius: 12px;
-    font-weight: 800; font-size: 1rem; cursor: pointer;
+    background: var(--accent);
+    color: var(--bg-deep);
+    border: none;
+    padding: 1.1rem;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 1rem;
+    cursor: pointer;
     box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);
 }
-.auth-button:disabled { opacity: 0.5; cursor: not-allowed; }
-.auth-button:active { transform: scale(0.98); }
+
+.auth-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.auth-button:active {
+    transform: scale(0.98);
+}
 
 /* Landing Page Specifics */
 .network-status {
-    position: absolute; top: 2rem; left: 2rem; padding: 0.6rem 1.2rem;
-    display: flex; align-items: center; gap: 0.8rem;
-    color: #fff; z-index: 200;
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+    padding: 0.6rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    color: #fff;
+    z-index: 200;
 }
 
-.status-dot { width: 8px; height: 8px; background: #94a3b8; border-radius: 50%; }
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: #94a3b8;
+    border-radius: 50%;
+}
 
-.auth-area-top { position: absolute; top: 2rem; right: 2rem; z-index: 200; }
+.auth-area-top {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    z-index: 200;
+}
 
 .bottom-panel {
-    position: absolute; bottom: -200px; left: 0; width: 100%;
-    background: rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(35px); -webkit-backdrop-filter: blur(35px);
-    border-radius: 0; border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 3rem 5%; transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 100; box-shadow: 0 -20px 50px rgba(0,0,0,0.5);
+    position: absolute;
+    bottom: -175px;
+    left: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border-radius: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: none;
+    padding: 3.5rem 5% 2rem 5%;
+    transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 100;
+    box-shadow: 0 -15px 40px rgba(0, 0, 0, 0.4);
 }
 
 /* Ploc Avatar & Animations */
 .ploc-core {
-    position: relative; width: 120px; height: 120px;
+    position: relative;
+    width: 120px;
+    height: 120px;
     background: linear-gradient(145deg, #f1f5f9, #cbd5e1);
-    border-radius: 50%; border: 1px solid rgba(255,255,255,0.3);
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 2px 2px 5px rgba(255,255,255,0.8);
-    cursor: pointer; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 2px 2px 5px rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     z-index: 10;
 }
 
 .ploc-effects {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none; z-index: 11;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 11;
 }
 
 .ploc-eye {
-    width: 8px; height: 20px; background: #1e293b;
-    border-radius: 10px; position: relative;
-    overflow: hidden; transition: all 0.3s ease;
+    width: 4px;
+    height: 20px;
+    background: #1e293b;
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
 }
 
 .ploc-pupil {
-    width: 4px; height: 4px; background: var(--accent);
-    border-radius: 50%; position: absolute;
-    top: 50%; left: 50%; transform: translate(-50%, -50%);
-    opacity: 0; transition: opacity 0.3s ease;
+    width: 4px;
+    height: 4px;
+    background: var(--accent);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 @keyframes plocZMove {
-    0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 0; }
-    10% { opacity: 1; }
-    100% { transform: translate(40px, -60px) scale(1.5) rotate(20deg); opacity: 0; }
+    0% {
+        transform: translate(0, 0) scale(1) rotate(0deg);
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(40px, -60px) scale(1.5) rotate(20deg);
+        opacity: 0;
+    }
 }
 
 @keyframes plocWorkMove {
-    0%, 100% { transform: translateX(-10px); }
-    50% { transform: translateX(10px); }
+
+    0%,
+    100% {
+        transform: translateX(-10px);
+    }
+
+    50% {
+        transform: translateX(10px);
+    }
 }
 
 .ploc-working-folder {
-    position: absolute; left: -30px; top: 40px; font-size: 24px;
+    position: absolute;
+    left: -30px;
+    top: 40px;
+    font-size: 24px;
     animation: plocWorkMove 2s ease-in-out infinite;
 }
 
 @keyframes tremble {
-    0% { transform: translate(1px, 1px) rotate(0deg); }
-    10% { transform: translate(-2px, -2px) rotate(-1deg); }
-    20% { transform: translate(-3px, 0px) rotate(1deg); }
-    30% { transform: translate(3px, 2px) rotate(0deg); }
-    40% { transform: translate(1px, -1px) rotate(1deg); }
-    50% { transform: translate(-1px, 2px) rotate(-1deg); }
-    60% { transform: translate(-3px, 1px) rotate(0deg); }
-    70% { transform: translate(3px, 1px) rotate(-1deg); }
-    80% { transform: translate(-1px, -1px) rotate(1deg); }
-    90% { transform: translate(1px, 2px) rotate(0deg); }
-    100% { transform: translate(1px, -2px) rotate(-1deg); }
+    0% {
+        transform: translate(1px, 1px) rotate(0deg);
+    }
+
+    10% {
+        transform: translate(-2px, -2px) rotate(-1deg);
+    }
+
+    20% {
+        transform: translate(-3px, 0px) rotate(1deg);
+    }
+
+    30% {
+        transform: translate(3px, 2px) rotate(0deg);
+    }
+
+    40% {
+        transform: translate(1px, -1px) rotate(1deg);
+    }
+
+    50% {
+        transform: translate(-1px, 2px) rotate(-1deg);
+    }
+
+    60% {
+        transform: translate(-3px, 1px) rotate(0deg);
+    }
+
+    70% {
+        transform: translate(3px, 1px) rotate(-1deg);
+    }
+
+    80% {
+        transform: translate(-1px, -1px) rotate(1deg);
+    }
+
+    90% {
+        transform: translate(1px, 2px) rotate(0deg);
+    }
+
+    100% {
+        transform: translate(1px, -2px) rotate(-1deg);
+    }
 }
 
 .ploc-pissed {
     animation: tremble 0.2s infinite !important;
     filter: sepia(1) saturate(500%) hue-rotate(-50deg) brightness(0.8) contrast(1.5);
     border-color: rgba(255, 0, 0, 0.8) !important;
-    box-shadow: 0 20px 50px rgba(255, 0, 0, 0.6), inset 2px 2px 5px rgba(255,255,255,0.8) !important;
+    box-shadow: 0 20px 50px rgba(255, 0, 0, 0.6), inset 2px 2px 5px rgba(255, 255, 255, 0.8) !important;
 }
 
 /* Ploc Bubble & Input */
@@ -199,10 +347,11 @@ html, body {
     font-size: 0.9rem;
     font-weight: 600;
     width: 220px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     z-index: 100;
     pointer-events: none;
 }
+
 .ploc-bubble::after {
     content: '';
     position: absolute;
@@ -219,9 +368,9 @@ html, body {
     left: 50%;
     transform: translateX(-50%);
     width: 200px;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     padding: 0.6rem 1rem;
     color: #fff;
@@ -232,128 +381,222 @@ html, body {
 }
 
 @keyframes bubblePop {
-    0% { transform: translateX(-50%) scale(0.5); opacity: 0; }
-    100% { transform: translateX(-50%) scale(1); opacity: 1; }
+    0% {
+        transform: translateX(-50%) scale(0.5);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateX(-50%) scale(1);
+        opacity: 1;
+    }
 }
 
 .panel-handle {
-    width: 45px; height: 4px; background: rgba(255,255,255,0.2);
-    border-radius: 10px; margin: -1.5rem auto 2rem auto; cursor: pointer;
+    width: 60px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    margin: -1.5rem auto 2.5rem auto;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+    transition: background 0.3s;
+}
+
+.panel-handle:hover {
+    background: rgba(255, 255, 255, 0.5);
 }
 
 .menu-btn {
-    aspect-ratio: 1; background: rgba(255,255,255,0.05);
-    border-radius: 50%; display: flex;
-    align-items: center; justify-content: center; color: rgba(255,255,255,0.8);
-    cursor: pointer; transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.05);
+    aspect-ratio: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
-.menu-btn:hover { background: rgba(56, 189, 248, 0.2); border-color: var(--accent); transform: scale(1.1); }
+
+.menu-btn:hover {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: var(--accent);
+    transform: scale(1.1);
+}
 
 /* Modals (Landing & Global) */
 .modal-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(8px);
-    z-index: 3000; display: flex; align-items: center; justify-content: center;
-    opacity: 0; pointer-events: none; transition: all 0.5s ease;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(2, 6, 23, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.5s ease;
 }
 
 .modal-card {
-    width: 95%; max-width: 450px; background: #1e293b; 
-    border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
-    padding: 1.5rem; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    width: 95%;
+    max-width: 450px;
+    background: #1e293b;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1.5rem;
+    position: relative;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
 }
 
 .promo-viewport {
-    flex: 1; height: 150px; overflow: hidden; 
-    position: relative; border-radius: 8px;
+    flex: 1;
+    height: 150px;
+    overflow: hidden;
+    position: relative;
+    border-radius: 8px;
 }
 
 .promo-banner {
-    display: flex; height: 100%; transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    height: 100%;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .promo-item {
-    flex: 0 0 100%; height: 100%;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 0.5rem;
+    flex: 0 0 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
     color: #fff;
 }
 
 .login-modal-card {
-    width: 90%; max-width: 400px; padding: 4rem 3rem;
-    background: rgba(255, 255, 255, 0.04); border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px);
-    box-shadow: 0 40px 100px rgba(0,0,0,0.5);
-    display: flex; flex-direction: column; gap: 2rem;
-    transform: scale(0.9); transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 90%;
+    max-width: 400px;
+    padding: 4rem 3rem;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    transform: scale(0.9);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Dashboard & Cards */
 .dashboard-container {
-    width: 100%; min-height: 100vh;
-    background: var(--bg-deep); color: #fff;
-    padding: 2rem; overflow-x: hidden;
+    width: 100%;
+    min-height: 100vh;
+    background: var(--bg-deep);
+    color: #fff;
+    padding: 2rem;
+    overflow-x: hidden;
 }
 
 .dashboard-header {
-    display: flex; justify-content: space-between;
-    align-items: center; margin-bottom: 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3rem;
 }
 
 .stat-card {
-    padding: 1.5rem; border-radius: 16px;
+    padding: 1.5rem;
+    border-radius: 16px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.1);
     transition: transform 0.3s ease;
 }
+
 .stat-card.accent {
     background: rgba(56, 189, 248, 0.1);
     border-color: rgba(56, 189, 248, 0.2);
 }
-.stat-card:hover { transform: translateY(-5px); }
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
 
 .activity-item {
     background: rgba(255, 255, 255, 0.02);
-    padding: 1.2rem; border-radius: 12px;
+    padding: 1.2rem;
+    border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.05);
-    display: flex; align-items: center; gap: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
 
 /* Floating Actions */
 .fab-button {
-    position: fixed; bottom: 2rem; left: 50%;
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
     transform: translateX(-50%);
-    width: 65px; height: 65px;
-    background: var(--accent); border-radius: 50%;
+    width: 65px;
+    height: 65px;
+    background: var(--accent);
+    border-radius: 50%;
     box-shadow: 0 10px 30px rgba(56, 189, 248, 0.4);
-    cursor: pointer; z-index: 10; border: none;
+    cursor: pointer;
+    z-index: 10;
+    border: none;
     color: var(--bg-deep);
 }
-.fab-button:active { transform: translateX(-50%) scale(0.9); }
+
+.fab-button:active {
+    transform: translateX(-50%) scale(0.9);
+}
 
 /* Kanban Components */
 .kanban-container {
-    width: 100%; min-height: 100vh;
-    background: var(--bg-deep); color: #fff;
-    padding: 2rem; padding-bottom: 100px;
+    width: 100%;
+    min-height: 100vh;
+    background: var(--bg-deep);
+    color: #fff;
+    padding: 2rem;
+    padding-bottom: 100px;
     overflow-x: auto;
 }
 
 .kanban-column {
-    min-width: 280px; flex: 1;
+    min-width: 280px;
+    flex: 1;
     background: rgba(255, 255, 255, 0.02);
-    border-radius: 20px; padding: 1.2rem;
+    border-radius: 20px;
+    padding: 1.2rem;
     border: 1px solid rgba(255, 255, 255, 0.05);
-    display: flex; flex-direction: column; gap: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 .kanban-card {
     background: rgba(255, 255, 255, 0.03);
-    padding: 1.2rem; border-radius: 12px;
+    padding: 1.2rem;
+    border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.05);
-    cursor: grab; transition: all 0.3s ease;
+    cursor: grab;
+    transition: all 0.3s ease;
 }
 
 .kanban-card:hover {
@@ -363,8 +606,18 @@ html, body {
 }
 
 .kanban-add-btn {
-    padding: 0.8rem; border: 1px dashed rgba(255, 255, 255, 0.1);
-    border-radius: 12px; display: flex; align-items: center; justify-content: center;
-    cursor: pointer; opacity: 0.4; transition: 0.3s;
+    padding: 0.8rem;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.4;
+    transition: 0.3s;
 }
-.kanban-add-btn:hover { opacity: 1; border-color: var(--accent); }
+
+.kanban-add-btn:hover {
+    opacity: 1;
+    border-color: var(--accent);
+}

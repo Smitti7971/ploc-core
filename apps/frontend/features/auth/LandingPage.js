@@ -110,7 +110,7 @@ export const renderLandingPage = () => {
         <div class="flex-column" style="position: relative; z-index: 5;">
             <div id="ploc-avatar-mount" style="height: 250px; display: flex; align-items: center; justify-content: center;"></div>
             <div style="text-align: center; color: var(--text-dim); font-size: 0.8rem; margin-top: 1rem; letter-spacing: 2px; opacity: 0.7;">
-                CLIQUE NO <span style="color: var(--accent); font-weight: 800;">PLOC</span> PARA CONVERSAR
+               <span style="color: var(--accent); font-weight: 900;">...</span> 
             </div>
         </div>
 
@@ -162,7 +162,7 @@ export const renderLandingPage = () => {
             authForm.style.height = 'auto';
             authForm.style.opacity = '1';
             authForm.style.overflow = 'visible';
-            
+
             if (register) {
                 confirmPassContainer.style.height = 'auto';
                 confirmPassContainer.style.opacity = '1';
@@ -194,7 +194,7 @@ export const renderLandingPage = () => {
                 try {
                     btnAuthAction.innerText = 'CARREGANDO...';
                     let response;
-                    
+
                     if (isRegister) {
                         if (password !== confirmPassword) throw new Error('As senhas não coincidem');
                         response = await apiClient.post('/auth/register', { email, password, name: email.split('@')[0] });

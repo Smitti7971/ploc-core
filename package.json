@@ -1,6 +1,6 @@
 {
   "name": "ploc-monorepo",
-  "version": "1.0.0",
+  "version": "0.0.9",
   "scripts": {
     "dev:front": "npx serve apps/frontend",
     "dev:back": "cd apps/backend && npm run dev",

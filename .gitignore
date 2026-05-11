@@ -1,20 +1,20 @@
-# Dependências
-node_modules/
+# Dependências (Recursivo)
+**/node_modules/
 jspm_packages/
 
-# Ambiente e Segredos
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env.production
+# Ambiente e Segredos (Recursivo)
+**/.env
+**/.env.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
+**/.env.production
 
 # Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-*.log
+**/*.log
 
 # Editor / IDE
 .vscode/
@@ -25,18 +25,17 @@ yarn-error.log*
 *.sln
 *.sw?
 
-# Build / Output
-dist/
-build/
-coverage/
+# Build / Output (Recursivo)
+**/dist/
+**/build/
+**/coverage/
 
 # OS
 .DS_Store
 Thumbs.db
 
 # Prisma
-/prisma/migrations/
-# Nota: Manter as migrações no Git é importante para produção, 
-# mas se quiser ignorar logs de migração ou arquivos temporários do SQLite use as linhas abaixo:
+# Migrações DEVEM ser versionadas para produção.
+# Ignoramos apenas arquivos de banco local se necessário.
 # dev.db
 # dev.db-journal

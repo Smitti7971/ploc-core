@@ -99,7 +99,7 @@ export const renderDashboard = () => {
     const avatarContainer = container.querySelector('#ploc-avatar-container');
     const plocAvatar = createPlocAvatar();
     avatarContainer.appendChild(plocAvatar);
-    
+
     initChatLogic(); // Inicializa a ponte cognitiva
 
     setTimeout(() => {
