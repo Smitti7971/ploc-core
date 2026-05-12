@@ -2,6 +2,16 @@
 
 Este arquivo registra a evolução técnica e visual do Ploc, servindo como a memória oficial de versões do projeto.
 
+## [0.1.3] - 2026-05-12
+### Corrigido
+- **Connection Refused**: Resolução de erros de conexão no localhost:3000 através da padronização dos scripts de inicialização.
+- **Scripts de Dev**: Adicionado script `dev` ao backend e script unificado na raiz para evitar conflitos de porta entre `npx serve` e o backend.
+
+### Adicionado
+- **Governança de Scripts**: Implementação do script unificado `npm run dev` que inicia o backend (o qual já serve o frontend).
+
+---
+
 ## [0.1.0-ALPHA] - 2026-05-11
 ### Adicionado
 - **Sistema Botânico**: Implementado sistema de CRUD, Fases de Crescimento, Logs e Agenda de Eventos.

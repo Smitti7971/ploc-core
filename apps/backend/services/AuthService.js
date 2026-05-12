@@ -8,7 +8,7 @@ const authConfig = require('../config/auth');
  * Centraliza a lógica de autenticação e segurança.
  */
 class AuthService {
-    async registerUser({ name, email, password }) {
+    async registerUser({ name, email, password, profilePhoto }) {
         const cleanEmail = email?.trim().toLowerCase();
         const cleanName = name?.trim() || 'Mestre';
 
@@ -26,7 +26,8 @@ class AuthService {
         return userRepository.create({
             name: cleanName,
             email: cleanEmail,
-            password: hashedPassword
+            password: hashedPassword,
+            profilePhoto: profilePhoto || null
         });
     }
 
@@ -54,7 +55,12 @@ class AuthService {
 
         return {
             token,
-            user: { id: user.id, name: user.name, email: user.email }
+            user: { 
+                id: user.id, 
+                name: user.name, 
+                email: user.email,
+                profilePhoto: user.profilePhoto 
+            }
         };
     }
 }

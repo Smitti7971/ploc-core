@@ -7,7 +7,7 @@
 - **Base Directory**: `/` (Configurado no Coolify) ✅ (validado via Coolify API)
 - **Build Pack**: `Dockerfile` (Nginx:stable-alpine personalizado) ✅ (validado no levantamento)
 - **Arquitetura**: SPA (Single Page Application) servida via Nginx ✅ (validado no levantamento)
-- **Versão**: v0.0.9 ✅ (validado pelo usuário)
+- **Versão**: v0.1.3 ✅ (validado pelo usuário)
 
 ### 2. Serviço de Backend (API)
 - **URL Pública**: `https://backend.midializando.cloud` ✅ (validado via Coolify API)
@@ -60,7 +60,7 @@
 
 
 ### 📊 Estado de Saúde (Operacional - 2026-05-11) 🟢
-- **Frontend**: ✅ ATIVO (v0.0.9-FINAL estável no ar, v0.1.3-CLEAN pendente). ✅ (validado via Coolify API: status `running`)
+- **Frontend**: ✅ ATIVO (v0.1.3-CLEAN operando via Backend). ✅ (validado via Coolify API: status `running`)
 - **Backend**: ✅ ATIVO (CORS validado, Voz/TTS pública integrada). ✅ (validado via Coolify API: status `running`)
 - **Banco de Dados**: ✅ CONECTADO (Prisma v6 operando com PostgreSQL). ✅ (validado via Coolify API: status `healthy`)
 - **Segurança**: ✅ VALIDADA (JWT funcional, Mixed Content eliminado). ✅ (validado no levantamento: middlewares e dependências de segurança encontrados)

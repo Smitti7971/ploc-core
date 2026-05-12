@@ -176,10 +176,7 @@ const LandingPage = {
                     `}
                 </div>
 
-                <!-- Mount Point do Mascote (Centralizado) -->
-                <div class="flex-column" style="position: relative; z-index: 5; margin-bottom: 80px;">
-                    <div id="ploc-mount" style="width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 20px 40px rgba(0,0,0,0.5));"></div>
-                </div>
+                <div style="height: 115px; margin-bottom: 80px; pointer-events: none;"></div>
 
                 <!-- Painel Inferior (Drawer) Estilizado -->
                 <div id="bottom-panel" class="bottom-panel" style="background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(30px) saturate(180%); -webkit-backdrop-filter: blur(30px) saturate(180%); border-top: 1px solid rgba(255,255,255,0.1); box-shadow: 0 -10px 40px rgba(0,0,0,0.5);">

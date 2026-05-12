@@ -1,7 +1,8 @@
 {
   "name": "ploc-monorepo",
-  "version": "0.0.9",
+  "version": "0.1.3",
   "scripts": {
+    "dev": "npm run dev:back",
     "dev:front": "npx serve apps/frontend",
     "dev:back": "cd apps/backend && npm run dev",
     "db:up": "docker-compose up -d",
