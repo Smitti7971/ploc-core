@@ -4,6 +4,7 @@ Este arquivo registra a evolução técnica e visual do Ploc, servindo como a me
 
 ## [0.1.3] - 2026-05-12
 ### Corrigido
+- **Deployment Fail (Coolify)**: Adicionado `Dockerfile` à raiz para resolver erro de build no Coolify, que não encontrava o arquivo no diretório padrão.
 - **Connection Refused**: Resolução de erros de conexão no localhost:3000 através da padronização dos scripts de inicialização.
 - **Scripts de Dev**: Adicionado script `dev` ao backend e script unificado na raiz para evitar conflitos de porta entre `npx serve` e o backend.
 
