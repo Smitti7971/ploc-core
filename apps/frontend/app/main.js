@@ -1,9 +1,11 @@
 import { router } from './router.js?v=0.1.3';
 import { createPlocAvatar } from '../shared/components/PlocAvatar.js?v=0.1.3';
+import { createDockMenu } from '../shared/components/DockMenu.js?v=0.1.3';
 import { initChatLogic } from '../features/chat/ChatWidget.js?v=0.1.3';
 
 // Gerenciamento do Mascote Único (Singleton)
 let plocInstance = null;
+let dockInstance = null;
 let isDragging = false;
 let startX, startY, initialX, initialY;
 let targetX = 0, targetY = 0;
@@ -44,6 +46,10 @@ const updatePosition = () => {
 const handleDragStart = (e) => {
     const mount = document.getElementById('ploc-singleton-mount');
     if (!mount) return;
+    
+    // Impede que o clique/toque "vaze" para o menu ou scroll do fundo
+    e.stopPropagation();
+    
     isDragging = true;
     const touch = e.type === 'touchstart' ? e.touches[0] : e;
     
@@ -60,6 +66,8 @@ const handleDragStart = (e) => {
     targetY = initialY;
 
     mount.style.transition = 'none';
+    mount.style.zIndex = '2000000'; // Sobe para o topo absoluto durante o arraste
+    
     if (plocInstance) {
         plocInstance.style.animation = 'none';
         plocInstance.style.transition = 'all 0.3s ease-out';
@@ -94,6 +102,9 @@ const handleDragEnd = () => {
     if (!isDragging) return;
     isDragging = false;
     
+    const mount = document.getElementById('ploc-singleton-mount');
+    if (mount) mount.style.zIndex = '999999'; // Acima do menu (999998)
+
     if (plocInstance) {
         setTimeout(() => {
             if (!isDragging) {
@@ -121,6 +132,11 @@ window.updatePlocUI = (state) => {
         mount.appendChild(plocInstance);
     }
 
+    if (!dockInstance) {
+        dockInstance = createDockMenu();
+        document.body.appendChild(dockInstance);
+    }
+
     // Reset de estilos do mount global para cada troca de rota
     mount.style.left = '';
     mount.style.top = '';
@@ -140,11 +156,13 @@ window.updatePlocUI = (state) => {
 
     mount.className = `state-${targetState}`;
 
-    // Sincroniza o menu de status com a visibilidade do Ploc
+    // Sincroniza o menu de status e o dock com a visibilidade
     const statusMenu = document.querySelector('.ploc-status-container');
-    if (statusMenu) {
-        statusMenu.style.display = targetState === 'hidden' ? 'none' : 'flex';
-    }
+    if (statusMenu) statusMenu.style.display = targetState === 'hidden' ? 'none' : 'flex';
+    if (dockInstance) dockInstance.style.display = targetState === 'hidden' ? 'none' : 'block';
+
+    // Sincroniza o brilho do menu ativo
+    if (window.updateDockActive) window.updateDockActive();
 };
 
 // O Router agora gerencia o ciclo de vida do Ploc via listeners de load e hashchange

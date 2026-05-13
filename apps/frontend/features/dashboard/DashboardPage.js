@@ -91,7 +91,7 @@ const DashboardPage = {
                     </div>
                 </section>
 
-                <!-- SLIDE 1: LABORATÓRIO -->
+                <!-- SLIDE 1: LABORATÓRIO (CENTRAL DE COMANDOS) -->
                 <section id="slide-laboratorio" style="
                     flex-shrink: 0;
                     width: 100vw; height: 100vh; 
@@ -99,40 +99,70 @@ const DashboardPage = {
                     scroll-snap-stop: always;
                     display: flex; flex-direction: column; 
                     align-items: center; justify-content: flex-start; 
-                    gap: 1.5rem; padding: 2rem 1rem;
+                    gap: 1.2rem; padding: 1.5rem 1rem;
                     position: relative;
-                    overflow: hidden;
+                    background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.08) 0%, transparent 50%);
                 ">
-                    <h1 style="color: var(--accent); letter-spacing: 2px; font-size: 1rem; font-weight: 900; margin: 1rem 0;">LABORATÓRIO</h1>
+                    <h1 style="color: var(--accent); letter-spacing: 4px; font-size: 0.9rem; font-weight: 900; margin: 1rem 0; opacity: 0.8;">LABORATÓRIO</h1>
                     
-                    <div id="upload-section" style="display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 320px; align-items: center;">
-                        <input type="file" id="file-input" style="display: none;" accept="image/*">
-                        <button id="btn-upload-trigger" class="glass-pill" style="padding: 1rem; width: 100%; border: 1px dashed var(--accent); color: var(--accent); font-weight: 800; cursor: pointer; font-size: 0.8rem;">
-                            <span class="material-symbols-rounded" style="vertical-align: middle; margin-right: 8px;">upload_file</span>
-                            ENVIAR FOTO
-                        </button>
+                    <!-- BENTO GRID DE RESUMO -->
+                    <div class="bento-grid" style="
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        grid-template-rows: auto auto auto;
+                        gap: 1rem;
+                        width: 100%;
+                        max-width: 360px;
+                        padding-bottom: 5rem; /* Espaço para o dock */
+                    ">
+                        <!-- Card: Atividades -->
+                        <div class="lab-card" style="grid-column: span 2; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 20px; padding: 1.2rem; display: flex; align-items: center; gap: 1rem;">
+                            <div style="width: 50px; height: 50px; border-radius: 15px; background: #38bdf8; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(56, 189, 248, 0.3);">
+                                <i class="icon-task-square" style="color: #fff; font-size: 1.5rem;"></i>
+                            </div>
+                            <div>
+                                <h3 style="margin: 0; font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Atividades</h3>
+                                <div style="font-size: 1.5rem; font-weight: 900; color: #fff;">12 <span style="font-size: 0.8rem; color: #38bdf8; font-weight: 600;">ATIVAS</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Card: Foco -->
+                        <div class="lab-card" style="background: rgba(192, 132, 252, 0.1); border: 1px solid rgba(192, 132, 252, 0.2); border-radius: 20px; padding: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                            <i class="icon-magic-star" style="color: #c084fc; font-size: 1.5rem;"></i>
+                            <h3 style="margin: 0; font-size: 0.65rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Dias em Foco</h3>
+                            <div style="font-size: 1.4rem; font-weight: 900; color: #fff;">07 <span style="font-size: 0.7rem; color: #c084fc;">DIAS</span></div>
+                        </div>
+
+                        <!-- Card: Sono -->
+                        <div class="lab-card" style="background: rgba(45, 212, 191, 0.1); border: 1px solid rgba(21, 212, 191, 0.2); border-radius: 20px; padding: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                            <i class="icon-moon" style="color: #2dd4bf; font-size: 1.5rem;"></i>
+                            <h3 style="margin: 0; font-size: 0.65rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Qualidade Sono</h3>
+                            <div style="font-size: 1.4rem; font-weight: 900; color: #fff;">85<span style="font-size: 0.7rem; color: #2dd4bf;">%</span></div>
+                        </div>
+
+                        <!-- Card: Resumo Saúde e Corpo -->
+                        <div class="lab-card" style="grid-column: span 2; background: rgba(251, 113, 133, 0.1); border: 1px solid rgba(251, 113, 133, 0.2); border-radius: 20px; padding: 1.2rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <h3 style="margin: 0; font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Saúde e Corpo</h3>
+                                <i class="icon-heart" style="color: #fb7185; font-size: 1.2rem;"></i>
+                            </div>
+                            <div style="display: flex; gap: 1rem;">
+                                <div style="flex: 1; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 0.8rem; text-align: center;">
+                                    <div style="color: #94a3b8; font-size: 0.6rem; font-weight: 700; margin-bottom: 4px;">PESO</div>
+                                    <div style="color: #fff; font-weight: 900;">78.5 <span style="font-size: 0.6rem; color: #fb7185;">KG</span></div>
+                                </div>
+                                <div style="flex: 1; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 0.8rem; text-align: center;">
+                                    <div style="color: #94a3b8; font-size: 0.6rem; font-weight: 700; margin-bottom: 4px;">IMC</div>
+                                    <div style="color: #fff; font-weight: 900;">24.2 <span style="font-size: 0.6rem; color: #fb7185;">IDEAL</span></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div id="preview-section" style="display: none; flex-direction: column; gap: 1.5rem; width: 100%; max-width: 320px; align-items: center; animation: fadeIn 0.5s ease;">
-                        <div id="image-frame" style="width: 200px; height: 200px; border-radius: 20px; overflow: hidden; border: 2px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3);">
-                            <img id="image-display" src="" style="width: 100%; height: 100%; object-fit: cover;">
-                        </div>
-                        <div style="width: 100%; display: flex; gap: 0.8rem;">
-                            <button id="btn-change-trigger" style="flex: 1; background: rgba(255,255,255,0.05); color: #fff; padding: 0.8rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; gap: 5px;">
-                                <span class="material-symbols-rounded" style="font-size: 1rem;">cached</span> TROCAR
-                            </button>
-                            <button id="btn-delete-image" style="flex: 1; background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 0.8rem; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; gap: 5px;">
-                                <span class="material-symbols-rounded" style="font-size: 1rem;">delete</span> EXCLUIR
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="status-message" style="color: #64748b; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Aguardando...</div>
-                    
-                    <div style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%) rotate(180deg); opacity: 0.2; animation: bounceX 2s infinite;">
+                    <div style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%) rotate(180deg); opacity: 0.2;">
                         <span class="material-symbols-rounded" style="font-size: 1.5rem; color: #fff;">chevron_right</span>
                     </div>
-                    <div style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); opacity: 0.2; animation: bounceX 2s infinite;">
+                    <div style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); opacity: 0.2;">
                         <span class="material-symbols-rounded" style="font-size: 1.5rem; color: #fff;">chevron_right</span>
                     </div>
                 </section>
@@ -255,58 +285,11 @@ const DashboardPage = {
 
         setTimeout(() => {
             const carousel = container.querySelector('#dashboard-carousel');
-            const fileInput = container.querySelector('#file-input');
-            const btnTrigger = container.querySelector('#btn-upload-trigger');
-            const btnChange = container.querySelector('#btn-change-trigger');
-            const btnDelete = container.querySelector('#btn-delete-image');
             const btnReturn = container.querySelector('#btn-return-landing');
-            const uploadSection = container.querySelector('#upload-section');
-            const previewSection = container.querySelector('#preview-section');
-            const imgDisplay = container.querySelector('#image-display');
-            const statusMsg = container.querySelector('#status-message');
 
-            // Centraliza no slide PLANTAS (Slide 5) ao carregar para facilitar testes
+            // Centraliza no slide LABORATÓRIO (Slide 1) ao carregar
             if (carousel) {
-                carousel.scrollLeft = 5 * window.innerWidth;
-            }
-
-            const updateStatus = (msg, color = '#64748b') => {
-                statusMsg.textContent = msg;
-                statusMsg.style.color = color;
-            };
-
-            const handleFileUpload = async (file) => {
-                try {
-                    updateStatus('ENVIANDO PARA O MINIO...', 'var(--accent)');
-                    const response = await apiClient.uploadFile(file, '/upload');
-                    if (response && response.url) {
-                        imgDisplay.src = response.url;
-                        uploadSection.style.display = 'none';
-                        previewSection.style.display = 'flex';
-                        updateStatus('UPLOAD CONCLUÍDO!', '#22c55e');
-                    }
-                } catch (error) {
-                    updateStatus(`ERRO: ${error.message}`, '#ef4444');
-                }
-            };
-
-            if (btnTrigger) btnTrigger.onclick = () => fileInput.click();
-            if (btnChange) btnChange.onclick = () => fileInput.click();
-            if (fileInput) {
-                fileInput.onchange = (e) => {
-                    const file = e.target.files[0];
-                    if (file) handleFileUpload(file);
-                };
-            }
-
-            if (btnDelete) {
-                btnDelete.onclick = () => {
-                    imgDisplay.src = '';
-                    previewSection.style.display = 'none';
-                    uploadSection.style.display = 'flex';
-                    fileInput.value = '';
-                    updateStatus('IMAGEM REMOVIDA.', '#64748b');
-                };
+                carousel.scrollLeft = 1 * window.innerWidth;
             }
 
             if (btnReturn) {

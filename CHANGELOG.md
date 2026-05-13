@@ -2,6 +2,14 @@
 
 Este arquivo registra a evolução técnica e visual do Ploc, servindo como a memória oficial de versões do projeto.
 
+## [0.1.4] - 2026-05-13
+### ✨ Modernização e UX (Interface Panorâmica)
+- **Mural Panorâmico**: Implementação de canvas lateral de 250vw na LandingPage para organização espacial de notas.
+- **DockMenu Flutuante**: Remoção do painel de vidro (island) para efeito de ícones flutuantes com brilho neon estático.
+- **Laboratório (Dashboard)**: Redesenho completo do slide 1 para layout Bento Grid com indicadores de métricas vitais.
+- **Gatilho de Notas**: Substituição do botão textual por ícone circular flutuante (position: fixed) para interface mais limpa.
+- **Estabilidade UI**: Correção de conflitos de z-index e eventos entre o PlocAvatar e o DockMenu.
+
 ## [0.1.3] - 2026-05-12
 ### Corrigido
 - **Deployment Fail (Coolify)**: Adicionado `Dockerfile` à raiz para resolver erro de build no Coolify, que não encontrava o arquivo no diretório padrão.

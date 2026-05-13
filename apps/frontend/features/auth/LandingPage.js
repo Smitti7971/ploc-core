@@ -9,16 +9,7 @@ const LandingPage = {
         const plocUserRaw = localStorage.getItem('ploc_user');
         const user = (token && plocUserRaw && plocUserRaw !== 'undefined') ? JSON.parse(plocUserRaw) : null;
 
-        const menuItems = [
-            { icon: 'dashboard', route: '#dashboard' },
-            { icon: 'calendar_month', route: '#calendar' },
-            { icon: 'task_alt', route: '#kanban' },
-            { icon: 'analytics', route: '#finance' },
-            { icon: 'volunteer_activism', route: '#health' },
-            { icon: 'auto_awesome', route: '#routines' },
-            { icon: 'person_4', route: '#user-settings' },
-            { icon: 'settings', route: '#settings' }
-        ];
+
 
         // Lógica de pós-renderização (Eventos)
         setTimeout(() => {
@@ -37,30 +28,7 @@ const LandingPage = {
             };
             checkStatus();
 
-            // --- Lógica da Gaveta (Drawer) ---
-            const bottomPanel = container.querySelector('#bottom-panel');
-            const drawerCloser = container.querySelector('#drawer-closer');
 
-            if (bottomPanel) bottomPanel.onclick = () => {
-                if (!bottomPanel.classList.contains('active')) {
-                    bottomPanel.classList.add('active');
-                }
-            };
-
-            if (drawerCloser) drawerCloser.onclick = (e) => {
-                if (bottomPanel.classList.contains('active')) {
-                    e.stopPropagation();
-                    bottomPanel.classList.remove('active');
-                }
-            };
-
-            // --- Navegação do Menu ---
-            container.querySelectorAll('.menu-btn').forEach(btn => {
-                btn.onclick = () => {
-                    const route = btn.getAttribute('data-route');
-                    if (route) window.location.hash = route;
-                };
-            });
 
             // --- Lógica da Cápsula Camaleão Unificada ---
             const capsule = container.querySelector('#user-capsule-container');
@@ -131,20 +99,137 @@ const LandingPage = {
                 }
             });
 
+            // --- SISTEMA DE STICKY NOTES (DESAFIO) ---
+            const notesCanvas = container.querySelector('#notes-canvas');
+            const addNoteBtn = container.querySelector('#add-note-btn');
+            
+            let notes = JSON.parse(localStorage.getItem('ploc_sticky_notes') || '[]');
+            
+            if (!window.plocNoteDrag) {
+                window.plocNoteDrag = { active: null, offset: { x: 0, y: 0 } };
+
+                window.addEventListener('mousemove', (e) => {
+                    if (!window.plocNoteDrag.active) return;
+                    const { el, data } = window.plocNoteDrag.active;
+                    
+                    const x = e.pageX - window.plocNoteDrag.offset.x;
+                    const y = e.pageY - window.plocNoteDrag.offset.y;
+                    
+                    el.style.left = `${x}px`;
+                    el.style.top = `${y}px`;
+                    
+                    data.x = x;
+                    data.y = y;
+                });
+
+                window.addEventListener('mouseup', () => {
+                    if (window.plocNoteDrag.active) {
+                        window.plocNoteDrag.active.el.style.opacity = '1';
+                        window.plocNoteDrag.active = null;
+                        localStorage.setItem('ploc_sticky_notes', JSON.stringify(notes));
+                    }
+                });
+            }
+
+            const saveNotes = () => {
+                localStorage.setItem('ploc_sticky_notes', JSON.stringify(notes));
+            };
+
+            const createNoteEl = (note) => {
+                const el = document.createElement('div');
+                el.className = `sticky-note ${note.colorClass || ''}`;
+                el.style.cssText = `left: ${note.x}px; top: ${note.y}px;`;
+                
+                el.innerHTML = `
+                    <div class="note-header">
+                        <div class="note-controls">
+                            <button class="note-btn color-cycle">🎨</button>
+                            <button class="note-btn delete">✕</button>
+                        </div>
+                    </div>
+                    <textarea>${note.content || ''}</textarea>
+                `;
+
+                const header = el.querySelector('.note-header');
+                header.onmousedown = (e) => {
+                    if (e.target.closest('.note-btn')) return;
+                    
+                    window.plocNoteDrag.active = { el, data: note };
+                    const rect = el.getBoundingClientRect();
+                    window.plocNoteDrag.offset.x = e.pageX - rect.left;
+                    window.plocNoteDrag.offset.y = e.pageY - rect.top;
+                    
+                    el.style.opacity = '0.9';
+                    el.style.zIndex = '1000000';
+                };
+
+                const textarea = el.querySelector('textarea');
+                textarea.oninput = () => {
+                    note.content = textarea.value;
+                    saveNotes();
+                };
+
+                el.querySelector('.color-cycle').onclick = (e) => {
+                    e.stopPropagation();
+                    const colors = ['', 'note-blue', 'note-green', 'note-pink', 'note-purple'];
+                    let next = (colors.indexOf(note.colorClass || '') + 1) % colors.length;
+                    el.classList.remove(note.colorClass || 'dummy');
+                    note.colorClass = colors[next];
+                    if (note.colorClass) el.classList.add(note.colorClass);
+                    saveNotes();
+                };
+
+                el.querySelector('.delete').onclick = (e) => {
+                    e.stopPropagation();
+                    notes = notes.filter(n => n.id !== note.id);
+                    el.remove();
+                    saveNotes();
+                };
+
+                return el;
+            };
+
+            if (notesCanvas) {
+                notesCanvas.innerHTML = '';
+                notes.forEach(note => notesCanvas.appendChild(createNoteEl(note)));
+            }
+
+            if (addNoteBtn) addNoteBtn.onclick = () => {
+                const newNote = {
+                    id: Date.now(),
+                    content: '',
+                    x: 100 + (Math.random() * 50),
+                    y: 100 + (Math.random() * 50),
+                    colorClass: ''
+                };
+                notes.push(newNote);
+                notesCanvas.appendChild(createNoteEl(newNote));
+                saveNotes();
+            };
+
         }, 0);
 
         // Retornamos a String HTML que será injetada pelo Router
         return `
-            <div id="landing-container" class="landing-page" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at top right, #1e293b 0%, #020617 100%); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; font-family: 'Inter', sans-serif;">
+            <div id="landing-container" class="landing-page" style="position: relative; min-height: 100vh; width: 250vw; background: radial-gradient(circle at top right, #1e293b 0%, #020617 100%); z-index: 9999; display: block; overflow-x: auto; overflow-y: auto; font-family: 'Inter', sans-serif;">
                 
-                <!-- Overlay de Partículas ou Textura (Opcional, mas dá o toque Premium) -->
-                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png'); opacity: 0.1; pointer-events: none;"></div>
+                <div id="notes-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9000;">
+                    <!-- As notas serão injetadas aqui -->
+                </div>
+                <style>#notes-canvas > * { pointer-events: all; }</style>
 
-                <div id="network-status" style="position: absolute; top: 1.5rem; left: 1.5rem; z-index: 1000;">
+                <div id="add-note-btn" class="add-note-trigger">
+                    <i class="icon-edit-2"></i>
+                </div>
+                
+                <!-- Overlay de Textura que rola junto -->
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png'); opacity: 0.05; pointer-events: none;"></div>
+
+                <div id="network-status" style="position: fixed; top: 1.5rem; left: 1.5rem; z-index: 1000;">
                     <div id="status-dot" style="width: 10px; height: 10px; border-radius: 50%; background: #94a3b8; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 15px rgba(148, 163, 184, 0.3);"></div>
                 </div>
 
-                <div id="user-capsule-mount" style="position: absolute; top: 1.5rem; right: 1.5rem; z-index: 1000;">
+                <div id="user-capsule-mount" style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 1000;">
                     ${token ? `
                         <div id="user-capsule-container" class="glass-pill" style="display: flex; align-items: center; padding: 4px; gap: 12px; cursor: pointer; min-width: 50px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 10px 30px rgba(0,0,0,0.3); background: rgba(15, 23, 42, 0.6);">
                             <div id="capsule-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #38bdf8, #1d4ed8); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.9rem; color: #fff; flex-shrink: 0; overflow: hidden; border: 2px solid rgba(255,255,255,0.1);">
@@ -165,8 +250,8 @@ const LandingPage = {
                             </div>
 
                             <div id="content-actions" style="display: none; align-items: center; gap: 10px; opacity: 0; transition: all 0.4s ease;">
-                                <div id="go-settings" class="flex-center" style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1); hover: background: rgba(56, 189, 248, 0.2);">
-                                    <span class="material-symbols-rounded" style="font-size: 1.3rem; color: #38bdf8;">settings</span>
+                                <div id="go-settings" class="flex-center" style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1);">
+                                    <i class="icon-setting-2" style="font-size: 1.3rem; color: #38bdf8;"></i>
                                 </div>
                                 <div id="do-logout" style="padding: 6px 14px; border-radius: 20px; background: #ef4444; color: #fff; font-size: 0.65rem; font-weight: 900; letter-spacing: 1.5px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);">SAIR</div>
                             </div>
@@ -176,37 +261,7 @@ const LandingPage = {
                     `}
                 </div>
 
-                <div style="height: 115px; margin-bottom: 80px; pointer-events: none;"></div>
 
-                <!-- Painel Inferior (Drawer) Estilizado -->
-                <div id="bottom-panel" class="bottom-panel" style="background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(30px) saturate(180%); -webkit-backdrop-filter: blur(30px) saturate(180%); border-top: 1px solid rgba(255,255,255,0.1); box-shadow: 0 -10px 40px rgba(0,0,0,0.5);">
-                    <div id="drawer-closer" style="width: 100%; height: 60px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease;">
-                        <div id="panel-handle" style="width: 40px; height: 4px; background: rgba(255,255,255,0.3); border-radius: 10px; box-shadow: 0 0 10px rgba(255,255,255,0.1);"></div>
-                    </div>
-                    <div id="drawer-content" class="drawer-grid" style="padding-bottom: 40px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px 10px;">
-                        ${menuItems.map(item => `
-                            <div class="menu-btn" data-route="${item.route}" style="cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                                <span class="material-symbols-rounded" style="font-size: 1.8rem; color: #94a3b8;">${item.icon}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                
-                <div id="footer-trigger" style="position: absolute; bottom: 0; left: 0; width: 100%; height: 70px; cursor: pointer; z-index: 200; display: flex; align-items: flex-start; justify-content: center;">
-                    <div style="margin-top: 15px; width: 30px; height: 3px; background: rgba(255,255,255,0.1); border-radius: 10px;"></div>
-                </div>
-
-                <style>
-                    .menu-btn:hover .icon-wrap {
-                        background: rgba(56, 189, 248, 0.15);
-                        border-color: #38bdf8;
-                        transform: translateY(-5px);
-                        box-shadow: 0 10px 20px rgba(56, 189, 248, 0.2);
-                    }
-                    .menu-btn:hover .material-symbols-rounded {
-                        color: #38bdf8;
-                    }
-                </style>
             </div>
         `;
     }

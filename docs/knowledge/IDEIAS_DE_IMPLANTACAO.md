@@ -52,6 +52,15 @@ Este documento serve como repositório para a visão criativa do PLOC, garantind
 
 ---
 
+## 📅 Inteligência Espacial e Calendário
+- **Ploc Analista (Arraste Contextual)**:
+    - Ao arrastar o Ploc e soltá-lo sobre um dia específico no Calendário, ele assume o papel de "Analista de Operações".
+    - **Ação**: O Ploc vasculha todas as anotações, tarefas, post-its e eventos salvos naquele dia.
+    - **Resultado**: Gera um resumo inteligente em tempo real (balão de fala ou áudio) destacando os pontos mais importantes, pendências e vitórias daquela data específica.
+    - **Mecânica**: Usa detecção de colisão (bounding box) entre o avatar e as células do calendário.
+
+---
+
 ## 🛠️ Infraestrutura e Manutenção
 - **Mecanismo de Cache Automático (Cache Busting)**: Implementado na v0.0.9 via query strings dinâmicas (`?v=N.N.N`) e política de `no-store` no Nginx. ✅
 
