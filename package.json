@@ -5,6 +5,8 @@
     "dev": "npm run dev:back",
     "dev:front": "npx serve apps/frontend",
     "dev:back": "cd apps/backend && npm run dev",
+    "deploy": "powershell ./scripts/deploy.ps1",
+    "test:db": "node apps/backend/tests/verify_prisma.js",
     "db:up": "docker-compose up -d",
     "db:down": "docker-compose down",
     "db:reset": "cd apps/backend && node scripts/reset-db.js"

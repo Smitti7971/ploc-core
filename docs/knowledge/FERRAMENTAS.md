@@ -3,6 +3,7 @@
 ## Utilitários de CLI
 - **jq (v1.8.1)** ✅ (validado via CMD)
 - **curl (v8.13.0)** ✅ (validado via CMD)
+- **Deploy Script (scripts/deploy.ps1)** ✅ (Novo: Automação Git + Coolify)
 - **winget (v1.28.240)** ✅ (validado via CMD)
 
 ## Ambiente de Desenvolvimento

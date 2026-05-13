@@ -108,27 +108,35 @@ const LandingPage = {
             if (!window.plocNoteDrag) {
                 window.plocNoteDrag = { active: null, offset: { x: 0, y: 0 } };
 
-                window.addEventListener('mousemove', (e) => {
+                const handleMove = (e) => {
                     if (!window.plocNoteDrag.active) return;
                     const { el, data } = window.plocNoteDrag.active;
                     
-                    const x = e.pageX - window.plocNoteDrag.offset.x;
-                    const y = e.pageY - window.plocNoteDrag.offset.y;
+                    const clientX = e.type.startsWith('touch') ? e.touches[0].pageX : e.pageX;
+                    const clientY = e.type.startsWith('touch') ? e.touches[0].pageY : e.pageY;
+
+                    const x = clientX - window.plocNoteDrag.offset.x;
+                    const y = clientY - window.plocNoteDrag.offset.y;
                     
                     el.style.left = `${x}px`;
                     el.style.top = `${y}px`;
                     
                     data.x = x;
                     data.y = y;
-                });
+                };
 
-                window.addEventListener('mouseup', () => {
+                const handleEnd = () => {
                     if (window.plocNoteDrag.active) {
                         window.plocNoteDrag.active.el.style.opacity = '1';
                         window.plocNoteDrag.active = null;
                         localStorage.setItem('ploc_sticky_notes', JSON.stringify(notes));
                     }
-                });
+                };
+
+                window.addEventListener('mousemove', handleMove);
+                window.addEventListener('touchmove', handleMove, { passive: false });
+                window.addEventListener('mouseup', handleEnd);
+                window.addEventListener('touchend', handleEnd);
             }
 
             const saveNotes = () => {
@@ -151,17 +159,27 @@ const LandingPage = {
                 `;
 
                 const header = el.querySelector('.note-header');
-                header.onmousedown = (e) => {
+                
+                const startDrag = (e) => {
                     if (e.target.closest('.note-btn')) return;
                     
+                    // Prevenir scroll apenas se for arraste na nota
+                    if (e.type === 'touchstart') e.preventDefault();
+
                     window.plocNoteDrag.active = { el, data: note };
                     const rect = el.getBoundingClientRect();
-                    window.plocNoteDrag.offset.x = e.pageX - rect.left;
-                    window.plocNoteDrag.offset.y = e.pageY - rect.top;
+                    const clientX = e.type === 'touchstart' ? e.touches[0].pageX : e.pageX;
+                    const clientY = e.type === 'touchstart' ? e.touches[0].pageY : e.pageY;
+
+                    window.plocNoteDrag.offset.x = clientX - rect.left;
+                    window.plocNoteDrag.offset.y = clientY - rect.top;
                     
                     el.style.opacity = '0.9';
                     el.style.zIndex = '1000000';
                 };
+
+                header.onmousedown = startDrag;
+                header.ontouchstart = startDrag;
 
                 const textarea = el.querySelector('textarea');
                 textarea.oninput = () => {
@@ -223,7 +241,7 @@ const LandingPage = {
                 </div>
                 
                 <!-- Overlay de Textura que rola junto -->
-                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png'); opacity: 0.05; pointer-events: none;"></div>
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('css/dark-matter.png'); opacity: 0.05; pointer-events: none;"></div>
 
                 <div id="network-status" style="position: fixed; top: 1.5rem; left: 1.5rem; z-index: 1000;">
                     <div id="status-dot" style="width: 10px; height: 10px; border-radius: 50%; background: #94a3b8; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 15px rgba(148, 163, 184, 0.3);"></div>

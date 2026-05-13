@@ -30,6 +30,10 @@ const routes = {
     'routines': async () => {
         const { default: RoutinesPage } = await import('../features/routines/RoutinesPage.js?v=0.1.3');
         return RoutinesPage.render();
+    },
+    'dev-insights': async () => {
+        const { default: DevInsightsPage } = await import('../features/dev-insights/DevInsightsPage.js?v=0.1.3');
+        return DevInsightsPage.render();
     }
 };
 
@@ -40,7 +44,7 @@ export const router = async () => {
     const hash = window.location.hash.slice(1) || 'landing';
     
     // Lista de rotas que exigem autenticação
-    const protectedRoutes = ['dashboard', 'calendar', 'kanban', 'settings', 'user-settings', 'routines'];
+    const protectedRoutes = ['dashboard', 'calendar', 'kanban', 'settings', 'user-settings', 'routines', 'dev-insights'];
     const token = localStorage.getItem('ploc_token');
 
     if (protectedRoutes.includes(hash) && !token) {

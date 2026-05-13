@@ -9,6 +9,13 @@ export const SettingsPage = {
             animation: fadeIn 0.4s ease;
         `;
 
+        // Recupera usuário para checar permissão dev
+        let user = {};
+        try {
+            const storedUser = localStorage.getItem('ploc_user');
+            if (storedUser) user = JSON.parse(storedUser);
+        } catch (e) {}
+
         container.innerHTML = `
             <div style="width: 100%; max-width: 500px;">
                 <!-- Header -->
@@ -27,6 +34,7 @@ export const SettingsPage = {
                     ${createSystemItem('IDIOMA', 'PORTUGUÊS (BR)', 'language')}
                     ${createSystemItem('VOZ DO PLOC', 'ATIVADA', 'mic')}
                     ${createSystemItem('SINCRONIZAÇÃO', 'AUTOMÁTICA', 'sync')}
+                    ${user?.email === 'smitti.j@gmail.com' ? createSystemItem('PLOC FORGE', 'MÉTRICAS DE DEV', 'terminal', 'btn-go-forge', true) : ''}
                 </div>
 
                 <div style="margin-top: 4rem; text-align: center;">
@@ -67,15 +75,20 @@ export const SettingsPage = {
         setTimeout(() => {
             const btnBack = container.querySelector('#btn-back-system');
             btnBack.onclick = () => window.location.hash = '#landing';
+
+            const btnForge = container.querySelector('#btn-go-forge');
+            if (btnForge) {
+                btnForge.onclick = () => window.location.hash = '#dev-insights';
+            }
         }, 0);
 
         return container;
     }
 };
 
-function createSystemItem(label, value, icon) {
+function createSystemItem(label, value, icon, id = '', hideChevron = false) {
     return `
-        <div class="system-item">
+        <div class="system-item" ${id ? `id="${id}"` : ''}>
             <div class="system-icon">
                 <span class="material-symbols-rounded">${icon}</span>
             </div>
@@ -83,7 +96,7 @@ function createSystemItem(label, value, icon) {
                 <div style="font-size: 0.55rem; font-weight: 900; color: #475569; letter-spacing: 1.5px; margin-bottom: 2px;">${label}</div>
                 <div style="font-size: 0.9rem; font-weight: 700; color: #fff;">${value}</div>
             </div>
-            <span class="material-symbols-rounded" style="color: #1e293b; font-size: 1.2rem;">chevron_right</span>
+            ${hideChevron ? '' : '<span class="material-symbols-rounded" style="color: #1e293b; font-size: 1.2rem;">chevron_right</span>'}
         </div>
     `;
 }
