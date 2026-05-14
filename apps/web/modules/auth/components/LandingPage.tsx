@@ -88,22 +88,28 @@ export default function LandingPage() {
 
   return (
     <>
-      <div
-        id="landing-container"
-        className="landing-page"
-        style={{
-          position: 'relative',
-          minHeight: '100vh',
-          width: '250vw',
-          background: 'radial-gradient(circle at top right, #1e293b 0%, #020617 100%)',
-          zIndex: 9999,
-          display: 'block',
-          overflowX: 'auto',
-          overflowY: 'auto',
-          fontFamily: "'Inter', sans-serif",
-        }}
-      >
-        {/* Texture overlay */}
+      {/* Viewport wrapper — mobile-safe, sem overflow horizontal no body */}
+      <div style={{ width: '100vw', height: '100dvh', overflow: 'hidden', position: 'relative' }}>
+        <div
+          id="landing-container"
+          className="landing-page"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            background: 'radial-gradient(circle at top right, #1e293b 0%, #020617 100%)',
+            zIndex: 1,
+            overflowX: 'auto',
+            overflowY: 'auto',
+            fontFamily: "'Inter', sans-serif",
+            /* Canvas interno pode ser 250vw para o efeito de workspace */
+          }}
+        >
+          {/* Canvas interno com largura expandida */}
+          <div style={{ minWidth: '250vw', minHeight: '100%', position: 'relative' }}>
+
+            {/* Texture overlay */}
         <div
           style={{
             position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
@@ -230,8 +236,11 @@ export default function LandingPage() {
               ACESSAR
             </button>
           )}
-        </div>
-      </div>
+          </div>{/* /User Capsule fixed */}
+
+          </div>{/* /canvas 250vw */}
+        </div>{/* /landing-container scrollable */}
+      </div>{/* /viewport wrapper */}
 
       {/* Auth Modal */}
       {authModal && (

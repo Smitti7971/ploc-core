@@ -1,9 +1,18 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Ploc — Produtividade Inteligente',
   description: 'Sua produtividade inteligente começa aqui.',
+};
+
+// ✅ Viewport configurado corretamente para Mobile First (Next.js App Router)
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#020617',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
