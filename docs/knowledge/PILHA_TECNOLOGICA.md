@@ -30,16 +30,21 @@
 - **Processamento de Imagem**: `sharp ^0.34.5` ✅ (validado: apps/backend/services/StorageService.js)
 - **Engine de Mídia**: Otimização em tempo real (WebP/Resize) via Sharp.
 
-## 🎨 Frontend (apps/frontend)
-- **Distribuição**: `PWA (Progressive Web App)` ✅ (confirmado: manifest.json e sw.js)
-- **Política de Cache**: `Cache-Control: expires max` (Nginx) ✅ (validado no Dockerfile do frontend)
-- **Automação**: Cache-Busting via Query String (`?v=N.N.N`) ✅
+## 🎨 Frontend (apps/web)
+- **Framework**: `Next.js 16.2.x` ✅ (validado: apps/web/package.json)
+- **Biblioteca de UI**: `React 19` ✅ (validado: apps/web/package.json)
+- **Ícones**: `Lucide-React ^1.14.0` ✅ (Padronizado em todo o App)
+- **Estilização**: `Tailwind CSS 4` ✅ (confirmado: tailwind.config.ts / package.json)
+- **Estado Global**: `Zustand ^5.0.x` ✅ (confirmado: apps/web/store/)
+- **Animações**: `Framer Motion ^12.x` ✅ (confirmado: apps/web/components/)
+- **Comunicação**: `Axios ^1.7.x` ✅ (confirmado: apps/web/services/)
+- **Linguagem**: `TypeScript 5.x` ✅
 
-- **Estrutura**: `SPA (Single Page Application)` baseada em HTML5 ✅ (confirmado: roteamento via JS detectado)
-- **Estilos**: `Vanilla CSS` (Moderno / Design System v1) ✅ (confirmado: apps/frontend/css/app.css)
-- **Lógica**: `Vanilla JavaScript` (ES6+ / Feature-Based) ✅ (confirmado: diretório apps/frontend/features)
-- **Estratégia de Ativos**: `Stateless Media` (Mídia servida via MinIO / S3) ✅
-- **Automação de Design**: `Jimp ^1.6.1` (Gerador de Ícones/Favicons - Local Only) ✅
+### Estratégia Frontend
+- **Arquitetura**: Next.js App Router (Server Components + Client Components) ✅
+- **Distribuição**: `PWA (Progressive Web App)` (Em migração para Next.js) ⚠️
+- **Mídia Stateless**: Integração total com MinIO / S3 via Backend ✅
+- **Deployment**: Vercel ou Docker (Next.js Standalone Mode) ✅
 
 ## ☁️ Infraestrutura (Coolify)
 

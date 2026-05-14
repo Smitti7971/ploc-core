@@ -1,4 +1,5 @@
-﻿import { AppShell } from '@/components/layout/AppShell';
+import { AppShell } from '@/components/layout/AppShell';
+import { Sparkles } from 'lucide-react';
 
 export default function Page() {
   return (
@@ -8,7 +9,7 @@ export default function Page() {
         alignItems: 'center', justifyContent: 'center',
         height: '100%', gap: '1rem', fontFamily: "'Inter', sans-serif",
       }}>
-        <i className="icon-magic-star" style={{ fontSize: '3rem', color: '#818cf8' }} />
+        <Sparkles size={64} color="#818cf8" />
         <h1 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 900, letterSpacing: '2px', margin: 0 }}>
           ROTINAS
         </h1>

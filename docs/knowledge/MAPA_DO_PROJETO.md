@@ -4,10 +4,10 @@
 
 ### 1. Serviço de Frontend (APP)
 - **URL Pública**: `https://ploc.midializando.cloud` ✅ (validado via Coolify API)
-- **Base Directory**: `/` (Configurado no Coolify) ✅ (validado via Coolify API)
-- **Build Pack**: `Dockerfile` (Nginx:stable-alpine personalizado) ✅ (validado no levantamento)
-- **Arquitetura**: SPA (Single Page Application) servida via Nginx ✅ (validado no levantamento)
-- **Versão**: v0.1.3 ✅ (validado pelo usuário)
+- **Base Directory**: `/apps/web` ✅ (Migrado para Next.js)
+- **Build Pack**: `Next.js / Docker` ✅
+- **Arquitetura**: Next.js 15 (App Router) ✅
+- **Versão**: v0.2.0 (Profile & Icons Update) ✅
 
 ### 2. Serviço de Backend (API)
 - **URL Pública**: `https://backend.midializando.cloud` ✅ (validado via Coolify API)
@@ -28,7 +28,7 @@
 - **Status**: Ativo (Autohospedado via Docker) ✅ (validado via Coolify API) 
 - **Endpoint**: `http://72.61.63.84:9000` ✅ (validado via Coolify API)
 - **Bucket Principal**: `ploc-assets` ✅ (validado no levantamento: apps/backend/.env e setup_minio.js)
-- **Função**: Armazenamento em nuvem de mídia (Fotos de Plantas, Avatares, Recibos) ✅ (validado no levantamento: identificada dependência `@aws-sdk/client-s3`)
+- **Função**: Armazenamento em nuvem de mídia (Fotos de Plantas, Avatares, Recibos) ✅ (Implementado: Upload de Avatares operando via StorageService)
 
 ### 5. Infraestrutura Local (Desenvolvimento)
 - **DB**: PostgreSQL 16 (via Docker Compose) ✅ (validado no levantamento: docker-compose.yml encontrado)
@@ -43,14 +43,14 @@
 - **Funcionalidades**: Listagem, Criação, Check/Uncheck, Deleção. ✅ (validado no levantamento: estruturas de controllers e rotas encontradas)
 - **Categorias**: Saúde, Finanças, Trabalho, Hábito, Leitura, Meditação, Estudo, Música. ✅ (validado no levantamento: campo `category` no schema.prisma)
 
-### 🎨 Arquitetura Frontend (Modular & Feature-Based)
-- **Landing Page (SUPREMA)**: Ponto de entrada, casa do Ploc, centro de interação primária e onde será centralizado as funcionalidades do projeto. ✅ (validado no levantamento: arquivo `features/auth/LandingPage.js` encontrado)
-- **Dashboard (Carrossel Expansivo)**: Navegação horizontal via scroll-snap com 6 slides operacionais (Finanças, Laboratório, Treino, Saúde, Dieta, Plantas).  ✅ (validado pelo usuário)
-- **Design System v1**: Centralizado em `apps/frontend/css/app.css` (Única Fonte da Verdade). ✅ (validado no levantamento: diretório `css/` encontrado)
-- **Feature-Based Architecture**: Organização por domínios em `apps/frontend/features/` (auth, calendar, chat, dashboard, routines, settings, tasks). ✅ (validado pelo usuário)
-- **Shared Layer**: Componentes e utilitários globais em `apps/assets/components` ✅ (validado pelo usuário) |
-- **Core App**: Ponto de entrada e roteamento em `apps/frontend/app/` (main.js, router.js). ✅ (validado no levantamento)
-- **Zero Page Reload**: SPA with dynamic routing and on-demand loading. ✅ (validado no levantamento: estrutura SPA detectada)
+### 🎨 Arquitetura Frontend (Modern Next.js)
+- **Landing Page (NEXT)**: Novo ponto de entrada em `apps/web/app/page.tsx`, integrando o PlocAvatar. ✅
+- [x] **Dashboard (Next.js App)**: Localizado em `apps/web/app/dashboard/`, migrado do legado Vanilla. ✅
+- [x] **Configurações (Settings)**: Nova página de gestão de perfil em `apps/web/app/settings/`. ✅
+- [x] **Design System v2**: Baseado em Tailwind CSS 4 e design tokens sincronizados. ✅
+- **Component Architecture**: Componentes reutilizáveis em `apps/web/components/` (mascot, layout, features). ✅
+- **State Management**: Zustand para estados globais (auth, ui, ploc). ✅
+- **Routing**: Next.js App Router para navegação otimizada e SEO. ✅
 
 ### 🧠 AI Layer (Cognitive Architecture)
 - **Orchestrator**: `apps/backend/ai/orchestrator/AIOrchestrator.js` gerencia intenções e ferramentas. ✅ (validado no levantamento: diretório `ai/` encontrado)
@@ -120,9 +120,8 @@
 ---
 
 ## 🚀 Roadmap e Objetivos Futuros
-- [x] **Conversão PWA**: Finalizado e validado ✅
-- [x] **Otimização de Cache**: Implementado no Nginx ✅
-- [x] **Plant System (Backend)**: Schema e modelos migrados ✅
-- [ ] **Plant System (Backend)**: Implementar endpoints (Serviços e Controllers).
-- [ ] **Plant System (Frontend)**: Implementar as telas de diário e calendário.
-- [ ] **Notificações Push**: Integrar com o Service Worker do PWA.
+- [x] **Migração Next.js**: Estrutura base e Mascot migrados ✅
+- [ ] **Migração Dashboard**: Portar todas as features do Vanilla para o Dashboard do Next.js.
+- [x] **Configurações de Usuário**: Página de settings e upload de foto implementados ✅
+- [ ] **Plant System (Full Stack)**: Finalizar endpoints e telas no Next.js.
+- [ ] **PWA & Push**: Configurar `@ducanh2912/next-pwa` para o novo frontend.

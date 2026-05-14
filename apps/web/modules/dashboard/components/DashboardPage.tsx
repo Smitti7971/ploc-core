@@ -8,17 +8,33 @@
 import { useRef } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
+import { 
+  ArrowLeft, 
+  LayoutDashboard, 
+  CheckSquare, 
+  Sparkles, 
+  Moon, 
+  Heart,
+  ChevronRight,
+  DollarSign,
+  Dumbbell,
+  Activity,
+  Apple,
+  Leaf,
+  LucideIcon
+} from 'lucide-react';
 
 // ── Slide: Placeholder genérico ──────────────────────────────────────────────
 interface PlaceholderSlideProps {
   id: string;
   title: string;
   accentColor: string;
+  icon: LucideIcon;
   hasLeft?: boolean;
   hasRight?: boolean;
 }
 
-function PlaceholderSlide({ id, title, accentColor, hasLeft = true, hasRight = true }: PlaceholderSlideProps) {
+function PlaceholderSlide({ id, title, accentColor, icon: Icon, hasLeft = true, hasRight = true }: PlaceholderSlideProps) {
   return (
     <section
       id={id}
@@ -29,26 +45,80 @@ function PlaceholderSlide({ id, title, accentColor, hasLeft = true, hasRight = t
         scrollSnapAlign: 'start',
         scrollSnapStop: 'always',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: `radial-gradient(circle at center, ${accentColor}0d 0%, transparent 70%)`,
+        background: '#000',
         overflow: 'hidden',
         position: 'relative',
       }}
     >
+      {/* Texto Fantasma de Fundo */}
       <h2 style={{
-        fontSize: 'clamp(2rem, 8vw, 3.5rem)',
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        fontSize: 'clamp(2rem, 15vw, 6rem)',
         fontWeight: 950,
-        letterSpacing: '15px',
+        letterSpacing: '20px',
         color: '#fff',
         textTransform: 'uppercase',
-        opacity: 0.15,
+        opacity: 0.03,
         filter: 'blur(1px)',
         whiteSpace: 'nowrap',
         userSelect: 'none',
+        zIndex: 0
       }}>
         {title}
       </h2>
+
+      {/* Conteúdo Centralizado */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '20px',
+        zIndex: 1
+      }}>
+        <div style={{
+          width: '80px',
+          height: '80px',
+          borderRadius: '24px',
+          background: `${accentColor}1a`,
+          border: `1px solid ${accentColor}33`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: accentColor,
+          boxShadow: `0 20px 40px rgba(0,0,0,0.4)`
+        }}>
+          <Icon size={40} />
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <h3 style={{ 
+            color: '#fff', 
+            margin: 0, 
+            fontSize: '1.2rem', 
+            fontWeight: 900, 
+            letterSpacing: '2px' 
+          }}>
+            {title}
+          </h3>
+          <p style={{ 
+            color: '#64748b', 
+            margin: '5px 0 0', 
+            fontSize: '0.7rem', 
+            fontWeight: 700, 
+            textTransform: 'uppercase',
+            letterSpacing: '1px'
+          }}>
+            Em Construção
+          </p>
+        </div>
+      </div>
+
       {hasLeft && <ChevronHint side="left" />}
       {hasRight && <ChevronHint side="right" />}
     </section>
@@ -81,62 +151,82 @@ function LabSlide() {
         gap: '1.2rem',
         padding: '1.5rem 1rem 6rem',
         position: 'relative',
-        background: 'radial-gradient(circle at top left, rgba(56, 189, 248, 0.08) 0%, transparent 50%)',
+        background: '#000',
         overflowY: 'auto',
       }}
     >
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: '360px', paddingTop: '0.5rem' }}>
+      {/* Texto Fantasma de Fundo (Padrão Calendário) */}
+      <h2 style={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        fontSize: 'clamp(2rem, 15vw, 6rem)',
+        fontWeight: 950,
+        letterSpacing: '20px',
+        color: '#fff',
+        textTransform: 'uppercase',
+        opacity: 0.03,
+        filter: 'blur(1px)',
+        whiteSpace: 'nowrap',
+        userSelect: 'none',
+        zIndex: 0
+      }}>
+        ROTINAS
+      </h2>
+
+      {/* Header Simplificado */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: '360px', paddingTop: '0.5rem', zIndex: 1 }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-          <span className="material-symbols-rounded" style={{ fontSize: '1.2rem', color: '#fff' }}>arrow_back</span>
+          <ArrowLeft size={18} color="#fff" />
         </Link>
-        <h1 style={{ color: '#38bdf8', letterSpacing: '4px', fontSize: '0.9rem', fontWeight: 900, opacity: 0.8, margin: 0 }}>
-          LABORATÓRIO
-        </h1>
         <div style={{ width: '40px' }} />
       </div>
 
-      {/* Bento Grid */}
+      {/* Conteúdo Centralizado (Placeholder Minimalista) */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '1rem',
-        width: '100%',
-        maxWidth: '360px',
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '20px',
+        zIndex: 1
       }}>
-        {/* Card fullwidth: Atividades */}
-        <BentoCard
-          icon="task-square" label="Atividades" value="12" unit="ATIVAS"
-          color="#38bdf8" span={2}
-          layout="row"
-        />
-
-        {/* Card: Foco */}
-        <BentoCard icon="magic-star" label="Dias em Foco" value="07" unit="DIAS" color="#c084fc" />
-
-        {/* Card: Sono */}
-        <BentoCard icon="moon" label="Sono" value="85" unit="%" color="#2dd4bf" />
-
-        {/* Card fullwidth: Saúde */}
         <div style={{
-          gridColumn: 'span 2',
-          background: 'rgba(251, 113, 133, 0.1)',
-          border: '1px solid rgba(251, 113, 133, 0.2)',
-          borderRadius: '20px',
-          padding: '1.2rem',
+          width: '80px',
+          height: '80px',
+          borderRadius: '24px',
+          background: 'rgba(56, 189, 248, 0.1)',
+          border: '1px solid rgba(56, 189, 248, 0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#38bdf8',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.4)'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 style={{ margin: 0, fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>Saúde e Corpo</h3>
-            <i className="icon-heart" style={{ color: '#fb7185', fontSize: '1.2rem' }} />
-          </div>
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            {[{ label: 'PESO', value: '78.5', unit: 'KG' }, { label: 'IMC', value: '24.2', unit: 'IDEAL' }].map((stat) => (
-              <div key={stat.label} style={{ flex: 1, background: 'rgba(0,0,0,0.2)', borderRadius: '12px', padding: '0.8rem', textAlign: 'center' }}>
-                <div style={{ color: '#94a3b8', fontSize: '0.6rem', fontWeight: 700, marginBottom: '4px' }}>{stat.label}</div>
-                <div style={{ color: '#fff', fontWeight: 900 }}>{stat.value} <span style={{ fontSize: '0.6rem', color: '#fb7185' }}>{stat.unit}</span></div>
-              </div>
-            ))}
-          </div>
+          <Sparkles size={40} />
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <h3 style={{ 
+            color: '#fff', 
+            margin: 0, 
+            fontSize: '1.2rem', 
+            fontWeight: 900, 
+            letterSpacing: '2px' 
+          }}>
+            ROTINAS
+          </h3>
+          <p style={{ 
+            color: '#64748b', 
+            margin: '5px 0 0', 
+            fontSize: '0.7rem', 
+            fontWeight: 700, 
+            textTransform: 'uppercase',
+            letterSpacing: '1px'
+          }}>
+            Em Construção
+          </p>
         </div>
       </div>
 
@@ -148,7 +238,7 @@ function LabSlide() {
 
 // ── Componentes Auxiliares ───────────────────────────────────────────────────
 interface BentoCardProps {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   value: string;
   unit: string;
@@ -170,8 +260,8 @@ function BentoCard({ icon, label, value, unit, color, span = 1, layout = 'col' }
       alignItems: layout === 'row' ? 'center' : 'flex-start',
       gap: layout === 'row' ? '1rem' : '0.5rem',
     }}>
-      <div style={{ width: '50px', height: '50px', borderRadius: '15px', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 8px 20px ${color}4d`, flexShrink: 0 }}>
-        <i className={`icon-${icon}`} style={{ color: '#fff', fontSize: '1.5rem' }} />
+      <div style={{ width: '50px', height: '50px', borderRadius: '15px', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 8px 20px ${color}4d`, flexShrink: 0, color: '#fff' }}>
+        {icon}
       </div>
       <div>
         <h3 style={{ margin: 0, fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>{label}</h3>
@@ -194,7 +284,7 @@ function ChevronHint({ side }: { side: 'left' | 'right' }) {
       animation: 'bounceX 2s infinite',
       pointerEvents: 'none',
     }}>
-      <span className="material-symbols-rounded" style={{ fontSize: '1.5rem', color: '#fff' }}>chevron_right</span>
+      <ChevronRight size={24} color="#fff" />
     </div>
   );
 }
@@ -234,12 +324,12 @@ export default function DashboardPage() {
           scrollbarWidth: 'none',
         }}
       >
-        <PlaceholderSlide id="slide-financas"  title="FINANÇAS" accentColor="#22c55e" hasLeft={false} />
+        <PlaceholderSlide id="slide-financas"  title="FINANÇAS" accentColor="#22c55e" icon={DollarSign} hasLeft={false} />
         <LabSlide />
-        <PlaceholderSlide id="slide-treino"    title="TREINO"   accentColor="#38bdf8" />
-        <PlaceholderSlide id="slide-saude"     title="SAÚDE"    accentColor="#ef4444" />
-        <PlaceholderSlide id="slide-dieta"     title="DIETA"    accentColor="#f97316" />
-        <PlaceholderSlide id="slide-botanica"  title="BOTÂNICA" accentColor="#10b981" hasRight={false} />
+        <PlaceholderSlide id="slide-treino"    title="TREINO"   accentColor="#38bdf8" icon={Dumbbell} />
+        <PlaceholderSlide id="slide-saude"     title="SAÚDE"    accentColor="#ef4444" icon={Activity} />
+        <PlaceholderSlide id="slide-dieta"     title="DIETA"    accentColor="#f97316" icon={Apple} />
+        <PlaceholderSlide id="slide-botanica"  title="BOTÂNICA" accentColor="#10b981" icon={Leaf} hasRight={false} />
       </div>
     </>
   );

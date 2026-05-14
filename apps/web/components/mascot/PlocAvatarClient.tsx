@@ -8,7 +8,7 @@
 import dynamic from 'next/dynamic';
 
 const PlocAvatarInner = dynamic(
-  () => import('./PlocAvatar').then(mod => ({ default: mod.PlocAvatar })),
+  () => import('./PlocAvatar'),
   { ssr: false }
 );
 

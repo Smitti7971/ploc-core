@@ -1,4 +1,5 @@
-﻿import { AppShell } from '@/components/layout/AppShell';
+import { AppShell } from '@/components/layout/AppShell';
+import { Calendar } from 'lucide-react';
 
 export default function Page() {
   return (
@@ -8,7 +9,7 @@ export default function Page() {
         alignItems: 'center', justifyContent: 'center',
         height: '100%', gap: '1rem', fontFamily: "'Inter', sans-serif",
       }}>
-        <i className="icon-calendar-2" style={{ fontSize: '3rem', color: '#c084fc' }} />
+        <Calendar size={64} color="#c084fc" />
         <h1 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 900, letterSpacing: '2px', margin: 0 }}>
           CALENDÁRIO
         </h1>

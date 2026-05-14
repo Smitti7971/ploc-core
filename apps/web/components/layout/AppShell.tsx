@@ -10,6 +10,8 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { DockMenu } from './DockMenu';
 import { PlocAvatarClient } from '@/components/mascot/PlocAvatarClient';
+import { UserHeader } from './UserHeader';
+import { usePathname } from 'next/navigation';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -18,12 +20,17 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const { isAuthenticated } = useAuthStore();
   const router = useRouter();
+  const pathname = usePathname();
+  const isSettings = pathname === '/settings';
 
   // Client-side auth guard (backup do middleware)
   useEffect(() => {
     const token = localStorage.getItem('ploc_token');
     if (!token && !isAuthenticated) {
       router.replace('/');
+    } else if (isAuthenticated) {
+      // Garante que o cookie existe para o Middleware
+      document.cookie = `ploc-auth=true; path=/; max-age=${60 * 60 * 24 * 7}`;
     }
   }, [isAuthenticated, router]);
 
@@ -54,8 +61,28 @@ export function AppShell({ children }: AppShellProps) {
       {/* Menu de navegação global */}
       <DockMenu />
 
-      {/* Mascote Ploc */}
-      <PlocAvatarClient />
+      {/* Header do Usuário (Cápsula Camaleão) - Oculto em settings para evitar duplicidade */}
+      {!isSettings && (
+        <div style={{ position: 'fixed', top: '30px', right: '30px', zIndex: 100000, pointerEvents: 'none' }}>
+          <UserHeader />
+        </div>
+      )}
+
+      {/* Mascote Ploc com posicionamento inteligente */}
+      <div style={{
+        position: 'fixed',
+        top: pathname === '/' ? '50%' : 'auto',
+        left: pathname === '/' ? '50%' : 'auto',
+        bottom: pathname === '/' ? 'auto' : '110px',
+        right: pathname === '/' ? 'auto' : '30px',
+        transform: pathname === '/' ? 'translate(-50%, -50%)' : 'none',
+        zIndex: 1000,
+        pointerEvents: 'none'
+      }}>
+        <div style={{ pointerEvents: 'all' }}>
+          <PlocAvatarClient />
+        </div>
+      </div>
     </div>
   );
 }

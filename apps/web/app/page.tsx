@@ -1,5 +1,15 @@
-import LandingPage from '@/modules/auth/components/LandingPage';
+'use client';
+
+import { useAuthStore } from '@/store/authStore';
+import LandingClient from "./LandingClient";
+import Blackboard from "@/modules/auth/components/Blackboard";
 
 export default function Home() {
-  return <LandingPage />;
+  const { isAuthenticated } = useAuthStore();
+  
+  if (isAuthenticated) {
+    return <Blackboard />;
+  }
+
+  return <LandingClient />;
 }

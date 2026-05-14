@@ -1,4 +1,5 @@
-﻿import { AppShell } from '@/components/layout/AppShell';
+import { AppShell } from '@/components/layout/AppShell';
+import { LayoutDashboard } from 'lucide-react';
 
 export default function Page() {
   return (
@@ -8,7 +9,7 @@ export default function Page() {
         alignItems: 'center', justifyContent: 'center',
         height: '100%', gap: '1rem', fontFamily: "'Inter', sans-serif",
       }}>
-        <i className="icon-chart-square" style={{ fontSize: '3rem', color: '#f59e0b' }} />
+        <LayoutDashboard size={64} color="#f59e0b" />
         <h1 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 900, letterSpacing: '2px', margin: 0 }}>
           DEV INSIGHTS
         </h1>

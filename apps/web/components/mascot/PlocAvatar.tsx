@@ -1,13 +1,8 @@
-'use client';
-
-/**
- * PlocAvatar.tsx — Mascote interativo do Ploc
- * Estados: sleeping | active | stressing | pissed
- * Draggável por toda a tela. Balão de fala. Minijogo de raiva.
- */
-
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
+import { useAuthStore } from '@/store/authStore';
+import { chatService } from '@/modules/chat/services/chatService';
 
 type PlocMode = 'sleeping' | 'active' | 'stressing' | 'pissed';
 
@@ -15,95 +10,119 @@ interface PlocState {
   mode: PlocMode;
   angerLevel: number;
   angerClicks: number;
-  speech: string | null;
+  isHurt: boolean;
 }
 
-// ── Hook de posição draggável ─────────────────────────────────────────────
-function useDraggable(initialPos: { x: number; y: number }) {
-  const [pos, setPos] = useState(initialPos);
-  const [dragging, setDragging] = useState(false);
-  const offsetRef = useRef({ x: 0, y: 0 });
-  const posRef = useRef(pos);
-  posRef.current = pos;
-
-  // Adjust position after client mount
-  const setInitialPos = useCallback((x: number, y: number) => {
-    setPos({ x, y });
-  }, []);
-
-  const onPointerDown = useCallback((e: React.PointerEvent) => {
-    e.stopPropagation();
-    setDragging(true);
-    offsetRef.current = {
-      x: e.clientX - posRef.current.x,
-      y: e.clientY - posRef.current.y,
-    };
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  }, []);
-
-  const onPointerMove = useCallback((e: React.PointerEvent) => {
-    if (!dragging) return;
-    setPos({
-      x: e.clientX - offsetRef.current.x,
-      y: e.clientY - offsetRef.current.y,
-    });
-  }, [dragging]);
-
-  const onPointerUp = useCallback(() => setDragging(false), []);
-
-  return { pos, setInitialPos, dragging, onPointerDown, onPointerMove, onPointerUp };
+interface PlocAvatarProps {
+  externalOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 // ── Componente Principal ──────────────────────────────────────────────────
-export function PlocAvatar() {
+export default function PlocAvatar({ externalOpen, onOpenChange }: PlocAvatarProps = {}) {
   const pathname = usePathname();
   const isLanding = pathname === '/';
   const isHidden = pathname === '/settings';
 
+  const [isInputOpen, setIsInputOpen] = useState(false);
+  
+  // Sincroniza estado local com prop externa se fornecida
+  const effectiveOpen = externalOpen !== undefined ? externalOpen : isInputOpen;
+  const setEffectiveOpen = (val: boolean) => {
+    if (onOpenChange) onOpenChange(val);
+    else setIsInputOpen(val);
+  };
+
+  const [isMounted, setIsMounted] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  const { user } = useAuthStore();
+
   // Estado persistido
   const [plocState, setPlocState] = useState<PlocState>({
     mode: 'sleeping',
-    angerLevel: 1,
+    angerLevel: 0,
     angerClicks: 0,
-    speech: null,
+    isHurt: false,
   });
+
+  const triggerHurt = () => {
+    setPlocState(prev => ({ ...prev, isHurt: true }));
+    speak("AII! Essa doeu! 🤕", 2000);
+    setTimeout(() => {
+      setPlocState(prev => ({ ...prev, isHurt: false }));
+    }, 1500);
+  };
 
   const speechTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Posição inicial: começa no centro, ajusta no cliente
-  const { pos, setInitialPos, dragging, onPointerDown, onPointerMove, onPointerUp } = useDraggable({ x: 0, y: 0 });
-
-  // Lê localStorage e posição inicial no cliente
+  // Lê localStorage no cliente
   useEffect(() => {
     setPlocState(prev => ({
       ...prev,
       angerLevel: parseInt(localStorage.getItem('ploc_anger_level') || '1'),
       angerClicks: parseInt(localStorage.getItem('ploc_anger_clicks') || '0'),
     }));
-    // Define posição real após montar no cliente
-    const SIZE = isLanding ? 120 : 80;
-    if (isLanding) {
-      setInitialPos(window.innerWidth / 2 - SIZE / 2, window.innerHeight / 2 - SIZE / 2);
-    } else {
-      setInitialPos(window.innerWidth - SIZE - 20, window.innerHeight / 2 - SIZE / 2);
-    }
-  }, [isLanding, setInitialPos]);
+  }, []);
 
   // Fórmula de dificuldade do minijogo
   const getClicksNeeded = (lvl: number) => Math.floor(Math.pow(lvl, 3) * 15);
 
-  const say = useCallback((text: string, duration = 3000) => {
-    if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
-    setPlocState(prev => ({ ...prev, speech: text }));
-    speechTimeoutRef.current = setTimeout(() => {
-      setPlocState(prev => ({ ...prev, speech: null }));
-    }, duration);
-  }, []);
+  const speak = (text: string, duration: number = 4000) => {
+    // Balão removido conforme solicitado
+  };
 
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    if (dragging) return;
+  const handleChatSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputValue.trim() || isLoading) return;
+
+    if (!user) {
+      speak("Para eu te ajudar com inteligência total, você precisa entrar primeiro! 😉");
+      setInputValue('');
+      setEffectiveOpen(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const res = await chatService.sendMessage(inputValue, {
+        isPissedOff: plocState.angerLevel >= 3
+      });
+      
+      speak(res.message || "Entendido!");
+      setInputValue('');
+      setEffectiveOpen(false);
+    } catch (err) {
+      speak("Ops, me engasguei aqui. Pode repetir? 😅");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    // Se clicar dormindo, acorda
+    if (plocState.mode === 'sleeping') {
+      setPlocState(prev => ({ ...prev, mode: 'active' }));
+      if (isLanding && !user) setEffectiveOpen(true); // Abre o mini-modal de auth na landing
+      return;
+    }
 
+    // Se clicar ativo e na landing sem user, toggle o mini-modal
+    if (isLanding && !user) {
+      setEffectiveOpen(!effectiveOpen);
+      return;
+    }
+
+    // Comportamento normal de chat se já logado
+    setEffectiveOpen(!effectiveOpen);
+    
+    // Mini game de irritação
     setPlocState(prev => {
       const newClicks = prev.angerClicks + 1;
       const needed = getClicksNeeded(prev.angerLevel);
@@ -114,7 +133,6 @@ export function PlocAvatar() {
         const newLevel = Math.min(prev.angerLevel + 1, 10);
         localStorage.setItem('ploc_anger_level', newLevel.toString());
         localStorage.setItem('ploc_anger_clicks', '0');
-        say('AGORA VOCÊ ME IRRITOU!', 5000);
         return { ...prev, mode: 'pissed', angerLevel: newLevel, angerClicks: 0 };
       }
 
@@ -123,31 +141,36 @@ export function PlocAvatar() {
         return { ...prev, mode: 'stressing', angerClicks: newClicks };
       }
 
-      if (prev.mode === 'sleeping') {
-        say('Me chamou?');
-      }
       return { ...prev, mode: 'active', angerClicks: newClicks };
     });
-  }, [dragging, say]);
+  };
 
-  // Clique fora: volta a dormir
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Clique fora: volta a dormir apenas se não for no Ploc
   useEffect(() => {
-    const handleOutside = () => {
-      setPlocState(prev => {
-        if (prev.mode !== 'sleeping') {
-          return { ...prev, mode: 'sleeping', speech: null };
-        }
-        return prev;
-      });
+    const handleOutside = (e: PointerEvent) => {
+      // Se clicou fora do container do Ploc
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setPlocState(prev => {
+          if (prev.mode !== 'sleeping') {
+            return { ...prev, mode: 'sleeping' };
+          }
+          return prev;
+        });
+        setEffectiveOpen(false);
+      }
     };
-    document.addEventListener('click', handleOutside);
-    return () => document.removeEventListener('click', handleOutside);
+    
+    // Usamos pointerdown para mobile/desktop e 'true' para capturar o evento na descida
+    document.addEventListener('pointerdown', handleOutside, true);
+    return () => document.removeEventListener('pointerdown', handleOutside, true);
   }, []);
 
   if (isHidden) return null;
 
   // ── Derivados visuais ─────────────────────────────────────────────────
-  const { mode, speech } = plocState;
+  const { mode } = plocState;
   const isSleeping  = mode === 'sleeping';
   const isPissed    = mode === 'pissed';
   const isStressing = mode === 'stressing';
@@ -159,142 +182,272 @@ export function PlocAvatar() {
   const r = Math.floor(56  + (isStressing ? progress * 183 : 0));
   const g = Math.floor(189 - (isStressing ? progress * 121 : 0));
   const b = Math.floor(248 - (isStressing ? progress * 180 : 0));
-  const bodyColor = isPissed
-    ? 'radial-gradient(circle at 35% 35%, rgba(239,68,68,0.85) 0%, rgba(220,38,38,0.95) 100%)'
-    : `radial-gradient(circle at 35% 35%, rgba(${r},${g},${b},0.75) 0%, rgba(14,165,233,0.85) 60%, rgba(3,105,161,0.95) 100%)`;
+  
+  const bodyColor = (isPissed || plocState.isHurt)
+    ? 'linear-gradient(135deg, #ef4444 0%, #991b1b 100%)' 
+    : isStressing
+      ? `rgba(${r}, ${g}, ${b}, 0.6)`
+      : `rgba(${r}, ${g}, ${b}, 0.35)`;
 
-  const opacity = isSleeping ? 0.4 : 0.85;
+  const limbColor = isSleeping ? '#0f172a' : (isPissed || plocState.isHurt ? 'rgba(239, 68, 68, 0.5)' : 'rgba(56, 189, 248, 0.4)');
+  const limbShadow = isSleeping ? 'none' : `0 0 3px ${isPissed || plocState.isHurt ? 'rgba(239, 68, 68, 0.3)' : 'rgba(56, 189, 248, 0.2)'}`; 
+
+  const opacity = isSleeping ? 0.6 : 1;
+
+  if (!isMounted) return null;
 
   return (
-    <div
+    <motion.div
+      ref={containerRef}
       id="ploc-singleton-mount"
+      drag
+      dragConstraints={typeof window !== 'undefined' ? (
+        isLanding ? {
+          left: -window.innerWidth / 2 + (pathname === '/dashboard' ? 60 : 90),
+          right: window.innerWidth / 2 - (pathname === '/dashboard' ? 60 : 90),
+          top: -window.innerHeight / 2 + (pathname === '/dashboard' ? 60 : 90),
+          bottom: window.innerHeight / 2 - (pathname === '/dashboard' ? 60 : 90),
+        } : {
+          left: -window.innerWidth + 100,
+          right: 30,
+          top: -window.innerHeight + 150,
+          bottom: 30,
+        }
+      ) : false}
+      dragElastic={0.2}
+      dragTransition={{ bounceStiffness: 600, bounceDamping: 20 }}
+      onDragEnd={(e, info) => {
+        const threshold = 600; // Um pouco mais difícil de machucar
+        if (Math.abs(info.velocity.x) > threshold || Math.abs(info.velocity.y) > threshold) {
+          // Pequeno atraso para o grito coincidir com a batida na borda (inércia)
+          setTimeout(() => {
+            triggerHurt();
+          }, 150); 
+        }
+      }}
+      whileDrag={{ 
+        scale: 1.05, // Aumento sutil no container
+      }}
+      initial={{ 
+        x: 0, 
+        y: 0, 
+        opacity: 0,
+        scale: 0.5 
+      }}
+      animate={{ 
+        opacity: 1,
+        scale: 1,
+        transition: { duration: 0.5 }
+      }}
       style={{
-        position: 'fixed',
-        left: pos.x,
-        top: pos.y,
-        width: SIZE,
-        height: SIZE,
+        position: 'relative', // Agora é relativo ao container que o AppShell/Blackboard define
+        width: isLanding ? 120 : 80,
+        height: isLanding ? 120 : 80,
         zIndex: 999999,
-        cursor: dragging ? 'grabbing' : 'grab',
+        cursor: 'grab',
         userSelect: 'none',
         touchAction: 'none',
-        transition: dragging ? 'none' : 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
-        animation: (!dragging && !isPissed) ? 'plocFloating 3s ease-in-out infinite' : 'none',
       }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
       onClick={handleClick}
     >
-      {/* Balão de fala */}
-      {speech && (
-        <div style={{
-          position: 'absolute',
-          bottom: '110%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'rgba(15, 23, 42, 0.95)',
-          border: '1px solid #38bdf8',
-          padding: '0.6rem 1rem',
-          borderRadius: '16px',
-          fontSize: '0.75rem',
-          fontWeight: 700,
-          whiteSpace: 'nowrap',
-          color: '#fff',
-          backdropFilter: 'blur(10px)',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-          zIndex: 10000,
-          pointerEvents: 'none',
-          animation: 'fadeIn 0.3s ease',
-          fontFamily: "'Inter', sans-serif",
-        }}>
-          {speech}
-          {/* Ponteiro */}
-          <div style={{
-            position: 'absolute',
-            bottom: '-6px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 0,
-            height: 0,
-            borderLeft: '6px solid transparent',
-            borderRight: '6px solid transparent',
-            borderTop: '6px solid #38bdf8',
-          }} />
-        </div>
-      )}
+      {/* Camada Interna para Flutuar e Respirar (Separada do Drag) */}
+      <motion.div
+        animate={{ y: [0, -12, 0] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        style={{ width: '100%', height: '100%', position: 'relative' }}
+      >
 
-      {/* Corpo do Ploc */}
-      <div
+      {/* Corpo do Ploc (Gelatina) */}
+      <motion.div
+        className={isPissed ? 'ploc-body-shake' : ''}
+        animate={{
+          background: bodyColor,
+          borderRadius: isPissed 
+            ? ["48% 52% 50% 50% / 50% 50% 50% 50%", "52% 48% 50% 50% / 50% 50% 50% 50%", "48% 52% 50% 50% / 50% 50% 50% 50%"]
+            : [
+                "50% 50% 48% 52% / 55% 55% 45% 45%", 
+                "54% 46% 52% 48% / 52% 56% 44% 48%", 
+                "48% 52% 50% 50% / 55% 48% 52% 45%",
+                "50% 50% 48% 52% / 55% 55% 45% 45%"
+              ],
+          scaleX: isSleeping ? 1.05 : 1,
+          scaleY: isSleeping ? 0.95 : 1,
+        }}
+        whileDrag={{
+          scaleX: 0.9, // Fica mais "fino"
+          scaleY: 1.1, // Fica mais "alto/esticado"
+          rotate: [0, 2, -2, 0],
+        }}
+        transition={{ 
+          background: { duration: 0.5 },
+          borderRadius: { duration: 4, repeat: Infinity, ease: "easeInOut" },
+          scaleX: { type: "spring", stiffness: 300, damping: 15 },
+          scaleY: { type: "spring", stiffness: 300, damping: 15 }
+        }}
+        whileTap={{ scale: 0.9, rotate: [0, -2, 2, 0] }} // Vibra ao clicar
         style={{
           position: 'absolute',
           inset: 0,
-          borderRadius: '50% 50% 50% 50% / 70% 70% 40% 40%',
-          background: bodyColor,
-          border: '1px solid rgba(255,255,255,0.2)',
+          border: '1px solid rgba(255,255,255,0.4)',
           overflow: 'hidden',
-          opacity,
-          transition: 'opacity 0.5s ease, background 0.5s ease',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          filter: isSleeping ? 'brightness(0.5) saturate(0.8)' : 'none',
           boxShadow: isPissed
-            ? '0 0 30px rgba(239,68,68,0.6)'
-            : isStressing
-              ? `0 0 20px rgba(${r},${g},${b},0.5)`
-              : '0 10px 40px rgba(56,189,248,0.3)',
-          animation: isPissed ? 'plocShake 0.1s infinite' : undefined,
+            ? '0 0 40px rgba(239,68,68,0.8), inset 0 0 20px rgba(255,255,255,0.3)'
+            : '0 10px 40px rgba(56,189,248,0.3), inset 0 0 15px rgba(255,255,255,0.2)',
         }}
       >
-        {/* Olhos */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10%', width: '100%', height: '100%' }}>
-          {[0, 1].map(i => (
-            <div
-              key={i}
+        {/* Bolhas de Ar Internas (Modo Estável) */}
+        <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+          {[1, 2, 3, 4, 5].map((b) => (
+            <motion.div
+              key={b}
+              animate={{
+                y: [0, -30, 0],
+                x: [0, Math.cos(b) * 15, 0],
+                opacity: [0.2, 0.5, 0.2],
+              }}
+              transition={{
+                duration: 5 + b,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
               style={{
-                width: '12%',
-                height: isSleeping ? '4%' : '22%',
-                background: '#1b234a',
-                borderRadius: isSleeping ? '10px' : '80% / 30%',
-                transition: 'all 0.3s ease',
-                animation: (!isSleeping && !isPissed) ? 'plocBlink 4s infinite' : undefined,
-                animationDelay: `${i * 0.5}s`,
+                position: 'absolute',
+                bottom: `${10 + b * 15}%`,
+                left: `${15 + (b % 3) * 20}%`,
+                width: `${6 + b * 2}px`,
+                height: `${6 + b * 2}px`,
+                background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.1) 70%)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '50%',
               }}
             />
           ))}
         </div>
 
-        {/* Língua (sleeping) */}
-        {isSleeping && (
-          <div style={{
-            position: 'absolute',
-            bottom: '15%',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '20%',
-            height: '12%',
-            background: '#fb7185',
-            borderRadius: '0 0 50% 50%',
-          }} />
-        )}
+        {/* Olhos */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15%', width: '100%', height: '100%', position: 'relative', zIndex: 2 }}>
+          {[0, 1].map(i => (
+            <div key={`eye-group-${i}`} style={{ position: 'relative', width: '12%', height: '20%', display: 'flex', alignItems: 'center' }}>
+              {/* Sombrancelhas */}
+              <motion.div
+                animate={{
+                  rotate: (plocState.isHurt || isPissed) ? (i === 0 ? 30 : -30) : 0,
+                  y: (plocState.isHurt || isPissed) ? 1 : -4, // Sobe um pouco no repouso
+                }}
+                style={{
+                  position: 'absolute',
+                  top: '-10px',
+                  left: '-20%',
+                  width: '140%',
+                  height: '4px',
+                  background: '#0f172a',
+                  borderRadius: '2px',
+                }}
+              />
+              {/* Olhos */}
+              <motion.div
+                className={(!isSleeping && !isPissed) ? 'ploc-eye-blink' : ''}
+                animate={{
+                  height: isSleeping ? '10%' : '100%', 
+                  borderRadius: isSleeping ? '2px' : '50%',
+                }}
+                transition={{ duration: 0.2 }}
+                style={{
+                  width: '100%', 
+                  height: '100%',
+                  background: '#0f172a',
+                }}
+              />
+            </div>
+          ))}
+        </div>
+
+
+        {/* Brilho Superior (Efeito Poring 3D) */}
+        <div style={{
+          position: 'absolute',
+          top: '12%',
+          left: '18%',
+          width: '25%',
+          height: '18%',
+          background: 'rgba(255,255,255,0.35)',
+          borderRadius: '50%',
+          filter: 'blur(3px)',
+          transform: 'rotate(-25deg)',
+        }} />
+      </motion.div>
+
+      {/* Membros estilo Palitinho (Doodle) */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        {/* Braços */}
+        {[-1, 1].map(side => (
+          <motion.div
+            key={`stick-arm-${side}`}
+            animate={{ rotate: [side * 20, side * 40, side * 20] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            style={{
+              position: 'absolute',
+              top: '50%',
+              [side === -1 ? 'left' : 'right']: '-25%', // Mais longe
+              width: '20px',
+              height: '6px',
+              background: limbColor,
+              boxShadow: limbShadow,
+              borderRadius: '3px',
+              transformOrigin: side === -1 ? 'right center' : 'left center',
+            }}
+          >
+            <div style={{
+              position: 'absolute',
+              [side === -1 ? 'left' : 'right']: '-8px',
+              top: '-2px',
+              width: '10px',
+              height: '10px',
+              borderRadius: '50%',
+              background: limbColor,
+              boxShadow: limbShadow,
+            }} />
+          </motion.div>
+        ))}
+
+        {/* Perninhas Flutuantes (Assumindo o estilo desconectado) */}
+        {[-1, 1].map(side => (
+          <motion.div
+            key={`stick-leg-${side}`}
+            animate={{ rotate: [side * 10, side * -10, side * 10] }}
+            transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+            style={{
+              position: 'absolute',
+              bottom: '-25px', // Bem soltas embaixo
+              [side === -1 ? 'left' : 'right']: '25%',
+              width: '6px',
+              height: '20px',
+              background: limbColor,
+              boxShadow: limbShadow,
+              borderRadius: '3px',
+              transformOrigin: 'top center',
+            }}
+          >
+            <div style={{
+              position: 'absolute',
+              bottom: '-5px',
+              left: '-2px',
+              width: '10px',
+              height: '10px',
+              borderRadius: '50%',
+              background: limbColor,
+              boxShadow: limbShadow,
+            }} />
+          </motion.div>
+        ))}
       </div>
-
-      {/* Zzz particles */}
+      {/* Limpeza de vestígios do Modal removido */}
       {isSleeping && <ZzzParticles />}
-
-      <style>{`
-        @keyframes plocBlink {
-          0%, 90%, 100% { transform: scaleY(1); }
-          95% { transform: scaleY(0.1); }
-        }
-        @keyframes plocZMove {
-          0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
-          50% { opacity: 0.8; }
-          100% { transform: translate(30px, -80px) scale(1.5); opacity: 0; }
-        }
-        @keyframes plocShake {
-          0%, 100% { transform: rotate(-3deg); }
-          50% { transform: rotate(3deg); }
-        }
-      `}</style>
-    </div>
+    </motion.div>
+    </motion.div>
   );
 }
 
@@ -306,7 +459,10 @@ function ZzzParticles() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const particle: ZParticle = { id: Date.now(), size: Math.floor(Math.random() * 10 + 12) };
+      const particle: ZParticle = { 
+        id: Date.now(), 
+        size: Math.floor(Math.random() * 15 + 20) 
+      };
       setZs(prev => [...prev.slice(-5), particle]);
       setTimeout(() => setZs(prev => prev.filter(z => z.id !== particle.id)), 2500);
     }, 600);
@@ -314,25 +470,31 @@ function ZzzParticles() {
   }, []);
 
   return (
-    <>
-      {zs.map(({ id, size }) => (
-        <span
+    <div style={{ position: 'absolute', right: '10px', top: '-40px', width: '100px', height: '100px', pointerEvents: 'none' }}>
+      {zs.map(({ id, size }, index) => (
+        <motion.span
           key={id}
+          initial={{ opacity: 0, y: 0, x: 0, scale: 0.5 }}
+          animate={{ 
+            opacity: [0, 1, 0], 
+            y: -100, 
+            x: Math.sin(id) * 20,
+            scale: 1.2
+          }}
+          transition={{ duration: 2.5, ease: "easeOut" }}
           style={{
             position: 'absolute',
-            right: '5px',
-            top: '5px',
-            color: 'rgba(56,189,248,0.6)',
-            fontWeight: 800,
+            color: index % 2 === 0 ? '#ffffff' : '#38bdf8', // Alterna entre branco e azul
+            textShadow: '0 0 12px rgba(56,189,248,0.6)',
+            fontWeight: 900,
             fontSize: `${size}px`,
-            animation: 'plocZMove 2.5s ease-out forwards',
-            pointerEvents: 'none',
-            fontFamily: 'sans-serif',
+            fontFamily: 'Outfit, sans-serif',
+            display: 'inline-block',
           }}
         >
           Z
-        </span>
+        </motion.span>
       ))}
-    </>
+    </div>
   );
 }

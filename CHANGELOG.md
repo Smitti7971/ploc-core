@@ -2,6 +2,14 @@
 
 Este arquivo registra a evolução técnica e visual do Ploc, servindo como a memória oficial de versões do projeto.
 
+## [0.2.0] - 2026-05-14
+### ✨ Perfil e Consolidação Next.js
+- **Upload de Avatar**: Implementação do sistema de upload de fotos de perfil com processamento via Sharp (WebP) e armazenamento persistente.
+- **Página de Configurações**: Criação do portal de ajustes de usuário (`/settings`) com interface Glassmorphism e feedback otimista.
+- **Migração de Ícones**: Substituição de fontes legadas por `lucide-react`, garantindo 100% de visibilidade e consistência visual no Dashboard e Menu.
+- **Persistência de Sessão**: Correção crítica no `authStore` (Zustand) para manter a sessão autenticada resiliente a recarregamentos de página.
+- **Proteção de Dados**: Implementação de tratamento de erros e fallbacks no `UserHeader` para evitar falhas durante a reidratação de dados.
+
 ## [0.1.4] - 2026-05-13
 ### ✨ Modernização e UX (Interface Panorâmica)
 - **Mural Panorâmico**: Implementação de canvas lateral de 250vw na LandingPage para organização espacial de notas.

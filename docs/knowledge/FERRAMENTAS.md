@@ -12,8 +12,8 @@
 - **Node.js (v25.9.0)** ✅ (validado via CMD)
 - **NPM (v11.12.1)** ✅ (validado via CMD)
 - **Prisma CLI (v7.8.0)** ✅ (validado via CMD)
-- **VS Code Extension: Live Server** ✅ (confirmado pelo usuário)
-- **PWA (Progressive Web App)** ✅ (validado: manifest.json e sw.js ativos)
+- **VS Code Extension: Tailwind CSS IntelliSense** ✅ (Recomendado para Tailwind 4)
+- **PWA (Progressive Web App)** ⚠️ (Em migração para Next.js)
 
 ## Notas de Configuração
 - O `jq` está configurado no PATH e funcional.

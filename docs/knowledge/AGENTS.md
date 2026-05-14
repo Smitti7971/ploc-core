@@ -15,7 +15,7 @@
 1. **Alinhamento**: Ler todos os arquivos de **Knowledge** (`MAPA_DO_PROJETO.md`, `PILHA_TECNOLOGICA.md`, `FERRAMENTAS.md`, `MODELO_DE_DADOS.md`, `ESTADO_DAS_APIS.md`) para entender o contexto total, restrições e modelos.
 2. **Auditoria de Terreno**: Antes de qualquer DRAFT, validar fisicamente o filesystem (usar `ls`, `grep`, `run_command`) para garantir que os arquivos citados na documentação existem e estão operantes.
 3. **Co-Criação e Estratégia (DRAFT)**: Criar um rascunho em `/docs/plans` detalhando a Lógica.
-   - **REGRA DE OURO**: Proibido sugerir bibliotecas (React, Tailwind, etc). Manter **Vanilla JS SPA** e **Mídia Stateless (MinIO)**.
+   - **REGRA DE OURO**: Priorizar o uso de **Next.js 15+**, **Tailwind CSS 4** e **Zustand**. Manter a arquitetura de **Mídia Stateless (MinIO)** para escalabilidade.
 4. **Aprovação**: Aguardar o "OK" consciente do USER sobre a lógica proposta.
 5. **Plano Operacional (Rigidez)**: Criar o `/docs/execution/current-task.md` seguindo rigorosamente as **5 Fases** detalhadas no [MASTER_PLANEJAMENTO_ESTRATEGICO.md](../guides/MASTER_PLANEJAMENTO_ESTRATEGICO.md).
 6. **Execução**: Executar um passo de cada vez, registrando o sucesso/falha no `current-task.md` com emojis.

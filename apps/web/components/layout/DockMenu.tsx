@@ -7,22 +7,31 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { 
+  LayoutDashboard, 
+  Calendar, 
+  CheckSquare, 
+  Sparkles, 
+  Heart, 
+  User, 
+  Settings,
+  Presentation
+} from 'lucide-react';
 
 interface DockItem {
-  icon: string;
+  icon: React.ReactNode;
   route: string;
   color: string;
   label: string;
 }
 
 const DOCK_ITEMS: DockItem[] = [
-  { icon: 'category',      route: '/dashboard',  color: '#60a5fa', label: 'Dashboard' },
-  { icon: 'calendar-2',    route: '/calendar',   color: '#c084fc', label: 'Calendário' },
-  { icon: 'task-square',   route: '/kanban',     color: '#4ade80', label: 'Tarefas' },
-  { icon: 'magic-star',    route: '/routines',   color: '#818cf8', label: 'Rotinas' },
-  { icon: 'heart',         route: '/health',     color: '#fb7185', label: 'Saúde' },
-  { icon: 'user-octagon',  route: '/profile',    color: '#2dd4bf', label: 'Perfil' },
-  { icon: 'setting-2',     route: '/settings',   color: '#94a3b8', label: 'Config' },
+  { icon: <Presentation size={20} />,    route: '/',           color: '#facc15', label: 'Blackboard' },
+  { icon: <LayoutDashboard size={20} />, route: '/dashboard',  color: '#60a5fa', label: 'Rotinas' },
+  { icon: <Calendar size={20} />,        route: '/calendar',   color: '#c084fc', label: 'Calendário' },
+  { icon: <CheckSquare size={20} />,     route: '/kanban',     color: '#4ade80', label: 'Tarefas' },
+  { icon: <Heart size={20} />,           route: '/health',     color: '#fb7185', label: 'Saúde' },
+  { icon: <Settings size={20} />,        route: '/settings',   color: '#94a3b8', label: 'Config' },
 ];
 
 export function DockMenu() {
@@ -92,10 +101,7 @@ export function DockMenu() {
                     cursor: 'pointer',
                   }}
                 >
-                  <i
-                    className={`icon-${item.icon}`}
-                    style={{ fontSize: '1.25rem' }}
-                  />
+                  {item.icon}
                 </div>
               </Link>
             );
