@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { DockMenu } from './DockMenu';
+import { PlocAvatarClient } from '@/components/mascot/PlocAvatarClient';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -52,6 +53,9 @@ export function AppShell({ children }: AppShellProps) {
 
       {/* Menu de navegação global */}
       <DockMenu />
+
+      {/* Mascote Ploc */}
+      <PlocAvatarClient />
     </div>
   );
 }

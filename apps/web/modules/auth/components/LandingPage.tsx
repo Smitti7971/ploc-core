@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { authService } from '@/modules/auth/services/authService';
 import { AuthModal } from '@/modules/auth/components/AuthModal';
+import { PlocAvatarClient } from '@/components/mascot/PlocAvatarClient';
 import type { AuthModalType } from '@/modules/auth/types/auth.types';
 
 interface StickyNote {
@@ -241,6 +242,8 @@ export default function LandingPage() {
           </div>{/* /canvas 250vw */}
         </div>{/* /landing-container scrollable */}
       </div>{/* /viewport wrapper */}
+
+      <PlocAvatarClient />
 
       {/* Auth Modal */}
       {authModal && (
