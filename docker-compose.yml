@@ -1,4 +1,5 @@
 services:
+  # Banco de Dados Local
   ploc-db-local:
     image: postgres:16-alpine
     container_name: ploc-db-local
@@ -12,5 +13,35 @@ services:
       - ploc_data_local:/var/lib/postgresql/data
     restart: unless-stopped
 
+  # Armazenamento de Fotos Local (MinIO)
+  ploc-storage-local:
+    image: minio/minio
+    container_name: ploc-storage-local
+    ports:
+      - "9000:9000" # API
+      - "9001:9001" # Console
+    environment:
+      MINIO_ROOT_USER: ploc_admin
+      MINIO_ROOT_PASSWORD: ploc_secret_password_2026
+    volumes:
+      - ploc_storage_data:/data
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+
+  # Auto-configuração do Bucket (Roda apenas uma vez)
+  ploc-storage-setup:
+    image: minio/mc
+    container_name: ploc-storage-setup
+    depends_on:
+      - ploc-storage-local
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc alias set local_minio http://ploc-storage-local:9000 ploc_admin ploc_secret_password_2026) do echo 'Aguardando MinIO...' && sleep 1; done;
+      /usr/bin/mc mb local_minio/ploc-assets;
+      /usr/bin/mc anonymous set public local_minio/ploc-assets;
+      exit 0;
+      "
+
 volumes:
   ploc_data_local:
+  ploc_storage_data:

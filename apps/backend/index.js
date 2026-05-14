@@ -18,6 +18,7 @@ const path = require('path');
 
 const app = express();
 app.use('/audio', express.static(path.join(__dirname, 'public/audio')));
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 const port = process.env.PORT || 3000;
