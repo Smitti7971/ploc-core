@@ -40,7 +40,8 @@ app.set('trust proxy', 1);
 // --- MIDDLEWARES DE SEGURANÇA ---
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
-  crossOriginEmbedderPolicy: false
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: false, // Desativado temporariamente para facilitar o debug em sslip.io
 }));
 
 const allowedOrigins = [
