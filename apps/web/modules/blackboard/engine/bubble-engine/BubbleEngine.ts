@@ -1,5 +1,5 @@
 import { BLACKBOARD_EVENTS, blackboardEventBus } from '../../events/eventBus';
-import { BlackboardBubble, BubbleType } from '../types/bubbles';
+import { BlackboardBubble, BubbleType } from '../../types/bubbles';
 import { attributeEngine } from '../attribute-engine/AttributeEngine';
 
 class BubbleEngine {
