@@ -590,9 +590,9 @@ export default function BlackboardPage() {
                 key={note.id}
                 note={note}
                 onDelete={() => deleteNote(note.id)}
-                onContentChange={(c) => updateNoteContent(note.id, c)}
+                onContentChange={(c: string) => updateNoteContent(note.id, c)}
                 onColorCycle={() => cycleNoteColor(note.id)}
-                onPositionChange={(x, y) => updateNotePosition(note.id, x, y)}
+                onPositionChange={(x: number, y: number) => updateNotePosition(note.id, x, y)}
                 onSave={() => localStorage.setItem('ploc_blackboard_notes', JSON.stringify(notes))}
               />
             ))}
