@@ -31,6 +31,7 @@ RUN echo 'server { \
     server_name localhost; \
     root /usr/share/nginx/html; \
     index index.html; \
+    absolute_redirect off; \
     location / { \
         try_files $uri $uri/ /index.html; \
     } \
