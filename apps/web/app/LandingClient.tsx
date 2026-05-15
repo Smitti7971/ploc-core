@@ -178,6 +178,7 @@ export default function LandingClient() {
                 type="email"
                 placeholder="E-MAIL"
                 value={authEmail}
+                autoComplete="email"
                 required
                 onChange={(e) => setAuthEmail(e.target.value)}
                 style={{ 
@@ -197,6 +198,7 @@ export default function LandingClient() {
                 type="password"
                 placeholder="SENHA"
                 value={authPass}
+                autoComplete="current-password"
                 required
                 onChange={(e) => setAuthPass(e.target.value)}
                 style={{ 

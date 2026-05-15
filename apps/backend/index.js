@@ -54,21 +54,23 @@ const allowedOrigins = [
   'http://localhost:3001'
 ].filter(Boolean);
 
+// --- MIDDLEWARE DE CORS MANUAL (FORÇA BRUTA) ---
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  res.header('Access-Control-Allow-Origin', origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
+// Configuração de CORS (Fallback)
 app.use(cors({
-  origin: function (origin, callback) {
-    // Permite requisições sem origin (como mobile apps ou curl)
-    if (!origin) return callback(null, true);
-    
-    const isLocal = origin.includes('localhost') || origin.includes('127.0.0.1');
-    if (isLocal || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('❌ CORS bloqueado para:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  origin: true,
   credentials: true
 }));
 
