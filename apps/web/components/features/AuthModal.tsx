@@ -111,6 +111,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)' }}>Nome</label>
                   <input
+                    id="feature-auth-name"
+                    name="name"
                     type="text"
                     required
                     value={name}
@@ -132,6 +134,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <label style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)' }}>E-mail</label>
                 <input
+                  id="feature-auth-email"
+                  name="email"
                   type="email"
                   required
                   value={email}
@@ -152,6 +156,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <label style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)' }}>Senha</label>
                 <input
+                  id="feature-auth-password"
+                  name="password"
                   type="password"
                   required
                   value={password}

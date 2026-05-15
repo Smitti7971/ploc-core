@@ -102,6 +102,8 @@ export function AuthModal({ initialType = 'login', onClose }: AuthModalProps) {
           {(['email', 'password', ...(!isLogin ? ['confirm'] : [])] as const).map((field) => (
             <input
               key={field}
+              id={`modal-auth-${field}`}
+              name={field}
               type={field === 'email' ? 'email' : 'password'}
               placeholder={field === 'email' ? 'E-mail' : field === 'password' ? 'Senha' : 'Confirmar Senha'}
               value={field === 'email' ? email : field === 'password' ? password : confirm}

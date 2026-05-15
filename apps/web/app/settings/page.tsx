@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { AppShell } from '@/components/layout/AppShell';
 import { useAuthStore } from '@/store/authStore';
+import { config } from '@/lib/config';
 import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, 
@@ -84,7 +85,7 @@ export default function SettingsPage() {
   const handleSaveChanges = async () => {
     setIsSaving(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+      const apiUrl = config.api.baseUrl;
       const res = await fetch(`${apiUrl}/api/users/me`, {
         method: 'PUT',
         headers: {
@@ -201,6 +202,8 @@ export default function SettingsPage() {
               <div style={{ position: 'relative' }}>
                 <User size={16} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
                 <input 
+                  id="settings-name"
+                  name="name"
                   type="text" value={name} onChange={(e) => setName(e.target.value)}
                   style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '14px 16px 14px 44px', color: '#fff', outline: 'none' }}
                 />
@@ -212,6 +215,8 @@ export default function SettingsPage() {
               <div style={{ position: 'relative' }}>
                 <Target size={16} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
                 <input 
+                  id="settings-username"
+                  name="username"
                   type="text" value={username} onChange={(e) => setUsername(e.target.value)}
                   style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '14px 16px 14px 44px', color: '#fff', outline: 'none' }}
                 />
@@ -223,6 +228,8 @@ export default function SettingsPage() {
               <div style={{ position: 'relative' }}>
                 <Mail size={16} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
                 <input 
+                  id="settings-email"
+                  name="email"
                   type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                   style={{ width: '100%', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '14px 16px 14px 44px', color: '#64748b', outline: 'none' }}
                 />

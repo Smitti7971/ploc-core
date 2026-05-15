@@ -153,6 +153,8 @@ export default function LandingClient() {
             <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {!isLogin && (
                 <input
+                  id="auth-name"
+                  name="name"
                   type="text"
                   placeholder="NOME"
                   value={authName}
@@ -171,6 +173,8 @@ export default function LandingClient() {
                 />
               )}
               <input
+                id="auth-email"
+                name="email"
                 type="email"
                 placeholder="E-MAIL"
                 value={authEmail}
@@ -188,6 +192,8 @@ export default function LandingClient() {
                 }}
               />
               <input
+                id="auth-password"
+                name="password"
                 type="password"
                 placeholder="SENHA"
                 value={authPass}
