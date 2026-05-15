@@ -6,8 +6,12 @@
 const getApiUrl = () => {
   let url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
   
+  // Garante que a URL termine com /api se não tiver
+  if (!url.endsWith('/api') && !url.endsWith('/api/')) {
+    url = url.endsWith('/') ? `${url}api` : `${url}/api`;
+  }
+
   // Proteção automática contra Mixed Content:
-  // Se o site estiver em HTTPS e a API em HTTP, faz o upgrade do protocolo.
   if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
     url = url.replace('http://', 'https://');
   }
