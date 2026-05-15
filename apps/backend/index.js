@@ -21,7 +21,8 @@ app.use('/audio', express.static(path.join(__dirname, 'public/audio')));
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
+console.log(`📡 Porta configurada: ${port} (Ambiente: ${process.env.NODE_ENV || 'development'})`);
 
 // --- LOGGER DE ACESSO (Customizado) ---
 app.use((req, res, next) => {

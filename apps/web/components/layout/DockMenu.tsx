@@ -27,7 +27,7 @@ interface DockItem {
 
 const DOCK_ITEMS: DockItem[] = [
   { icon: <Presentation size={20} />,    route: '/',           color: '#facc15', label: 'Blackboard' },
-  { icon: <LayoutDashboard size={20} />, route: '/dashboard',  color: '#60a5fa', label: 'Rotinas' },
+  { icon: <Sparkles size={20} />,     route: '/dashboard',  color: '#60a5fa', label: 'Rotinas' },
   { icon: <Calendar size={20} />,        route: '/calendar',   color: '#c084fc', label: 'Calendário' },
   { icon: <CheckSquare size={20} />,     route: '/kanban',     color: '#4ade80', label: 'Tarefas' },
   { icon: <Heart size={20} />,           route: '/health',     color: '#fb7185', label: 'Saúde' },

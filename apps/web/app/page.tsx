@@ -2,13 +2,13 @@
 
 import { useAuthStore } from '@/store/authStore';
 import LandingClient from "./LandingClient";
-import Blackboard from "@/modules/auth/components/Blackboard";
+import BlackboardPage from "@/modules/blackboard/components/BlackboardPage";
 
 export default function Home() {
   const { isAuthenticated } = useAuthStore();
   
   if (isAuthenticated) {
-    return <Blackboard />;
+    return <BlackboardPage />;
   }
 
   return <LandingClient />;

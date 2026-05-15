@@ -17,12 +17,10 @@ import {
   Heart,
   ChevronRight,
   DollarSign,
-  Dumbbell,
-  Activity,
-  Apple,
-  Leaf,
   LucideIcon
 } from 'lucide-react';
+import { Dumbbell, Activity, Apple, Leaf } from 'lucide-react';
+import { PillarPage } from '@/modules/routines/components/PillarPage';
 
 // ── Slide: Placeholder genérico ──────────────────────────────────────────────
 interface PlaceholderSlideProps {
@@ -293,10 +291,10 @@ function ChevronHint({ side }: { side: 'left' | 'right' }) {
 export default function DashboardPage() {
   const carouselRef = useRef<HTMLDivElement>(null);
 
-  // Inicia no slide Laboratório (índice 1)
+  // Inicia no slide Central (Mente - índice 1 de 5)
   const handleCarouselLoad = (el: HTMLDivElement | null) => {
     if (el) {
-      el.scrollLeft = window.innerWidth;
+      el.scrollLeft = window.innerWidth; // Começa na Mente
     }
   };
 
@@ -324,12 +322,11 @@ export default function DashboardPage() {
           scrollbarWidth: 'none',
         }}
       >
-        <PlaceholderSlide id="slide-financas"  title="FINANÇAS" accentColor="#22c55e" icon={DollarSign} hasLeft={false} />
-        <LabSlide />
-        <PlaceholderSlide id="slide-treino"    title="TREINO"   accentColor="#38bdf8" icon={Dumbbell} />
-        <PlaceholderSlide id="slide-saude"     title="SAÚDE"    accentColor="#ef4444" icon={Activity} />
-        <PlaceholderSlide id="slide-dieta"     title="DIETA"    accentColor="#f97316" icon={Apple} />
-        <PlaceholderSlide id="slide-botanica"  title="BOTÂNICA" accentColor="#10b981" icon={Leaf} hasRight={false} />
+        <PillarPage pillarId="corpo" />
+        <PillarPage pillarId="mente" />
+        <PillarPage pillarId="vida" />
+        <PillarPage pillarId="liberdade" />
+        <PillarPage pillarId="proposito" />
       </div>
     </>
   );

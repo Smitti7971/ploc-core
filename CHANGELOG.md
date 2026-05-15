@@ -2,6 +2,15 @@
 
 Este arquivo registra a evolução técnica e visual do Ploc, servindo como a memória oficial de versões do projeto.
 
+## [0.3.0] - 2026-05-15
+### ✨ Oceano Mental & Física de Navegação
+- **Motor de Bolhas (BubbleEngine)**: Implementação de física linear e contínua para tarefas, com convergência automática para o centro (Ploc) baseada na urgência (1h = 1000px).
+- **Sonar Temporal**: Sistema de radar visual com anéis concêntricos (0.5h, 1h, 3h, 6h) e ondas de pulso para orientação espacial e feedback de proximidade de prazos.
+- **Arquitetura de Zoom Adaptativo**: Novo sistema de zoom 'Smooth-to-Pointer' com wrapper de escala dinâmico, permitindo navegar entre visões estratégicas (Semana) e operacionais (Hora) sem perda de foco.
+- **Estabilização de Infraestrutura**: Migração definitiva do backend para a porta 5000 e resolução de conflitos de conectividade 404/ERR_CONNECTION_REFUSED.
+- **Performance de Canvas**: Otimização radical do Blackboard removendo o overhead do Framer Motion em elementos de larga escala, garantindo 60 FPS constantes.
+- **Radar de Centralização**: Implementação de botão de recuperação de foco (Target) com cálculo matemático determinístico para reposicionamento instantâneo no Ploc.
+
 ## [0.2.0] - 2026-05-14
 ### ✨ Perfil e Consolidação Next.js
 - **Upload de Avatar**: Implementação do sistema de upload de fotos de perfil com processamento via Sharp (WebP) e armazenamento persistente.

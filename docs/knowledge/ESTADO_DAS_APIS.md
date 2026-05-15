@@ -23,6 +23,7 @@
 - **Botanical DB**: `Plant, Phase, Log, Event, Media` ✅ (Validado via `verify_prisma.js`)
 - **Coolify API**: `http://72.61.63.84:8000/api/v1/health` ✅ (Coolify Nativo)
 - **Modo Híbrido**: Frontend configurado para usar Cloud por padrão em `localhost`. ✅
+- **RPG System**: Atributos calculados em tempo real via `AttributeEngine` (Client-side). ⚠️ (Pendente: Persistência em DB)
 
 ---
 *Nota: Se algum serviço apresentar 🔴 (Inativo), consulte o Guia de Credenciais.*

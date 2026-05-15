@@ -58,6 +58,13 @@
 - **Behaviors**: Gestão de prompts de comportamento em `apps/backend/ai/prompts/behaviors/`. ✅ (validado no levantamento)
 - **Event-Driven**: Comunicação assíncrona via `apps/backend/events/EventEmitter.js`. ✅ (validado no levantamento: diretório `events/` encontrado)
 
+### 🕹️ Blackboard & RPG System (Immersive UI)
+- **Radar Imersivo**: Canvas infinito (`8000x8000px`) com sistema de sonar e marcadores de borda inteligentes. ✅
+- **Navegação 60fps**: Sistema de centralização matemática (`centerOnPosition`) para foco instantâneo e estável em bolhas. ✅
+- **Attribute Engine**: Motor de progressão de atributos (Corpo, Mente, Vida, Liberdade, Propósito) integrado ao estouro de bolhas. ✅
+- **Bubble Engine**: Sistema de spawning dinâmico com suporte a metadados de recompensa (rewardAttribute). ✅
+- **Score (Foco)**: Sistema de economia de 'Moedas de Foco' baseado no desempenho no radar. ✅
+
 
 ### 📊 Estado de Saúde (Operacional - 2026-05-11) 🟢
 - **Frontend**: ✅ ATIVO (v0.1.3-CLEAN operando via Backend). ✅ (validado via Coolify API: status `running`)
@@ -121,7 +128,10 @@
 
 ## 🚀 Roadmap e Objetivos Futuros
 - [x] **Migração Next.js**: Estrutura base e Mascot migrados ✅
+- [x] **Blackboard Core**: Radar imersivo, navegação 60fps e foco centralizado ✅
+- [x] **RPG System v1**: Integração de atributos reais e geração de bolhas de teste ✅
 - [ ] **Migração Dashboard**: Portar todas as features do Vanilla para o Dashboard do Next.js.
 - [x] **Configurações de Usuário**: Página de settings e upload de foto implementados ✅
 - [ ] **Plant System (Full Stack)**: Finalizar endpoints e telas no Next.js.
 - [ ] **PWA & Push**: Configurar `@ducanh2912/next-pwa` para o novo frontend.
+- [ ] **Polimento Premium**: SFX (sons) e Auras visuais de alta prioridade.

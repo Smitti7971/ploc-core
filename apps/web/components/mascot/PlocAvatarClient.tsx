@@ -12,6 +12,12 @@ const PlocAvatarInner = dynamic(
   { ssr: false }
 );
 
-export function PlocAvatarClient() {
-  return <PlocAvatarInner />;
+export function PlocAvatarClient({ 
+  draggable = true, 
+  emotion = 'calm' 
+}: { 
+  draggable?: boolean;
+  emotion?: 'calm' | 'happy' | 'stressed' | 'pissed' | 'sleeping' | 'dizzy';
+}) {
+  return <PlocAvatarInner draggable={draggable} emotion={emotion} />;
 }

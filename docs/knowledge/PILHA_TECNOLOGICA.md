@@ -37,6 +37,8 @@
 - **Estilização**: `Tailwind CSS 4` ✅ (confirmado: tailwind.config.ts / package.json)
 - **Estado Global**: `Zustand ^5.0.x` ✅ (confirmado: apps/web/store/)
 - **Animações**: `Framer Motion ^12.x` ✅ (confirmado: apps/web/components/)
+- **Gestão de Eventos**: `EventEmitter / Custom EventBus` ✅ (Comunicação entre Engines e UI)
+- **Blackboard Engines**: Motores de estado personalizados (`BubbleEngine`, `AttributeEngine`, `PlocEngine`) ✅
 - **Comunicação**: `Axios ^1.7.x` ✅ (confirmado: apps/web/services/)
 - **Linguagem**: `TypeScript 5.x` ✅
 

@@ -118,6 +118,7 @@ export default function LandingClient() {
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            className="auth-modal"
             style={{
               position: 'relative',
               width: 'min(100%, 340px)',

@@ -1,10 +1,11 @@
 # Agent Instructions
 
 ## 🧭 Governança de Conhecimento
-1. **Fonte da Verdade**: O arquivo `docs/knowledge/MAPA_DO_PROJETO.md` é a autoridade máxima.
-2. **Histórico e Auditoria**: Arquivos em `archives/history/` e `archives/deleteds/` são registros fósseis. **NUNCA** use-os como referência para novos designs ou lógicas.
-3. **Plano de Voo**: Toda tarefa complexa deve começar com um `docs/execution/current-task.md`.
-4. **Regras de Nomenclatura**:
+1. **Fonte da Verdade**: O arquivo `docs/knowledge/MAPA_DO_PROJETO.md` é a autoridade técnica.
+2. **Bússola de Produto**: O arquivo `docs/knowledge/VISÃO_DO_PRODUTO.md` é o mapa mestre de "quem o Ploc é" — define a alma, estética e comportamento do sistema.
+3. **Histórico e Auditoria**: Arquivos em `archives/history/` e `archives/deleteds/` são registros fósseis. **NUNCA** use-os como referência para novos designs ou lógicas.
+4. **Plano de Voo**: Toda tarefa complexa deve começar com um `docs/execution/current-task.md`.
+5. **Regras de Nomenclatura**:
    - Pastas: `kebab-case` (ex: `user-services`).
    - Arquivos JS: `camelCase` (ex: `authController.js`).
    - Documentação: `UPPER_CASE` para arquivos mestres, `kebab-case` para o resto.

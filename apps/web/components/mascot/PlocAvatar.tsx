@@ -3,6 +3,9 @@ import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { chatService } from '@/modules/chat/services/chatService';
+import { PILLARS_DATA, IMPACT_ICONS, RoutineOption } from '@/modules/routines/data/routinesData';
+import { attributeEngine, UserAttributes } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
+import { Sparkles } from 'lucide-react';
 
 type PlocMode = 'sleeping' | 'active' | 'stressing' | 'pissed';
 
@@ -16,10 +19,17 @@ interface PlocState {
 interface PlocAvatarProps {
   externalOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
+  draggable?: boolean; // Nova prop para controlar o drag
+  emotion?: 'calm' | 'happy' | 'stressed' | 'pissed' | 'sleeping' | 'dizzy';
 }
 
 // ── Componente Principal ──────────────────────────────────────────────────
-export default function PlocAvatar({ externalOpen, onOpenChange }: PlocAvatarProps = {}) {
+export default function PlocAvatar({ 
+  externalOpen, 
+  onOpenChange, 
+  draggable = true,
+  emotion 
+}: PlocAvatarProps = {}) {
   const pathname = usePathname();
   const isLanding = pathname === '/';
   const isHidden = pathname === '/settings';
@@ -50,6 +60,12 @@ export default function PlocAvatar({ externalOpen, onOpenChange }: PlocAvatarPro
     isHurt: false,
   });
 
+  // Novos estados para Simulação
+  const [focusedRoutine, setFocusedRoutine] = useState<RoutineOption | null>(null);
+  const [focusedPillar, setFocusedPillar] = useState<string | null>(null);
+  const [showSimulation, setShowSimulation] = useState(false);
+  const attributes = attributeEngine.getAttributes();
+
   const triggerHurt = () => {
     setPlocState(prev => ({ ...prev, isHurt: true }));
     speak("AII! Essa doeu! 🤕", 2000);
@@ -68,6 +84,21 @@ export default function PlocAvatar({ externalOpen, onOpenChange }: PlocAvatarPro
       angerClicks: parseInt(localStorage.getItem('ploc_anger_clicks') || '0'),
     }));
   }, []);
+
+  // Sincroniza emoção externa com o modo do Ploc
+  useEffect(() => {
+    if (emotion) {
+      const modeMap: Record<string, PlocMode> = {
+        calm: 'active',
+        happy: 'active',
+        stressed: 'stressing',
+        pissed: 'pissed',
+        sleeping: 'sleeping',
+        dizzy: 'stressing'
+      };
+      setPlocState(prev => ({ ...prev, mode: modeMap[emotion] || 'active' }));
+    }
+  }, [emotion]);
 
   // Fórmula de dificuldade do minijogo
   const getClicksNeeded = (lvl: number) => Math.floor(Math.pow(lvl, 3) * 15);
@@ -109,20 +140,21 @@ export default function PlocAvatar({ externalOpen, onOpenChange }: PlocAvatarPro
     // Se clicar dormindo, acorda
     if (plocState.mode === 'sleeping') {
       setPlocState(prev => ({ ...prev, mode: 'active' }));
-      if (isLanding && !user) setEffectiveOpen(true); // Abre o mini-modal de auth na landing
+      if (focusedRoutine) {
+        setShowSimulation(true);
+      }
+      if (isLanding && !user) setEffectiveOpen(true);
       return;
     }
 
-    // Se clicar ativo e na landing sem user, toggle o mini-modal
-    if (isLanding && !user) {
+    // Se já estiver ativo, toggle simulação se houver foco
+    if (focusedRoutine) {
+      setShowSimulation(!showSimulation);
+    } else {
       setEffectiveOpen(!effectiveOpen);
-      return;
     }
-
-    // Comportamento normal de chat se já logado
-    setEffectiveOpen(!effectiveOpen);
     
-    // Mini game de irritação
+    // Mini game de irritação (mantido)
     setPlocState(prev => {
       const newClicks = prev.angerClicks + 1;
       const needed = getClicksNeeded(prev.angerLevel);
@@ -150,15 +182,31 @@ export default function PlocAvatar({ externalOpen, onOpenChange }: PlocAvatarPro
   // Clique fora: volta a dormir apenas se não for no Ploc
   useEffect(() => {
     const handleOutside = (e: PointerEvent) => {
+      const target = e.target as HTMLElement;
+      
+      // Se clicou em um input, textarea ou dentro de um modal de auth, não faz nada
+      if (
+        target.tagName === 'INPUT' || 
+        target.tagName === 'TEXTAREA' || 
+        target.closest('.auth-modal') ||
+        target.closest('form')
+      ) {
+        return;
+      }
+
       // Se clicou fora do container do Ploc
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (containerRef.current && !containerRef.current.contains(target)) {
         setPlocState(prev => {
           if (prev.mode !== 'sleeping') {
             return { ...prev, mode: 'sleeping' };
           }
           return prev;
         });
-        setEffectiveOpen(false);
+        
+        // Só fecha se for o controle interno (chat) e não um modal externo de login
+        if (externalOpen === undefined) {
+          setEffectiveOpen(false);
+        }
       }
     };
     
@@ -200,7 +248,7 @@ export default function PlocAvatar({ externalOpen, onOpenChange }: PlocAvatarPro
     <motion.div
       ref={containerRef}
       id="ploc-singleton-mount"
-      drag
+      drag={draggable}
       dragConstraints={typeof window !== 'undefined' ? (
         isLanding ? {
           left: -window.innerWidth / 2 + (pathname === '/dashboard' ? 60 : 90),
@@ -216,13 +264,30 @@ export default function PlocAvatar({ externalOpen, onOpenChange }: PlocAvatarPro
       ) : false}
       dragElastic={0.2}
       dragTransition={{ bounceStiffness: 600, bounceDamping: 20 }}
+      onDrag={(e, info) => {
+        // Detecção de card sob o Ploc
+        const el = document.elementFromPoint(info.point.x, info.point.y);
+        const card = el?.closest('[data-routine-id]');
+        if (card) {
+          const rId = card.getAttribute('data-routine-id');
+          const pId = card.getAttribute('data-pillar-id');
+          if (rId && pId && PILLARS_DATA[pId]) {
+            const routine = PILLARS_DATA[pId].options.find(o => o.id === rId);
+            if (routine && routine.id !== focusedRoutine?.id) {
+              setFocusedRoutine(routine);
+              setFocusedPillar(pId);
+            }
+          }
+        } else if (focusedRoutine) {
+          setFocusedRoutine(null);
+          setFocusedPillar(null);
+          setShowSimulation(false);
+        }
+      }}
       onDragEnd={(e, info) => {
-        const threshold = 600; // Um pouco mais difícil de machucar
+        const threshold = 600;
         if (Math.abs(info.velocity.x) > threshold || Math.abs(info.velocity.y) > threshold) {
-          // Pequeno atraso para o grito coincidir com a batida na borda (inércia)
-          setTimeout(() => {
-            triggerHurt();
-          }, 150); 
+          setTimeout(() => { triggerHurt(); }, 150); 
         }
       }}
       whileDrag={{ 
@@ -250,9 +315,85 @@ export default function PlocAvatar({ externalOpen, onOpenChange }: PlocAvatarPro
       }}
       onClick={handleClick}
     >
+      {/* Simulation Speech Bubble */}
+      <AnimatePresence>
+        {showSimulation && focusedRoutine && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, x: -100, scale: 0.8 }}
+            animate={{ opacity: 1, y: -220, x: -120, scale: 1 }}
+            exit={{ opacity: 0, y: 10, x: -100, scale: 0.8 }}
+            style={{
+              position: 'absolute',
+              width: '280px',
+              background: 'rgba(15, 23, 42, 0.95)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(56, 189, 248, 0.3)',
+              borderRadius: '24px',
+              padding: '1.2rem',
+              zIndex: 1000,
+              boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+              color: '#fff'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
+               <Sparkles size={16} color="#38bdf8" />
+               <span style={{ fontSize: '0.7rem', fontWeight: 900, letterSpacing: '1px' }}>PREVISÃO PLOC</span>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
+              {(Object.keys(PILLARS_DATA) as Array<keyof UserAttributes>).map(key => {
+                const pConfig = PILLARS_DATA[key];
+                const PIcon = pConfig.icon;
+                const current = attributes[key];
+                const impact = focusedRoutine.impacts.find(i => i.pilar === key)?.val || 0;
+                const simulated = Math.min(100, Math.max(0, current + impact));
+                
+                const getCol = (v: number) => {
+                  if (v >= 70) return '#22c55e';
+                  if (v >= 40) return pConfig.color;
+                  return '#ef4444';
+                };
+                const sColor = getCol(simulated);
+
+                return (
+                  <div key={key} style={{ textAlign: 'center' }}>
+                    <div style={{ 
+                      width: '40px', height: '40px', borderRadius: '12px', 
+                      background: 'rgba(255,255,255,0.03)', 
+                      border: `1px solid ${impact !== 0 ? sColor + '40' : 'rgba(255,255,255,0.05)'}`,
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      position: 'relative', margin: '0 auto 4px'
+                    }}>
+                      <PIcon size={12} color={impact !== 0 ? sColor : '#475569'} />
+                      <span style={{ fontSize: '0.6rem', fontWeight: 900 }}>{simulated}</span>
+                      {impact !== 0 && (
+                        <div style={{
+                          position: 'absolute', top: '-8px', right: '-8px',
+                          background: impact > 0 ? '#22c55e' : '#ef4444',
+                          color: '#fff', fontSize: '0.5rem', fontWeight: 900,
+                          padding: '1px 3px', borderRadius: '3px'
+                        }}>{impact > 0 ? `+${impact}` : impact}</div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '10px', lineHeight: '1.4' }}>
+              "{focusedRoutine.title} vai mudar seu estado, humano. Faz sentido para você agora?"
+            </p>
+            {/* Arrow tail */}
+            <div style={{
+              position: 'absolute', bottom: '-10px', left: '50%', transform: 'translateX(-50%)',
+              width: '0', height: '0', borderLeft: '10px solid transparent', borderRight: '10px solid transparent',
+              borderTop: '10px solid rgba(15, 23, 42, 0.95)'
+            }} />
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Camada Interna para Flutuar e Respirar (Separada do Drag) */}
       <motion.div
-        animate={{ y: [0, -12, 0] }}
+        animate={{ y: [6, -6, 6] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         style={{ width: '100%', height: '100%', position: 'relative' }}
       >
