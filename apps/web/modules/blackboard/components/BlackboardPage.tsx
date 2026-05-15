@@ -71,7 +71,7 @@ export default function BlackboardPage() {
   const [bubbles, setBubbles] = useState<BlackboardBubble[]>([]);
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
-  const [viewMode, setViewMode] = useState<'free' | '1h' | 'day' | 'week'>('day');
+  const [viewMode, setViewMode] = useState<'free' | '1h' | 'day' | 'week' | 'month'>('day');
   const [isCentered, setIsCentered] = useState(true);
   const [lastCompleted, setLastCompleted] = useState<string | null>(null);
   const [plocReaction, setPlocReaction] = useState<'idle' | 'happy' | 'stressed' | 'dizzy'>('idle');

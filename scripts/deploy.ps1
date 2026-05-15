@@ -10,19 +10,15 @@ $BACK_UUID = "leaocf7ke5lgluo0bg2dco0w"
 
 Write-Host "📦 Iniciando Sincronização Git..." -ForegroundColor Cyan
 git add .
-git commit -m "$msg"
+git commit -m $msg
 git push origin main
 
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "Git Push realizado com sucesso!" -ForegroundColor Green
-    
-    Write-Host "Disparando Deploy no Coolify (Frontend)..." -ForegroundColor Yellow
-    curl.exe -k -s -X GET "https://coolify.midializando.cloud/api/v1/deploy?uuid=$FRONT_UUID`&force=true" -H "Authorization: Bearer $TOKEN"
-    
-    Write-Host "`nDisparando Deploy no Coolify (Backend)..." -ForegroundColor Yellow
-    curl.exe -k -s -X GET "https://coolify.midializando.cloud/api/v1/deploy?uuid=$BACK_UUID`&force=true" -H "Authorization: Bearer $TOKEN"
+Write-Host "Disparando Deploy no Coolify (Frontend)..." -ForegroundColor Yellow
+$frontUrl = "https://coolify.midializando.cloud/api/v1/deploy?uuid=" + $FRONT_UUID + "&force=true"
+curl.exe -k -s -X GET $frontUrl -H "Authorization: Bearer $TOKEN"
 
-    Write-Host "`nProcesso Finalizado! Aguarde alguns minutos para o build terminar no servidor." -ForegroundColor Green
-} else {
-    Write-Host "Erro no Git. O deploy foi cancelado." -ForegroundColor Red
-}
+Write-Host "`nDisparando Deploy no Coolify (Backend)..." -ForegroundColor Yellow
+$backUrl = "https://coolify.midializando.cloud/api/v1/deploy?uuid=" + $BACK_UUID + "&force=true"
+curl.exe -k -s -X GET $backUrl -H "Authorization: Bearer $TOKEN"
+
+Write-Host "`nProcesso Finalizado! Verifique o painel do Coolify." -ForegroundColor Green
