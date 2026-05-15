@@ -266,6 +266,9 @@ export default function BlackboardPage() {
       })
     );
 
+  const updateNotePosition = (id: number, x: number, y: number) =>
+    saveNotes(notes.map((n) => (n.id === id ? { ...n, x, y } : n)));
+
   // --- State e Refs ---
   const scaleRef = useRef(scale);
   const lastZoomTime = useRef(0);
