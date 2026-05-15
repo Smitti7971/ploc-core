@@ -363,7 +363,7 @@ export default function BlackboardPage() {
 
   // Auto-center on mount
   useEffect(() => {
-    centerOnOrigin(undefined, 'auto');
+    centerOnOrigin('auto');
   }, []);
 
   const toggleFullScreen = () => {
