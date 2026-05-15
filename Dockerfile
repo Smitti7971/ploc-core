@@ -33,7 +33,7 @@ RUN echo 'server { \
     index index.html; \
     absolute_redirect off; \
     location / { \
-        try_files $uri $uri/ /index.html; \
+        try_files $uri $uri.html $uri/ /index.html; \
     } \
     # Cache para assets estáticos \
     location ~* \.(js|css|json|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ { \

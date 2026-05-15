@@ -15,7 +15,17 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
   const config = PILLARS_DATA[pillarId];
   if (!config) return null;
 
-  const [attributes] = useState(attributeEngine.getAttributes());
+  const [isMounted, setIsMounted] = React.useState(false);
+  const [attributes, setAttributes] = useState(attributeEngine.getAttributes());
+
+  React.useEffect(() => {
+    setIsMounted(true);
+    // Sincroniza com o estado atual do engine (que já leu o localStorage)
+    setAttributes(attributeEngine.getAttributes());
+  }, []);
+
+  if (!isMounted) return null;
+
 
   const currentLevel = attributes[config.id];
   const Icon = config.icon;
