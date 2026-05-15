@@ -251,10 +251,10 @@ export default function PlocAvatar({
       drag={draggable}
       dragConstraints={typeof window !== 'undefined' ? (
         isLanding ? {
-          left: -window.innerWidth / 2 + (pathname === '/dashboard' ? 60 : 90),
-          right: window.innerWidth / 2 - (pathname === '/dashboard' ? 60 : 90),
-          top: -window.innerHeight / 2 + (pathname === '/dashboard' ? 60 : 90),
-          bottom: window.innerHeight / 2 - (pathname === '/dashboard' ? 60 : 90),
+          left: -window.innerWidth / 2 + ((pathname as string) === '/dashboard' ? 60 : 90),
+          right: window.innerWidth / 2 - ((pathname as string) === '/dashboard' ? 60 : 90),
+          top: -window.innerHeight / 2 + ((pathname as string) === '/dashboard' ? 60 : 90),
+          bottom: window.innerHeight / 2 - ((pathname as string) === '/dashboard' ? 60 : 90),
         } : {
           left: -window.innerWidth + 100,
           right: 30,
