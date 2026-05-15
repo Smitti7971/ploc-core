@@ -699,10 +699,10 @@ export default function BlackboardPage() {
                 let visualDist = 0;
                 const totalMins = (bubble.metadata as any)?.totalMinutes || 10;
                 if (isOutward) {
-                  const progress = Math.min(1, 1 - (bubble.minutesRemaining / totalMins));
+                  const progress = Math.min(1, 1 - ((bubble.minutesRemaining || 0) / totalMins));
                   visualDist = progress * 500;
                 } else {
-                  visualDist = Math.max(120, (bubble.minutesRemaining / windowMinutes) * 500);
+                  visualDist = Math.max(120, ((bubble.minutesRemaining || 0) / windowMinutes) * 500);
                 }
 
                 const visualX = 1000 + Math.cos(bubble.angle || 0) * visualDist;
