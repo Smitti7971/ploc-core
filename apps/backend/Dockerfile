@@ -22,7 +22,7 @@ RUN npx prisma generate
 COPY . .
 
 # 6. Expor a porta da API
-EXPOSE 5000
+EXPOSE 3000
 
 # 7. Comando de inicialização: 
 # Gera o cliente (garantia), roda migrações e inicia o servidor.
