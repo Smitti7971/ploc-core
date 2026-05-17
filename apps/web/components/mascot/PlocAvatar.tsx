@@ -1,7 +1,7 @@
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useMemo } from 'react';
 import { usePathname } from 'next/navigation';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, MessageSquare, Send } from 'lucide-react';
 
 import { PlocAvatarProps } from './types';
 import { usePlocState } from './usePlocState';
@@ -9,6 +9,7 @@ import { usePlocSpeech } from './usePlocSpeech';
 import { PlocFace } from './PlocFace';
 import { PlocBubbles } from './PlocBubbles';
 import { PlocLimbs } from './PlocLimbs';
+import { chatService } from '@/modules/chat/services/chatService';
 
 import { PILLARS_DATA, IMPACT_ICONS } from '@/modules/routines/data/routinesData';
 import { attributeEngine, UserAttributes } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
@@ -45,6 +46,42 @@ export default function PlocAvatar({
     isPissed,
     isStressing,
   } = usePlocState({ emotion, speak });
+
+  // Chat / Dialogue System with Ploc (OpenAI Integration)
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<Array<{ sender: 'user' | 'ploc', text: string }>>([
+    { sender: 'ploc', text: 'Olá, mestre! Eu sou o Ploc. O que vamos planejar ou conversar hoje? 🫧' }
+  ]);
+  const [inputValue, setInputValue] = useState('');
+  const [isPending, setIsPending] = useState(false);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [chatMessages.length, isPending]);
+
+  const handleSendMessage = async (text: string) => {
+    if (!text.trim()) return;
+    
+    setChatMessages(prev => [...prev, { sender: 'user', text }]);
+    setInputValue('');
+    setIsPending(true);
+
+    try {
+      const res = await chatService.sendMessage(text);
+      const reply = res.message || "Não entendi muito bem, mestre. Pode repetir? 😅";
+      
+      setChatMessages(prev => [...prev, { sender: 'ploc', text: reply }]);
+      speak(reply, Math.min(8000, reply.length * 80 + 2000));
+    } catch (e) {
+      console.error(e);
+      setChatMessages(prev => [...prev, { sender: 'ploc', text: "Tive um curto-circuito na conexão. Vamos tentar de novo? 🔌" }]);
+    } finally {
+      setIsPending(false);
+    }
+  };
 
   const attributes = attributeEngine.getAttributes();
   const SIZE = isLanding ? 120 : 80;
@@ -256,7 +293,185 @@ export default function PlocAvatar({
             </div>
           </motion.div>
         )}
+
+        {isChatOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 15, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 15, scale: 0.9 }}
+            onClick={(e) => e.stopPropagation()} // impede cliques no chat de ativarem mini-game
+            style={{
+              position: 'absolute',
+              bottom: '125%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '300px',
+              background: 'rgba(15, 23, 42, 0.94)',
+              border: '1px solid rgba(56, 189, 248, 0.35)',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.6), inset 0 0 15px rgba(56,189,248,0.15)',
+              borderRadius: '20px',
+              padding: '16px',
+              zIndex: 99999,
+              backdropFilter: 'blur(16px)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(56, 189, 248, 0.15)', paddingBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px' }}>👾</span>
+                <span style={{ fontWeight: 'bold', color: '#38bdf8', fontSize: '14px', letterSpacing: '0.5px' }}>PLOC DIÁLOGO</span>
+              </div>
+              <button 
+                onClick={() => setIsChatOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'rgba(148, 163, 184, 0.8)',
+                  cursor: 'pointer',
+                  fontSize: '12px'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Lista de Mensagens */}
+            <div 
+              ref={chatScrollRef}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                maxHeight: '180px',
+                overflowY: 'auto',
+                paddingRight: '4px',
+              }}
+            >
+              {chatMessages.map((msg, idx) => (
+                <div 
+                  key={idx} 
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+                  }}
+                >
+                  <div style={{
+                    maxWidth: '85%',
+                    padding: '8px 12px',
+                    borderRadius: msg.sender === 'user' ? '12px 12px 0 12px' : '12px 12px 12px 0',
+                    background: msg.sender === 'user' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                    border: msg.sender === 'user' ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)',
+                    color: msg.sender === 'user' ? '#e2e8f0' : '#f8fafc',
+                    fontSize: '13px',
+                    lineHeight: '1.4',
+                    wordBreak: 'break-word',
+                  }}>
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+              
+              {isPending && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(56, 189, 248, 0.8)', fontSize: '12px', paddingLeft: '4px' }}>
+                  <span className="animate-pulse">👾</span>
+                  <span style={{ fontStyle: 'italic' }}>Ploc está digitando...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Formulário de Input */}
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendMessage(inputValue);
+              }}
+              style={{
+                display: 'flex',
+                gap: '8px',
+                marginTop: '4px',
+              }}
+            >
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="Converse com o Ploc..."
+                disabled={isPending}
+                style={{
+                  flex: 1,
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                  borderRadius: '10px',
+                  padding: '8px 12px',
+                  color: '#fff',
+                  fontSize: '13px',
+                  outline: 'none',
+                }}
+              />
+              <button
+                type="submit"
+                disabled={isPending || !inputValue.trim()}
+                style={{
+                  background: 'rgba(56, 189, 248, 0.2)',
+                  border: '1px solid rgba(56, 189, 248, 0.4)',
+                  borderRadius: '10px',
+                  width: '34px',
+                  height: '34px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#38bdf8',
+                  cursor: 'pointer',
+                  opacity: inputValue.trim() ? 1 : 0.5,
+                }}
+              >
+                <Send size={14} />
+              </button>
+            </form>
+          </motion.div>
+        )}
       </AnimatePresence>
+
+      {/* Botão flutuante para abrir o chat (💬) */}
+      {!isSleeping && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsChatOpen(!isChatOpen);
+            setShowSimulation(false); // fecha simulação de rotina se aberta
+          }}
+          style={{
+            position: 'absolute',
+            top: '-10px',
+            right: '-10px',
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            background: isChatOpen ? '#38bdf8' : 'rgba(15, 23, 42, 0.9)',
+            border: '1px solid rgba(56, 189, 248, 0.4)',
+            color: isChatOpen ? '#0f172a' : '#38bdf8',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(56, 189, 248, 0.2)',
+            transition: 'all 0.2s ease',
+            zIndex: 99999,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.15)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+        >
+          <MessageSquare size={16} />
+        </button>
+      )}
 
       {/* Camada Interna para Flutuar e Respirar (Separada do Drag) */}
       <motion.div
