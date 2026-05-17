@@ -1,6 +1,26 @@
+@import "tailwindcss";
+
 :root {
-  --background: #020617;
-  --foreground: #ffffff;
+  /* Colors from Ploc Visual DNA */
+  --ploc-primary: #087bad;
+  --ploc-secondary: #1d4ed8;
+  --ploc-accent: #fbbf24;
+  --ploc-danger: #ef4444;
+  
+  --ploc-background: #020617;
+  --ploc-foreground: #ffffff;
+  --ploc-glass: rgba(15, 23, 42, 0.7);
+  --ploc-border: rgba(255, 255, 255, 0.1);
+  --ploc-muted: #94a3b8;
+
+  /* Spacing/Radius */
+  --radius-button: 16px;
+  --radius-input: 16px;
+  --radius-card: 28px;
+
+  /* Typography */
+  --font-display: 'Outfit', sans-serif;
+  --font-body: 'Roboto', sans-serif;
 }
 
 * {
@@ -11,16 +31,88 @@
 body {
   margin: 0;
   padding: 0;
-  overflow: hidden; /* Aquário não tem scroll lateral infinito, é imersivo */
-  background: #020617;
-  font-family: 'Inter', sans-serif;
+  overflow: hidden; 
+  background: var(--ploc-background);
+  color: var(--ploc-foreground);
+  font-family: var(--font-body);
 }
 
-h1, h2 {
-  font-family: 'Outfit', sans-serif;
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
 }
 
 /* Esconde scrollbar para imersão total */
 ::-webkit-scrollbar {
   display: none;
 }
+
+/* ── Animações GPU do Mascote Ploc ── */
+@keyframes ploc-gelatin-breathe {
+  0%, 100% {
+    border-radius: 50% 50% 48% 52% / 52% 52% 48% 48%;
+  }
+  25% {
+    border-radius: 52% 48% 51% 49% / 50% 52% 48% 50%;
+  }
+  50% {
+    border-radius: 48% 52% 52% 48% / 49% 50% 50% 51%;
+  }
+  75% {
+    border-radius: 51% 49% 49% 51% / 51% 49% 51% 49%;
+  }
+}
+
+@keyframes ploc-gelatin-pissed {
+  0%, 100% {
+    border-radius: 48% 52% 49% 51% / 51% 49% 51% 49%;
+  }
+  50% {
+    border-radius: 52% 48% 51% 49% / 49% 51% 49% 51%;
+  }
+}
+
+@keyframes ploc-body-shake {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  20% {
+    transform: translate3d(-3px, 1.5px, 0) rotate(-1.5deg);
+  }
+  40% {
+    transform: translate3d(1.5px, -1.5px, 0) rotate(1.5deg);
+  }
+  60% {
+    transform: translate3d(-1.5px, 3px, 0) rotate(-1.5deg);
+  }
+  80% {
+    transform: translate3d(3px, 1.5px, 0) rotate(1.5deg);
+  }
+}
+
+@keyframes ploc-eye-blink {
+  0%, 90%, 100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.12);
+  }
+}
+
+/* Classes utilitárias das animações */
+.ploc-gelatin-breathe-anim {
+  animation: ploc-gelatin-breathe 4.8s infinite ease-in-out; /* Ciclo mais dinâmico (era 6s) */
+}
+
+.ploc-gelatin-pissed-anim {
+  animation: ploc-gelatin-pissed 0.4s infinite ease-in-out;
+}
+
+.ploc-body-shake {
+  animation: ploc-body-shake 0.12s infinite linear;
+}
+
+.ploc-eye-blink {
+  animation: ploc-eye-blink 4.2s infinite ease-in-out;
+  transform-origin: center;
+}
+

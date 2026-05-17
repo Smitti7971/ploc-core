@@ -21,27 +21,43 @@ async function request<T>(
   const { body, headers = {}, token } = options;
 
   // Pega token do localStorage se não for passado explicitamente
-  const authToken =
-    token ??
-    (typeof window !== 'undefined'
-      ? localStorage.getItem(config.auth.tokenKey)
-      : null);
+  let authToken = token;
+  
+  if (!authToken && typeof window !== 'undefined') {
+    // 1. Tenta na chave direta
+    authToken = localStorage.getItem(config.auth.tokenKey) || undefined;
+    
+    // 2. Se falhar, tenta extrair do objeto persistido do Zustand (ploc-auth)
+    if (!authToken) {
+      try {
+        const persisted = localStorage.getItem('ploc-auth');
+        if (persisted) {
+          const parsed = JSON.parse(persisted);
+          authToken = parsed.state?.token;
+        }
+      } catch (e) {
+        // Ignora erro de parse
+      }
+    }
+  }
 
-  const response = await fetch(`${config.api.baseUrl}${endpoint}`, {
+  const fullUrl = `${config.api.baseUrl}${endpoint}`;
+  console.log(`🚀 [API Request] ${method} ${fullUrl}`, authToken ? 'Token: SIM' : 'Token: NÃO');
+
+  const response = await fetch(fullUrl, {
     method,
     headers: {
       'Content-Type': 'application/json',
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
       ...headers,
     },
-    ...(body ? { body: JSON.stringify(body) } : {}),
+    body: body ? JSON.stringify(body) : undefined,
   });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(
-      errorData.message || `Erro ${response.status}: ${response.statusText}`
-    );
+    const errorMessage = errorData.message || errorData.error || `Erro ${response.status}: ${response.statusText}`;
+    throw new Error(errorMessage);
   }
 
   return response.json() as Promise<T>;

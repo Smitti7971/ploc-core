@@ -1,4 +1,5 @@
 import { blackboardEventBus, BLACKBOARD_EVENTS } from '../../events/eventBus';
+import { UserStats } from '@/types/global.types';
 
 export interface UserAttributes {
   corpo: number;
@@ -101,6 +102,12 @@ class AttributeEngine {
     return this.score;
   }
 
+  applySleepPenalty() {
+    this.updateScore(-10); // Perde 10 pontos de foco
+    this.updateAttribute('corpo', -8); // Perde 8 pontos de corpo (sono/energia física)
+    this.updateAttribute('mente', -4); // Perde 4 pontos de mente (fadiga)
+  }
+
   private updateAttribute(pillar: keyof UserAttributes, diff: number) {
     const oldValue = this.attributes[pillar];
     this.attributes[pillar] = Math.max(0, Math.min(100, this.attributes[pillar] + diff));
@@ -149,6 +156,42 @@ class AttributeEngine {
 
   getAttributes() {
     return this.attributes;
+  }
+
+  /**
+   * Sincroniza os atributos visuais com os dados reais do banco de dados.
+   */
+  syncWithBackend(stats: UserStats) {
+    if (!stats) return;
+    
+    console.log('🧬 [AttributeEngine] SINCRONIZANDO COM BANCO:', stats);
+
+    // Limpa o lixo do localStorage antes de aplicar os novos
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('ploc_attributes');
+    }
+
+    this.attributes = {
+      corpo: stats.body || 10,
+      mente: stats.mind || 10,
+      vida: stats.life || 10,
+      liberdade: stats.freedom || 10,
+      proposito: stats.purpose || 10
+    };
+
+    this.score = stats.xp ?? 0;
+    
+    // Notifica o sistema (AttributeMonitor) para atualizar IMEDIATAMENTE
+    const pillars: Array<keyof UserAttributes> = ['corpo', 'mente', 'vida', 'liberdade', 'proposito'];
+    pillars.forEach((pillar) => {
+      blackboardEventBus.emit(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, {
+        pillar,
+        value: this.attributes[pillar],
+        diff: 0
+      });
+    });
+
+    this.save();
   }
 }
 

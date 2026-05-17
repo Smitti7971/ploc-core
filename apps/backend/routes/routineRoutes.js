@@ -17,4 +17,7 @@ router.post('/adopt', routineController.adoptTemplate);
 // Remover uma rotina
 router.delete('/:id', routineController.deleteRoutine);
 
+// Concluir uma rotina (Ganha XP/Coins)
+router.post('/:id/complete', routineController.completeRoutine);
+
 module.exports = router;

@@ -56,6 +56,43 @@ export function UserHeader() {
           )}
         </div>
 
+        {/* Level e XP (Sempre visível ou expandido) */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          gap: '2px',
+          marginLeft: isOpen ? '0px' : '8px',
+          marginRight: isOpen ? '0px' : '4px'
+        }}>
+          <span style={{ 
+            fontSize: '0.6rem', 
+            fontWeight: 900, 
+            color: '#fff', 
+            opacity: 0.9,
+            letterSpacing: '0.5px'
+          }}>
+            LVL {user?.stats?.level || 1}
+          </span>
+          <div style={{ 
+            width: '40px', 
+            height: '3px', 
+            background: 'rgba(255,255,255,0.1)', 
+            borderRadius: '10px',
+            overflow: 'hidden' 
+          }}>
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${(user?.stats?.xp || 0) % 100}%` }}
+              style={{ 
+                height: '100%', 
+                background: 'linear-gradient(90deg, #38bdf8, #818cf8)',
+                borderRadius: '10px'
+              }} 
+            />
+          </div>
+        </div>
+
         {/* Menu Expandido */}
         <AnimatePresence>
           {isOpen && (

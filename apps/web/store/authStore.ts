@@ -17,6 +17,8 @@ interface AuthState {
   setAuth: (token: string, user: User) => void;
   updateUser: (user: Partial<User>) => void;
   logout: () => void;
+  isAuthModalOpen: boolean;
+  setAuthModalOpen: (open: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -42,6 +44,9 @@ export const useAuthStore = create<AuthState>()(
         // Limpa cookie
         document.cookie = 'ploc-auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       },
+
+      isAuthModalOpen: false,
+      setAuthModalOpen: (open) => set({ isAuthModalOpen: open }),
     }),
     {
       name: 'ploc-auth',

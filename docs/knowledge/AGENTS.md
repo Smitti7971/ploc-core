@@ -13,7 +13,7 @@
 ## 🔥 BLOCO PRINCIPAL
 
 ### Fluxo obrigatório de execução
-1. **Alinhamento**: Ler todos os arquivos de **Knowledge** (`MAPA_DO_PROJETO.md`, `PILHA_TECNOLOGICA.md`, `FERRAMENTAS.md`, `MODELO_DE_DADOS.md`, `ESTADO_DAS_APIS.md`) para entender o contexto total, restrições e modelos.
+1. **Alinhamento**: Ler todos os arquivos de **Knowledge** (`MAPA_DO_PROJETO.md`, `PILHA_TECNOLOGICA.md`, `FERRAMENTAS.md`, `MODELO_DE_DADOS.md`, `VISÃO_DO_PRODUTO.md`, `ESTADO_DAS_APIS.md`) para entender o contexto total, restrições e modelos.
 2. **Auditoria de Terreno**: Antes de qualquer DRAFT, validar fisicamente o filesystem (usar `ls`, `grep`, `run_command`) para garantir que os arquivos citados na documentação existem e estão operantes.
 3. **Co-Criação e Estratégia (DRAFT)**: Criar um rascunho em `/docs/plans` detalhando a Lógica.
    - **REGRA DE OURO**: Priorizar o uso de **Next.js 15+**, **Tailwind CSS 4** e **Zustand**. Manter a arquitetura de **Mídia Stateless (MinIO)** para escalabilidade.

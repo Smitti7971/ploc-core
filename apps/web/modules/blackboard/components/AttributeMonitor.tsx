@@ -3,9 +3,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, Activity, Heart, Bird, Flag, Sparkles } from 'lucide-react';
+import { useAuth } from '@/modules/auth/hooks/useAuth';
 import { blackboardEventBus, BLACKBOARD_EVENTS } from '../events/eventBus';
 import { attributeEngine, UserAttributes, AttributeChange } from '../engine/attribute-engine/AttributeEngine';
 import { bubbleEngine } from '../engine/bubble-engine/BubbleEngine';
+import { useAuthStore } from '@/store/authStore';
 
 const PILLARS_CONFIG = {
   corpo: { 
@@ -61,6 +63,8 @@ export function AttributeMonitor({ onClose }: AttributeMonitorProps) {
   const [activeTab, setActiveTab] = useState<'pillars' | 'history'>('pillars');
   const [history, setHistory] = useState<any[]>([]);
 
+  const { user, refreshProfile } = useAuth();
+
   const refreshHistory = useCallback(() => {
     if (activeTab === 'history') {
       try {
@@ -72,6 +76,27 @@ export function AttributeMonitor({ onClose }: AttributeMonitorProps) {
     }
   }, [activeTab]);
 
+  const handleManualSync = useCallback(async () => {
+    console.log('🔄 [Manual Sync] Ativando sincronização forçada...');
+    const updatedUser = await refreshProfile();
+    
+    if (updatedUser?.stats) {
+      console.log('📊 Dados recebidos do Servidor:', updatedUser.stats);
+      attributeEngine.syncWithBackend(updatedUser.stats);
+    } else {
+      console.warn('⚠️ [Manual Sync] Servidor não retornou estatísticas.');
+    }
+  }, [refreshProfile]);
+
+  // Sync automático removido temporariamente para evitar loops
+  /*
+  useEffect(() => {
+    handleManualSync();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); 
+  */
+
+  // 2. Gestão de Histórico e Eventos
   useEffect(() => {
     refreshHistory();
 
@@ -86,6 +111,7 @@ export function AttributeMonitor({ onClose }: AttributeMonitorProps) {
 
   useEffect(() => {
     const unsub = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, (change: AttributeChange) => {
+      console.log(`📈 [AttributeMonitor] Atributo ${change.pillar} mudou para ${change.value}`);
       setAttributes(prev => ({ ...prev, [change.pillar]: change.value }));
       
       setLastChanges(prev => ({ ...prev, [change.pillar]: change.diff }));
@@ -130,48 +156,76 @@ export function AttributeMonitor({ onClose }: AttributeMonitorProps) {
       gap: '20px',
       zIndex: 100,
     }}>
-      {/* Tab Switcher */}
+      {/* Tab Switcher & Sync Button */}
       <div style={{
         display: 'flex',
-        background: 'rgba(255,255,255,0.03)',
-        backdropFilter: 'blur(10px)',
-        padding: '4px',
-        borderRadius: '50px',
-        border: '1px solid rgba(255,255,255,0.1)',
-        pointerEvents: 'all'
+        alignItems: 'center',
+        gap: '12px'
       }}>
-        <button 
-          onClick={() => setActiveTab('pillars')}
+        <div style={{
+          display: 'flex',
+          background: 'rgba(255,255,255,0.03)',
+          backdropFilter: 'blur(10px)',
+          padding: '4px',
+          borderRadius: '50px',
+          border: '1px solid rgba(255,255,255,0.1)',
+          pointerEvents: 'all'
+        }}>
+          <button 
+            onClick={() => setActiveTab('pillars')}
+            style={{
+              padding: '8px 20px',
+              borderRadius: '50px',
+              background: activeTab === 'pillars' ? 'rgba(255,255,255,0.1)' : 'transparent',
+              border: 'none',
+              color: activeTab === 'pillars' ? '#fff' : 'rgba(255,255,255,0.5)',
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            ATRIBUTOS
+          </button>
+          <button 
+            onClick={() => setActiveTab('history')}
+            style={{
+              padding: '8px 20px',
+              borderRadius: '50px',
+              background: activeTab === 'history' ? 'rgba(255,255,255,0.1)' : 'transparent',
+              border: 'none',
+              color: activeTab === 'history' ? '#fff' : 'rgba(255,255,255,0.5)',
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            HISTÓRICO
+          </button>
+        </div>
+
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleManualSync}
+          title="Sincronizar com Servidor"
           style={{
-            padding: '8px 20px',
-            borderRadius: '50px',
-            background: activeTab === 'pillars' ? 'rgba(255,255,255,0.1)' : 'transparent',
-            border: 'none',
-            color: activeTab === 'pillars' ? '#fff' : 'rgba(255,255,255,0.5)',
-            fontSize: '0.7rem',
-            fontWeight: 800,
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            background: 'rgba(56, 189, 248, 0.15)',
+            border: '1px solid rgba(56, 189, 248, 0.3)',
+            color: '#38bdf8',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             cursor: 'pointer',
-            transition: 'all 0.2s'
+            pointerEvents: 'all'
           }}
         >
-          ATRIBUTOS
-        </button>
-        <button 
-          onClick={() => setActiveTab('history')}
-          style={{
-            padding: '8px 20px',
-            borderRadius: '50px',
-            background: activeTab === 'history' ? 'rgba(255,255,255,0.1)' : 'transparent',
-            border: 'none',
-            color: activeTab === 'history' ? '#fff' : 'rgba(255,255,255,0.5)',
-            fontSize: '0.7rem',
-            fontWeight: 800,
-            cursor: 'pointer',
-            transition: 'all 0.2s'
-          }}
-        >
-          HISTÓRICO
-        </button>
+          <Sparkles size={14} />
+        </motion.button>
       </div>
 
       {activeTab === 'pillars' ? (

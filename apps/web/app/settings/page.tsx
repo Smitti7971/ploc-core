@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { AppShell } from '@/components/layout/AppShell';
 import { useAuthStore } from '@/store/authStore';
+import { apiService } from '@/services/api';
 import { config } from '@/lib/config';
 import { useRouter } from 'next/navigation';
 import { 
@@ -30,6 +31,38 @@ export default function SettingsPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  const [isHydrated, setIsHydrated] = useState(false);
+  
+  // Debug para entender o que está acontecendo
+  console.log('🛠️ [SettingsPage] Estado Atual:', { 
+    isHydrated, 
+    hasUser: !!user, 
+    hasToken: !!token,
+    tokenPreview: token ? `${token.substring(0, 10)}...` : 'NULLED'
+  });
+
+  useEffect(() => {
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      console.log('✅ [SettingsPage] Hidratação Finalizada!');
+      setIsHydrated(true);
+    });
+
+    if (useAuthStore.persist.hasHydrated()) {
+      setIsHydrated(true);
+    }
+
+    return () => unsub();
+  }, []);
+
+  // Redireciona se não houver token (sessão perdida) - APÓS HIDRATAÇÃO
+  useEffect(() => {
+    if (isHydrated && !token && typeof window !== 'undefined') {
+      console.warn('⚠️ [SettingsPage] Sessão não encontrada. Redirecionando...');
+      router.push('/');
+    }
+  }, [isHydrated, token, router]);
+
+
   // Sincroniza estados iniciais quando o user carregar
   useEffect(() => {
     if (user) {
@@ -51,28 +84,11 @@ export default function SettingsPage() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+      const uploadData = await apiService.upload<{ url: string }>('/upload?type=avatar', formData);
       
-      const uploadRes = await fetch(`${apiUrl}/api/upload?type=avatar`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formData
-      });
+      const response = await apiService.put<any>('/users/me', { profilePhoto: uploadData.url }, { token: token || undefined });
 
-      if (!uploadRes.ok) throw new Error('Falha no upload');
-      const uploadData = await uploadRes.json();
-      
-      const updateRes = await fetch(`${apiUrl}/api/users/me`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ profilePhoto: uploadData.url })
-      });
-
-      if (!updateRes.ok) throw new Error('Falha ao salvar');
-      updateUser({ profilePhoto: uploadData.url });
+      updateUser(response.user);
       
     } catch (error) {
       console.error(error);
@@ -85,19 +101,8 @@ export default function SettingsPage() {
   const handleSaveChanges = async () => {
     setIsSaving(true);
     try {
-      const apiUrl = config.api.baseUrl;
-      const res = await fetch(`${apiUrl}/api/users/me`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ name, email, username })
-      });
-
-      if (!res.ok) throw new Error('Falha ao atualizar');
-      const updated = await res.json();
-      updateUser(updated);
+      const response = await apiService.put<any>('/users/me', { name, email, username }, { token: token || undefined });
+      updateUser(response.user);
       alert('Perfil atualizado! ✨');
     } catch (err) {
       console.error(err);

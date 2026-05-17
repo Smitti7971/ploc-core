@@ -52,3 +52,18 @@ exports.deleteRoutine = async (req, res) => {
         res.status(status).json({ error: error.message });
     }
 };
+
+exports.completeRoutine = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await routineService.completeRoutine(req.user.id, id);
+        res.json({
+            message: 'Rotina concluída com sucesso! Recompensas distribuídas.',
+            ...result
+        });
+    } catch (error) {
+        console.error('❌ Erro ao concluir rotina:', error.message);
+        const status = error.message.includes('negado') ? 403 : 400;
+        res.status(status).json({ error: error.message });
+    }
+};

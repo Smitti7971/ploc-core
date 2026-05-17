@@ -12,7 +12,6 @@ const uploadRoutes = require('./routes/uploadRoutes');
 const authMiddleware = require('./middleware/authMiddleware');
 const healthRoutes = require('./routes/healthRoutes');
 const routineRoutes = require('./routes/routineRoutes');
-const plantRoutes = require('./routes/plantRoutes');
 
 const path = require('path');
 
@@ -24,12 +23,13 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 const port = process.env.PORT || 3000;
 console.log(`📡 Porta configurada: ${port} (Ambiente: ${process.env.NODE_ENV || 'development'})`);
 
-// --- LOGGER DE ACESSO (Customizado) ---
+// --- LOGGER DE ACESSO (DETALHADO PARA DEBUG) ---
 app.use((req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {
     const duration = Date.now() - start;
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - ${res.statusCode} (${duration}ms)`);
+    const authHeader = req.headers.authorization ? 'Enviado ✅' : 'Ausente ❌';
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl || req.url} - ${res.statusCode} (${duration}ms) | Auth: ${authHeader}`);
   });
   next();
 });
@@ -74,12 +74,7 @@ app.use(cors({
   credentials: true
 }));
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 300, // Aumentado para evitar bloqueios em testes intensos
-  message: { message: "Muitas requisições, tente novamente em 15 minutos.", status: "Error" }
-});
-app.use('/api/', limiter);
+// Limitador desativado para desenvolvimento
 
 // Limite de 10kb para evitar payloads gigantes (DOS)
 app.use(express.json({ limit: '10kb' }));
@@ -138,7 +133,6 @@ app.use('/api/users', authMiddleware, userRoutes);
 // Rotas de Tarefas e Rotinas (PROTEGIDAS)
 app.use('/api/tasks', authMiddleware, taskRoutes);
 app.use('/api/routines', authMiddleware, routineRoutes);
-app.use('/api/plants', plantRoutes); // Auth já está no router de plantas
 app.get('/api/ping-routines', (req, res) => res.json({ message: "Routine route is registered! 🚀" }));
 
 // Rotas de IA (Proteção agora é interna por rota)

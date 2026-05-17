@@ -15,26 +15,42 @@ class UserRepository {
     async findById(id) {
         return prisma.user.findUnique({
             where: { id },
-            select: { id: true, name: true, email: true, createdAt: true }
+            include: { 
+                stats: true,
+                statTransactions: {
+                    take: 10,
+                    orderBy: { createdAt: 'desc' }
+                }
+            }
         });
     }
 
     async findByEmail(email) {
         return prisma.user.findUnique({
-            where: { email }
+            where: { email },
+            include: { stats: true }
         });
     }
 
     async create(data) {
         return prisma.user.create({
-            data
+            data: {
+                ...data,
+                stats: {
+                    create: {} // Inicializa com os valores @default do schema
+                }
+            },
+            include: {
+                stats: true
+            }
         });
     }
 
     async update(id, data) {
         return await prisma.user.update({
             where: { id },
-            data
+            data,
+            include: { stats: true }
         });
     }
 

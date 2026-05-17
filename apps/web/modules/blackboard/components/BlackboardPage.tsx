@@ -7,19 +7,20 @@
 
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useRouter } from 'next/navigation';
 import { PlocAvatarClient } from '@/components/mascot/PlocAvatarClient';
-import { 
-  Settings, 
-  LogOut, 
-  Maximize2, 
-  Minimize2, 
-  Grid3X3, 
-  Plus, 
-  Target, 
-  Clock, 
-  Brain, 
-  Activity as ActivityIcon, 
-  Sparkles, 
+import {
+  Settings,
+  LogOut,
+  Maximize2,
+  Minimize2,
+  Grid3X3,
+  Plus,
+  Target,
+  Clock,
+  Brain,
+  Activity as ActivityIcon,
+  Sparkles,
   HelpCircle,
   ChevronRight
 } from 'lucide-react';
@@ -61,7 +62,30 @@ const BUBBLE_COLORS: Record<string, string> = {
 export type SonarTheme = 'radio_wave' | 'submarine' | 'holographic' | 'clockwork';
 
 export default function BlackboardPage() {
-  const { user, logout } = useAuthStore();
+  const { user, token, logout } = useAuthStore();
+  const router = useRouter();
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Espera a hidratação do Zustand (carregar do localStorage)
+  useEffect(() => {
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      setIsHydrated(true);
+    });
+
+    if (useAuthStore.persist.hasHydrated()) {
+      setIsHydrated(true);
+    }
+
+    return () => unsub();
+  }, []);
+
+  // Redireciona se não houver usuário (sessão perdida) - APÓS HIDRATAÇÃO
+  useEffect(() => {
+    if (isHydrated && !user && typeof window !== 'undefined') {
+      router.push('/');
+    }
+  }, [isHydrated, user, router]);
+
   const [notes, setNotes] = useState<StickyNote[]>([]);
   const [capsuleOpen, setCapsuleOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -79,7 +103,7 @@ export default function BlackboardPage() {
   const [showFocusInfo, setShowFocusInfo] = useState(false);
   const [selectedBubble, setSelectedBubble] = useState<BlackboardBubble | null>(null);
   const [interactionNote, setInteractionNote] = useState('');
-  const [sonarTheme, setSonarTheme] = useState<SonarTheme>('clockwork');
+  const [sonarTheme, setSonarTheme] = useState<SonarTheme>('radio_wave');
 
   // Janela de tempo baseada no modo de visualização
   const getWindowMinutes = useCallback(() => {
@@ -126,6 +150,13 @@ export default function BlackboardPage() {
     };
   }, [score]);
 
+  // Sincroniza atributos reais do backend com o motor visual (AttributeEngine)
+  useEffect(() => {
+    if (user?.stats) {
+      attributeEngine.syncWithBackend(user.stats);
+    }
+  }, [user]);
+
   const [showTutorial, setShowTutorial] = useState(false);
   const [plocState, setPlocState] = useState(plocEngine.getState());
   const [plocMessage, setPlocMessage] = useState<string | null>(null);
@@ -146,7 +177,7 @@ export default function BlackboardPage() {
     if (canvas) {
       const scrollX = 1000 - canvas.clientWidth / 2;
       const scrollY = 1000 - canvas.clientHeight / 2;
-      
+
       // Garante que behavior seja uma string válida para o scrollTo
       const scrollBehavior = typeof behavior === 'string' ? behavior : 'smooth';
       canvas.scrollTo({ left: scrollX, top: scrollY, behavior: scrollBehavior as ScrollBehavior });
@@ -161,7 +192,7 @@ export default function BlackboardPage() {
       const visualY = 1000 + (y - 1000) * scale;
       const scrollX = visualX - canvas.clientWidth / 2;
       const scrollY = visualY - canvas.clientHeight / 2;
-      
+
       const scrollBehavior = typeof behavior === 'string' ? behavior : 'smooth';
       canvas.scrollTo({ left: scrollX, top: scrollY, behavior: scrollBehavior as ScrollBehavior });
     }
@@ -176,7 +207,7 @@ export default function BlackboardPage() {
     if (selectedBubble) {
       const isOutward = (selectedBubble as any).metadata?.direction === 'outward';
       const totalMins = (selectedBubble as any).metadata?.totalMinutes || 10;
-      
+
       let visualDist = 0;
       if (isOutward) {
         const progress = 1 - ((selectedBubble.minutesRemaining || 0) / totalMins);
@@ -187,7 +218,7 @@ export default function BlackboardPage() {
 
       const visualX = 1000 + Math.cos(selectedBubble.angle || 0) * visualDist;
       const visualY = 1000 + Math.sin(selectedBubble.angle || 0) * visualDist;
-      
+
       centerOnPosition(visualX, visualY);
     }
   }, [selectedBubble, centerOnPosition, windowMinutes]);
@@ -205,15 +236,15 @@ export default function BlackboardPage() {
     const handleScroll = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
-      
+
       // O centro ideal é sempre 4000 (centro do canvas 8000x8000)
       const targetScrollX = 1000 - (w / 2);
       const targetScrollY = 1000 - (h / 2);
 
       const threshold = 150; // px de margem de erro
-      const isNear = Math.abs(canvas.scrollLeft - targetScrollX) < threshold && 
-                     Math.abs(canvas.scrollTop - targetScrollY) < threshold;
-      
+      const isNear = Math.abs(canvas.scrollLeft - targetScrollX) < threshold &&
+        Math.abs(canvas.scrollTop - targetScrollY) < threshold;
+
       setIsCentered(prev => {
         if (prev !== isNear) return isNear;
         return prev;
@@ -272,9 +303,9 @@ export default function BlackboardPage() {
   // --- State e Refs ---
   const scaleRef = useRef(scale);
   const lastZoomTime = useRef(0);
-  
-  useEffect(() => { 
-    scaleRef.current = scale; 
+
+  useEffect(() => {
+    scaleRef.current = scale;
   }, [scale]);
 
   const zoomDebounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -283,7 +314,7 @@ export default function BlackboardPage() {
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
-      
+
       const canvas = document.getElementById('blackboard-canvas');
       const bg = canvas?.querySelector('.canvas-background') as HTMLElement;
       if (!canvas || !bg) return;
@@ -292,9 +323,9 @@ export default function BlackboardPage() {
       const oldScale = scaleRef.current;
       // Escala entre 0.15 (15%) e 3 (300%) para evitar instabilidade no browser
       const newScale = Math.min(Math.max(oldScale + delta, 0.15), 3);
-      
+
       if (oldScale === newScale) return;
-      
+
       scaleRef.current = newScale;
 
       // ATUALIZAÇÃO VISUAL IMEDIATA (Pula o React para suavidade)
@@ -319,7 +350,7 @@ export default function BlackboardPage() {
   // Bubble Engine Subscription & Event Listeners
   useEffect(() => {
     const unsubscribe = bubbleEngine.subscribe(setBubbles);
-    
+
     const onExplode = (bubble: any) => {
       setLastCompleted(bubble.content);
       setPlocReaction('happy');
@@ -340,7 +371,7 @@ export default function BlackboardPage() {
 
     blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_EXPLODED, onExplode);
     blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_TIMEOUT, onTimeout);
-    
+
     const unsubPloc = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, setPlocState);
     const unsubReaction = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.PLOC_REACTION, (reaction: any) => {
       setPlocReaction(reaction.type.toLowerCase() as any);
@@ -356,7 +387,7 @@ export default function BlackboardPage() {
     if (!hasSeenTutorial) {
       setShowTutorial(true);
     }
-    
+
     return () => {
       unsubscribe();
       unsubPloc();
@@ -371,13 +402,13 @@ export default function BlackboardPage() {
 
   const toggleFullScreen = () => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
+      document.documentElement.requestFullscreen().catch(() => { });
       setIsFullScreen(true);
       // Zoom out automático para dar impressão de "abrir a visão"
       setScale(0.5);
     } else {
       if (document.exitFullscreen) {
-        document.exitFullscreen().catch(() => {});
+        document.exitFullscreen().catch(() => { });
       }
       setIsFullScreen(false);
       // Volta ao zoom padrão
@@ -404,17 +435,17 @@ export default function BlackboardPage() {
 
   const handlePanMove = useCallback((e: MouseEvent) => {
     if (!isPanning) return;
-    
+
     const canvas = document.getElementById('blackboard-canvas');
     if (canvas) {
       const dx = e.clientX - panStart.x;
       const dy = e.clientY - panStart.y;
       const newLeft = panStart.scrollLeft - dx;
       const newTop = panStart.scrollTop - dy;
-      
+
       canvas.scrollLeft = newLeft;
       canvas.scrollTop = newTop;
-      
+
       // Sincronizar estado para os marcadores (Imediato para evitar lag visual)
       setScrollPos({ x: newLeft, y: newTop });
     }
@@ -467,13 +498,13 @@ export default function BlackboardPage() {
   };
 
   return (
-    <div 
-      className="blackboard-page" 
+    <div
+      className="blackboard-page"
       ref={containerRef}
-      style={{ 
-        width: '100vw', 
-        height: '100vh', 
-        background: '#0a0c0a', 
+      style={{
+        width: '100vw',
+        height: '100vh',
+        background: '#0a0c0a',
         overflow: 'hidden',
         position: 'relative',
         fontFamily: "'Inter', sans-serif",
@@ -488,11 +519,11 @@ export default function BlackboardPage() {
         pointerEvents: 'none',
         zIndex: 1
       }} />
-      
+
       {/* Seletor de Tema do Radar (Floating) */}
       <div style={{
         position: 'fixed',
-        top: '100px',
+        top: '200px',
         left: '20px',
         zIndex: 100,
         display: 'flex',
@@ -526,7 +557,7 @@ export default function BlackboardPage() {
         ))}
       </div>
 
-      <div 
+      <div
         id="blackboard-canvas"
         onMouseDown={handlePanStart}
         style={{
@@ -534,7 +565,7 @@ export default function BlackboardPage() {
           height: '100%',
           overflow: 'auto',
           position: 'relative',
-          padding: 0, 
+          padding: 0,
           margin: 0,
           cursor: isPanning ? 'grabbing' : 'grab',
           scrollbarWidth: 'none',
@@ -542,17 +573,17 @@ export default function BlackboardPage() {
           background: '#0a0c0a'
         }}
       >
-        <div style={{ 
-          width: '2000px', 
-          height: '2000px', 
+        <div style={{
+          width: '2000px',
+          height: '2000px',
           position: 'relative',
           flexShrink: 0
         }}>
-          <div 
+          <div
             className="canvas-background"
-            style={{ 
-              width: '2000px', 
-              height: '2000px', 
+            style={{
+              width: '2000px',
+              height: '2000px',
               position: 'absolute',
               top: 0,
               left: 0,
@@ -564,311 +595,311 @@ export default function BlackboardPage() {
             }}
           >
 
-          <AnimatePresence>
-            {showGrid && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  backgroundImage: `
+            <AnimatePresence>
+              {showGrid && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    backgroundImage: `
                     linear-gradient(rgba(56, 189, 248, 0.05) 2px, transparent 2px),
                     linear-gradient(90deg, rgba(56, 189, 248, 0.05) 2px, transparent 2px),
                     linear-gradient(rgba(56, 189, 248, 0.02) 1px, transparent 1px),
                     linear-gradient(90deg, rgba(56, 189, 248, 0.02) 1px, transparent 1px)
                   `,
-                  backgroundSize: '100px 100px, 100px 100px, 20px 20px, 20px 20px',
-                  pointerEvents: 'none',
-                  zIndex: 0
-                }}
-              />
-            )}
-          </AnimatePresence>
-
-          <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 5 }}>
-            {notes.map((note) => (
-              <StickyNoteEl
-                key={note.id}
-                note={note}
-                onDelete={() => deleteNote(note.id)}
-                onContentChange={(c: string) => updateNoteContent(note.id, c)}
-                onColorCycle={() => cycleNoteColor(note.id)}
-                onPositionChange={(x: number, y: number) => updateNotePosition(note.id, x, y)}
-                onSave={() => localStorage.setItem('ploc_blackboard_notes', JSON.stringify(notes))}
-              />
-            ))}
-          </div>
-
-          <div 
-            id="ploc-anchor"
-            style={{
-              position: 'absolute',
-              left: '50%',
-              top: '50%',
-              width: '0px',
-              height: '0px',
-              zIndex: 20
-            }}
-          >
-            <motion.div 
-              style={{ 
-                position: 'absolute', 
-                left: 0,
-                top: 0,
-                pointerEvents: 'all', 
-              }}
-              initial={{ x: "-50%", y: "-50%", scale: 0.7 }}
-              animate={{
-                x: plocReaction === 'dizzy' ? ["-50%", "-52%", "-48%", "-52%", "-48%", "-50%"] : "-50%",
-                y: "-50%",
-                // Escalonamento Óptico Inteligente: O elemento não encolhe além do tamanho real
-                // mas pode crescer se o usuário der um zoom muito próximo para ver detalhes.
-                scale: (plocReaction === 'happy' ? 0.8 : 0.7) * Math.max(1, 1 / scale),
-              }}
-              transition={{ 
-                scale: { type: 'spring', stiffness: 300, damping: 20 },
-                x: { duration: 0.4 }
-              }}
-            >
-              <PlocAvatarClient 
-                draggable={false} 
-                emotion={plocState.emotion === 'calm' ? (plocReaction === 'idle' ? 'calm' : plocReaction as any) : plocState.emotion as any}
-              />
-            </motion.div>
-            {/* Radar Temporal (Sonar) */}
-            <SonarAuras 
-              centerX={0} 
-              centerY={0} 
-              theme={sonarTheme}
-            />
-            
-            {/* Balão de Fala do Ploc (Centralizado e Dinâmico) */}
-            <AnimatePresence>
-              {plocMessage && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20, scale: 0.8, x: '-50%' }}
-                  animate={{ opacity: 1, y: -110, scale: 1, x: '-50%' }}
-                  exit={{ opacity: 0, scale: 0.8, x: '-50%' }}
-                  style={{
-                    position: 'absolute',
-                    left: '0px',
-                    width: 'max-content',
-                    maxWidth: '280px',
-                    background: 'rgba(15, 23, 42, 0.9)',
-                    backdropFilter: 'blur(20px)',
-                    padding: '12px 20px',
-                    borderRadius: '24px',
-                    color: '#fff',
-                    fontSize: '0.85rem',
-                    fontWeight: 800,
-                    textAlign: 'center',
-                    boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
-                    border: '1px solid rgba(56, 189, 248, 0.3)',
-                    zIndex: 300,
-                    pointerEvents: 'none'
-                  }}
-                >
-                  {plocMessage}
-                  {/* Triângulo do Balão (Seta) */}
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '-8px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: '0',
-                    height: '0',
-                    borderLeft: '10px solid transparent',
-                    borderRight: '10px solid transparent',
-                    borderTop: '10px solid rgba(15, 23, 42, 0.9)'
-                  }} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 150 }}>
-            <AnimatePresence mode="popLayout">
-              {bubbles
-                .filter(b => (b.minutesRemaining || 0) <= windowMinutes * 2)
-                .map((bubble) => {
-                const isOutward = (bubble as any).metadata?.direction === 'outward';
-                const isGoalReached = isOutward && (bubble.minutesRemaining || 0) <= 0.08;
-                
-                let visualDist = 0;
-                const totalMins = (bubble.metadata as any)?.totalMinutes || 10;
-                if (isOutward) {
-                  const progress = Math.min(1, 1 - ((bubble.minutesRemaining || 0) / totalMins));
-                  visualDist = progress * 500;
-                } else {
-                  visualDist = Math.max(120, ((bubble.minutesRemaining || 0) / windowMinutes) * 500);
-                }
-
-                const visualX = 1000 + Math.cos(bubble.angle || 0) * visualDist;
-                const visualY = 1000 + Math.sin(bubble.angle || 0) * visualDist;
-                const isSelected = selectedBubble?.id === bubble.id;
-
-                return (
-                  <div key={bubble.id} style={{ position: 'absolute', left: 0, top: 0, pointerEvents: 'none' }}>
-                    <BubbleItem 
-                      bubble={{ ...bubble, x: visualX, y: visualY }} 
-                      windowMinutes={isOutward ? totalMins : windowMinutes}
-                      canvasScale={scale}
-                      onExplode={() => {
-                        setShowAttributes(false);
-                        setShowFocusInfo(false);
-                        setShowTutorial(false);
-                        setSelectedBubble(bubble);
-                        setInteractionNote('');
-                      }}
-                    />
-
-                    <AnimatePresence>
-                      {isSelected && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.8, x: visualX - 120, y: visualY - 260 }}
-                          animate={{ opacity: 1, scale: 1, x: visualX - 120, y: visualY - 280 }}
-                          exit={{ opacity: 0, scale: 0.8, x: visualX - 120, y: visualY - 260 }}
-                          style={{
-                            position: 'absolute',
-                            width: '240px',
-                            background: 'rgba(15, 23, 42, 0.95)',
-                            backdropFilter: 'blur(16px)',
-                            border: `1px solid ${isGoalReached ? 'rgba(16, 185, 129, 0.4)' : (isOutward ? 'rgba(239, 68, 68, 0.4)' : 'rgba(56, 189, 248, 0.4)')}`,
-                            borderRadius: '16px',
-                            padding: '16px',
-                            boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-                            zIndex: 200,
-                            pointerEvents: 'all'
-                          }}
-                        >
-                          <div style={{
-                            position: 'absolute',
-                            bottom: '-8px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: '0',
-                            height: '0',
-                            borderLeft: '10px solid transparent',
-                            borderRight: '10px solid transparent',
-                            borderTop: `10px solid ${isGoalReached ? 'rgba(16, 185, 129, 0.95)' : (isOutward ? 'rgba(239, 68, 68, 0.95)' : 'rgba(15, 23, 42, 0.95)')}`,
-                          }} />
-                          <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px' }}>
-                            {bubble.content}
-                          </div>
-                          
-                          <div style={{ 
-                            background: isGoalReached ? 'rgba(16, 185, 129, 0.15)' : (isOutward ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)'),
-                            padding: '8px',
-                            borderRadius: '8px',
-                            fontSize: '0.75rem',
-                            color: isGoalReached ? '#10b981' : (isOutward ? '#fca5a5' : '#86efac'),
-                            marginBottom: '12px'
-                          }}>
-                            {isGoalReached ? (
-                              <>🏆 <b>META ALCANÇADA!</b><br/>Parabéns por resistir. Clique em <b>Concluir</b> para resetar o ciclo e ganhar <b>+15 Moedas</b>.</>
-                            ) : isOutward ? (
-                              <>⚠️ Desistir agora: <b>-10 Moedas</b><br/>Vencer: <b>+20 Moedas</b></>
-                            ) : (
-                              <>✨ Bônus de Foco: <b>+5 Moedas</b></>
-                            )}
-                          </div>
-
-                          <textarea 
-                            value={interactionNote}
-                            onChange={(e) => setInteractionNote(e.target.value)}
-                            placeholder="Notas da atividade..."
-                            style={{
-                              width: '100%',
-                              background: 'rgba(255,255,255,0.05)',
-                              border: '1px solid rgba(255,255,255,0.1)',
-                              borderRadius: '8px',
-                              padding: '8px',
-                              color: '#fff',
-                              fontSize: '0.8rem',
-                              minHeight: '60px',
-                              marginBottom: '12px',
-                              resize: 'none',
-                              outline: 'none'
-                            }}
-                          />
-
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button 
-                              onClick={() => setSelectedBubble(null)}
-                              style={{
-                                flex: 1,
-                                padding: '8px',
-                                background: 'transparent',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                color: 'rgba(255,255,255,0.6)',
-                                borderRadius: '8px',
-                                fontSize: '0.75rem',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Cancelar
-                            </button>
-                            <button 
-                              onClick={() => {
-                                bubbleEngine.explodeBubble(bubble.id, interactionNote);
-                                setSelectedBubble(null);
-                                setInteractionNote('');
-                              }}
-                              style={{
-                                flex: 1,
-                                padding: '8px',
-                                background: isGoalReached ? '#10b981' : (isOutward ? '#ef4444' : '#38bdf8'),
-                                border: 'none',
-                                color: '#fff',
-                                borderRadius: '8px',
-                                fontSize: '0.75rem',
-                                fontWeight: 'bold',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              {isGoalReached ? 'Resetar Ciclo' : (isOutward ? 'Ceder' : 'Concluir')}
-                            </button>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
-            </AnimatePresence>
-
-            <AnimatePresence>
-              {activeWaves.map(wave => (
-                <motion.div
-                  key={wave.id}
-                  initial={{ width: 0, height: 0, opacity: 1, x: '-50%', y: '-50%' }}
-                  animate={{ 
-                    width: 1500, 
-                    height: 1500, 
-                    opacity: 0,
-                    borderWidth: [4, 20, 0] 
-                  }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 1.2, ease: "circOut" }}
-                  style={{
-                    position: 'absolute',
-                    left: `${wave.x}px`,
-                    top: `${wave.y}px`,
-                    borderRadius: '50%',
-                    border: `4px solid ${wave.color}`,
-                    boxShadow: `0 0 50px ${wave.color}`,
+                    backgroundSize: '100px 100px, 100px 100px, 20px 20px, 20px 20px',
                     pointerEvents: 'none',
-                    zIndex: 200
+                    zIndex: 0
                   }}
                 />
-              ))}
+              )}
             </AnimatePresence>
+
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 5 }}>
+              {notes.map((note) => (
+                <StickyNoteEl
+                  key={note.id}
+                  note={note}
+                  onDelete={() => deleteNote(note.id)}
+                  onContentChange={(c: string) => updateNoteContent(note.id, c)}
+                  onColorCycle={() => cycleNoteColor(note.id)}
+                  onPositionChange={(x: number, y: number) => updateNotePosition(note.id, x, y)}
+                  onSave={() => localStorage.setItem('ploc_blackboard_notes', JSON.stringify(notes))}
+                />
+              ))}
+            </div>
+
+            <div
+              id="ploc-anchor"
+              style={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                width: '0px',
+                height: '0px',
+                zIndex: 20
+              }}
+            >
+              <motion.div
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  pointerEvents: 'all',
+                }}
+                initial={{ x: "-50%", y: "-50%", scale: 0.7 }}
+                animate={{
+                  x: plocReaction === 'dizzy' ? ["-50%", "-52%", "-48%", "-52%", "-48%", "-50%"] : "-50%",
+                  y: "-50%",
+                  // Escalonamento Óptico Inteligente: O elemento não encolhe além do tamanho real
+                  // mas pode crescer se o usuário der um zoom muito próximo para ver detalhes.
+                  scale: (plocReaction === 'happy' ? 0.8 : 0.7) * Math.max(1, 1 / scale),
+                }}
+                transition={{
+                  scale: { type: 'spring', stiffness: 300, damping: 20 },
+                  x: { duration: 0.4 }
+                }}
+              >
+                <PlocAvatarClient
+                  draggable={false}
+                  emotion={plocState.emotion === 'calm' ? (plocReaction === 'idle' ? 'calm' : plocReaction as any) : plocState.emotion as any}
+                />
+              </motion.div>
+              {/* Radar Temporal (Sonar) */}
+              <SonarAuras
+                centerX={0}
+                centerY={0}
+                theme={sonarTheme}
+              />
+
+              {/* Balão de Fala do Ploc (Centralizado e Dinâmico) */}
+              <AnimatePresence>
+                {plocMessage && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20, scale: 0.8, x: '-50%' }}
+                    animate={{ opacity: 1, y: -110, scale: 1, x: '-50%' }}
+                    exit={{ opacity: 0, scale: 0.8, x: '-50%' }}
+                    style={{
+                      position: 'absolute',
+                      left: '0px',
+                      width: 'max-content',
+                      maxWidth: '280px',
+                      background: 'rgba(15, 23, 42, 0.9)',
+                      backdropFilter: 'blur(20px)',
+                      padding: '12px 20px',
+                      borderRadius: '24px',
+                      color: '#fff',
+                      fontSize: '0.85rem',
+                      fontWeight: 800,
+                      textAlign: 'center',
+                      boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+                      border: '1px solid rgba(56, 189, 248, 0.3)',
+                      zIndex: 300,
+                      pointerEvents: 'none'
+                    }}
+                  >
+                    {plocMessage}
+                    {/* Triângulo do Balão (Seta) */}
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '-8px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: '0',
+                      height: '0',
+                      borderLeft: '10px solid transparent',
+                      borderRight: '10px solid transparent',
+                      borderTop: '10px solid rgba(15, 23, 42, 0.9)'
+                    }} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 150 }}>
+              <AnimatePresence mode="popLayout">
+                {bubbles
+                  .filter(b => (b.minutesRemaining || 0) <= windowMinutes * 2)
+                  .map((bubble) => {
+                    const isOutward = (bubble as any).metadata?.direction === 'outward';
+                    const isGoalReached = isOutward && (bubble.minutesRemaining || 0) <= 0.08;
+
+                    let visualDist = 0;
+                    const totalMins = (bubble.metadata as any)?.totalMinutes || 10;
+                    if (isOutward) {
+                      const progress = Math.min(1, 1 - ((bubble.minutesRemaining || 0) / totalMins));
+                      visualDist = progress * 500;
+                    } else {
+                      visualDist = Math.max(120, ((bubble.minutesRemaining || 0) / windowMinutes) * 500);
+                    }
+
+                    const visualX = 1000 + Math.cos(bubble.angle || 0) * visualDist;
+                    const visualY = 1000 + Math.sin(bubble.angle || 0) * visualDist;
+                    const isSelected = selectedBubble?.id === bubble.id;
+
+                    return (
+                      <div key={bubble.id} style={{ position: 'absolute', left: 0, top: 0, pointerEvents: 'none' }}>
+                        <BubbleItem
+                          bubble={{ ...bubble, x: visualX, y: visualY }}
+                          windowMinutes={isOutward ? totalMins : windowMinutes}
+                          canvasScale={scale}
+                          onExplode={() => {
+                            setShowAttributes(false);
+                            setShowFocusInfo(false);
+                            setShowTutorial(false);
+                            setSelectedBubble(bubble);
+                            setInteractionNote('');
+                          }}
+                        />
+
+                        <AnimatePresence>
+                          {isSelected && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.8, x: visualX - 120, y: visualY - 260 }}
+                              animate={{ opacity: 1, scale: 1, x: visualX - 120, y: visualY - 280 }}
+                              exit={{ opacity: 0, scale: 0.8, x: visualX - 120, y: visualY - 260 }}
+                              style={{
+                                position: 'absolute',
+                                width: '240px',
+                                background: 'rgba(15, 23, 42, 0.95)',
+                                backdropFilter: 'blur(16px)',
+                                border: `1px solid ${isGoalReached ? 'rgba(16, 185, 129, 0.4)' : (isOutward ? 'rgba(239, 68, 68, 0.4)' : 'rgba(56, 189, 248, 0.4)')}`,
+                                borderRadius: '16px',
+                                padding: '16px',
+                                boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+                                zIndex: 200,
+                                pointerEvents: 'all'
+                              }}
+                            >
+                              <div style={{
+                                position: 'absolute',
+                                bottom: '-8px',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                width: '0',
+                                height: '0',
+                                borderLeft: '10px solid transparent',
+                                borderRight: '10px solid transparent',
+                                borderTop: `10px solid ${isGoalReached ? 'rgba(16, 185, 129, 0.95)' : (isOutward ? 'rgba(239, 68, 68, 0.95)' : 'rgba(15, 23, 42, 0.95)')}`,
+                              }} />
+                              <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px' }}>
+                                {bubble.content}
+                              </div>
+
+                              <div style={{
+                                background: isGoalReached ? 'rgba(16, 185, 129, 0.15)' : (isOutward ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)'),
+                                padding: '8px',
+                                borderRadius: '8px',
+                                fontSize: '0.75rem',
+                                color: isGoalReached ? '#10b981' : (isOutward ? '#fca5a5' : '#86efac'),
+                                marginBottom: '12px'
+                              }}>
+                                {isGoalReached ? (
+                                  <>🏆 <b>META ALCANÇADA!</b><br />Parabéns por resistir. Clique em <b>Concluir</b> para resetar o ciclo e ganhar <b>+15 Moedas</b>.</>
+                                ) : isOutward ? (
+                                  <>⚠️ Desistir agora: <b>-10 Moedas</b><br />Vencer: <b>+20 Moedas</b></>
+                                ) : (
+                                  <>✨ Bônus de Foco: <b>+5 Moedas</b></>
+                                )}
+                              </div>
+
+                              <textarea
+                                value={interactionNote}
+                                onChange={(e) => setInteractionNote(e.target.value)}
+                                placeholder="Notas da atividade..."
+                                style={{
+                                  width: '100%',
+                                  background: 'rgba(255,255,255,0.05)',
+                                  border: '1px solid rgba(255,255,255,0.1)',
+                                  borderRadius: '8px',
+                                  padding: '8px',
+                                  color: '#fff',
+                                  fontSize: '0.8rem',
+                                  minHeight: '60px',
+                                  marginBottom: '12px',
+                                  resize: 'none',
+                                  outline: 'none'
+                                }}
+                              />
+
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                  onClick={() => setSelectedBubble(null)}
+                                  style={{
+                                    flex: 1,
+                                    padding: '8px',
+                                    background: 'transparent',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    color: 'rgba(255,255,255,0.6)',
+                                    borderRadius: '8px',
+                                    fontSize: '0.75rem',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  Cancelar
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    bubbleEngine.explodeBubble(bubble.id, interactionNote);
+                                    setSelectedBubble(null);
+                                    setInteractionNote('');
+                                  }}
+                                  style={{
+                                    flex: 1,
+                                    padding: '8px',
+                                    background: isGoalReached ? '#10b981' : (isOutward ? '#ef4444' : '#38bdf8'),
+                                    border: 'none',
+                                    color: '#fff',
+                                    borderRadius: '8px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  {isGoalReached ? 'Resetar Ciclo' : (isOutward ? 'Ceder' : 'Concluir')}
+                                </button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })}
+              </AnimatePresence>
+
+              <AnimatePresence>
+                {activeWaves.map(wave => (
+                  <motion.div
+                    key={wave.id}
+                    initial={{ width: 0, height: 0, opacity: 1, x: '-50%', y: '-50%' }}
+                    animate={{
+                      width: 1500,
+                      height: 1500,
+                      opacity: 0,
+                      borderWidth: [4, 20, 0]
+                    }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 1.2, ease: "circOut" }}
+                    style={{
+                      position: 'absolute',
+                      left: `${wave.x}px`,
+                      top: `${wave.y}px`,
+                      borderRadius: '50%',
+                      border: `4px solid ${wave.color}`,
+                      boxShadow: `0 0 50px ${wave.color}`,
+                      pointerEvents: 'none',
+                      zIndex: 200
+                    }}
+                  />
+                ))}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </div>
-    </div>
       <motion.div
         style={{
           position: 'fixed',
@@ -950,9 +981,9 @@ export default function BlackboardPage() {
         </motion.button>
       </motion.div>
 
-      <div style={{ 
-        position: 'fixed', 
-        top: '90px', 
+      <div style={{
+        position: 'fixed',
+        top: '90px',
         left: '30px',
         zIndex: 100001,
       }}>
@@ -996,10 +1027,10 @@ export default function BlackboardPage() {
             color: '#000',
             boxShadow: '0 0 10px rgba(251, 191, 36, 0.3)'
           }}>$</div>
-          <span style={{ 
-            fontSize: '1.1rem', 
-            fontWeight: 700, 
-            color: '#fbbf24', 
+          <span style={{
+            fontSize: '1.1rem',
+            fontWeight: 700,
+            color: '#fbbf24',
             fontFamily: 'monospace',
             letterSpacing: '1px'
           }}>
@@ -1061,7 +1092,7 @@ export default function BlackboardPage() {
                   <li>Evite que as bolhas colidam com o Ploc!</li>
                 </ul>
               </div>
-              <button 
+              <button
                 onClick={() => setShowFocusInfo(false)}
                 style={{
                   marginTop: '25px',
@@ -1082,13 +1113,13 @@ export default function BlackboardPage() {
         )}
       </AnimatePresence>
 
-      <div style={{ 
-        position: 'fixed', 
-        top: '30px', 
-        right: '30px', 
-        display: 'flex', 
+      <div style={{
+        position: 'fixed',
+        top: '30px',
+        right: '30px',
+        display: 'flex',
         alignItems: 'center',
-        gap: '12px', 
+        gap: '12px',
         zIndex: 100001,
         pointerEvents: 'none'
       }}>
@@ -1100,11 +1131,11 @@ export default function BlackboardPage() {
             const modes: ('1h' | 'day' | 'week')[] = ['1h', 'day', 'week'];
             const nextMode = modes[(modes.indexOf(viewMode as any) + 1) % modes.length];
             setViewMode(nextMode);
-            
+
             // Escala ideal para ver o radar completo (1000px de diâmetro)
             // Agora 1.0 (100%) é o nosso alvo panorâmico
             let nextScale = 1;
-            
+
             setScale(nextScale);
             // O centerPloc será disparado pelo useEffect [viewMode]
           }}
@@ -1199,10 +1230,10 @@ export default function BlackboardPage() {
           {Math.round(scale * 100)}%
         </div>
 
-        <ViewportMarkers 
-          bubbles={bubbles} 
-          scrollPos={scrollPos} 
-          scale={scale} 
+        <ViewportMarkers
+          bubbles={bubbles}
+          scrollPos={scrollPos}
+          scale={scale}
           onFocusTask={(task: any) => {
             setShowAttributes(false);
             setShowFocusInfo(false);
@@ -1413,39 +1444,39 @@ const StickyNoteEl = memo(({ note, onDelete, onContentChange, onColorCycle, onPo
 
 
 /** Item de Bolha (Task/Insight) */
-const BubbleItem = memo(({ bubble, onExplode, windowMinutes = 10, canvasScale = 1 }: { 
-  bubble: BlackboardBubble, 
-  onExplode: () => void, 
+const BubbleItem = memo(({ bubble, onExplode, windowMinutes = 10, canvasScale = 1 }: {
+  bubble: BlackboardBubble,
+  onExplode: () => void,
   windowMinutes?: number,
   canvasScale?: number
 }) => {
   const Icon = bubble.type === 'bright_idea' ? Sparkles : (bubble.type === 'knowledge' ? Brain : ActivityIcon);
   const themeColor = BUBBLE_COLORS[bubble.type] || '#38bdf8';
   const isOutward = (bubble as any).metadata?.direction === 'outward';
-  
+
   const opticalScale = Math.max(1, 1 / canvasScale);
   const isPerformanceMode = canvasScale < 0.6;
 
   const isGoalReached = isOutward && (bubble.minutesRemaining || 0) <= 0;
   const mainColor = isGoalReached ? '#10b981' : (isOutward ? '#ef4444' : themeColor);
-  
+
   return (
     <motion.div
       id={`bubble-${bubble.id}`}
       initial={{ scale: 0, opacity: 0 }}
-      animate={{ 
+      animate={{
         y: [0, -12, 0],
         x: [0, 8, 0, -8, 0],
         scale: opticalScale,
         opacity: 1
       }}
-      exit={{ 
-        scale: opticalScale * 4, 
+      exit={{
+        scale: opticalScale * 4,
         opacity: 0,
         filter: 'brightness(2) blur(10px)',
-        transition: { duration: 0.4, ease: "easeOut" } 
+        transition: { duration: 0.4, ease: "easeOut" }
       }}
-      transition={{ 
+      transition={{
         y: { duration: 3 + Math.random() * 2, repeat: Infinity, ease: "easeInOut" },
         x: { duration: 5 + Math.random() * 2, repeat: Infinity, ease: "easeInOut" },
         scale: { type: 'spring', stiffness: 300, damping: 20 },
@@ -1453,14 +1484,14 @@ const BubbleItem = memo(({ bubble, onExplode, windowMinutes = 10, canvasScale = 
       }}
       style={{
         position: 'absolute',
-        left: `${bubble.x - bubble.size/2}px`,
-        top: `${bubble.y - bubble.size/2}px`,
+        left: `${bubble.x - bubble.size / 2}px`,
+        top: `${bubble.y - bubble.size / 2}px`,
         width: `${bubble.size}px`,
         height: `${bubble.size}px`,
         transformOrigin: 'center center',
         borderRadius: '50%',
         backgroundColor: isOutward ? 'transparent' : `${mainColor}20`,
-        backgroundImage: isOutward 
+        backgroundImage: isOutward
           ? `radial-gradient(circle, ${mainColor}40 0%, ${mainColor}10 100%)`
           : 'none',
         backdropFilter: 'blur(12px)',
@@ -1475,10 +1506,10 @@ const BubbleItem = memo(({ bubble, onExplode, windowMinutes = 10, canvasScale = 
         zIndex: 100,
         transform: `translateZ(0)`
       }}
-      whileHover={{ 
-        scale: 1.2 * opticalScale, 
+      whileHover={{
+        scale: 1.2 * opticalScale,
         backgroundColor: isOutward ? 'transparent' : `${mainColor}40`,
-        backgroundImage: isOutward 
+        backgroundImage: isOutward
           ? `radial-gradient(circle, ${mainColor}60 0%, ${mainColor}20 100%)`
           : 'none'
       }}
@@ -1497,23 +1528,23 @@ const BubbleItem = memo(({ bubble, onExplode, windowMinutes = 10, canvasScale = 
         zIndex: 3
       }} />
 
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
         justifyContent: 'center',
         gap: '4px',
-        position: 'relative', 
-        zIndex: 2 
+        position: 'relative',
+        zIndex: 2
       }}>
         {isOutward ? (
           <div style={{ fontSize: bubble.size * 0.4 }}>🚭</div>
         ) : (
           <Icon size={bubble.size * 0.35} color={themeColor} />
         )}
-        <span style={{ 
-          fontSize: '10px', 
-          fontWeight: '900', 
+        <span style={{
+          fontSize: '10px',
+          fontWeight: '900',
           fontFamily: 'monospace',
           color: isGoalReached ? '#dcfce7' : (isOutward ? '#fca5a5' : '#fff'),
           textShadow: `0 0 5px ${mainColor}`,
@@ -1539,12 +1570,12 @@ const BubbleItem = memo(({ bubble, onExplode, windowMinutes = 10, canvasScale = 
       </div>
 
       {bubble.energy > 0 && (
-        <svg 
+        <svg
           viewBox={`0 0 ${bubble.size} ${bubble.size}`}
-          width={bubble.size} 
-          height={bubble.size} 
-          style={{ 
-            position: 'absolute', 
+          width={bubble.size}
+          height={bubble.size}
+          style={{
+            position: 'absolute',
             top: 0,
             left: 0,
             transform: 'rotate(-90deg)',
@@ -1553,17 +1584,17 @@ const BubbleItem = memo(({ bubble, onExplode, windowMinutes = 10, canvasScale = 
             zIndex: 3
           }}
         >
-          <circle 
-            cx={bubble.size/2} 
-            cy={bubble.size/2} 
-            r={bubble.size/2 - 3}
-            fill="none" 
-            stroke={mainColor} 
+          <circle
+            cx={bubble.size / 2}
+            cy={bubble.size / 2}
+            r={bubble.size / 2 - 3}
+            fill="none"
+            stroke={mainColor}
             strokeWidth="3"
             strokeLinecap="round"
-            strokeDasharray={2 * Math.PI * (bubble.size/2 - 3)}
-            strokeDashoffset={isGoalReached ? 0 : (2 * Math.PI * (bubble.size/2 - 3) * (1 - (bubble.minutesRemaining || 0) / (bubble.metadata?.totalMinutes || 10)))}
-            style={{ 
+            strokeDasharray={2 * Math.PI * (bubble.size / 2 - 3)}
+            strokeDashoffset={isGoalReached ? 0 : (2 * Math.PI * (bubble.size / 2 - 3) * (1 - (bubble.minutesRemaining || 0) / (bubble.metadata?.totalMinutes || 10)))}
+            style={{
               filter: `drop-shadow(0 0 5px ${mainColor})`,
               transition: 'stroke-dashoffset 0.5s ease, stroke 0.5s ease'
             }}
@@ -1579,7 +1610,7 @@ const BubbleItem = memo(({ bubble, onExplode, windowMinutes = 10, canvasScale = 
 const ViewportMarkers = ({ bubbles, scrollPos, scale, onFocusTask }: any) => {
   const w = window.innerWidth;
   const h = window.innerHeight;
-  
+
   return (
     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 100002 }}>
       {bubbles.map((bubble: any) => {
@@ -1589,7 +1620,7 @@ const ViewportMarkers = ({ bubbles, scrollPos, scale, onFocusTask }: any) => {
         const rect = el.getBoundingClientRect();
         const bubbleScreenX = rect.left + rect.width / 2;
         const bubbleScreenY = rect.top + rect.height / 2;
-        
+
         // Verifica se qualquer parte da bolha está visível na tela
         const isVisible = (
           rect.top < h &&
@@ -1597,26 +1628,26 @@ const ViewportMarkers = ({ bubbles, scrollPos, scale, onFocusTask }: any) => {
           rect.left < w &&
           rect.right > 0
         );
-        
+
         if (isVisible) return null;
-        
+
         // Calcular direção a partir do centro da tela para a bolha
         const dx = bubbleScreenX - (w / 2);
         const dy = bubbleScreenY - (h / 2);
         const angle = Math.atan2(dy, dx);
-        
+
         const margin = 50;
         let edgeX, edgeY;
-        
+
         const aspect = w / h;
         const tanAngle = Math.abs(Math.tan(angle));
-        
-        if (tanAngle < 1/aspect) {
+
+        if (tanAngle < 1 / aspect) {
           edgeX = dx > 0 ? w - margin : margin;
-          edgeY = (h / 2) + (dx > 0 ? (w/2 - margin) * Math.tan(angle) : -(w/2 - margin) * Math.tan(angle));
+          edgeY = (h / 2) + (dx > 0 ? (w / 2 - margin) * Math.tan(angle) : -(w / 2 - margin) * Math.tan(angle));
         } else {
           edgeY = dy > 0 ? h - margin : margin;
-          edgeX = (w / 2) + (dy > 0 ? (h/2 - margin) / Math.tan(angle) : -(h/2 - margin) / Math.tan(angle));
+          edgeX = (w / 2) + (dy > 0 ? (h / 2 - margin) / Math.tan(angle) : -(h / 2 - margin) / Math.tan(angle));
         }
 
         const themeColor = BUBBLE_COLORS[bubble.type] || '#38bdf8';
@@ -1652,7 +1683,7 @@ const ViewportMarkers = ({ bubbles, scrollPos, scale, onFocusTask }: any) => {
             onClick={() => onFocusTask(bubble)}
           >
             {/* Seta Direcional */}
-            <div style={{ 
+            <div style={{
               position: 'absolute',
               transform: `rotate(${angle}rad) translateX(24px)`,
               display: 'flex',
@@ -1661,7 +1692,7 @@ const ViewportMarkers = ({ bubbles, scrollPos, scale, onFocusTask }: any) => {
             }}>
               <ChevronRight size={16} color={themeColor} />
             </div>
-            
+
             {/* Miniatura do Conteúdo */}
             <div style={{ fontSize: '14px', zIndex: 2 }}>
               {isOutward ? '🚭' : bubble.type === 'work' ? '💼' : bubble.type === 'study' ? '📚' : '✨'}
@@ -1676,8 +1707,8 @@ const ViewportMarkers = ({ bubbles, scrollPos, scale, onFocusTask }: any) => {
 
 
 /** Componente de Radar/Sonar com Temas Selecionáveis */
-const SonarAuras = memo(({ centerX, centerY, theme = 'clockwork' }: { 
-  centerX: number, 
+const SonarAuras = memo(({ centerX, centerY, theme = 'radio_wave' }: {
+  centerX: number,
   centerY: number,
   theme?: SonarTheme
 }) => {

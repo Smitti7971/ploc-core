@@ -8,6 +8,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// --- ENUMS ---
+
 enum Priority {
   BAIXA
   MEDIA
@@ -20,6 +22,33 @@ enum TaskStatus {
   CONCLUIDO
   CANCELADO
 }
+
+enum StatType {
+  BODY
+  MIND
+  LIFE
+  FREEDOM
+  PURPOSE
+  FOCO_COINS
+  PREMIUM_COINS
+  XP
+}
+
+enum TransactionSourceType {
+  ROUTINE
+  ACHIEVEMENT
+  PENALTY
+  DAILY_BONUS
+  SYSTEM
+}
+
+enum ExecutionStatus {
+  COMPLETED
+  SKIPPED
+  FAILED
+}
+
+// --- MODELS ---
 
 model User {
   id                   String    @id @default(uuid())
@@ -46,7 +75,67 @@ model User {
   
   routines             Routine[]
   tasks                Task[]
-  plants               Plant[]
+  
+  // Gamificação e Progresso
+  stats                UserStats?
+  statTransactions     StatTransaction[]
+  taskExecutions       TaskExecution[]
+}
+
+model UserStats {
+  id               String   @id @default(uuid())
+
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Atributos de Evolução
+  body             Int      @default(0)
+  mind             Int      @default(0)
+  life             Int      @default(0)
+  freedom          Int      @default(0)
+  purpose          Int      @default(0)
+
+  // Economia
+  focoCoins        Int      @default(0)
+  premiumCoins     Int      @default(0)
+
+  // Progressão
+  level            Int      @default(1)
+  xp               Int      @default(0)
+
+  // Consistência
+  streakDays       Int      @default(0)
+
+  lastCalculatedAt DateTime?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model StatTransaction {
+  id            String   @id @default(uuid())
+
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  statType      StatType
+
+  amount        Int
+
+  sourceType    TransactionSourceType
+
+  sourceId      String?
+
+  description   String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([statType])
+  @@index([sourceType])
 }
 
 model Routine {
@@ -54,14 +143,58 @@ model Routine {
   name        String
   category    String   // TREINO, ESTUDO, TRABALHO, etc
   description String?
-  config      Json?    // Estrutura para dias da semana, horários, etc
+  config      Json?    // Estrutura para dias da semana, horários, etc (ex: { "days": [1,3,5], "time": "08:00" })
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   tasks       Task[]
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
 
+  // Gamificação e Execução
+  rewards     RoutineReward[]
+  executions  TaskExecution[]
+
   @@index([userId])
+}
+
+model RoutineReward {
+  id          String    @id @default(uuid())
+
+  routineId   Int
+  routine     Routine   @relation(fields: [routineId], references: [id], onDelete: Cascade)
+
+  statType    StatType
+
+  amount      Int
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([routineId])
+}
+
+model TaskExecution {
+  id                String            @id @default(uuid())
+
+  userId            String
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  routineId         Int
+  routine           Routine           @relation(fields: [routineId], references: [id], onDelete: Cascade)
+
+  status            ExecutionStatus
+
+  startedAt         DateTime?
+  finishedAt        DateTime?
+
+  completedOnTime   Boolean           @default(false)
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([userId])
+  @@index([routineId])
+  @@index([status])
 }
 
 model RoutineTemplate {
@@ -97,104 +230,4 @@ model Task {
   @@index([completed])
   @@index([status])
   @@index([priority])
-}
-
-// --- SISTEMA DE PLANTAS (PRO) ---
-
-model Plant {
-  id            String    @id @default(uuid())
-  name          String
-  species       String?
-  userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  germinatedAt  DateTime? // TIMESTAMPTZ
-  harvestedAt   DateTime? // TIMESTAMPTZ
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  phases        PlantPhase[]
-  logs          PlantLog[]
-  events        PlantEvent[]
-  media         PlantMedia[]
-
-  @@index([userId])
-  @@index([createdAt])
-}
-
-model PlantPhase {
-  id          String    @id @default(uuid())
-  plantId     String
-  plant       Plant     @relation(fields: [plantId], references: [id], onDelete: Cascade)
-  
-  phaseName   String    // ex: "Germinação", "Vegetativo", "Floração"
-  startedAt   DateTime  // TIMESTAMPTZ
-  endedAt     DateTime? // TIMESTAMPTZ
-
-  createdAt   DateTime  @default(now())
-
-  @@index([plantId])
-  @@index([startedAt])
-}
-
-model PlantLog {
-  id          String    @id @default(uuid())
-  plantId     String
-  plant       Plant     @relation(fields: [plantId], references: [id], onDelete: Cascade)
-  
-  title       String
-  mood        String    @default("healthy") // healthy, stressed, warning, etc
-  notes       String?
-  tags        Json?     // JSONB: ["rega", "poda", etc]
-  
-  loggedAt    DateTime  @default(now()) // Referência principal para Calendário
-
-  media       PlantMedia[]
-  
-  createdAt   DateTime  @default(now())
-
-  @@index([plantId])
-  @@index([loggedAt])
-}
-
-model PlantMedia {
-  id          String    @id @default(uuid())
-  plantId     String
-  plant       Plant     @relation(fields: [plantId], references: [id], onDelete: Cascade)
-  
-  logId       String?
-  log         PlantLog? @relation(fields: [logId], references: [id], onDelete: SetNull)
-  
-  url         String    // media_url
-  type        String    @default("image") // image, video, timelapse, ai-generated
-  fileSize    Int?      // file_size
-  metadata    Json?     // JSONB: { camera: "iphone", ai_analysis: { ... } }
-  
-  createdAt   DateTime  @default(now())
-
-  @@index([plantId])
-  @@index([logId])
-}
-
-model PlantEvent {
-  id          String    @id @default(uuid())
-  plantId     String
-  plant       Plant     @relation(fields: [plantId], references: [id], onDelete: Cascade)
-  
-  type        String    // watering, fertilization, pruning, harvest, etc
-  title       String
-  description String?
-  
-  startsAt    DateTime  // TIMESTAMPTZ
-  endsAt      DateTime? // TIMESTAMPTZ
-  
-  status      String    @default("pending") // pending, completed, skipped
-  metadata    Json?     // JSONB
-  
-  createdAt   DateTime  @default(now())
-
-  @@index([plantId])
-  @@index([startsAt])
-  @@index([type])
 }

@@ -10,7 +10,11 @@ class RoutineRepository {
     async findAllByUserId(userId) {
         return prisma.routine.findMany({
             where: { userId },
-            include: { tasks: true }, // Opcional: trazer tarefas associadas
+            include: { 
+                tasks: true,
+                rewards: true,
+                _count: { select: { executions: true } }
+            },
             orderBy: { createdAt: 'desc' }
         });
     }
@@ -18,7 +22,14 @@ class RoutineRepository {
     async findById(id) {
         return prisma.routine.findUnique({
             where: { id },
-            include: { tasks: true }
+            include: { 
+                tasks: true,
+                rewards: true,
+                executions: {
+                    take: 5,
+                    orderBy: { createdAt: 'desc' }
+                }
+            }
         });
     }
 

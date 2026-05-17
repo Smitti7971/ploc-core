@@ -1,4 +1,5 @@
 const taskRepository = require('../repositories/TaskRepository');
+const progressionService = require('./ProgressionService');
 
 /**
  * TaskService
@@ -82,7 +83,21 @@ class TaskService {
             }
         }
 
-        return taskRepository.update(tid, data);
+        const updatedTask = await taskRepository.update(tid, data);
+
+        // Se a tarefa acabou de ser concluída, dar XP base
+        if (completed === true && (!task.completed)) {
+            await progressionService.updateStat({
+                userId,
+                statType: 'XP',
+                amount: 5, // XP base por tarefa individual
+                sourceType: 'SYSTEM',
+                sourceId: String(tid),
+                description: `Tarefa concluída: ${updatedTask.name}`
+            });
+        }
+
+        return updatedTask;
     }
 
     async removeTask(userId, taskId) {

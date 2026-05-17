@@ -1,5 +1,6 @@
 const routineRepository = require('../repositories/RoutineRepository');
 const taskRepository = require('../repositories/TaskRepository');
+const progressionService = require('./ProgressionService');
 
 /**
  * RoutineService
@@ -11,7 +12,7 @@ class RoutineService {
     }
 
     async createRoutine(userId, data) {
-        const { name, category, description, config } = data;
+        const { name, category, description, config, rewards } = data;
 
         if (!name || !category || !config || !config.days) {
             throw new Error('Dados da rotina incompletos (name, category, config.days são obrigatórios)');
@@ -22,13 +23,26 @@ class RoutineService {
             category,
             description,
             config,
-            userId: userId
+            userId: userId,
+            rewards: rewards ? {
+                createMany: {
+                    data: rewards // [{ statType: 'XP', amount: 50 }, ...]
+                }
+            } : undefined
         });
 
         // Projetar tarefas iniciais para as próximas 4 semanas
         await this.projectTasks(routine);
 
-        return routine;
+        return routineRepository.findById(routine.id); // Retornar com relações
+    }
+
+    /**
+     * Marca uma rotina como concluída e processa a gamificação.
+     */
+    async completeRoutine(userId, routineId) {
+        const rid = parseInt(routineId);
+        return progressionService.executeRoutine(userId, rid);
     }
 
     /**

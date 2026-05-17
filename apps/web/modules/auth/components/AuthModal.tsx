@@ -1,190 +1,131 @@
 'use client';
 
-/**
- * AuthModal.tsx — Modal de Login/Cadastro
- * Design fiel ao original: glassmorphism dark, gradiente azul.
- */
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuthStore } from '@/store/authStore';
+import { cn } from '@/lib/utils';
 
-import { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import type { AuthModalType } from '../types/auth.types';
+export const AuthModal: React.FC = () => {
+  const { isAuthModalOpen, setAuthModalOpen } = useAuthStore();
 
-interface AuthModalProps {
-  initialType?: AuthModalType;
-  onClose: () => void;
-}
+  const [isLogin, setIsLogin] = useState(true);
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPass, setAuthPass] = useState('');
+  const [authName, setAuthName] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
-export function AuthModal({ initialType = 'login', onClose }: AuthModalProps) {
-  const [type, setType] = useState<AuthModalType>(initialType);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const { login, register, isLoading, error, setError } = useAuth();
-  const cardRef = useRef<HTMLDivElement>(null);
-  const isLogin = type === 'login';
-
-  // Entrance animation
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (cardRef.current) cardRef.current.style.transform = 'scale(1)';
-    }, 10);
-    return () => clearTimeout(timer);
-  }, [type]);
-
-  const handleSwitch = (newType: AuthModalType) => {
-    setError(null);
-    setType(newType);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLogin) {
-      await login({ email, password });
-    } else {
-      await register({ email, password, confirmPassword: confirm });
+    setAuthLoading(true);
+    setAuthError(null);
+
+    try {
+      const endpoint = isLogin ? '/auth/login' : '/auth/register';
+      const payload = isLogin
+        ? { email: authEmail, password: authPass }
+        : { name: authName, email: authEmail, password: authPass };
+
+      const { apiService } = await import('@/services/api');
+      const response = await apiService.post<{ token: string; user: any }>(endpoint, payload);
+
+      useAuthStore.getState().setAuth(response.token, response.user);
+      setAuthModalOpen(false);
+    } catch (err: any) {
+      setAuthError(err.message || 'Erro ao autenticar');
+    } finally {
+      setAuthLoading(false);
     }
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[10010] flex items-center justify-center"
-      style={{
-        background: 'rgba(0,0,0,0.85)',
-        backdropFilter: 'blur(15px)',
-        animation: 'fadeIn 0.3s ease',
-        fontFamily: "'Inter', sans-serif",
-      }}
-      onClick={onClose}
-    >
-      <div
-        ref={cardRef}
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: '90%',
-          maxWidth: '400px',
-          padding: '2.5rem',
-          background: 'rgba(15, 23, 42, 0.7)',
-          backdropFilter: 'blur(40px) saturate(200%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(200%)',
-          borderRadius: '28px',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: '0 40px 100px rgba(0, 0, 0, 0.6)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1.5rem',
-          transform: 'scale(0.9)',
-          transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 text-white/40 hover:text-white transition-colors"
-          style={{ fontFamily: 'Material Symbols Rounded' }}
-        >
-          ✕
-        </button>
+    <AnimatePresence>
+      {isAuthModalOpen && (
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-5">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setAuthModalOpen(false)}
+            className="absolute inset-0 bg-black/40 backdrop-blur-md"
+          />
 
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-          <h2 style={{ color: '#fff', fontSize: '1.4rem', fontWeight: 900, letterSpacing: '1px', margin: 0 }}>
-            PLOC <span style={{ color: '#38bdf8' }}>{isLogin ? 'LOGIN' : 'CADASTRO'}</span>
-          </h2>
-          <p style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: '4px' }}>
-            {isLogin ? 'Sua produtividade inteligente começa aqui.' : 'Crie sua conta e comece agora.'}
-          </p>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-          {(['email', 'password', ...(!isLogin ? ['confirm'] : [])] as const).map((field) => (
-            <input
-              key={field}
-              id={`modal-auth-${field}`}
-              name={field}
-              type={field === 'email' ? 'email' : 'password'}
-              placeholder={field === 'email' ? 'E-mail' : field === 'password' ? 'Senha' : 'Confirmar Senha'}
-              value={field === 'email' ? email : field === 'password' ? password : confirm}
-              onChange={(e) => {
-                if (field === 'email') setEmail(e.target.value);
-                else if (field === 'password') setPassword(e.target.value);
-                else setConfirm(e.target.value);
-              }}
-              required
-              style={{
-                width: '100%',
-                background: 'rgba(0,0,0,0.3)',
-                border: '1.5px solid rgba(255,255,255,0.1)',
-                padding: '1.1rem',
-                borderRadius: '16px',
-                color: '#fff',
-                outline: 'none',
-                fontSize: '0.95rem',
-                transition: 'border-color 0.3s',
-                boxSizing: 'border-box',
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#38bdf8';
-                e.target.style.background = 'rgba(56, 189, 248, 0.05)';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = 'rgba(255,255,255,0.1)';
-                e.target.style.background = 'rgba(0,0,0,0.3)';
-              }}
-            />
-          ))}
-
-          {/* Error */}
-          {error && (
-            <div style={{
-              color: '#ef4444', fontSize: '0.75rem', textAlign: 'center',
-              padding: '0.8rem', background: 'rgba(239, 68, 68, 0.1)',
-              borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)',
-            }}>
-              {error}
-            </div>
-          )}
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={isLoading}
-            style={{
-              background: 'linear-gradient(135deg, #38bdf8, #1d4ed8)',
-              color: '#fff',
-              padding: '1.1rem',
-              borderRadius: '18px',
-              fontWeight: 900,
-              fontSize: '0.95rem',
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              border: 'none',
-              marginTop: '0.5rem',
-              boxShadow: '0 10px 25px rgba(29, 78, 216, 0.4)',
-              letterSpacing: '1px',
-              transition: 'all 0.3s',
-              opacity: isLoading ? 0.5 : 1,
-            }}
-          >
-            {isLoading ? 'PROCESSANDO...' : isLogin ? 'ACESSAR' : 'CRIAR CONTA'}
-          </button>
-        </form>
-
-        {/* Switch */}
-        <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
-          <p
-            onClick={() => handleSwitch(isLogin ? 'register' : 'login')}
-            style={{ color: '#94a3b8', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 500 }}
-          >
-            {isLogin ? (
-              <>Novo por aqui? <span style={{ color: '#38bdf8', fontWeight: 800 }}>Cadastre-se</span></>
-            ) : (
-              <>Já tem conta? <span style={{ color: '#38bdf8', fontWeight: 800 }}>Faça login</span></>
+          {/* Modal Container */}
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            className={cn(
+              "relative w-full max-w-[340px] p-10 flex flex-col gap-6 z-[1]",
+              "bg-[var(--ploc-glass)] backdrop-blur-[40px]",
+              "rounded-[var(--radius-card)] border border-[var(--ploc-border)]",
+              "shadow-[0_30px_60px_rgba(0,0,0,0.8)] text-[var(--ploc-foreground)]"
             )}
-          </p>
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center">
+              <h2 className="m-0 text-2xl font-black uppercase tracking-[3px] font-display">
+                {isLogin ? 'Login' : 'Cadastro'}
+              </h2>
+            </div>
+
+            <form onSubmit={handleAuthSubmit} className="flex flex-col gap-4">
+              {!isLogin && (
+                <input
+                  type="text"
+                  placeholder="NOME"
+                  value={authName}
+                  required
+                  onChange={(e) => setAuthName(e.target.value)}
+                  className="bg-white/5 border border-[var(--ploc-border)] rounded-[var(--radius-input)] p-4 text-white text-sm outline-none placeholder:text-white/20"
+                />
+              )}
+              <input
+                type="email"
+                placeholder="E-MAIL"
+                value={authEmail}
+                required
+                onChange={(e) => setAuthEmail(e.target.value)}
+                className="bg-white/5 border border-[var(--ploc-border)] rounded-[var(--radius-input)] p-4 text-white text-sm outline-none placeholder:text-white/20"
+              />
+              <input
+                type="password"
+                placeholder="SENHA"
+                value={authPass}
+                required
+                onChange={(e) => setAuthPass(e.target.value)}
+                className="bg-white/5 border border-[var(--ploc-border)] rounded-[var(--radius-input)] p-4 text-white text-sm outline-none placeholder:text-white/20"
+              />
+
+              {authError && (
+                <p className="text-[var(--ploc-danger)] text-[10px] m-0 text-center">
+                  {authError}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={authLoading}
+                className={cn(
+                  "bg-[var(--ploc-primary)] text-[var(--ploc-background)]",
+                  "rounded-[var(--radius-button)] p-[18px] font-black cursor-pointer transition-all hover:brightness-110",
+                  "disabled:opacity-50 disabled:cursor-not-allowed"
+                )}
+              >
+                {authLoading ? '...' : isLogin ? 'ENTRAR' : 'CRIAR CONTA'}
+              </button>
+            </form>
+
+            <button
+              onClick={() => setIsLogin(!isLogin)}
+              className="bg-transparent border-none text-[var(--ploc-muted)] text-xs cursor-pointer underline hover:text-white/50 transition-colors"
+            >
+              {isLogin ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Entre aqui'}
+            </button>
+          </motion.div>
         </div>
-      </div>
-    </div>
+      )}
+    </AnimatePresence>
   );
-}
+};

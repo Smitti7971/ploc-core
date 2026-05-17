@@ -53,13 +53,35 @@ class AuthService {
             }
         );
 
+        // Garantia: Se o usuário não tem stats (usuário antigo), cria agora
+        let userStats = user.stats;
+        if (!userStats) {
+            console.log(`🎁 Inicializando estatísticas para o usuário: ${user.email}`);
+            const prisma = require('../config/database');
+            userStats = await prisma.userStats.create({
+                data: {
+                    userId: user.id,
+                    level: 1,
+                    xp: 0,
+                    body: 10,
+                    mind: 10,
+                    life: 10,
+                    freedom: 10,
+                    purpose: 10,
+                    focoCoins: 0,
+                    premiumCoins: 0
+                }
+            });
+        }
+
         return {
             token,
             user: { 
                 id: user.id, 
                 name: user.name, 
                 email: user.email,
-                profilePhoto: user.profilePhoto 
+                profilePhoto: user.profilePhoto,
+                stats: userStats
             }
         };
     }

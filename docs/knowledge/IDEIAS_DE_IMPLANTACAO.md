@@ -113,4 +113,33 @@ Este documento serve como repositório para a visão criativa do PLOC, garantind
 
 ---
 
+## 🔮 Códigos Secretos & Ovos de Páscoa (Konami Ploc Code)
+- **Mecânica de Sequência de Toques (Bubble Combo/Code)**: 
+    - Se o usuário digitar ou tocar uma sequência específica de elementos na tela, ativa-se o "Modo Secreto".
+    - **Combos Possíveis**: 
+        - Tocar na frequência do widget no canto direito em uma ordem exata: *Pouco (1) ➔ Intenso (3) ➔ Pouco (1) ➔ Médio (2)*.
+        - Cutucar o Ploc em pontos anatômicos específicos em sequência rápida: *Olho Esquerdo ➔ Olho Direito ➔ Boca ➔ Barriga*.
+    - **Reações Físicas e Visuais**:
+        - **O Mortal**: O Ploc faz uma animação de pirueta física (backflip) com elasticidade extrema.
+        - **A Supernova de Sabão**: O Ploc se deforma de modo cômico até explodir temporariamente em 50 mini-bolhas douradas brilhantes que flutuam para o topo com sons de harpa sintetizados por Web Audio API. Ele ressurge logo em seguida piscando e se desculpando.
+        - **God Mode (Óculos de Pixel)**: Ploc coloca óculos escuros estilo *Turn Down For What*, seu balão de voz muda para um degradê neon e ele passa a responder a qualquer pergunta com frases ultra-confiantes, engraçadas ou sarcásticas.
+    - **Premiações e Recompensas**: 
+        - Desbloqueio de Skins temporárias gratuitas (ex: "Ploc de Ouro", "Ploc Cyberpunk", "Ploc Retro Pixel 8-Bit").
+        - Liberação de pacotes de áudio raros contendo piadas internas do desenvolvimento.
+
+---
+
+## 🫧 Painel Hidráulico de Atmosferas (Atmos Control Hub)
+- **Evolução da Cápsula de Frequência**: 
+    - O botão flutuante monocromático do canto direito serve de portal para a "Física da Tela".
+    - **Expansão Líquida**: Ao segurar o botão de frequência por 1.5 segundos, ele se expande em um lindo painel glassmórfico de controle.
+    - **Transição de Elementos**: Permite ao usuário trocar o tipo de partícula que preenche e flutua no fundo do aplicativo:
+        - *Bolhas de Sabão* (Clássico - colisão e estouros caricatos).
+        - *Folhas de Outono* (Relaxante - física de balanço lateral com vento, acumulando no rodapé da tela).
+        - *Partículas de Fogo* (Energizante - flutuação rápida com faíscas que se desfazem na gravidade).
+        - *Estrelas Cadentes* (Foco Noturno - linhas rápidas horizontais e diagonais).
+    - **Sintonia de Áudio Correspondente**: Cada atmosfera traz efeitos sonoros correspondentes sintetizados na Web Audio API em tempo real (som de folhas secas ao tocar nelas, estalos de madeira ao estourar fogo, etc.).
+
+---
+
 *Documento em constante evolução. Registre aqui antes de codar.*
