@@ -152,9 +152,9 @@ export function usePlocState({ emotion, speak }: UsePlocStateOptions = {}) {
   // Gatilho de dor (quando arremessado rápido)
   const triggerHurt = () => {
     setPlocState(prev => ({ ...prev, isHurt: true }));
-    playCuteVocalSound('hurt'); // Toca o sonzinho fofo de "Aii!"
+    playCuteVocalSound('hurt'); // Foley complementar fofo
     if (speak) {
-      speak("AII! Essa doeu! 🤕", 2000);
+      speak("aiii! 🤕", 1500);
     }
     setTimeout(() => {
       setPlocState(prev => ({ ...prev, isHurt: false }));
@@ -177,21 +177,19 @@ export function usePlocState({ emotion, speak }: UsePlocStateOptions = {}) {
       };
     });
 
-    // Escolhe dinamicamente um som de voz cartoon baseado no sentimento da colisão
+    // Escolhe dinamicamente um som de voz cartoon foley
     const soundTypes: ('annoyed' | 'hurt' | 'sigh')[] = ['hurt', 'annoyed', 'sigh'];
     const randomSound = soundTypes[Math.floor(Math.random() * soundTypes.length)];
     playCuteVocalSound(randomSound);
 
     if (speak) {
       const annoyPhrases = [
-        `Ei! Essa bolha de "${word}" molhou meu cílio! 😤`,
-        `Splash! Que gelado! 🥶`,
-        `Ei, pare de explodir bolhas em mim! 😤`,
-        `Ploc! Molhou tudo por aqui! 🧼`,
-        `Ei, cuidado com a bolha! 😤`
+        "ummm... 😤",
+        "aiii! 🤕",
+        "poxa... 🧼"
       ];
       const randomPhrase = annoyPhrases[Math.floor(Math.random() * annoyPhrases.length)];
-      speak(randomPhrase, 2000);
+      speak(randomPhrase, 1500);
     }
   };
 
