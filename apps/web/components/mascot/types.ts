@@ -5,6 +5,7 @@ export interface PlocState {
   angerLevel: number;
   angerClicks: number;
   isHurt: boolean;
+  isHit?: boolean;
 }
 
 export interface PlocAvatarProps {

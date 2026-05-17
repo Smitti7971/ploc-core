@@ -3,6 +3,7 @@ import { PlocState, PlocMode } from './types';
 import { RoutineOption, PILLARS_DATA } from '@/modules/routines/data/routinesData';
 import { attributeEngine } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
 import { blackboardEventBus, BLACKBOARD_EVENTS } from '@/modules/blackboard/events/eventBus';
+import { getHasUserInteracted } from './usePlocSpeech';
 
 interface UsePlocStateOptions {
   emotion?: string;
@@ -15,6 +16,7 @@ let sharedMascotAudioCtx: AudioContext | null = null;
 // Função ultra-fofa de síntese de voz de desenho animado ("uhm", "ai", "poxa/sigh") via Web Audio API
 const playCuteVocalSound = (type: 'annoyed' | 'hurt' | 'sigh') => {
   if (typeof window === 'undefined') return;
+  if (!getHasUserInteracted()) return;
 
   try {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -145,6 +147,7 @@ export function usePlocState({ emotion, speak }: UsePlocStateOptions = {}) {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const lastReactionTimeRef = useRef<number>(0);
+  const bubbleCollisionCountRef = useRef<number>(0);
 
   useEffect(() => {
     setIsMounted(true);
@@ -168,37 +171,43 @@ export function usePlocState({ emotion, speak }: UsePlocStateOptions = {}) {
 
   // Gatilho de incomodado/irritado por bolha que colidiu
   const triggerBubbleCollided = (word: string) => {
+    bubbleCollisionCountRef.current += 1;
+    const isThresholdReached = bubbleCollisionCountRef.current >= 5;
+    
+    if (isThresholdReached) {
+      bubbleCollisionCountRef.current = 0; // reset
+    }
+
     const nowTime = Date.now();
-    if (nowTime - lastReactionTimeRef.current < 1800) return;
+    if (nowTime - lastReactionTimeRef.current < 1800 && !isThresholdReached) return;
     lastReactionTimeRef.current = nowTime;
 
     setPlocState(prev => {
-      if (prev.isHurt) return prev;
+      if (prev.isHurt || prev.isHit) return prev;
       
-      // Temporariamente ativa isHurt para dar o feedback visual de choque/incomodado!
       setTimeout(() => {
-        setPlocState(p => ({ ...p, isHurt: false }));
+        setPlocState(p => ({ ...p, isHurt: false, isHit: false }));
       }, 1000);
 
       return {
         ...prev,
-        isHurt: true
+        isHurt: isThresholdReached,
+        isHit: !isThresholdReached
       };
     });
 
-    // Escolhe dinamicamente um som de voz cartoon foley
-    const soundTypes: ('annoyed' | 'hurt' | 'sigh')[] = ['hurt', 'annoyed', 'sigh'];
-    const randomSound = soundTypes[Math.floor(Math.random() * soundTypes.length)];
-    playCuteVocalSound(randomSound);
-
-    if (speak) {
-      const annoyPhrases = [
-        "ummm... 😤",
-        "aiii! 🤕",
-        "poxa... 🧼"
-      ];
-      const randomPhrase = annoyPhrases[Math.floor(Math.random() * annoyPhrases.length)];
-      speak(randomPhrase, 1500);
+    if (isThresholdReached) {
+      playCuteVocalSound('annoyed');
+      if (speak) {
+        const phrases = [
+          "CARA, tô meditando aqui, não consegue estourar essas bolhas pra mim?",
+          "Ei! Assim você me desconcentra! Tira essas bolhas daqui!",
+          "Socorro! Alguém me salva desse ataque de sabão!",
+          "Não dá pra focar com essas bolhas batendo em mim! Me ajuda!"
+        ];
+        speak(phrases[Math.floor(Math.random() * phrases.length)], 5000);
+      }
+      return;
     }
   };
 

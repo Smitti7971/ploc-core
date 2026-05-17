@@ -1,22 +1,41 @@
 const express = require('express');
 const router = express.Router();
 const aiOrchestrator = require('../ai/orchestrator/AIOrchestrator');
+const jwt = require('jsonwebtoken');
+const authConfig = require('../config/auth');
+const JWT_SECRET = authConfig.jwtSecret;
 
-const authMiddleware = require('../middleware/authMiddleware');
+// Middleware de Autenticação Opcional para o Chat do Ploc
+// Permite que o Ploc funcione como assistente de boas-vindas na landing page sem estar logado
+const optionalAuth = (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
+        const token = authHeader?.split(' ')[1] || req.query.token;
+
+        if (token) {
+            const decoded = jwt.verify(token, JWT_SECRET, { algorithms: [authConfig.algorithm] });
+            req.user = decoded;
+        }
+    } catch (error) {
+        console.warn('⚠️ [optionalAuth] Token inválido ou expirado:', error.message);
+    }
+    next();
+};
 
 /**
  * @route POST /api/ai/chat
  * @desc Envia uma mensagem para o assistente de IA
- * @access Private
+ * @access Public / Private (Opcional)
  */
-router.post('/chat', authMiddleware, async (req, res) => {
+router.post('/chat', optionalAuth, async (req, res) => {
     try {
         const { message, fillerText, isPissedOff } = req.body;
         if (!message) {
             return res.status(400).json({ error: 'Mensagem é obrigatória' });
         }
 
-        const response = await aiOrchestrator.process(req.user.id, message, fillerText, isPissedOff);
+        const userId = req.user?.id || 'guest';
+        const response = await aiOrchestrator.process(userId, message, fillerText, isPissedOff);
         res.json(response);
     } catch (error) {
         console.error('❌ Erro na AI Layer:', error);

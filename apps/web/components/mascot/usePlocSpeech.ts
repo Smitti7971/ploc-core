@@ -1,6 +1,26 @@
 import { useState, useRef, useEffect } from 'react';
 import { config } from '@/lib/config';
 
+let hasUserInteracted = false;
+if (typeof window !== 'undefined') {
+  const handleInteraction = () => {
+    hasUserInteracted = true;
+    window.removeEventListener('pointerdown', handleInteraction, true);
+    window.removeEventListener('keydown', handleInteraction, true);
+  };
+  window.addEventListener('pointerdown', handleInteraction, true);
+  window.addEventListener('keydown', handleInteraction, true);
+}
+
+export function getHasUserInteracted() {
+  if (typeof window === 'undefined') return false;
+  if (hasUserInteracted) return true;
+  if (typeof navigator !== 'undefined' && (navigator as any).userActivation) {
+    return (navigator as any).userActivation.hasBeenActive;
+  }
+  return false;
+}
+
 export function usePlocSpeech() {
   const [speechText, setSpeechText] = useState<string>('');
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
@@ -9,7 +29,7 @@ export function usePlocSpeech() {
 
   // Fallback robusto usando a API nativa de SpeechSynthesis do navegador
   const fallbackSpeak = (text: string) => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window && getHasUserInteracted()) {
       try {
         const cleanText = text.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '');
         const utterance = new SpeechSynthesisUtterance(cleanText);
@@ -36,7 +56,7 @@ export function usePlocSpeech() {
     // Limpa emojis e símbolos não verbais
     const cleanText = text.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
 
-    if (cleanText) {
+    if (cleanText && getHasUserInteracted()) {
       try {
         // Tenta reproduzir o áudio ultra-realista da OpenAI via rota de streaming do backend
         const ttsUrl = `${config.api.baseUrl}/ai/tts?text=${encodeURIComponent(cleanText)}`;

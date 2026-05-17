@@ -366,6 +366,11 @@ function FloatingBubble({ concept, isFirstPageLoad = false }: FloatingBubbleProp
           hasUserInteracted = true;
           setIsPopped(true);
           playPlocSound();
+          
+          blackboardEventBus.emit(BLACKBOARD_EVENTS.BUBBLE_EXPLODED, {
+            word: concept.word,
+            poppedByUser: true
+          });
         }
       }}
       onMouseDown={() => {
@@ -373,6 +378,11 @@ function FloatingBubble({ concept, isFirstPageLoad = false }: FloatingBubbleProp
           hasUserInteracted = true;
           setIsPopped(true);
           playPlocSound();
+          
+          blackboardEventBus.emit(BLACKBOARD_EVENTS.BUBBLE_EXPLODED, {
+            word: concept.word,
+            poppedByUser: true
+          });
         }
       }}
       onTouchStart={() => {
@@ -380,6 +390,11 @@ function FloatingBubble({ concept, isFirstPageLoad = false }: FloatingBubbleProp
           hasUserInteracted = true;
           setIsPopped(true);
           playPlocSound();
+          
+          blackboardEventBus.emit(BLACKBOARD_EVENTS.BUBBLE_EXPLODED, {
+            word: concept.word,
+            poppedByUser: true
+          });
         }
       }}
       style={{
