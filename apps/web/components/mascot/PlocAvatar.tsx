@@ -58,7 +58,7 @@ export default function PlocAvatar({
     const b = Math.floor(248 - (isStressing ? progress * 180 : 0));
     
     const bodyColor = (isPissed || plocState.isHurt)
-      ? 'linear-gradient(135deg, #ef4444 0%, #991b1b 100%)' 
+      ? 'rgba(239, 68, 68, 0.7)' 
       : isStressing
         ? `rgba(${r}, ${g}, ${b}, 0.6)`
         : `rgba(${r}, ${g}, ${b}, 0.35)`;
@@ -271,14 +271,14 @@ export default function PlocAvatar({
             : 'ploc-gelatin-breathe-anim'
           }
           animate={{
-            background: bodyColor,
+            backgroundColor: bodyColor,
             scale: isDragging ? 1 : (isTapped ? 0.90 : (isHovered ? 1.06 : 1)),
             scaleX: isDragging ? 1 : (isTapped ? 1.20 : (isHovered ? 1.03 : (isSleeping ? 1.04 : 1))),
             scaleY: isDragging ? 1 : (isTapped ? 0.80 : (isHovered ? 0.97 : (isSleeping ? 0.96 : 1))),
             rotate: isDragging ? 0 : (isTapped ? [0, -3, 3, 0] : 0),
           }}
           transition={{ 
-            background: { duration: 0.4 },
+            backgroundColor: { duration: 0.4 },
             scaleX: { type: "spring", stiffness: 180, damping: 9, mass: 0.4 },
             scaleY: { type: "spring", stiffness: 180, damping: 9, mass: 0.4 },
             scale: { type: "spring", stiffness: 200, damping: 12 },

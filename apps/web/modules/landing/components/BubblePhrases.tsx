@@ -45,9 +45,23 @@ const BASE_CONCEPTS = [
 // Flag global para verificar se o usuário já interagiu com a tela
 let hasUserInteracted = false;
 
+// Cache global para a AudioContext e evitar recriação excessiva
+let sharedAudioCtx: AudioContext | null = null;
+
 if (typeof window !== 'undefined') {
   const enableAudio = () => {
     hasUserInteracted = true;
+
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextClass && !sharedAudioCtx) {
+        sharedAudioCtx = new AudioContextClass();
+        sharedAudioCtx.resume().catch(() => {});
+      }
+    } catch (e) {
+      // Falha silenciosa
+    }
+
     window.removeEventListener('click', enableAudio);
     window.removeEventListener('touchstart', enableAudio);
     window.removeEventListener('keydown', enableAudio);
@@ -56,9 +70,6 @@ if (typeof window !== 'undefined') {
   window.addEventListener('touchstart', enableAudio, { passive: true });
   window.addEventListener('keydown', enableAudio, { passive: true });
 }
-
-// Cache global para a AudioContext e evitar recriação excessiva
-let sharedAudioCtx: AudioContext | null = null;
 
 // Função ultra-leve de síntese de som de estouro "PLOC" com variações procedurais e presets dinâmicos via Web Audio API
 const playPlocSound = () => {
