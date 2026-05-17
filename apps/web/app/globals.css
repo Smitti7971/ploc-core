@@ -108,7 +108,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .ploc-body-shake {
-  animation: ploc-body-shake 0.12s infinite linear;
+  animation: 
+    ploc-body-shake 0.12s infinite linear,
+    ploc-gelatin-pissed 0.4s infinite ease-in-out;
 }
 
 .ploc-eye-blink {

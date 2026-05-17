@@ -287,6 +287,7 @@ export default function PlocAvatar({
           style={{
             position: 'absolute',
             inset: 0,
+            borderRadius: '50%',
             border: '1px solid rgba(255,255,255,0.4)',
             overflow: 'hidden',
             backdropFilter: 'blur(8px)',
