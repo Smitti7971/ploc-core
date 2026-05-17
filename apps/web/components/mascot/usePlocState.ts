@@ -144,6 +144,7 @@ export function usePlocState({ emotion, speak }: UsePlocStateOptions = {}) {
   const [isDragging, setIsDragging] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastReactionTimeRef = useRef<number>(0);
 
   useEffect(() => {
     setIsMounted(true);
@@ -151,6 +152,10 @@ export function usePlocState({ emotion, speak }: UsePlocStateOptions = {}) {
 
   // Gatilho de dor (quando arremessado rápido)
   const triggerHurt = () => {
+    const nowTime = Date.now();
+    if (nowTime - lastReactionTimeRef.current < 1800) return;
+    lastReactionTimeRef.current = nowTime;
+
     setPlocState(prev => ({ ...prev, isHurt: true }));
     playCuteVocalSound('hurt'); // Foley complementar fofo
     if (speak) {
@@ -163,6 +168,10 @@ export function usePlocState({ emotion, speak }: UsePlocStateOptions = {}) {
 
   // Gatilho de incomodado/irritado por bolha que colidiu
   const triggerBubbleCollided = (word: string) => {
+    const nowTime = Date.now();
+    if (nowTime - lastReactionTimeRef.current < 1800) return;
+    lastReactionTimeRef.current = nowTime;
+
     setPlocState(prev => {
       if (prev.isHurt) return prev;
       
