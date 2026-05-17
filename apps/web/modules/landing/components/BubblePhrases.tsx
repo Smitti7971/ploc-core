@@ -336,6 +336,22 @@ function FloatingBubble({ concept, isFirstPageLoad = false }: FloatingBubbleProp
           playPlocSound();
         }
       }}
+      onMouseDown={(e) => {
+        e.preventDefault();
+        if (!isPopped) {
+          hasUserInteracted = true;
+          setIsPopped(true);
+          playPlocSound();
+        }
+      }}
+      onTouchStart={(e) => {
+        e.preventDefault();
+        if (!isPopped) {
+          hasUserInteracted = true;
+          setIsPopped(true);
+          playPlocSound();
+        }
+      }}
       style={{
         left: concept.left,
         position: 'absolute',

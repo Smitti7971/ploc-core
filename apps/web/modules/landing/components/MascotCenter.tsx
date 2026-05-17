@@ -17,7 +17,8 @@ export function MascotCenter() {
       alignItems: 'center',
       justifyContent: 'center',
       width: '350px',
-      height: '350px'
+      height: '350px',
+      pointerEvents: 'auto'
     }}>
       {/* O Ploc */}
       <motion.div
