@@ -58,18 +58,18 @@ export default function PlocAvatar({
     const b = Math.floor(248 - (isStressing ? progress * 180 : 0));
     
     const bodyColor = (isPissed || plocState.isHurt)
-      ? 'rgba(239, 68, 68, 0.7)' 
+      ? 'rgba(244, 63, 94, 0.45)' 
       : isStressing
         ? `rgba(${r}, ${g}, ${b}, 0.6)`
         : `rgba(${r}, ${g}, ${b}, 0.35)`;
 
     const limbColor = isSleeping 
       ? '#0f172a' 
-      : (isPissed || plocState.isHurt ? 'rgba(239, 68, 68, 0.5)' : 'rgba(56, 189, 248, 0.4)');
+      : (isPissed || plocState.isHurt ? 'rgba(244, 63, 94, 0.5)' : 'rgba(56, 189, 248, 0.4)');
       
     const limbShadow = isSleeping 
       ? 'none' 
-      : `0 0 3px ${isPissed || plocState.isHurt ? 'rgba(239, 68, 68, 0.3)' : 'rgba(56, 189, 248, 0.2)'}`; 
+      : `0 0 3px ${isPissed || plocState.isHurt ? 'rgba(244, 63, 94, 0.3)' : 'rgba(56, 189, 248, 0.2)'}`; 
 
     return { bodyColor, limbColor, limbShadow };
   }, [plocState.angerClicks, plocState.angerLevel, plocState.isHurt, isStressing, isPissed, isSleeping]);
@@ -293,9 +293,9 @@ export default function PlocAvatar({
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
             filter: isSleeping ? 'brightness(0.5) saturate(0.8)' : 'none',
-            boxShadow: isPissed
-              ? '0 0 40px rgba(239,68,68,0.8), inset 0 0 20px rgba(255,255,255,0.3)'
-              : '0 10px 40px rgba(56,189,248,0.3), inset 0 0 15px rgba(255,255,255,0.2)',
+            boxShadow: (isPissed || plocState.isHurt)
+              ? '0 0 25px rgba(244, 63, 94, 0.45), inset 0 0 12px rgba(255, 255, 255, 0.2)'
+              : '0 10px 40px rgba(56, 189, 248, 0.3), inset 0 0 15px rgba(255, 255, 255, 0.2)',
           }}
         >
           {/* Bolhas 3D Internas */}

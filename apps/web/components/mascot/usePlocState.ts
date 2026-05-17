@@ -9,6 +9,119 @@ interface UsePlocStateOptions {
   speak?: (text: string, duration?: number) => void;
 }
 
+// Cache global para o AudioContext das vozes do Ploc para evitar vazamento de memória e reinstanciação
+let sharedMascotAudioCtx: AudioContext | null = null;
+
+// Função ultra-fofa de síntese de voz de desenho animado ("uhm", "ai", "poxa/sigh") via Web Audio API
+const playCuteVocalSound = (type: 'annoyed' | 'hurt' | 'sigh') => {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    if (!sharedMascotAudioCtx) {
+      sharedMascotAudioCtx = new AudioContextClass();
+    }
+    const ctx = sharedMascotAudioCtx;
+
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+
+    const now = ctx.currentTime;
+
+    // Filtros e osciladores harmônicos para modelar sonoridades vocais fofas (formantes)
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+
+    osc1.connect(filter);
+    osc2.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    filter.type = 'bandpass';
+    filter.Q.setValueAtTime(4.5, now);
+
+    const basePitch = 250 + Math.random() * 30; // Pitch agudo, fofo e caricato
+
+    if (type === 'hurt') {
+      // Som caricato de "Aii!" - Sweep exponencial ascendente muito fofo e ágil
+      osc1.type = 'triangle';
+      osc2.type = 'sine';
+
+      osc1.frequency.setValueAtTime(basePitch, now);
+      osc1.frequency.exponentialRampToValueAtTime(basePitch * 2.3, now + 0.08);
+
+      osc2.frequency.setValueAtTime(basePitch * 1.5, now);
+      osc2.frequency.exponentialRampToValueAtTime(basePitch * 3.45, now + 0.08);
+
+      filter.frequency.setValueAtTime(750, now);
+      filter.frequency.exponentialRampToValueAtTime(2300, now + 0.08);
+
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.12, now + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+
+      osc1.start(now);
+      osc2.start(now);
+      osc1.stop(now + 0.17);
+      osc2.stop(now + 0.17);
+    } else if (type === 'annoyed') {
+      // Som caricato de "Umm..." - Glissando descendente resmungado com osciladores senoidais combinados
+      osc1.type = 'sine';
+      osc2.type = 'triangle';
+
+      osc1.frequency.setValueAtTime(basePitch * 1.15, now);
+      osc1.frequency.linearRampToValueAtTime(basePitch * 0.9, now + 0.22);
+
+      osc2.frequency.setValueAtTime(basePitch * 1.7, now);
+      osc2.frequency.linearRampToValueAtTime(basePitch * 1.35, now + 0.22);
+
+      filter.frequency.setValueAtTime(950, now);
+      filter.frequency.linearRampToValueAtTime(580, now + 0.22);
+
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.1, now + 0.04);
+      gainNode.gain.linearRampToValueAtTime(0.07, now + 0.16);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.24);
+
+      osc1.start(now);
+      osc2.start(now);
+      osc1.stop(now + 0.25);
+      osc2.stop(now + 0.25);
+    } else {
+      // Som caricato de "Poxa..." (Sigh) - Exalação e queda de pitch super suave e melancólica
+      osc1.type = 'sine';
+      osc2.type = 'sine';
+
+      osc1.frequency.setValueAtTime(basePitch * 1.05, now);
+      osc1.frequency.exponentialRampToValueAtTime(basePitch * 0.72, now + 0.3);
+
+      filter.frequency.setValueAtTime(680, now);
+      filter.frequency.linearRampToValueAtTime(420, now + 0.3);
+
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.09, now + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
+
+      osc1.start(now);
+      osc1.stop(now + 0.33);
+    }
+
+    setTimeout(() => {
+      osc1.disconnect();
+      osc2.disconnect();
+      filter.disconnect();
+      gainNode.disconnect();
+    }, 400);
+  } catch (e) {
+    // Falha silenciosa
+  }
+};
+
 export function usePlocState({ emotion, speak }: UsePlocStateOptions = {}) {
   const [isMounted, setIsMounted] = useState(false);
 
@@ -39,6 +152,7 @@ export function usePlocState({ emotion, speak }: UsePlocStateOptions = {}) {
   // Gatilho de dor (quando arremessado rápido)
   const triggerHurt = () => {
     setPlocState(prev => ({ ...prev, isHurt: true }));
+    playCuteVocalSound('hurt'); // Toca o sonzinho fofo de "Aii!"
     if (speak) {
       speak("AII! Essa doeu! 🤕", 2000);
     }
@@ -62,6 +176,11 @@ export function usePlocState({ emotion, speak }: UsePlocStateOptions = {}) {
         isHurt: true
       };
     });
+
+    // Escolhe dinamicamente um som de voz cartoon baseado no sentimento da colisão
+    const soundTypes: ('annoyed' | 'hurt' | 'sigh')[] = ['hurt', 'annoyed', 'sigh'];
+    const randomSound = soundTypes[Math.floor(Math.random() * soundTypes.length)];
+    playCuteVocalSound(randomSound);
 
     if (speak) {
       const annoyPhrases = [
