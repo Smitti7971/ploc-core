@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { CHALLENGE_PHRASES } from '@/modules/landing/constants/phrases';
+import { blackboardEventBus, BLACKBOARD_EVENTS } from '@/modules/blackboard/events/eventBus';
 
 interface BubbleConcept {
   id?: string; // id opcional na base, adicionado dinamicamente
@@ -227,6 +228,13 @@ function FloatingBubble({ concept, isFirstPageLoad = false }: FloatingBubbleProp
           // COLISÃO DETECTADA! A bolha "ploca" imediatamente!
           setIsPopped(true);
           playPlocSound();
+          
+          // Notifica o Ploc para que ele reaja à colisão e fique incomodado/molhado!
+          blackboardEventBus.emit(BLACKBOARD_EVENTS.BUBBLE_EXPLODED, {
+            word: concept.word,
+            collided: true
+          });
+
           active = false;
           return;
         }

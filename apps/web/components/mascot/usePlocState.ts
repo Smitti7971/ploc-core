@@ -47,6 +47,48 @@ export function usePlocState({ emotion, speak }: UsePlocStateOptions = {}) {
     }, 1500);
   };
 
+  // Gatilho de incomodado/irritado por bolha que colidiu
+  const triggerBubbleCollided = (word: string) => {
+    setPlocState(prev => {
+      if (prev.isHurt) return prev;
+      
+      // Temporariamente ativa isHurt para dar o feedback visual de choque/incomodado!
+      setTimeout(() => {
+        setPlocState(p => ({ ...p, isHurt: false }));
+      }, 1000);
+
+      return {
+        ...prev,
+        isHurt: true
+      };
+    });
+
+    if (speak) {
+      const annoyPhrases = [
+        `Ei! Essa bolha de "${word}" molhou meu cílio! 😤`,
+        `Splash! Que gelado! 🥶`,
+        `Ei, pare de explodir bolhas em mim! 😤`,
+        `Ploc! Molhou tudo por aqui! 🧼`,
+        `Ei, cuidado com a bolha! 😤`
+      ];
+      const randomPhrase = annoyPhrases[Math.floor(Math.random() * annoyPhrases.length)];
+      speak(randomPhrase, 2000);
+    }
+  };
+
+  // Escuta colisões de bolhas para reagir
+  useEffect(() => {
+    const unsubscribe = blackboardEventBus.subscribe(
+      BLACKBOARD_EVENTS.BUBBLE_EXPLODED,
+      (data) => {
+        if (data && data.collided) {
+          triggerBubbleCollided(data.word);
+        }
+      }
+    );
+    return () => unsubscribe();
+  }, [speak]);
+
   // Fórmula de cliques necessários para irritação
   const getClicksNeeded = (lvl: number) => Math.floor(Math.pow(lvl, 3) * 15);
 

@@ -266,7 +266,7 @@ export default function PlocAvatar({
       >
         {/* Corpo Gelatinoso do Ploc */}
         <motion.div
-          className={isPissed 
+          className={(isPissed || plocState.isHurt)
             ? 'ploc-body-shake ploc-gelatin-pissed-anim' 
             : 'ploc-gelatin-breathe-anim'
           }
