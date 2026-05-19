@@ -3,7 +3,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
+import { apiService } from '@/services/api';
 import { cn } from '@/lib/utils';
+import type { User } from '@/types/global.types';
 
 export const AuthModal: React.FC = () => {
   const { isAuthModalOpen, setAuthModalOpen } = useAuthStore();
@@ -26,13 +28,13 @@ export const AuthModal: React.FC = () => {
         ? { email: authEmail, password: authPass }
         : { name: authName, email: authEmail, password: authPass };
 
-      const { apiService } = await import('@/services/api');
-      const response = await apiService.post<{ token: string; user: any }>(endpoint, payload);
+      const response = await apiService.post<{ token: string; user: User }>(endpoint, payload);
 
       useAuthStore.getState().setAuth(response.token, response.user);
       setAuthModalOpen(false);
-    } catch (err: any) {
-      setAuthError(err.message || 'Erro ao autenticar');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Erro ao autenticar';
+      setAuthError(message);
     } finally {
       setAuthLoading(false);
     }
@@ -78,7 +80,7 @@ export const AuthModal: React.FC = () => {
                   value={authName}
                   required
                   onChange={(e) => setAuthName(e.target.value)}
-                  className="bg-white/5 border border-[var(--ploc-border)] rounded-[var(--radius-input)] p-4 text-white text-sm outline-none placeholder:text-white/20"
+                  className="bg-white/5 border border-[var(--ploc-border)] rounded-[var(--radius-input)] p-4 text-white text-sm outline-none transition-all placeholder:text-white/20 focus:border-[var(--ploc-primary)]/50 focus:bg-white/10"
                 />
               )}
               <input
@@ -87,7 +89,7 @@ export const AuthModal: React.FC = () => {
                 value={authEmail}
                 required
                 onChange={(e) => setAuthEmail(e.target.value)}
-                className="bg-white/5 border border-[var(--ploc-border)] rounded-[var(--radius-input)] p-4 text-white text-sm outline-none placeholder:text-white/20"
+                className="bg-white/5 border border-[var(--ploc-border)] rounded-[var(--radius-input)] p-4 text-white text-sm outline-none transition-all placeholder:text-white/20 focus:border-[var(--ploc-primary)]/50 focus:bg-white/10"
               />
               <input
                 type="password"
@@ -95,11 +97,11 @@ export const AuthModal: React.FC = () => {
                 value={authPass}
                 required
                 onChange={(e) => setAuthPass(e.target.value)}
-                className="bg-white/5 border border-[var(--ploc-border)] rounded-[var(--radius-input)] p-4 text-white text-sm outline-none placeholder:text-white/20"
+                className="bg-white/5 border border-[var(--ploc-border)] rounded-[var(--radius-input)] p-4 text-white text-sm outline-none transition-all placeholder:text-white/20 focus:border-[var(--ploc-primary)]/50 focus:bg-white/10"
               />
 
               {authError && (
-                <p className="text-[var(--ploc-danger)] text-[10px] m-0 text-center">
+                <p className="text-[var(--ploc-danger)] text-[10px] m-0 text-center font-bold">
                   {authError}
                 </p>
               )}

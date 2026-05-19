@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, Activity, Heart, Bird, Flag, Sparkles } from 'lucide-react';
 import { useAuth } from '@/modules/auth/hooks/useAuth';
@@ -128,15 +128,51 @@ export function AttributeMonitor({ onClose }: AttributeMonitorProps) {
   }, []);
 
   useEffect(() => {
+    const isDemo = attributeEngine.getIsDemoMode();
     const handleClickOutside = (e: MouseEvent) => {
       if (!(e.target as HTMLElement).closest('.attribute-bubble') && !(e.target as HTMLElement).closest('.monitor-panel')) {
         setActiveTooltip(null);
-        onClose();
+        if (!isDemo) {
+          onClose();
+        }
       }
     };
     window.addEventListener('mousedown', handleClickOutside);
     return () => window.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
+
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const resetTimer = useCallback(() => {
+    if (!attributeEngine.getIsDemoMode()) return;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    timerRef.current = setTimeout(() => {
+      onClose();
+    }, 5000);
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!attributeEngine.getIsDemoMode()) return;
+
+    resetTimer();
+
+    const unsubExplode = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_EXPLODED, resetTimer);
+    const unsubTimeout = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_TIMEOUT, resetTimer);
+
+    return () => {
+      unsubExplode();
+      unsubTimeout();
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [resetTimer]);
+
+  const handleUserActivity = () => {
+    resetTimer();
+  };
 
   const getNextTasks = (pillarKey: string) => {
     const activeBubbles = bubbleEngine.getActiveBubbles();
@@ -145,7 +181,11 @@ export function AttributeMonitor({ onClose }: AttributeMonitorProps) {
   };
 
   return (
-    <div className="monitor-panel" style={{
+    <div 
+      className="monitor-panel" 
+      onMouseMove={handleUserActivity}
+      onClick={handleUserActivity}
+      style={{
       position: 'fixed',
       top: '140px',
       left: '50%',

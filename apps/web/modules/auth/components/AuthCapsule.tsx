@@ -15,32 +15,23 @@ export const AuthCapsule: React.FC = () => {
   };
 
   return (
-    <div className="absolute top-[25px] right-[25px] z-[9999] flex items-center gap-3">
+    <div className="absolute top-[25px] right-[25px] z-[9999] flex items-center gap-3 pointer-events-auto">
       {isAuthenticated ? (
         <UserHeader />
       ) : (
         <>
           <Link href="/dashboard" onClick={handleEnterClick}>
             <motion.div
-              initial={{ opacity: 1 }}
-              whileHover={{ 
-                scale: 1.05, 
-                background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.9) 0%, rgba(5, 150, 105, 0.9) 100%)',
-                boxShadow: '0 0 25px rgba(16, 185, 129, 0.5)'
-              }}
-              animate={{
-                background: [
-                  'linear-gradient(90deg, rgba(16, 185, 129, 0.75) 0%, rgba(5, 150, 105, 0.75) 100%)',
-                  'linear-gradient(90deg, rgba(5, 150, 105, 0.75) 0%, rgba(16, 185, 129, 0.75) 100%)',
-                ]
-              }}
-              transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+              initial={{ opacity: 0.9 }}
+              whileHover={{ scale: 1.05 }}
               className={cn(
-                "backdrop-blur-xl px-9 py-3 rounded-full border border-emerald-400/35",
-                "cursor-pointer shadow-lg shadow-emerald-500/25 flex items-center justify-center transition-all min-h-[48px]"
+                "bg-gradient-to-r from-[var(--ploc-primary)] to-[var(--ploc-secondary)]",
+                "backdrop-blur-xl px-4 py-1.5 rounded-full border border-white/15",
+                "cursor-pointer shadow-lg shadow-[var(--ploc-primary)]/10 hover:shadow-[var(--ploc-primary)]/30",
+                "flex items-center justify-center transition-all min-h-[36px]"
               )}
             >
-              <span className="text-white text-[12px] font-black tracking-[2px] font-display">
+              <span className="text-white text-[12px] font-black tracking-[1.5px] font-display">
                 ENTRAR
               </span>
             </motion.div>

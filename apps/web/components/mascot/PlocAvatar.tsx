@@ -1,59 +1,130 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+/**
+ * ============================================================================
+ * Avatar Principal do Ploc - PlocAvatar.tsx
+ * ============================================================================
+ * Descrição: O orquestrador visual e interativo principal do mascote Ploc.
+ * Une toda a lógica física, de simulação, diálogo e rendering gráfico em uma
+ * experiência imersiva e unificada.
+ * 
+ * Principais responsabilidades:
+ * - Coleta e distribui hooks de estados físicos (`usePlocState`), fala (`usePlocSpeech`) e chat (`usePlocChat`).
+ * - Encapsula e posiciona os subcomponentes (`PlocFace`, `PlocLimbs`, `PlocBubbles`, `TypewriterText`).
+ * - Controla a física de arrastar e soltar (drag & drop) usando Framer Motion.
+ * - Gerencia o portal de chat dark-glassmorphism e o balão de simulação (`PlocSimulationCard`).
+ * ============================================================================
+ */
+
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useMotionValue } from 'framer-motion';
 import { usePathname } from 'next/navigation';
-import { Sparkles, MessageSquare, Send, Mic } from 'lucide-react';
+import { Mic, Send, Activity, Brain, Heart, Bird, Flag } from 'lucide-react';
+import { blackboardEventBus, BLACKBOARD_EVENTS } from '@/modules/blackboard/events/eventBus';
 
-import { PlocAvatarProps } from './types';
+const PILLAR_ICONS: Record<string, any> = {
+  corpo: Activity,
+  mente: Brain,
+  vida: Heart,
+  liberdade: Bird,
+  proposito: Flag
+};
+
+const PILLAR_COLORS: Record<string, string> = {
+  corpo: '#ef4444',
+  mente: '#38bdf8',
+  vida: '#facc15',
+  liberdade: '#2dd4bf',
+  proposito: '#c084fc'
+};
+
+import { PlocAvatarProps, PlocAppearance, DEFAULT_PLOC_APPEARANCE } from './types';
 import { usePlocState } from './usePlocState';
 import { usePlocSpeech } from './usePlocSpeech';
+import { usePlocChat } from './usePlocChat';
 import { PlocFace } from './PlocFace';
 import { PlocBubbles } from './PlocBubbles';
 import { PlocLimbs } from './PlocLimbs';
-import { chatService } from '@/modules/chat/services/chatService';
-import { blackboardEventBus, BLACKBOARD_EVENTS } from '@/modules/blackboard/events/eventBus';
+import { TypewriterText, ThinkingDots } from './TypewriterText';
+import { PlocSimulationCard } from './PlocSimulationCard';
 
-import { PILLARS_DATA, IMPACT_ICONS } from '@/modules/routines/data/routinesData';
-import { attributeEngine, UserAttributes } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
-
-function TypewriterText({ text, speed = 25 }: { text: string; speed?: number }) {
-  const [displayedText, setDisplayedText] = useState('');
-
-  useEffect(() => {
-    let index = 0;
-    setDisplayedText('');
-
-    if (!text || text === '...') {
-      setDisplayedText(text || '');
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setDisplayedText((prev) => prev + text.charAt(index));
-      index++;
-      if (index >= text.length) {
-        clearInterval(interval);
-      }
-    }, speed);
-
-    return () => clearInterval(interval);
-  }, [text, speed]);
-
-  return <span>{displayedText}</span>;
-}
+import { PILLARS_DATA } from '@/modules/routines/data/routinesData';
+import { attributeEngine } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
 
 export default function PlocAvatar({
   draggable = true,
-  emotion
+  emotion,
+  appearance: propAppearance
 }: PlocAvatarProps = {}) {
   const pathname = usePathname();
   const isLanding = pathname === '/';
   const isHidden = pathname === '/settings';
 
-  const { speak } = usePlocSpeech();
+  const hasDraggedRef = useRef(false); // Ref para evitar clique convencional ao soltar drag!
+
+  const { speak, isSpeaking, isTTSLoading, isSpeakingMouth } = usePlocSpeech();
 
   const x = useMotionValue(0);
   const y = useMotionValue(0);
+
+  // Observa e carrega a customização ativa do Ploc do localStorage (ou prop)
+  const [localAppearance, setLocalAppearance] = useState<PlocAppearance>(DEFAULT_PLOC_APPEARANCE);
+
+  useEffect(() => {
+    if (propAppearance) {
+      setLocalAppearance(propAppearance);
+      return;
+    }
+    const handleLoadAppearance = () => {
+      const saved = localStorage.getItem('ploc_appearance');
+      if (saved) {
+        try {
+          setLocalAppearance(JSON.parse(saved));
+        } catch (e) {}
+      }
+    };
+    handleLoadAppearance();
+    window.addEventListener('storage', handleLoadAppearance);
+    return () => window.removeEventListener('storage', handleLoadAppearance);
+  }, [propAppearance]);
+
+  const appearance = propAppearance || localAppearance;
+
+  const [indicators, setIndicators] = useState<any[]>([]);
+
+  useEffect(() => {
+    const unsub = blackboardEventBus.subscribe(
+      BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED,
+      (change: any) => {
+        if (!change || !change.pillar || change.diff === 0) return;
+        if (change.pillar === 'foco') return;
+
+        const id = Math.random().toString();
+        setIndicators(prev => {
+          let xOffset = 0;
+          if (prev.length > 0) {
+            const last = prev[prev.length - 1];
+            if (last.xOffset === 0) {
+              xOffset = change.diff > 0 ? 25 : -25;
+            } else {
+              xOffset = -last.xOffset;
+            }
+          }
+          return [...prev, {
+            id,
+            pillar: change.pillar,
+            diff: change.diff,
+            xOffset
+          }];
+        });
+
+        setTimeout(() => {
+          setIndicators(prev => prev.filter(ind => ind.id !== id));
+        }, 1500);
+      }
+    );
+
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     x.set(0);
@@ -81,165 +152,265 @@ export default function PlocAvatar({
     isSleeping,
     isPissed,
     isStressing,
+    ANGER_LEVELS,
   } = usePlocState({ emotion, speak });
 
-  // Chat / Dialogue System with Ploc (OpenAI Integration)
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState<Array<{ sender: 'user' | 'ploc', text: string }>>([]);
-  const [inputValue, setInputValue] = useState('');
-  const [isPending, setIsPending] = useState(false);
-  const [hasSpokenIntro, setHasSpokenIntro] = useState(false);
-  const [visiblePlocText, setVisiblePlocText] = useState('');
+  const [areActionsVisible, setAreActionsVisible] = useState(false);
+  const [achievementToast, setAchievementToast] = useState<{ title: string; message: string } | null>(null);
 
-  // States for the mini-game
-  const [chatStage, setChatStage] = useState(0);
-  const [planejeScore, setPlanejeScore] = useState(0);
-
-  const chatScrollRef = useRef<HTMLDivElement>(null);
+  // Partículas de sono flutuantes (Zzz...)
+  const [sleepingZs, setSleepingZs] = useState<{ id: string; x: number; scale: number; text: string }[]>([]);
 
   useEffect(() => {
-    const lastMsg = chatMessages.filter(m => m.sender === 'ploc').slice(-1)[0];
-    if (lastMsg && isChatOpen) {
-      setVisiblePlocText(lastMsg.text);
-      const timer = setTimeout(() => {
-        setVisiblePlocText('');
-      }, 6000); // Esconde a legenda rápido para combinar com a fala curta
-      return () => clearTimeout(timer);
-    }
-  }, [chatMessages, isChatOpen]);
-
-  useEffect(() => {
-    if (chatScrollRef.current) {
-      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
-    }
-  }, [chatMessages.length, isPending]);
-
-  const handleSendMessage = async (text: string) => {
-    if (!text.trim()) return;
-
-    setChatMessages(prev => [...prev, { sender: 'user', text }]);
-    setInputValue('');
-    setIsPending(true);
-
-    // Hardcoded script for the first two messages
-    if (chatStage === 0) {
-      setTimeout(() => {
-        const reply = "Não quero nem te ouvir, eu sei que você não cuida nem de você, por que acha que vai cuidar de mim?";
-        setChatMessages(prev => [...prev, { sender: 'ploc', text: reply }]);
-        setIsPending(false);
-        setChatStage(1);
-        speak(reply, 8000);
-      }, 4000);
+    if (!isSleeping) {
+      setSleepingZs([]);
       return;
     }
 
-    if (chatStage === 1) {
-      setTimeout(() => {
-        const reply = "Já estou farto disso, muita fala, pouca ação, Se você me ajudar, aí sim eu acredito em você.";
-        setChatMessages(prev => [...prev, { sender: 'ploc', text: reply }]);
-        setIsPending(false);
-        setChatStage(2);
-        speak(reply, 8000);
-      }, 4000);
-      return;
-    }
-
-    if (chatStage === 2) {
-      setTimeout(() => {
-        const reply = "Estoure as bolhas de 'planeje'! Aja, não fale!";
-        setChatMessages(prev => [...prev, { sender: 'ploc', text: reply }]);
-        setIsPending(false);
-        speak(reply, 4000);
-      }, 4000);
-      return;
-    }
-
-    try {
-      const res = await chatService.sendMessage(text);
-      const reply = res.message || "Não entendi muito bem, mestre. Pode repetir?";
-
-      setChatMessages(prev => [...prev, { sender: 'ploc', text: reply }]);
-      speak(reply, Math.min(8000, reply.length * 80 + 2000));
-    } catch (e) {
-      console.error(e);
-      setChatMessages(prev => [...prev, { sender: 'ploc', text: "Tive um curto-circuito na conexão. Vamos tentar de novo?" }]);
-    } finally {
-      setIsPending(false);
-    }
-  };
-
-  // Escuta colisões de bolha apenas se estiver no estágio 2 (modo jogo)
-  useEffect(() => {
-    if (chatStage === 2) {
-      const unsubscribe = blackboardEventBus.subscribe(
-        BLACKBOARD_EVENTS.BUBBLE_EXPLODED,
-        (data: any) => {
-          if (data && (data.poppedByUser || data.collided)) {
-            const word = data.word.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-            setPlanejeScore(prev => {
-              let newScore = prev;
-              if (word === 'planeje' || word === 'planejar' || word === 'planejamento') {
-                newScore = prev + 1;
-              } else {
-                newScore = Math.max(0, prev - 1);
-              }
-
-              if (newScore >= 10 && prev < 10) {
-                // Vitória
-                setChatStage(3);
-                const winMsg = "Parabéns, agora confio em você, topa me ajudar?";
-                setChatMessages(msgs => [...msgs, { sender: 'ploc', text: winMsg }]);
-                speak(winMsg, 6000);
-              }
-
-              return newScore;
-            });
-          }
+    const interval = setInterval(() => {
+      const id = Math.random().toString();
+      const texts = ['z', 'Z'];
+      setSleepingZs(prev => [
+        ...prev,
+        {
+          id,
+          x: 45 + Math.random() * 25, // Do meio para a direita perto da cabeça do Ploc
+          scale: 0.8 + Math.random() * 0.8,
+          text: texts[Math.floor(Math.random() * texts.length)]
         }
-      );
-      return () => unsubscribe();
+      ]);
+
+      setTimeout(() => {
+        setSleepingZs(prev => prev.filter(z => z.id !== id));
+      }, 3000);
+    }, 1200);
+
+    return () => clearInterval(interval);
+  }, [isSleeping]);
+
+  // Escuta conquistas destravadas globalmente em tempo real
+  useEffect(() => {
+    const handleToast = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        setAchievementToast({
+          title: customEvent.detail.title,
+          message: customEvent.detail.message
+        });
+        setTimeout(() => {
+          setAchievementToast(null);
+        }, 4500);
+      }
+    };
+    window.addEventListener('ploc_toast_notification', handleToast);
+    return () => window.removeEventListener('ploc_toast_notification', handleToast);
+  }, []);
+
+  // Chat & Minigame centralizado no custom hook usePlocChat
+  const {
+    isChatOpen,
+    setIsChatOpen,
+    chatMessages,
+    inputValue,
+    setInputValue,
+    isPending,
+    chatStage,
+    planejeScore,
+    visiblePlocText,
+    chatScrollRef,
+    handleSendMessage,
+    handleOpenIntro,
+    hasSpokenIntro,
+    gameMode,
+    showChoiceButtons,
+    handleContinuePlaying,
+    handleRegisterChoice,
+  } = usePlocChat();
+
+  const [currentSpokenText, setCurrentSpokenText] = useState('');
+  const [isChatInputVisible, setIsChatInputVisible] = useState(false);
+
+  // Escuta cliques fora para colocar o Ploc no estado "acordado - sem ação" e fechar o input de chat
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as HTMLElement;
+      if (containerRef.current && !containerRef.current.contains(target)) {
+        if (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.closest('form') ||
+          target.closest('.auth-modal')
+        ) {
+          return;
+        }
+
+        // Se estiver falando, não fechamos abruptamente o chat ou as legendas
+        if (isSpeaking) {
+          return;
+        }
+
+        setAreActionsVisible(false);
+        setIsChatInputVisible(false); // Fecha o input de texto ao clicar fora!
+        if (isLanding) {
+          // Não fechamos o balão de fala do Ploc no clique fora para evitar sumiço precoce das legendas!
+          // setIsChatOpen(false); 
+          blackboardEventBus.emit('OPEN_LANDING_CHAT', false); // Sincroniza com a página
+        }
+      }
+    };
+    document.addEventListener('pointerdown', handleOutsideClick, true);
+    return () => document.removeEventListener('pointerdown', handleOutsideClick, true);
+  }, [containerRef, isLanding, setIsChatOpen, isSpeaking]);
+
+  useEffect(() => {
+    if (isPending || isTTSLoading) {
+      setCurrentSpokenText(''); // Limpa o texto anterior enquanto pensa ou carrega a voz
     }
-  }, [chatStage, speak]);
+  }, [isPending, isTTSLoading]);
+
+  useEffect(() => {
+    let clearTimer: NodeJS.Timeout | null = null;
+
+    const handleSpeechLoading = () => {
+      if (clearTimer) clearTimeout(clearTimer);
+      setCurrentSpokenText(''); // Limpa o texto quando inicia o carregamento da voz
+    };
+
+    const handleSpeechStart = (e: Event) => {
+      if (clearTimer) clearTimeout(clearTimer);
+      const customEvent = e as CustomEvent;
+      setCurrentSpokenText(customEvent.detail.text); // Define o texto exatamente ao ouvir a voz!
+    };
+
+    const handleSpeechFinished = () => {
+      if (clearTimer) clearTimeout(clearTimer);
+      // Mantém a última frase na tela por 2 segundos antes de sumir com fade-out
+      clearTimer = setTimeout(() => {
+        setCurrentSpokenText('');
+      }, 2000);
+    };
+    
+    window.addEventListener('ploc_speech_loading', handleSpeechLoading);
+    window.addEventListener('ploc_speech_started', handleSpeechStart);
+    window.addEventListener('ploc_speech_finished', handleSpeechFinished);
+    return () => {
+      window.removeEventListener('ploc_speech_loading', handleSpeechLoading);
+      window.removeEventListener('ploc_speech_started', handleSpeechStart);
+      window.removeEventListener('ploc_speech_finished', handleSpeechFinished);
+      if (clearTimer) clearTimeout(clearTimer);
+    };
+  }, []);
 
   const attributes = attributeEngine.getAttributes();
   const SIZE = isLanding ? 120 : 80;
 
-  // Cor base do corpo — fica amarelo fraco ao apanhar de bolha e vermelho ao estressar (Cálculos Memoizados para 120FPS)
+  // Cor base do corpo e membros reativos ao estado de irritação
   const { bodyColor, limbColor, limbShadow } = useMemo(() => {
-    const needed = Math.floor(Math.pow(plocState.angerLevel, 3) * 15);
-    const progress = plocState.angerClicks / needed;
-    const r = Math.floor(56 + (isStressing ? progress * 183 : 0));
-    const g = Math.floor(189 - (isStressing ? progress * 121 : 0));
-    const b = Math.floor(248 - (isStressing ? progress * 180 : 0));
+    // Cores base do corpo baseadas na customização escolhida
+    let baseR = 56;
+    let baseG = 189;
+    let baseB = 248;
 
-    const bodyColor = (isPissed || plocState.isHurt)
-      ? 'rgba(244, 63, 94, 0.45)'
-      : plocState.isHit
-        ? 'rgba(251, 191, 36, 0.35)' // Amarelo fraco
-        : isStressing
-          ? `rgba(${r}, ${g}, ${b}, 0.6)`
-          : `rgba(${r}, ${g}, ${b}, 0.35)`;
+    const chosenColor = appearance?.bodyColor || 'classic';
+    if (chosenColor === 'rose') {
+      baseR = 244; baseG = 63; baseB = 94;
+    } else if (chosenColor === 'gold') {
+      baseR = 245; baseG = 158; baseB = 11;
+    } else if (chosenColor === 'emerald') {
+      baseR = 16; baseG = 185; baseB = 129;
+    } else if (chosenColor === 'purple') {
+      baseR = 139; baseG = 92; baseB = 246;
+    } else if (chosenColor === 'lava') {
+      baseR = 239; baseG = 68; baseB = 68;
+    }
 
-    const limbColor = isSleeping
-      ? '#0f172a'
-      : (isPissed || plocState.isHurt ? 'rgba(244, 63, 94, 0.5)' : plocState.isHit ? 'rgba(251, 191, 36, 0.4)' : 'rgba(56, 189, 248, 0.4)');
+    let bodyColor = `rgba(${baseR}, ${baseG}, ${baseB}, 0.35)`;
 
-    const limbShadow = isSleeping
-      ? 'none'
-      : `0 0 3px ${isPissed || plocState.isHurt ? 'rgba(244, 63, 94, 0.3)' : plocState.isHit ? 'rgba(251, 191, 36, 0.2)' : 'rgba(56, 189, 248, 0.2)'}`;
+    if (plocState.isHurt) {
+      bodyColor = 'rgba(244, 63, 94, 0.45)';
+    } else if (plocState.isPositiveHit) {
+      bodyColor = 'rgba(16, 185, 129, 0.45)'; // Verde Esmeralda Lindo e Vibrante para positivo!
+    } else if (plocState.isHit) {
+      bodyColor = 'rgba(251, 191, 36, 0.35)'; // Amarelo fraco temporário
+    } else if (plocState.angerLevel === 1) {
+      bodyColor = 'rgba(254, 240, 138, 0.55)'; // Level 1: Amarelo Claro
+    } else if (plocState.angerLevel === 2) {
+      bodyColor = 'rgba(251, 191, 36, 0.6)'; // Level 2: Âmbar / Laranja-Amarelo
+    } else if (plocState.angerLevel === 3) {
+      bodyColor = 'rgba(249, 115, 22, 0.6)'; // Level 3: Laranja Vivo
+    } else if (plocState.angerLevel === 4) {
+      bodyColor = 'rgba(239, 68, 68, 0.65)'; // Level 4: Vermelho Vivo
+    } else if (plocState.angerLevel === 5) {
+      bodyColor = 'rgba(153, 27, 27, 0.8)'; // Level 5: Vermelho Carmesim Escuro (Enfurecido)
+    }
+
+    let limbColor = `rgba(${baseR}, ${baseG}, ${baseB}, 0.4)`;
+    let limbShadow = `0 0 3px rgba(${baseR}, ${baseG}, ${baseB}, 0.2)`;
+
+    if (isSleeping) {
+      limbColor = '#0f172a';
+      limbShadow = 'none';
+    } else {
+      if (plocState.isHurt) {
+        limbColor = 'rgba(244, 63, 94, 0.5)';
+        limbShadow = '0 0 3px rgba(244, 63, 94, 0.2)';
+      } else if (plocState.isPositiveHit) {
+        limbColor = 'rgba(16, 185, 129, 0.5)';
+        limbShadow = '0 0 3px rgba(16, 185, 129, 0.2)';
+      } else if (plocState.isHit) {
+        limbColor = 'rgba(251, 191, 36, 0.4)';
+        limbShadow = '0 0 3px rgba(251, 191, 36, 0.15)';
+      } else if (plocState.angerLevel === 1) {
+        limbColor = 'rgba(254, 240, 138, 0.5)';
+        limbShadow = '0 0 3px rgba(254, 240, 138, 0.2)';
+      } else if (plocState.angerLevel === 2) {
+        limbColor = 'rgba(251, 191, 36, 0.5)';
+        limbShadow = '0 0 3px rgba(251, 191, 36, 0.2)';
+      } else if (plocState.angerLevel === 3) {
+        limbColor = 'rgba(249, 115, 22, 0.55)';
+        limbShadow = '0 0 3px rgba(249, 115, 22, 0.3)';
+      } else if (plocState.angerLevel === 4) {
+        limbColor = 'rgba(239, 68, 68, 0.6)';
+        limbShadow = '0 0 3px rgba(239, 68, 68, 0.3)';
+      } else if (plocState.angerLevel === 5) {
+        limbColor = 'rgba(153, 27, 27, 0.7)';
+        limbShadow = '0 0 5px rgba(153, 27, 27, 0.4)';
+      }
+    }
 
     return { bodyColor, limbColor, limbShadow };
-  }, [plocState.angerClicks, plocState.angerLevel, plocState.isHurt, plocState.isHit, isStressing, isPissed, isSleeping]);
+  }, [plocState.angerLevel, plocState.isHurt, plocState.isHit, isSleeping, appearance?.bodyColor]);
 
   if (isHidden) return null;
   if (!isMounted) return null;
 
+  const shouldShake = plocState.angerLevel >= 4 || plocState.isHurt || plocState.isHit;
+
   return (
     <>
+      {/* Floating Achievement Toast */}
+      <AnimatePresence>
+        {achievementToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 15, scale: 0.8 }}
+            animate={{ opacity: 1, y: -90, scale: 1 }}
+            exit={{ opacity: 0, y: -120, scale: 0.8 }}
+            className="absolute left-1/2 -translate-x-1/2 w-[220px] bg-slate-950/95 border border-amber-500/50 rounded-2xl p-2.5 shadow-[0_8px_32px_rgba(245,158,11,0.25)] flex flex-col gap-1 items-center text-center z-[9999999] backdrop-blur-[6px]"
+          >
+            <div className="absolute inset-0 bg-amber-500/5 rounded-2xl animate-pulse pointer-events-none" />
+            <div className="text-xl animate-bounce">🏆</div>
+            <div className="text-[9.5px] font-black uppercase tracking-wider text-amber-400">Conquista Desbloqueada!</div>
+            <div className="text-[11px] font-black text-white leading-tight">{achievementToast.title}</div>
+            <div className="text-[9px] text-slate-300 leading-tight font-medium mt-0.5">{achievementToast.message}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <motion.div
         ref={containerRef}
         id="ploc-singleton-mount"
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.96 }}
         drag={draggable}
         dragConstraints={typeof window !== 'undefined' ? (
           isLanding ? {
@@ -259,6 +430,7 @@ export default function PlocAvatar({
         onDragStart={() => {
           setIsDragging(true);
           setIsTapped(false);
+          hasDraggedRef.current = true; // Marca que está sendo arrastado!
         }}
         onDrag={(e, info) => {
           // Detecção de card sob o Ploc
@@ -288,16 +460,13 @@ export default function PlocAvatar({
           if (Math.abs(info.velocity.x) > threshold || Math.abs(info.velocity.y) > threshold) {
             setTimeout(() => { triggerHurt(); }, 150);
           }
+          // Limpa o estado de arrasto logo após um pequeno delay para evitar que o clique convencional dispare!
+          setTimeout(() => {
+            hasDraggedRef.current = false;
+          }, 150);
         }}
         onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => {
-          setIsHovered(false);
-          setIsTapped(false);
-        }}
-        onMouseDown={() => setIsTapped(true)}
-        onMouseUp={() => setIsTapped(false)}
-        onTouchStart={() => setIsTapped(true)}
-        onTouchEnd={() => setIsTapped(false)}
+        onMouseLeave={() => setIsHovered(false)}
         initial={{
           opacity: 0,
           scale: 0.5
@@ -305,158 +474,77 @@ export default function PlocAvatar({
         animate={{
           opacity: isSleeping ? 0.6 : 1,
           scale: 1,
-          transition: { duration: 0.5 }
+          filter: isSleeping ? 'brightness(0.5) saturate(0.8)' : 'brightness(1) saturate(1)',
         }}
+        transition={{
+          opacity: { duration: isSleeping ? 0.5 : 2.6, ease: "easeInOut" },
+          filter: { duration: isSleeping ? 0.5 : 2.6, ease: "easeInOut" },
+          scale: { duration: 0.5 }
+        }}
+        className="relative cursor-grab select-none touch-none"
         style={{
-          position: 'relative',
           width: SIZE,
           height: SIZE,
           zIndex: isLanding ? 20 : 999999,
-          cursor: 'grab',
-          userSelect: 'none',
-          touchAction: 'none',
           x,
           y,
         }}
-        onClick={handleClick}
+        onClick={(e) => {
+          if (hasDraggedRef.current) return; // BLOQUEIA clique se acabou de arrastar!
+          
+          // Reseta estados físicos na hora para prevenir qualquer efeito residual "gordo" ou "circular"
+          setIsTapped(false);
+          setIsHovered(false);
+          
+          handleClick(e);
+          setAreActionsVisible(true);
+
+          if (isLanding) {
+            // Emite evento para abrir o input da landing page
+            blackboardEventBus.emit('OPEN_LANDING_CHAT', true);
+            // E também abre o chat visual do Ploc para mostrar as falas dele!
+            setIsChatOpen(true);
+            if (!hasSpokenIntro) {
+              handleOpenIntro();
+            }
+            return;
+          }
+
+          // Abre o input de chat ao clicar no Ploc
+          if (!isSleeping && plocState.angerLevel < 5) {
+            setIsChatInputVisible(true);
+            setIsChatOpen(true);
+            if (!hasSpokenIntro) {
+              handleOpenIntro();
+            }
+          }
+        }}
       >
         {/* Balão de Simulação de Rotina */}
         <AnimatePresence>
-          {showSimulation && focusedRoutine && (
-            <motion.div
-              initial={{ opacity: 0, y: 15, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 15, scale: 0.9 }}
-              style={{
-                position: 'absolute',
-                bottom: '125%',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: '260px',
-                background: 'rgba(15, 23, 42, 0.95)',
-                border: '1px solid rgba(56, 189, 248, 0.3)',
-                boxShadow: '0 20px 40px rgba(0,0,0,0.5), inset 0 0 15px rgba(56,189,248,0.1)',
-                borderRadius: '16px',
-                padding: '16px',
-                zIndex: 99999,
-                backdropFilter: 'blur(12px)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-              }}
-            >
-              {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: 'rgba(56, 189, 248, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#38bdf8'
-                }}>
-                  {focusedPillar && (IMPACT_ICONS as any)[focusedPillar] ? (
-                    (() => {
-                      const IconComp = (IMPACT_ICONS as any)[focusedPillar];
-                      return <IconComp size={16} />;
-                    })()
-                  ) : (
-                    <Sparkles size={16} />
-                  )}
-                </div>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '10px', color: '#38bdf8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    {focusedPillar === 'corpo' ? 'Corpo' : focusedPillar === 'mente' ? 'Mente' : focusedPillar === 'vida' ? 'Vida' : focusedPillar === 'liberdade' ? 'Liberdade' : 'Propósito'}
-                  </span>
-                  <span style={{ fontSize: '12px', color: '#f8fafc', fontWeight: 600 }}>
-                    {focusedRoutine.title}
-                  </span>
-                </div>
-              </div>
-
-              {/* Descrição */}
-              <p style={{ fontSize: '11px', color: '#94a3b8', margin: 0, lineHeight: '1.4' }}>
-                {focusedRoutine.desc}
-              </p>
-
-              {/* Impacto Previsto */}
-              <div style={{
-                background: 'rgba(255,255,255,0.03)',
-                borderRadius: '8px',
-                padding: '8px 10px',
-                border: '1px solid rgba(255,255,255,0.05)'
-              }}>
-                <span style={{ fontSize: '9px', color: '#64748b', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>
-                  Impacto Previsto (Se Realizado):
-                </span>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  {focusedRoutine.impacts.map((impact) => {
-                    const key = impact.pilar;
-                    const val = impact.val;
-                    const currentVal = attributes[key] || 0;
-                    const targetVal = Math.min(100, Math.max(0, currentVal + val));
-                    const isPositive = val >= 0;
-
-                    return (
-                      <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontSize: '10px', color: '#e2e8f0', textTransform: 'capitalize' }}>
-                          {key === 'corpo' ? 'Corpo' : key === 'mente' ? 'Mente' : key === 'vida' ? 'Vida' : key === 'liberdade' ? 'Liberdade' : 'Propósito'}:
-                        </span>
-                        <span style={{ fontSize: '11px', fontWeight: 600, color: isPositive ? '#10b981' : '#ef4444' }}>
-                          {currentVal}% → {targetVal}% ({isPositive ? '+' : ''}{val}%)
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </motion.div>
+          {showSimulation && focusedRoutine && focusedPillar && (
+            <PlocSimulationCard
+              focusedRoutine={focusedRoutine}
+              focusedPillar={focusedPillar}
+              attributes={attributes}
+            />
           )}
-
-
         </AnimatePresence>
 
         {/* Ações Superiores (Microfone e Chat) */}
-        {!isSleeping && (
-          <div style={{
-            position: 'absolute',
-            top: '-55px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 99999,
-          }}>
+        {!isSleeping && areActionsVisible && (
+          <div className="absolute top-[-55px] left-1/2 -translate-x-1/2 z-[99999]">
             <motion.div
               animate={{ y: [3, -3, 3] }}
               transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-              style={{
-                display: 'flex',
-                gap: '12px',
-              }}
+              className="flex gap-3"
             >
               {/* Bolha de Microfone */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  background: 'rgba(15, 23, 42, 0.85)',
-                  border: '1px solid rgba(56, 189, 248, 0.4)',
-                  color: '#38bdf8',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(56, 189, 248, 0.2)',
-                  transition: 'all 0.2s ease',
-                  backdropFilter: 'blur(4px)',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.15)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                className="w-7 h-7 rounded-full bg-slate-900/85 border border-sky-500/40 text-sky-400 flex items-center justify-center cursor-pointer shadow-[0_4px_12px_rgba(56,189,248,0.2)] transition-all duration-200 backdrop-blur-[4px] hover:scale-110"
               >
                 <Mic size={14} />
               </button>
@@ -465,40 +553,13 @@ export default function PlocAvatar({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (!isChatOpen && !hasSpokenIntro) {
-                    setHasSpokenIntro(true);
-                    setIsPending(true); // Liga os "..."
-                    setTimeout(() => {
-                      const introMsg = 'Veio aqui me dar desculpinhas né?';
-                      setChatMessages([{ sender: 'ploc', text: introMsg }]);
-                      setIsPending(false);
-                      // The gesture from the click allows AudioContext to start!
-                      if (speak) speak(introMsg, 3000);
-                    }, 4000); // Latência de 4s antes de soltar a patada
-                  }
-                  setIsChatOpen(!isChatOpen);
+                  handleOpenIntro();
+                  setIsChatInputVisible(!isChatInputVisible);
                   setShowSimulation(false); // fecha simulação de rotina se aberta
                 }}
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  background: isChatOpen ? '#38bdf8' : 'rgba(15, 23, 42, 0.85)',
-                  border: '1px solid rgba(56, 189, 248, 0.4)',
-                  color: isChatOpen ? '#0f172a' : '#38bdf8',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(56, 189, 248, 0.2)',
-                  transition: 'all 0.2s ease',
-                  fontSize: '12px',
-                  fontWeight: 800,
-                  letterSpacing: '1px',
-                  backdropFilter: 'blur(4px)',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.15)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                className={`w-7 h-7 rounded-full border border-sky-500/40 flex items-center justify-center cursor-pointer shadow-[0_4px_12px_rgba(56,189,248,0.2)] transition-all duration-200 backdrop-blur-[4px] hover:scale-110 ${
+                  isChatInputVisible ? 'bg-sky-400 text-slate-900' : 'bg-slate-900/85 text-sky-400'
+                }`}
               >
                 ...
               </button>
@@ -510,80 +571,137 @@ export default function PlocAvatar({
         <motion.div
           animate={{ y: [6, -6, 6] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          style={{ width: '100%', height: '100%', position: 'relative' }}
+          className="w-full h-full relative"
         >
-          {/* Mini-game Score Counter */}
-          <AnimatePresence>
-            {chatStage >= 2 && chatStage < 4 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.5, y: -10, x: '-50%' }}
-                animate={{ opacity: 1, scale: 1, y: 0, x: '-50%' }}
-                exit={{ opacity: 0, scale: 0.5, x: '-50%' }}
-                style={{
-                  position: 'absolute',
-                  bottom: '-35px',
-                  left: '50%',
-                  background: planejeScore >= 10 ? '#22c55e' : 'rgba(34, 197, 94, 0.3)',
-                  border: '2px solid #22c55e',
-                  color: '#fff',
-                  padding: '4px 10px',
-                  borderRadius: '12px',
-                  fontWeight: 'bold',
-                  fontSize: '14px',
-                  zIndex: 1000,
-                  boxShadow: planejeScore >= 10 ? '0 0 20px rgba(34,197,94,0.8)' : '0 0 10px rgba(34,197,94,0.3)',
-                  backdropFilter: 'blur(4px)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                <span>🎯</span> {planejeScore}/10
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Indicadores Flutuantes Dinâmicos (+1 / -1) */}
+          <div className="absolute top-[-25px] left-1/2 -translate-x-1/2 w-full flex justify-center pointer-events-none z-[999999]">
+            <AnimatePresence>
+              {indicators.map(ind => {
+                const Icon = PILLAR_ICONS[ind.pillar];
+                const color = PILLAR_COLORS[ind.pillar] || '#fff';
+                return (
+                  <motion.div
+                    key={ind.id}
+                    initial={{ opacity: 0, y: 15, scale: 0.6, x: `calc(-50% + ${ind.xOffset}px)` }}
+                    animate={{ opacity: 1, y: -45, scale: 1, x: `calc(-50% + ${ind.xOffset}px)` }}
+                    exit={{ opacity: 0, transition: { duration: 0.2 } }}
+                    transition={{ type: 'spring', stiffness: 120, damping: 10, duration: 1.2 }}
+                    className="absolute flex items-center gap-0.5 px-1.5 py-0.5 rounded-full border shadow-lg backdrop-blur-[2px] font-black text-[11px]"
+                    style={{
+                      borderColor: `${color}60`,
+                      background: 'rgba(15, 23, 42, 0.85)',
+                      color: ind.diff > 0 ? '#4ade80' : '#f87171',
+                      boxShadow: `0 4px 12px ${color}30`
+                    }}
+                  >
+                    {Icon && <Icon size={9} style={{ color }} />}
+                    <span>{ind.diff > 0 ? `+${ind.diff}` : ind.diff}</span>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+
+          {/* Aura Traseira */}
+          {(appearance.aura !== 'none' || plocState.angerLevel >= 4) && (
+            <div className="absolute inset-0 pointer-events-none z-0 flex items-center justify-center">
+              {plocState.angerLevel >= 4 ? renderAura('rage') : renderAura(appearance.aura)}
+            </div>
+          )}
+
+          {/* Cabelo (Sticks out above head) */}
+          {appearance.hair !== 'none' && (
+            <div className="absolute top-[-22%] left-1/2 -translate-x-1/2 w-full h-[40%] z-20 pointer-events-none flex items-end justify-center">
+              {renderHair(appearance.hair)}
+            </div>
+          )}
+
+          {/* Chapéu (Sticks out above head/hair) */}
+          {appearance.hat !== 'none' && (
+            <div className="absolute top-[-38%] left-1/2 -translate-x-1/2 w-full h-[45%] z-30 pointer-events-none flex items-end justify-center">
+              {renderHat(appearance.hat)}
+            </div>
+          )}
+
+          {/* Partículas de Sono (Zzz...) */}
+          {isSleeping && (
+            <div className="absolute inset-0 pointer-events-none z-[1000] overflow-visible">
+              <AnimatePresence>
+                {sleepingZs.map((z) => (
+                  <motion.span
+                    key={z.id}
+                    initial={{ opacity: 0, y: 10, scale: 0.4, x: `${z.x}%` }}
+                    animate={{
+                      opacity: [0, 1, 1, 0],
+                      y: -95,
+                      x: [`${z.x}%`, `${z.x + 14}%`, `${z.x + 8}%`],
+                      scale: z.scale,
+                      color: ['#7dd3fc', '#ffffff', '#7dd3fc', '#ffffff', '#7dd3fc']
+                    }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 2.8, ease: 'easeOut' }}
+                    className="absolute font-black select-none"
+                    style={{
+                      fontFamily: 'Outfit, sans-serif',
+                      textShadow: '0 2px 8px rgba(0,0,0,0.5), 0 0 10px rgba(255,255,255,0.4)',
+                      fontSize: '26px'
+                    }}
+                  >
+                    {z.text}
+                  </motion.span>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
+
+
+
           {/* Corpo Gelatinoso do Ploc */}
           <motion.div
-            className={(isPissed || plocState.isHurt)
-              ? 'ploc-body-shake ploc-gelatin-pissed-anim'
-              : 'ploc-gelatin-breathe-anim'
-            }
             animate={{
               backgroundColor: bodyColor,
-              scale: isDragging ? 1 : (isTapped ? 0.90 : (isHovered ? 1.06 : 1)),
-              scaleX: isDragging ? 1 : (isTapped ? 1.20 : (isHovered ? 1.03 : (isSleeping ? 1.04 : 1))),
-              scaleY: isDragging ? 1 : (isTapped ? 0.80 : (isHovered ? 0.97 : (isSleeping ? 0.96 : 1))),
-              rotate: isDragging ? 0 : (isTapped ? [0, -3, 3, 0] : 0),
+              scale: 1,
+              scaleX: isDragging ? 1 : (isSleeping ? 1.04 : 1),
+              scaleY: isDragging ? 1 : (isSleeping ? 0.96 : 1),
+              rotate: 0,
             }}
             transition={{
               backgroundColor: { duration: 0.4 },
               scaleX: { type: "spring", stiffness: 180, damping: 9, mass: 0.4 },
               scaleY: { type: "spring", stiffness: 180, damping: 9, mass: 0.4 },
               scale: { type: "spring", stiffness: 200, damping: 12 },
-              rotate: { type: "tween", duration: 0.35, ease: "easeInOut" }
+              rotate: { type: "tween", duration: 0.35, ease: "easeInOut" },
             }}
-            style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: '50%',
-              border: '1px solid rgba(255,255,255,0.4)',
-              overflow: 'hidden',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              filter: isSleeping ? 'brightness(0.5) saturate(0.8)' : 'none',
-              boxShadow: (isPissed || plocState.isHurt)
-                ? '0 0 25px rgba(244, 63, 94, 0.45), inset 0 0 12px rgba(255, 255, 255, 0.2)'
-                : '0 10px 40px rgba(56, 189, 248, 0.3), inset 0 0 15px rgba(255, 255, 255, 0.2)',
-            }}
+            className={`absolute inset-0 rounded-full border border-white/40 overflow-hidden backdrop-blur-[8px] ${
+              shouldShake
+                ? 'ploc-body-shake ploc-gelatin-pissed-anim'
+                : 'ploc-gelatin-breathe-anim'
+            } ${
+              shouldShake
+                ? '[box-shadow:0_0_25px_rgba(244,_63,_94,_0.45),_inset_0_0_12px_rgba(255,_255,_255,_0.2)]'
+                : '[box-shadow:0_10px_40px_rgba(56,_189,_248,_0.3),_inset_0_0_15px_rgba(255,_255,_255,_0.2)]'
+            }`}
           >
             {/* Bolhas 3D Internas */}
             <PlocBubbles />
+
+            {/* Roupas do Ploc (Inside gelatin body so it stretches & rotates together) */}
+            {appearance.clothes !== 'none' && (
+              <div className="absolute bottom-0 left-0 right-0 h-[40%] z-10 pointer-events-none flex items-center justify-center">
+                {renderClothes(appearance.clothes)}
+              </div>
+            )}
 
             {/* Olhos e Expressões Faciais */}
             <PlocFace
               isSleeping={isSleeping}
               isPissed={isPissed}
               isHurt={plocState.isHurt}
+              isSpeaking={isSpeakingMouth}
+              appearance={appearance}
+              angerLevel={plocState.angerLevel}
+              isHit={plocState.isHit}
+              isPositiveHit={plocState.isPositiveHit}
             />
           </motion.div>
 
@@ -591,133 +709,136 @@ export default function PlocAvatar({
           <PlocLimbs
             limbColor={limbColor}
             limbShadow={limbShadow}
+            appearance={appearance}
           />
+
+          {/* Barrinha de Irritação (Cabo de Guerra) */}
+          {!isSleeping && (plocState.angerLevel > 0 || plocState.angerClicks > 0) && (
+            <div className="absolute bottom-[-24px] left-1/2 -translate-x-1/2 w-[76px] flex flex-col items-center gap-0.5 z-[999999] pointer-events-none">
+              {/* Progresso visual */}
+              <div className="w-full h-1.5 bg-slate-950/85 border border-white/10 rounded-full overflow-hidden p-[0.5px] shadow-lg flex items-center">
+                <motion.div
+                  className={`h-full rounded-full transition-all duration-150 ${
+                    plocState.angerLevel === 5
+                      ? 'bg-gradient-to-r from-red-600 via-rose-500 to-red-600 animate-pulse'
+                      : plocState.angerLevel === 4
+                        ? 'bg-gradient-to-r from-red-500 to-orange-500'
+                        : plocState.angerLevel === 3
+                          ? 'bg-gradient-to-r from-orange-500 to-amber-500'
+                          : plocState.angerLevel === 2
+                            ? 'bg-gradient-to-r from-amber-500 to-yellow-400'
+                            : 'bg-gradient-to-r from-yellow-400 to-emerald-400'
+                  }`}
+                  style={{
+                    width: `${
+                      plocState.angerLevel === 5
+                        ? (plocState.angerTimer ? (plocState.angerTimer / 300) * 100 : 100)
+                        : (plocState.angerClicks / ANGER_LEVELS[plocState.angerLevel].clicksNeeded) * 100
+                    }%`
+                  }}
+                />
+              </div>
+              {/* Badge indicadora do Nível/Timer */}
+              <span className="text-[7px] font-bold text-white tracking-wider uppercase font-mono px-1 py-0.2 rounded bg-slate-950/70 border border-white/5 backdrop-blur-[2px] leading-none whitespace-nowrap">
+                {plocState.angerLevel === 5
+                  ? `FÚRIA: ${plocState.angerTimer}s`
+                  : `LVL ${plocState.angerLevel} (${Math.round((plocState.angerClicks / ANGER_LEVELS[plocState.angerLevel].clicksNeeded) * 100)}%)`}
+              </span>
+            </div>
+          )}
         </motion.div>
       </motion.div>
 
       {/* standalone React Portal with its own AnimatePresence for the decoupled chat interface */}
       {typeof window !== 'undefined' && createPortal(
         <AnimatePresence>
-          {isChatOpen && (
+          {(isChatOpen || isChatInputVisible) && (
             <>
               {/* Texto do Ploc fixado na tela (Top) */}
-              <div
-                style={{
-                  position: 'fixed',
-                  top: '15vh',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  width: '90%',
-                  maxWidth: '650px',
-                  zIndex: 999999,
-                  pointerEvents: 'none',
-                }}
-              >
+              <div className="fixed top-[15vh] left-1/2 -translate-x-1/2 w-[68%] max-w-[340px] z-[999999] pointer-events-none flex flex-col items-center gap-6">
                 <AnimatePresence mode="wait">
-                  {(visiblePlocText || isPending) && (
-                    <motion.div
-                      key={isPending ? 'pending' : visiblePlocText}
-                      initial={{ opacity: 0, y: -15 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.8, ease: 'easeOut' }}
-                      style={{
-                        textAlign: 'center',
-                        color: '#ffffff',
-                        fontSize: '18px', // Fonte menor
-                        fontWeight: 400,
-                        lineHeight: '1.5',
-                        fontFamily: 'var(--font-sans), Roboto, sans-serif', // Roboto moderno e limpo
-                        letterSpacing: '0.5px',
-                        padding: '16px 24px',
-                        textShadow: '0 2px 10px rgba(0,0,0,0.8), 0 0 4px rgba(0,0,0,0.5)', // Adds readability since we removed background
-                      }}
+                  {isChatOpen && (currentSpokenText || isPending || isTTSLoading) && (
+                    <div
+                      className="bg-slate-950/40 py-3 px-4 shadow-lg w-full pointer-events-none text-center"
+                      style={{ borderRadius: '0px', border: 'none' }}
                     >
-                      {isPending ? (
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', alignItems: 'center', height: '27px' }}>
-                          <motion.span animate={{ y: [0, -8, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} style={{ width: '8px', height: '8px', background: '#fff', borderRadius: '50%', boxShadow: '0 2px 4px rgba(0,0,0,0.5)' }} />
-                          <motion.span animate={{ y: [0, -8, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} style={{ width: '8px', height: '8px', background: '#fff', borderRadius: '50%', boxShadow: '0 2px 4px rgba(0,0,0,0.5)' }} />
-                          <motion.span animate={{ y: [0, -8, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} style={{ width: '8px', height: '8px', background: '#fff', borderRadius: '50%', boxShadow: '0 2px 4px rgba(0,0,0,0.5)' }} />
-                        </div>
-                      ) : (
-                        <TypewriterText text={visiblePlocText} />
-                      )}
-                    </motion.div>
+                      <motion.div
+                        key={isPending || isTTSLoading ? 'pending' : currentSpokenText}
+                        initial={{ opacity: 0, y: 3 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -3 }}
+                        transition={{ duration: 0.3, ease: 'easeOut' }}
+                        className="text-white text-[15.5px] font-medium leading-relaxed tracking-wide [text-shadow:0_1px_3px_rgba(0,0,0,0.35)]"
+                        style={{ fontFamily: 'Outfit, sans-serif' }}
+                      >
+                        {isPending || isTTSLoading ? (
+                          <ThinkingDots />
+                        ) : (
+                          <TypewriterText text={currentSpokenText} />
+                        )}
+                      </motion.div>
+                    </div>
                   )}
                 </AnimatePresence>
+
+                {/* Botões de Escolha do Equilíbrio Mínimo */}
+                {isChatOpen && showChoiceButtons && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5, duration: 0.5 }}
+                    className="flex gap-4 pointer-events-auto mt-2"
+                  >
+                    <button
+                      onClick={handleRegisterChoice}
+                      className="px-6 py-2.5 rounded-full font-bold text-sm tracking-wide text-white bg-emerald-500/25 border border-emerald-400/50 backdrop-blur-[8px] hover:bg-emerald-500/40 hover:scale-105 active:scale-95 transition-all shadow-[0_4px_20px_rgba(16,185,129,0.3)]"
+                    >
+                      Cadastrar-se
+                    </button>
+                    <button
+                      onClick={handleContinuePlaying}
+                      className="px-6 py-2.5 rounded-full font-bold text-sm tracking-wide text-white/90 bg-white/5 border border-white/20 backdrop-blur-[8px] hover:bg-white/10 hover:scale-105 active:scale-95 transition-all shadow-[0_4px_20px_rgba(0,0,0,0.2)]"
+                    >
+                      Continuar Jogando
+                    </button>
+                  </motion.div>
+                )}
               </div>
 
               {/* Input de texto abaixo do Ploc (Space Evenly look) */}
-              <div
-                style={{
-                  position: 'fixed',
-                  bottom: '31vh',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  width: '90%',
-                  maxWidth: '460px',
-                  zIndex: 999999,
-                  pointerEvents: 'auto',
-                }}
-              >
-                <motion.form
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 15 }}
-                  transition={{ duration: 0.5, ease: 'easeOut' }}
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleSendMessage(inputValue);
-                  }}
-                  style={{
-                    display: 'flex',
-                    gap: '12px',
-                    background: 'rgba(15, 23, 42, 0.45)',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.55), inset 0 0 20px rgba(255,255,255,0.02)',
-                    borderRadius: '99px',
-                    padding: '6px 8px 6px 20px',
-                    backdropFilter: 'blur(16px)',
-                  }}
-                >
-                  <input
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    placeholder="Escreva algo para o Ploc..."
-                    disabled={isPending}
-                    style={{
-                      flex: 1,
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#fff',
-                      fontSize: '14px',
-                      outline: 'none',
-                      padding: '6px 0',
+              {isChatInputVisible && !isLanding && (
+                <div className="fixed bottom-[31vh] left-1/2 -translate-x-1/2 w-[90%] max-w-[460px] z-[999999] pointer-events-auto">
+                  <motion.form
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 15 }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSendMessage(inputValue);
                     }}
-                  />
-                  <button
-                    type="submit"
-                    disabled={isPending || !inputValue.trim()}
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: '50%',
-                      width: '32px',
-                      height: '32px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff',
-                      cursor: 'pointer',
-                      opacity: inputValue.trim() ? 1 : 0.4,
-                      transition: 'all 0.2s',
-                    }}
+                    className="flex gap-3 bg-slate-900/45 border border-white/12 shadow-[0_8px_32px_rgba(0,0,0,0.55),_inset_0_0_20px_rgba(255,255,255,0.02)] rounded-full py-1.5 pr-2 pl-5 backdrop-blur-[16px]"
                   >
-                    <Send size={14} />
-                  </button>
-                </motion.form>
-              </div>
+                    <input
+                      type="text"
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      placeholder="Escreva algo para o Ploc..."
+                      disabled={isPending}
+                      className="flex-1 bg-transparent border-none text-white text-sm outline-none py-1.5"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isPending || !inputValue.trim()}
+                      className={`bg-white/10 border border-white/20 rounded-full w-8 h-8 flex items-center justify-center text-white cursor-pointer transition-all duration-200 ${
+                        inputValue.trim() ? 'opacity-100' : 'opacity-40'
+                      }`}
+                    >
+                      <Send size={14} />
+                    </button>
+                  </motion.form>
+                </div>
+              )}
             </>
           )}
         </AnimatePresence>,
@@ -725,4 +846,289 @@ export default function PlocAvatar({
       )}
     </>
   );
+}
+
+function renderAura(aura: string) {
+  switch (aura) {
+    case 'success':
+      return (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <motion.div
+            className="absolute w-[200px] h-[200px] rounded-full bg-amber-400/20 blur-2xl mix-blend-screen"
+            animate={{ scale: [1, 1.25, 1], opacity: [0.4, 0.7, 0.4] }}
+            transition={{ duration: 3, repeat: Infinity }}
+          />
+          <motion.div
+            className="absolute w-[220px] h-[220px] rounded-full border border-amber-400/30 blur-sm mix-blend-screen"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
+          />
+        </div>
+      );
+    case 'disaster':
+      return (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <motion.div
+            className="absolute w-[200px] h-[200px] rounded-full bg-fuchsia-900/30 blur-2xl mix-blend-screen"
+            animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0.8, 0.5] }}
+            transition={{ duration: 4, repeat: Infinity }}
+          />
+          <motion.div
+            className="absolute w-[180px] h-[180px] rounded-full border-2 border-dashed border-fuchsia-600/20"
+            animate={{ rotate: -360 }}
+            transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+          />
+        </div>
+      );
+    case 'fire':
+      return (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <motion.div
+            className="absolute w-[210px] h-[210px] rounded-full bg-rose-500/20 blur-3xl mix-blend-screen"
+            animate={{ y: [0, -12, 0], scaleX: [1, 1.1, 1], scaleY: [1, 1.2, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        </div>
+      );
+    case 'rage':
+      return (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible">
+          {/* Intense Crimson Core Glow */}
+          <motion.div
+            className="absolute w-[220px] h-[220px] rounded-full bg-red-800/40 blur-3xl mix-blend-screen"
+            animate={{ scale: [1, 1.3, 0.95, 1.2, 1], opacity: [0.6, 0.9, 0.5, 0.85, 0.6] }}
+            transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          {/* Outer Fiery Wave */}
+          <motion.div
+            className="absolute w-[240px] h-[240px] rounded-full bg-rose-600/25 blur-2xl mix-blend-screen"
+            animate={{ y: [2, -10, 2], scaleX: [1, 1.15, 0.95, 1.1, 1], scaleY: [1, 1.25, 0.9, 1.2, 1] }}
+            transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          {/* Angry Sparks/Embers shooting out */}
+          {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle, idx) => (
+            <motion.div
+              key={`rage-particle-${idx}`}
+              className="absolute w-2 h-2.5 bg-red-500 rounded-full blur-[0.5px]"
+              style={{ boxShadow: '0 0 8px #dc2626' }}
+              animate={{
+                x: [0, Math.cos(angle * Math.PI / 180) * 130],
+                y: [0, Math.sin(angle * Math.PI / 180) * 130 - 25],
+                opacity: [1, 0.8, 0],
+                scale: [0.8, 1.6, 0]
+              }}
+              transition={{
+                duration: 1.4,
+                repeat: Infinity,
+                delay: idx * 0.1,
+                ease: 'easeOut'
+              }}
+            />
+          ))}
+        </div>
+      );
+    case 'star':
+      return (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible">
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, idx) => (
+            <motion.div
+              key={`star-particle-${idx}`}
+              className="absolute w-2 h-2 bg-sky-300 rounded-full blur-[1px]"
+              animate={{
+                x: [0, Math.cos(angle * Math.PI / 180) * 110],
+                y: [0, Math.sin(angle * Math.PI / 180) * 110],
+                opacity: [1, 0],
+                scale: [0.8, 1.4, 0]
+              }}
+              transition={{
+                duration: 2.2,
+                repeat: Infinity,
+                delay: idx * 0.2,
+                ease: 'easeOut'
+              }}
+            />
+          ))}
+        </div>
+      );
+    default:
+      return null;
+  }
+}
+
+function renderHair(hair: string) {
+  switch (hair) {
+    case 'pompadour':
+      return (
+        <svg width="100%" height="100%" viewBox="0 0 100 60" fill="none" className="overflow-visible">
+          <path
+            d="M 12 50 C 4 35, 18 10, 50 15 C 72 18, 86 28, 88 50 C 88 50, 68 40, 50 48 C 32 56, 18 52, 12 50 Z"
+            fill="#1e1b4b"
+            stroke="#312e81"
+            strokeWidth="3.5"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case 'spiky':
+      return (
+        <svg width="100%" height="100%" viewBox="0 0 100 50" fill="none" className="overflow-visible">
+          <path
+            d="M 8 46 L 24 16 L 36 34 L 50 8 L 64 34 L 76 16 L 92 46 Z"
+            fill="#090d16"
+            stroke="#1e293b"
+            strokeWidth="4"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case 'afro':
+      return (
+        <svg width="105%" height="105%" viewBox="0 0 100 70" fill="none" className="overflow-visible">
+          <ellipse cx="50" cy="40" rx="36" ry="26" fill="#180c05" />
+          <ellipse cx="26" cy="46" rx="22" ry="18" fill="#180c05" />
+          <ellipse cx="74" cy="46" rx="22" ry="18" fill="#180c05" />
+          <ellipse cx="50" cy="22" rx="26" ry="20" fill="#180c05" />
+        </svg>
+      );
+    case 'curls':
+      return (
+        <svg width="100%" height="100%" viewBox="0 0 100 50" fill="none" className="overflow-visible">
+          <circle cx="25" cy="30" r="12" fill="#d97706" />
+          <circle cx="40" cy="20" r="13" fill="#d97706" />
+          <circle cx="60" cy="20" r="13" fill="#d97706" />
+          <circle cx="75" cy="30" r="12" fill="#d97706" />
+        </svg>
+      );
+    case 'bangs':
+      return (
+        <svg width="100%" height="100%" viewBox="0 0 100 45" fill="none" className="overflow-visible">
+          <path
+            d="M 12 40 Q 50 12 88 40 Q 72 26 50 40 Q 28 26 12 40 Z"
+            fill="#a21caf"
+            stroke="#701a75"
+            strokeWidth="2.5"
+          />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
+function renderHat(hat: string) {
+  switch (hat) {
+    case 'cap':
+      return (
+        <svg width="100%" height="100%" viewBox="0 0 100 50" fill="none" className="overflow-visible">
+          <path d="M 22 42 C 22 18, 78 18, 78 42 Z" fill="#ef4444" stroke="#b91c1c" strokeWidth="2.5" />
+          {/* Visor */}
+          <path d="M 16 38 Q 4 48 30 46" stroke="#3b82f6" strokeWidth="6" strokeLinecap="round" />
+          <circle cx="50" cy="24" r="4.5" fill="#ffffff" />
+        </svg>
+      );
+    case 'tophat':
+      return (
+        <svg width="90%" height="90%" viewBox="0 0 90 70" fill="none" className="overflow-visible">
+          {/* Crown */}
+          <path d="M 22 50 L 26 10 L 64 10 L 68 50 Z" fill="#111827" stroke="#1f2937" strokeWidth="2" />
+          {/* Band */}
+          <rect x="23.5" y="42" width="43" height="8" fill="#e11d48" />
+          {/* Brim */}
+          <ellipse cx="45" cy="52" rx="36" ry="6" fill="#030712" />
+        </svg>
+      );
+    case 'crown':
+      return (
+        <svg width="80%" height="80%" viewBox="0 0 80 50" fill="none" className="overflow-visible">
+          <path
+            d="M 8 42 L 12 10 L 28 26 L 40 5 L 52 26 L 68 10 L 72 42 Z"
+            fill="#f59e0b"
+            stroke="#b45309"
+            strokeWidth="3.5"
+            strokeLinejoin="round"
+          />
+          {/* Jewels */}
+          <circle cx="40" cy="5" r="4" fill="#ef4444" />
+          <circle cx="12" cy="10" r="3" fill="#3b82f6" />
+          <circle cx="68" cy="10" r="3" fill="#3b82f6" />
+          <rect x="25" y="32" width="6" height="6" fill="#10b981" transform="rotate(45 28 35)" />
+          <rect x="49" y="32" width="6" height="6" fill="#10b981" transform="rotate(45 52 35)" />
+        </svg>
+      );
+    case 'beanie':
+      return (
+        <svg width="90%" height="90%" viewBox="0 0 90 45" fill="none" className="overflow-visible">
+          <path d="M 12 40 C 12 15, 78 15, 78 40 Z" fill="#10b981" />
+          <rect x="10" y="34" width="70" height="8" rx="4" fill="#047857" />
+          {/* Pom pom */}
+          <circle cx="45" cy="15" r="7" fill="#ffffff" stroke="#e5e7eb" strokeWidth="1.5" />
+        </svg>
+      );
+    case 'horns':
+      return (
+        <svg width="100%" height="100%" viewBox="0 0 100 50" fill="none" className="overflow-visible">
+          <path d="M 22 36 Q 10 24 6 8 Q 18 20 28 32 Z" fill="#ef4444" />
+          <path d="M 78 36 Q 90 24 94 8 Q 82 20 72 32 Z" fill="#ef4444" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
+function renderClothes(clothes: string) {
+  switch (clothes) {
+    case 'hoodie':
+      return (
+        <svg width="100%" height="100%" viewBox="0 0 100 55" fill="none" className="overflow-visible">
+          <path
+            d="M 10 50 C 10 20, 90 20, 90 50 Z"
+            fill="#06b6d4"
+            stroke="#0891b2"
+            strokeWidth="3.5"
+            strokeLinejoin="round"
+          />
+          {/* Strings */}
+          <path d="M 44 26 L 40 42 M 56 26 L 60 42" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
+      );
+    case 'suit':
+      return (
+        <svg width="100%" height="100%" viewBox="0 0 100 55" fill="none" className="overflow-visible">
+          {/* Jacket */}
+          <path d="M 10 50 C 10 20, 90 20, 90 50 Z" fill="#0f172a" />
+          {/* White shirt triangle */}
+          <path d="M 38 18 L 50 38 L 62 18 Z" fill="#ffffff" />
+          {/* Bowtie */}
+          <path d="M 42 22 L 58 28 L 58 22 M 58 22 L 42 28 L 42 22 Z" fill="#ef4444" />
+        </svg>
+      );
+    case 'cape':
+      return (
+        <svg width="120%" height="120%" viewBox="0 0 120 70" fill="none" className="overflow-visible opacity-90 mix-blend-screen">
+          <path
+            d="M 10 60 C 20 20, 100 20, 110 60 C 120 65, 80 50, 60 62 C 40 50, 0 65, 10 60 Z"
+            fill="#e11d48"
+            stroke="#be123c"
+            strokeWidth="2.5"
+          />
+        </svg>
+      );
+    case 'armor':
+      return (
+        <svg width="100%" height="100%" viewBox="0 0 100 55" fill="none" className="overflow-visible">
+          <path
+            d="M 10 50 C 10 20, 90 20, 90 50 Z"
+            fill="#94a3b8"
+            stroke="#475569"
+            strokeWidth="3.5"
+            strokeLinejoin="round"
+          />
+          <rect x="36" y="24" width="28" height="22" rx="4" fill="#334155" />
+          <circle cx="50" cy="35" r="4.5" fill="#f59e0b" />
+        </svg>
+      );
+    default:
+      return null;
+  }
 }

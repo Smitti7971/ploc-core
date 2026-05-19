@@ -1,8 +1,17 @@
 'use client';
 
 /**
- * PlocAvatarClient.tsx — Wrapper que força renderização apenas no cliente.
- * Evita erros de hidratação SSR com o mascote (posição, localStorage, etc.)
+ * ============================================================================
+ * Wrapper Client - PlocAvatarClient.tsx
+ * ============================================================================
+ * Descrição: Wrapper que força a renderização do PlocAvatar estritamente no lado
+ * do cliente (Client-Side).
+ * 
+ * Principais responsabilidades:
+ * - Desativa a renderização SSR (Server-Side Rendering) para o mascote Ploc.
+ * - Evita problemas de hidratação e discrepância de DOM (como leituras imediatas
+ *   de localStorage ou posições físicas baseadas nas dimensões da janela).
+ * ============================================================================
  */
 
 import dynamic from 'next/dynamic';

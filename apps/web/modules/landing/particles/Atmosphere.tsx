@@ -15,9 +15,12 @@ export const Atmosphere: React.FC = () => {
           rotate: [0, 20, -20, 0]
         }}
         transition={{ duration: 40, repeat: Infinity, ease: "easeInOut" }}
+        style={{
+          willChange: 'transform',
+          transform: 'translateZ(0)'
+        }}
         className="absolute top-[-20%] left-[-10%] w-[80%] h-[80%] rounded-[45%] blur-[100px] bg-[radial-gradient(circle,_rgba(56,189,248,0.07)_0%,_transparent_75%)]"
       />
-
       {/* Bolha Inferior Direita */}
       <motion.div
         animate={{
@@ -27,6 +30,10 @@ export const Atmosphere: React.FC = () => {
           rotate: [0, -25, 25, 0]
         }}
         transition={{ duration: 50, repeat: Infinity, ease: "easeInOut" }}
+        style={{
+          willChange: 'transform',
+          transform: 'translateZ(0)'
+        }}
         className="absolute bottom-[-25%] right-[-20%] w-[90%] h-[90%] rounded-[40%] blur-[120px] bg-[radial-gradient(circle,_rgba(3,105,161,0.1)_0%,_transparent_75%)]"
       />
     </div>

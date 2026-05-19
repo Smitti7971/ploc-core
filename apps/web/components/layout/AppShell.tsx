@@ -22,6 +22,7 @@ export function AppShell({ children }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const isSettings = pathname === '/settings';
+  const isPlocPage = pathname === '/ploc';
 
   // Client-side auth guard (backup do middleware)
   useEffect(() => {
@@ -61,28 +62,30 @@ export function AppShell({ children }: AppShellProps) {
       {/* Menu de navegação global */}
       <DockMenu />
 
-      {/* Header do Usuário (Cápsula Camaleão) - Oculto em settings para evitar duplicidade */}
-      {!isSettings && (
+      {/* Header do Usuário (Cápsula Camaleão) - Oculto em settings ou ploc para evitar duplicidade */}
+      {!isSettings && !isPlocPage && (
         <div style={{ position: 'fixed', top: '30px', right: '30px', zIndex: 100000, pointerEvents: 'none' }}>
           <UserHeader />
         </div>
       )}
 
-      {/* Mascote Ploc com posicionamento inteligente */}
-      <div style={{
-        position: 'fixed',
-        top: pathname === '/' ? '50%' : 'auto',
-        left: pathname === '/' ? '50%' : 'auto',
-        bottom: pathname === '/' ? 'auto' : '110px',
-        right: pathname === '/' ? 'auto' : '30px',
-        transform: pathname === '/' ? 'translate(-50%, -50%)' : 'none',
-        zIndex: 1000,
-        pointerEvents: 'none'
-      }}>
-        <div style={{ pointerEvents: 'all' }}>
-          <PlocAvatarClient />
+      {/* Mascote Ploc com posicionamento inteligente - Oculto na página dedicada do Ploc */}
+      {!isPlocPage && (
+        <div style={{
+          position: 'fixed',
+          top: pathname === '/' ? '50%' : 'auto',
+          left: pathname === '/' ? '50%' : 'auto',
+          bottom: pathname === '/' ? 'auto' : '110px',
+          right: pathname === '/' ? 'auto' : '30px',
+          transform: pathname === '/' ? 'translate(-50%, -50%)' : 'none',
+          zIndex: 1000,
+          pointerEvents: 'none'
+        }}>
+          <div style={{ pointerEvents: 'all' }}>
+            <PlocAvatarClient />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

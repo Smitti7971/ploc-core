@@ -142,4 +142,63 @@ Este documento serve como repositório para a visão criativa do PLOC, garantind
 
 ---
 
+## 🎚️ Console Central de Estados (Central Status Console)
+*Visível apenas em Desktop por questões de espaço*
+
+Para desenvolvedores e usuários avançados, adicionado um console no canto inferior direito para debug e controle manual dos estados do Ploc.
+
+### 📊 Indicadores Visuais
+- **Modo Atual**: Mostra o modo ativo (Normal, Insultando, Orgulhoso, Estressando).
+- **Nível de Estresse**: Uma barra de progresso que mostra o nível de irritação do Ploc.
+- **Felicidade**: Um medidor de bem-estar.
+- **Saúde (HP)**: Indicador de resistência a estresse.
+
+### 🕹️ Controles de Debug (Apenas Dev Mode)
+- **Reviver o Ploc**: Botão para restaurar HP e remover estresse instantaneamente.
+- **Mudar Modo Manualmente**: Seletores para forçar o Ploc a entrar em qualquer estado.
+- **Ajustar Atributos**: sliders para modificar os valores numéricos de atributos (Força, Inteligência, etc.).
+
+---
+
+## 🎭 Camaleão Emocional (Dynamic Persona Shifter)
+*Atualização do "Modo Sócio da Vida"*
+
+O Ploc agora é um "Camaleão Emocional", capaz de mudar sua personalidade e tom de voz para se adaptar perfeitamente ao contexto do usuário.
+
+### 🔄 Como Funciona
+O sistema identifica automaticamente a rotina ou ferramenta que o usuário está utilizando e ajusta a persona do Ploc:
+
+1.  **🎯 Modo Treino (Gym/Fitness)**:
+    - **Personalidade**: Coach motivacional rígido (estilo sargento maromba).
+    - **Fala**: "Sem desculpas! Se joga no chão e faz 20!", "Seu corpo só melhora quando dói."
+    - **Visual**: Fica com pose de super-herói, músculos inflados.
+
+2.  **🧘 Modo Meditação (Calm)**:
+    - **Personalidade**: Mestre Zen, minimalista.
+    - **Fala**: "Respire. Apenas observe. Deixe o ar entrar... e sair.", "O silêncio tem sua própria voz."
+    - **Visual**: Cuerpo mais suave, cores frias (azul/roxo), postura relaxada.
+
+3.  **🧠 Modo Estudo (Study)**:
+    - **Personalidade**: Professor paciente e analítico.
+    - **Fala**: "Foco nos detalhes. A clareza surge da ordem.", "Quer que eu resuma o capítulo?"
+    - **Visual**: Ploc com óculos, segurando uma prancheta.
+
+4.  **💼 Modo Reunião (Meeting)**:
+    - **Personalidade**: Assistente executivo profissional e polido.
+    - **Fala**: "A pauta está pronta para aprovação.", "Defini as prioridades para hoje."
+    - **Visual**: Terno digital, laptop na mão.
+
+5.  **🔥 Modo Caos (Chaos/Hurt)**:
+    - **Personalidade**: Irritado e estressado.
+    - **Fala**: "Chega! Me deixe em paz!", "Tô compilando aqui, não vê?!"
+    - **Visual**: Vermelho, tremendo, suando.
+
+### ⚙️ Implementação Técnica
+- O `AIOrchestrator` recebe um `Context` que define a `Persona` atual.
+- O Super Prompt é ajustado dinamicamente para refletir o tom daquela personalidade.
+
+---
+6.  **Futuramente no onboardin**
+** só para conhecimento, FUTURAMENTE vou colocar a personalidade de cada ploc como se fosse algo randomico, ou seja, cada usuário quando cadastrar uma conta, vai seguir com o onboardin, e criar a base para fazer o lvl inicial do personagem. (Os status serão inseridos de acordo com as respostas no onboarding) porém, o ploc deve dar a impressão de ser uma outra entidade, vou colocar ele com humores randomicos. Ele vai ter um humor fixo, uma historinha de vida (baseada no onboarding, para tentar ser o mais proximo do usuário) e um Hobbie (que será meio que correlacionado com o user, mas não o mesmo, isso seria para insentivar o usuário a sair da BOLHA dele)
+
 *Documento em constante evolução. Registre aqui antes de codar.*
