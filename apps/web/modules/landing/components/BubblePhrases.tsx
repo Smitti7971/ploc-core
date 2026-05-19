@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { useBubbleState } from './bubbles/useBubbleState';
+import { useBubbleState } from '../hooks/useBubbleState';
 import { FloatingBubble } from './bubbles/FloatingBubble';
 import ChallengePhrasesText from './ChallengePhrasesText';
 import LandingPlocChat from './LandingPlocChat';
@@ -23,6 +23,7 @@ export default function BubblePhrases() {
     isLandingChatOpen,
     isWhirlwind,
     activeConcepts,
+    onboardingStage,
     toggleTooltip,
     changeDensity
   } = useBubbleState();
@@ -65,6 +66,7 @@ export default function BubblePhrases() {
         attributes={attributes}
         onToggleTooltip={toggleTooltip}
         onChangeDensity={changeDensity}
+        onboardingStage={onboardingStage}
       />
 
       {/* ── 4. Recompensa ── */}

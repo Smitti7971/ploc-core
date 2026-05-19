@@ -225,6 +225,17 @@ export default function PlocAvatar({
     showChoiceButtons,
     handleContinuePlaying,
     handleRegisterChoice,
+    onboardingStage,
+    handleAdvanceOnboardingStage,
+    handleStartPhase2,
+    showStartGameButton,
+    handleStartOnboardingGame,
+    handleMascotClick,
+    tempSelectedPillar,
+    showPriorityConfirmButtons,
+    handleConfirmPriorityPillar,
+    handleResetPriorityPillar,
+    phase1PopCount
   } = usePlocChat();
 
   const [currentSpokenText, setCurrentSpokenText] = useState('');
@@ -499,6 +510,11 @@ export default function PlocAvatar({
           handleClick(e);
           setAreActionsVisible(true);
 
+          if (gameMode === 'decor') {
+            handleMascotClick();
+            return;
+          }
+
           if (isLanding) {
             // Emite evento para abrir o input da landing page
             blackboardEventBus.emit('OPEN_LANDING_CHAT', true);
@@ -755,7 +771,7 @@ export default function PlocAvatar({
           {(isChatOpen || isChatInputVisible) && (
             <>
               {/* Texto do Ploc fixado na tela (Top) */}
-              <div className="fixed top-[15vh] left-1/2 -translate-x-1/2 w-[68%] max-w-[340px] z-[999999] pointer-events-none flex flex-col items-center gap-6">
+              <div className="fixed top-[6vh] sm:top-[12vh] left-1/2 -translate-x-1/2 w-[88%] sm:w-[68%] max-w-[340px] z-[999999] pointer-events-none flex flex-col items-center gap-4 sm:gap-6">
                 <AnimatePresence mode="wait">
                   {isChatOpen && (currentSpokenText || isPending || isTTSLoading) && (
                     <div
@@ -803,10 +819,58 @@ export default function PlocAvatar({
                     </button>
                   </motion.div>
                 )}
+
+                {/* Indicador de Progresso de Hábitos (Fase 1) */}
+                {isChatOpen && gameMode === 'onboarding_game' && ['corpo', 'mente', 'vida', 'liberdade', 'proposito'].includes(onboardingStage) && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1, duration: 0.4 }}
+                    className="flex flex-col items-center gap-2 mt-2 select-none"
+                  >
+                    <span className="text-[10px] text-emerald-400 font-extrabold tracking-widest uppercase font-mono bg-slate-900/80 px-4 py-1.5 rounded-full border border-emerald-500/30 backdrop-blur-[6px] shadow-[0_4px_15px_rgba(16,185,129,0.2)]">
+                      {onboardingStage.toUpperCase()} • {phase1PopCount}/3
+                    </span>
+                  </motion.div>
+                )}
+
+                {/* Botão de Transição para Fase 2 (Resultados) */}
+                {isChatOpen && gameMode === 'onboarding_game' && onboardingStage === 'results' && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.2, duration: 0.4 }}
+                    className="pointer-events-auto mt-2"
+                  >
+                    <button
+                      onClick={handleStartPhase2}
+                      className="px-8 py-3.5 rounded-full font-bold text-sm tracking-wide text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 border border-amber-400/30 backdrop-blur-[8px] hover:scale-105 active:scale-95 transition-all shadow-[0_4px_25px_rgba(245,158,11,0.45)] whitespace-nowrap uppercase font-mono"
+                    >
+                      Iniciar Fase 2: Desafio de Equilíbrio ⚖️
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Botões de Confirmação da Prioridade Inicial (Fase 1: Priority) */}
+                {isChatOpen && gameMode === 'onboarding_game' && onboardingStage === 'priority' && showPriorityConfirmButtons && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4 }}
+                    className="flex justify-center pointer-events-auto mt-2"
+                  >
+                    <button
+                      onClick={handleConfirmPriorityPillar}
+                      className="px-8 py-2.5 rounded-full font-bold text-sm tracking-wide text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 border border-emerald-400/30 backdrop-blur-[8px] hover:scale-105 active:scale-95 transition-all shadow-[0_4px_20px_rgba(16,185,129,0.35)]"
+                    >
+                      Confirmar
+                    </button>
+                  </motion.div>
+                )}
               </div>
 
               {/* Input de texto abaixo do Ploc (Space Evenly look) */}
-              {isChatInputVisible && !isLanding && (
+              {isChatInputVisible && !isLanding && gameMode !== 'onboarding_game' && (
                 <div className="fixed bottom-[31vh] left-1/2 -translate-x-1/2 w-[90%] max-w-[460px] z-[999999] pointer-events-auto">
                   <motion.form
                     initial={{ opacity: 0, y: 15 }}

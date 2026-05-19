@@ -180,6 +180,34 @@ Este arquivo documenta a transição da arquitetura de "Móveis Chumbados" para 
 
 ---
 
+## 🗓️ 19 de Maio, 2026
+
+### 🧩 Lógica: Individualização de Bolhas & Refinamento do Game de Onboarding (Ciclo 11)
+- **Status**: ✅ CONCLUÍDO
+- **Ação**: Implementação de bolhas individuais de pilares com estados ricos e contextualizados (`corpo`, `mente`, `vida`, `liberdade`, `proposito`), desacoplamento físico e visual de cliques ativos do usuário versus colisões passivas de sabão com o Ploc, e reformulação das falas do Ploc com alta variedade por pilar.
+- **Resultado**:
+    - **Bolhas Especializadas com Metadados**: Cada pilar possui bolhas personalizadas de valor positivo ou negativo (ex: `Sedentarismo` (-) vs `Treinar` (+); `Dívidas` (-) vs `Autonomia` (+)) com tamanhos variados e z-indices ajustados para efeito real de profundidade e parallax.
+    - **Desacoplamento de Interação (Cliques vs Colisões)**:
+        - **Colisões Físicas**: Quando as bolhas flutuam e colidem silenciosamente com o Ploc, ele as absorve de forma serena. As reações do Ploc são extraídas de uma matriz rica de provérbios reflexivos específicos para aquele pilar com cooldown generoso, sem interferir na pontuação.
+        - **Cliques do Usuário**: Quando o usuário clica ativamente em uma bolha, ela explode de forma ativa. Se o onboarding-game estiver inativo (modo decorativo), ela conta para a contagem de progressão dramática do Ploc até desbloquear as bolhas de onboarding.
+    - **Refinamento do Game de Onboarding**:
+        - Quando o minigame inicia, apenas bolhas específicas dos 5 pilares com status (+/-) são geradas.
+        - Estourar bolhas positivas adiciona pontos ao pilar correspondente no `AttributeEngine` e faz o Ploc vibrar em comemoração com falas positivas alegres.
+        - Estourar bolhas negativas subtrai pontos no `AttributeEngine` e gera falas de alerta e atenção.
+        - Se o usuário tentar estourar um pilar de forma desproporcional, o Ploc dá um "puxão de orelha" sobre o equilíbrio de todos os pilares.
+    - **Validação de Compilação Impecável**: Execução de `npx tsc --noEmit` e `npm run build` bem-sucedidos em 100% com 0 erros, garantindo máxima estabilidade de código e excelente integridade arquitetural.
+- **Benefício**: Experiência de jogo incrivelmente rica, fluida e imersiva. A interação com as bolhas se tornou um minigame extremamente satisfatório de autoconhecimento que engaja e ensina o usuário sobre o equilíbrio de sua vida.
+    - **Identificação Visual Dinâmica das Bolhas**:
+        - **Bolhas Positivas**: Envolvidas em um lindo gradiente radial esmeralda-verde (`rgba(34, 197, 94, 0.45)`) com borda sólida de `2px` contrastada (`rgba(34, 197, 94, 0.65)`) e brilho interno (inset shadow) que destaca a bolha instantaneamente na tela.
+        - **Bolhas Negativas**: Envolvidas em um vibrante gradiente radial carmesim-vermelho (`rgba(239, 68, 68, 0.45)`) com borda sólida de `2px` (`rgba(239, 68, 68, 0.65)`) e brilho avermelhado pulsante, facilitando a rápida identificação visual de ameaças à vida e hábitos.
+        - **Rótulos Legíveis (Text Labels)**: Forçamos a renderização de textos de ação nítidos em fonte `Outfit` com cor branca pura (`#ffffff`) e sombreamento profundo para que o jogador consiga ler com facilidade palavras complexas como "Fast-food" ou "Meditação" em vez de apenas ver ícones genéricos.
+    - **Falas Passivo-Agressivas de Equilíbrio**:
+        - Mapeamos um conjunto super rico de diálogos passivos-agressivos baseados em cada um dos 5 pilares do Ploc (Corpo, Mente, Vida, Liberdade, Propósito).
+        - Quando o usuário clica e estoura uma bolha, o Ploc comenta especificamente de acordo com o pilar clicado e se o pilar é positivo ou negativo.
+        - O roteiro de falas ativamente incentiva o equilíbrio, mostrando o benefício do pilar, mas alertando que o excesso de foco nele arruína todos os outros pilares (ex: " shape de ouro com mente esgotada e sem liberdade financeira é só uma carcaça bonita no vazio!").
+
+---
+
 > "O design não é apenas o que se vê, mas como ele funciona por trás das cortinas." 🕵️‍♂️🚀
 
 

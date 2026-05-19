@@ -1,55 +1,39 @@
 import { Activity, Brain, Heart, Bird, Flag } from 'lucide-react';
 
-export const getBubbleWordColor = (word: string): string => {
-  const wordUpper = word.toUpperCase().trim();
-  if (wordUpper.startsWith('S')) {
-    const num = parseInt(wordUpper.substring(1));
-    if (!isNaN(num)) {
-      const index = (num - 1) % 5;
-      const colors = ['#ef4444', '#38bdf8', '#facc15', '#2dd4bf', '#c084fc'];
-      return colors[index];
-    }
-  } else if (wordUpper.startsWith('N')) {
-    const num = parseInt(wordUpper.substring(1));
-    if (!isNaN(num)) {
-      const cleanNum = ((num - 1) % 10) % 5;
-      const colors = ['#ef4444', '#38bdf8', '#facc15', '#2dd4bf', '#c084fc'];
-      return colors[cleanNum];
-    }
-  }
-  return 'rgba(255, 255, 255, 0.85)';
+// Mapeamento elegante de cores vibrantes e harmônicas para cada pilar do Ploc
+const PILLAR_COLORS: Record<string, string> = {
+  corpo: '#10b981',      // Emerald
+  mente: '#3b82f6',      // Blue
+  vida: '#ec4899',       // Pink/Rose/Violet
+  liberdade: '#06b6d4',  // Cyan/Teal
+  proposito: '#8b5cf6'   // Violet/Purple
 };
 
-export const getBubbleIcon = (word: string) => {
-  const wordUpper = word.toUpperCase().trim();
-  let index = -1;
-  if (wordUpper.startsWith('S')) {
-    const num = parseInt(wordUpper.substring(1));
-    if (!isNaN(num)) {
-      index = (num - 1) % 5;
-    }
-  } else if (wordUpper.startsWith('N')) {
-    const num = parseInt(wordUpper.substring(1));
-    if (!isNaN(num)) {
-      index = ((num - 1) % 10) % 5;
-    }
+const PILLAR_ICONS: Record<string, any> = {
+  corpo: Activity,
+  mente: Brain,
+  vida: Heart,
+  liberdade: Bird,
+  proposito: Flag
+};
+
+export const getBubbleWordColor = (word: string, pillar?: string): string => {
+  if (pillar && PILLAR_COLORS[pillar]) {
+    return PILLAR_COLORS[pillar];
   }
-  const icons = [Activity, Brain, Heart, Bird, Flag];
-  if (index >= 0 && index < icons.length) {
-    return icons[index];
+  return 'rgba(255, 255, 255, 0.9)';
+};
+
+export const getBubbleIcon = (word: string, pillar?: string) => {
+  if (pillar && PILLAR_ICONS[pillar]) {
+    return PILLAR_ICONS[pillar];
   }
   return null;
 };
 
-export const getDecorIcon = (word: string) => {
-  const wordLower = word.toLowerCase().trim();
-  if (wordLower.startsWith('d')) {
-    const num = parseInt(wordLower.substring(1));
-    if (!isNaN(num)) {
-      const index = (num - 1) % 5;
-      const icons = [Activity, Brain, Heart, Bird, Flag];
-      return icons[index];
-    }
+export const getDecorIcon = (word: string, pillar?: string) => {
+  if (pillar && PILLAR_ICONS[pillar]) {
+    return PILLAR_ICONS[pillar];
   }
   return null;
 };

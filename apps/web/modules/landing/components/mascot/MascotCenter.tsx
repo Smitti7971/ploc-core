@@ -11,6 +11,9 @@ export function MascotCenter() {
   const [isEntering, setIsEntering] = useState(true);
   const [poppedLetters, setPoppedLetters] = useState<number[]>([]);
 
+  const popTimeoutsRef = React.useRef<NodeJS.Timeout[]>([]);
+  const isManualPopRef = React.useRef(false);
+
   // Gera uma ordem aleatória de surgimento estável para as 4 letras [0, 1, 2, 3] no mount
   // Garante que o index do primeiro a nascer (spawnOrder[0]) seja sempre maior que o do último (spawnOrder[3])
   const spawnOrder = useMemo(() => {
@@ -24,9 +27,20 @@ export function MascotCenter() {
     return order;
   }, []);
 
-  const popBubble = (i: number) => {
+  const popBubble = (i: number, isManual = false) => {
+    if (isManual) {
+      isManualPopRef.current = true;
+      popTimeoutsRef.current.forEach(clearTimeout);
+      popTimeoutsRef.current = [];
+    }
     setPoppedLetters(prev => prev.includes(i) ? prev : [...prev, i]);
   };
+
+  useEffect(() => {
+    if (poppedLetters.length === 4 && isManualPopRef.current) {
+      blackboardEventBus.emit('TITLE_BUBBLES_POPPED');
+    }
+  }, [poppedLetters]);
 
   useEffect(() => {
     const unsub = blackboardEventBus.subscribe('OPEN_LANDING_CHAT', (open: boolean) => {
@@ -50,11 +64,12 @@ export function MascotCenter() {
       setTimeout(() => popBubble(shuffled[2]), 9300),
       setTimeout(() => popBubble(shuffled[3]), 9700),
     ];
+    popTimeoutsRef.current = popTimeouts;
 
     return () => {
       unsub();
       clearTimeout(wakeTimeout);
-      popTimeouts.forEach(clearTimeout);
+      popTimeoutsRef.current.forEach(clearTimeout);
     };
   }, []);
 
@@ -74,7 +89,7 @@ export function MascotCenter() {
               index={i}
               seqIndex={spawnOrder.indexOf(i)}
               isPopped={poppedLetters.includes(i)}
-              onClick={() => popBubble(i)}
+              onClick={() => popBubble(i, true)}
             />
           ))}
         </div>

@@ -13,6 +13,7 @@ interface PillarsControlGroupProps {
   attributes: any;
   onToggleTooltip: (pillarKey: string) => void;
   onChangeDensity: (newDensity: 'none' | 'low' | 'medium' | 'high') => void;
+  onboardingStage?: string;
 }
 
 export default function PillarsControlGroup({
@@ -21,8 +22,13 @@ export default function PillarsControlGroup({
   activeTooltip,
   attributes,
   onToggleTooltip,
-  onChangeDensity
+  onChangeDensity,
+  onboardingStage
 }: PillarsControlGroupProps) {
+  const showHUD = gameMode !== 'onboarding_game' || onboardingStage === 'fase2';
+
+  if (!showHUD) return null;
+
   return (
     <div className="absolute bottom-6 right-6 pointer-events-auto z-100 flex flex-col items-center gap-3">
       {/* Atributos Fixos da Landing Page (Acima do controle de bolhas) */}

@@ -20,6 +20,7 @@ import { attributeEngine } from '@/modules/blackboard/engine/attribute-engine/At
 import { blackboardEventBus, BLACKBOARD_EVENTS } from '@/modules/blackboard/events/eventBus';
 import { getHasUserInteracted } from './usePlocSpeech';
 import { triggerAchievementUnlock } from './achievements';
+import { MASCOT_COLLISION_PHRASES } from './plocPhrases';
 
 interface UsePlocStateOptions {
   emotion?: string;
@@ -37,7 +38,7 @@ if (typeof window !== 'undefined') {
         sharedMascotAudioCtx = new AudioContextClass();
       }
       if (sharedMascotAudioCtx && sharedMascotAudioCtx.state === 'suspended') {
-        sharedMascotAudioCtx.resume().catch(() => {});
+        sharedMascotAudioCtx.resume().catch(() => { });
       }
     } catch (e) {
       console.warn('Failed to pre-initialize sharedMascotAudioCtx:', e);
@@ -227,7 +228,7 @@ export function usePlocState({ emotion, speak }: UsePlocStateOptions = {}) {
     setPlocState(prev => ({ ...prev, isHurt: true }));
     playCuteVocalSound('hurt'); // Foley complementar fofo
     if (speak) {
-      speak("aiii! 🤕", 1500);
+      speak("pare de me jogar de um lado para o outro! ", 1500);
     }
     setTimeout(() => {
       setPlocState(prev => ({ ...prev, isHurt: false }));
@@ -286,24 +287,14 @@ export function usePlocState({ emotion, speak }: UsePlocStateOptions = {}) {
       if (isThresholdReached) {
         playCuteVocalSound('annoyed');
         if (speak) {
-          const phrases = [
-            "CARA, tô meditando aqui, não consegue estourar essas bolhas pra mim?",
-            "Ei! Assim você me desconcentra! Tira essas bolhas daqui!",
-            "Socorro! Alguém me salva desse ataque de sabão!",
-            "Não dá pra focar com essas bolhas batendo em mim! Me ajuda!"
-          ];
-          speak(phrases[Math.floor(Math.random() * phrases.length)], 5000);
+          const arr = MASCOT_COLLISION_PHRASES.annoyed;
+          speak(arr[Math.floor(Math.random() * arr.length)], 5000);
         }
       } else {
         playCuteVocalSound('sigh');
         if (speak) {
-          const phrases = [
-            "Putz... essa bolha negativa tirou pontos de todos os nossos atributos!",
-            "Poxa, perdemos pontos de equilíbrio! Fique longe das bolhas negativas!",
-            "Que droga, fomos atingidos! Nosso equilíbrio caiu um pouco!",
-            "Cuidado, essas bolhas negativas tiram o nosso foco e nossos pontos!"
-          ];
-          speak(phrases[Math.floor(Math.random() * phrases.length)], 4000);
+          const arr = MASCOT_COLLISION_PHRASES.negativeHit;
+          speak(arr[Math.floor(Math.random() * arr.length)], 4000);
         }
       }
     } else if (isPositive) {
@@ -315,7 +306,7 @@ export function usePlocState({ emotion, speak }: UsePlocStateOptions = {}) {
       } else if (wordUpper.startsWith('N')) {
         pillarIndex = ((num - 1) % 10) % 5;
       }
-      
+
       const pillars: Array<'corpo' | 'mente' | 'vida' | 'liberdade' | 'proposito'> = ['corpo', 'mente', 'vida', 'liberdade', 'proposito'];
       const targetPillar = pillarIndex >= 0 && pillarIndex < pillars.length ? pillars[pillarIndex] : null;
       const currentVal = targetPillar ? attributeEngine.getAttributes()[targetPillar] : 0;
@@ -336,21 +327,11 @@ export function usePlocState({ emotion, speak }: UsePlocStateOptions = {}) {
       playCuteVocalSound('success');
       if (speak) {
         if (isCaboDeGuerra) {
-          const phrases = [
-            "Puts, focou muito em uma coisa e acabou tirando de outra! Foque em outras coisas para equilibrar!",
-            "Ganhamos de um lado, mas perdemos do outro! Lembre-se de balancear os atributos!",
-            "Foco excessivo desgasta outros pilares! Tente espalhar mais os seus pontos!",
-            "Cuidado, focar apenas em um pilar faz outro decair. Tente focar em outras coisas!"
-          ];
-          speak(phrases[Math.floor(Math.random() * phrases.length)], 5000);
+          const arr = MASCOT_COLLISION_PHRASES.caboDeGuerra;
+          speak(arr[Math.floor(Math.random() * arr.length)], 5000);
         } else {
-          const phrases = [
-            "Nossa, adorei essa bolha!",
-            "Hum, que energia boa!",
-            "Essa me fez muito bem!",
-            "Oba, ponto pra mim!"
-          ];
-          speak(phrases[Math.floor(Math.random() * phrases.length)], 2000);
+          const arr = MASCOT_COLLISION_PHRASES.positiveSuccess;
+          speak(arr[Math.floor(Math.random() * arr.length)], 2000);
         }
       }
     }
@@ -624,14 +605,14 @@ export function usePlocState({ emotion, speak }: UsePlocStateOptions = {}) {
       const nextClicks = plocState.angerClicks + 1;
 
       // Se atingir ou passar de 14 cliques, entra na lógica de aviso/confirmação
-      if (nextClicks >= 14) {
+      if (nextClicks >= 5) {
         if (!isWarningRef.current) {
           isWarningRef.current = true;
           playCuteVocalSound('annoyed');
           if (speak) {
-            speak("Ei, para com isso! Se me clicar mais uma vez, vou ficar irritado! 😠", 3500);
+            speak("Mania besta de ficar tocando nos outros! Pare com isso!", 3500);
           }
-          
+
           setPlocState(prev => {
             localStorage.setItem('ploc_anger_clicks', '14');
             return {
@@ -663,7 +644,7 @@ export function usePlocState({ emotion, speak }: UsePlocStateOptions = {}) {
 
           playCuteVocalSound('annoyed');
           if (speak) {
-            speak("Eu avisei! Agora estou chateado! 😠", 3000);
+            speak("Essa sua mania de ficar cutucando as coisas, nào te levam a lugar algum, já pensou em ser menos irritante? ! ", 3000);
           }
           triggerAchievementUnlock('paciencia_jo');
 
@@ -699,13 +680,13 @@ export function usePlocState({ emotion, speak }: UsePlocStateOptions = {}) {
     setPlocState(prev => {
       const nextClicks = prev.angerClicks + 1;
       const currentConfig = ANGER_LEVELS[prev.angerLevel];
-      
+
       localStorage.setItem('ploc_anger_clicks', nextClicks.toString());
 
       if (nextClicks >= currentConfig.clicksNeeded) {
         const nextLevel = Math.min(prev.angerLevel + 1, 5);
         localStorage.setItem('ploc_anger_level', nextLevel.toString());
-        
+
         const isLvl5 = nextLevel === 5;
         const nextLevelClicks = isLvl5 ? 0 : ANGER_LEVELS[nextLevel].clicksNeeded * 0.5; // Inicia em 50%
         localStorage.setItem('ploc_anger_clicks', nextLevelClicks.toString());

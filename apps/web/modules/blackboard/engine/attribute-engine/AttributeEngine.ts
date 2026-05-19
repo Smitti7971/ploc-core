@@ -115,28 +115,38 @@ class AttributeEngine {
       return; // Ignore absolutely all attribute changes in decor mode!
     }
 
-    let pillar: keyof UserAttributes | null = null;
-    let diff = 1;
-
-    // Fallback/Parsing automático baseado no padrão do jogo (S1..S10, n1..n20)
-    const word = (bubble.word || '').toUpperCase().trim();
-    if (word.startsWith('S')) {
-      const num = parseInt(word.substring(1));
-      if (!isNaN(num) && num >= 1 && num <= 10) {
-        const pillars: Array<keyof UserAttributes> = ['corpo', 'mente', 'vida', 'liberdade', 'proposito'];
-        pillar = pillars[(num - 1) % 5];
-        diff = num <= 5 ? 2 : -2;
-      }
-    } else if (word.startsWith('N')) {
-      const num = parseInt(word.substring(1));
-      if (!isNaN(num) && num >= 1 && num <= 20) {
-        const pillars: Array<keyof UserAttributes> = ['corpo', 'mente', 'vida', 'liberdade', 'proposito'];
-        pillar = pillars[((num - 1) % 10) % 5];
-        diff = num <= 10 ? 1 : -1;
+    // Desativa pontuação e alterações de atributos durante a Fase 1 do Onboarding
+    if (gameMode === 'onboarding_game') {
+      const activeStage = typeof window !== 'undefined' ? localStorage.getItem('ploc_onboarding_stage') || 'priority' : 'priority';
+      if (activeStage !== 'fase2') {
+        return;
       }
     }
 
-    // Se tiver metadados explícitos, utilize-os com prioridade
+    // ── 1. SE A BOLHA POSSUI EFEITOS MULTIDIMENSIONAIS (FASE 2) ──
+    if (bubble.impacts) {
+      const impacts = bubble.impacts;
+      const pillarsList: Array<keyof UserAttributes> = ['corpo', 'mente', 'vida', 'liberdade', 'proposito'];
+      pillarsList.forEach(p => {
+        const val = impacts[p] || 0;
+        if (val !== 0) {
+          this.attributes[p] = Math.max(0, Math.min(10, this.attributes[p] + val));
+          blackboardEventBus.emit(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, {
+            pillar: p,
+            value: this.attributes[p],
+            diff: val
+          });
+        }
+      });
+      this.save();
+      return;
+    }
+
+    // ── 2. SE NÃO POSSUI IMPACTS (FASE 1 OU OUTROS CASOS) ──
+    let pillar: keyof UserAttributes | null = bubble.pillar || null;
+    let diff = typeof bubble.points === 'number' ? bubble.points : 1;
+
+    // Fallback de metadados
     if (bubble.metadata?.pillar) {
       pillar = bubble.metadata.pillar;
     }
@@ -145,99 +155,18 @@ class AttributeEngine {
     }
 
     if (pillar) {
-
-      if (gameMode === 'onboarding_game') {
-        const attributes = this.attributes;
-        const values = [attributes.corpo, attributes.mente, attributes.vida, attributes.liberdade, attributes.proposito];
-        const maxVal = Math.max(...values);
-        const minVal = Math.min(...values);
-        const isBalanced = (maxVal - minVal) <= 1;
-
-        const pillars: Array<keyof UserAttributes> = ['corpo', 'mente', 'vida', 'liberdade', 'proposito'];
-
-        // 1. SE FOR NEGATIVA: Apenas subtrai do pilar alvo, sem punição geral!
-        if (diff < 0) {
-          this.attributes[pillar] = Math.max(0, this.attributes[pillar] + diff);
-          this.save();
-          blackboardEventBus.emit(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, {
-            pillar,
-            value: this.attributes[pillar],
-            diff
-          });
-          return;
-        }
-
-        // 2. SE NÃO ESTIVER EQUILIBRADO (sabemos que diff > 0 aqui):
-        if (!isBalanced) {
-          // Se eles estão estourando uma bolha positiva de um pilar que já é o maior de todos (aumentando o desequilíbrio), pune!
-          if (attributes[pillar] === maxVal) {
-            // PUNISHMENT: Lose -1 in all attributes!
-            pillars.forEach(p => {
-              this.attributes[p] = Math.max(0, this.attributes[p] - 1);
-            });
-            this.save();
-            // Emit events
-            pillars.forEach(p => {
-              blackboardEventBus.emit(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, {
-                pillar: p,
-                value: this.attributes[p],
-                diff: -1
-              });
-            });
-            // Dispatch custom event for Ploc reaction
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(new CustomEvent('ploc_unbalanced_pop'));
-            }
-            return;
-          }
-
-          // Se eles estão estourando uma bolha positiva de um atributo menor para tentar reequilibrar (catch-up):
-          this.attributes[pillar] = Math.min(10, this.attributes[pillar] + diff);
-          this.save();
-          blackboardEventBus.emit(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, {
-            pillar,
-            value: this.attributes[pillar],
-            diff
-          });
-          return;
-        }
-
-        // 3. SE ESTIVER EQUILIBRADO (sabemos que diff > 0 aqui):
-        this.attributes[pillar] = Math.min(10, this.attributes[pillar] + diff);
-        this.save();
-        blackboardEventBus.emit(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, {
-          pillar,
-          value: this.attributes[pillar],
-          diff
-        });
-        return;
-      }
-
-      // Recompensa de Foco normal fora do modo onboarding
-      this.updateAttribute(pillar, diff);
-      this.updateScore(Math.abs(diff) * 10);
+      this.attributes[pillar] = Math.max(0, Math.min(10, this.attributes[pillar] + diff));
+      this.save();
+      blackboardEventBus.emit(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, {
+        pillar,
+        value: this.attributes[pillar],
+        diff
+      });
       return;
     }
 
-    // Recompensa genérica para bolhas legadas
+    // Recompensa genérica
     this.updateScore(10);
-    if (bubble.metadata?.rewardAttribute) {
-      this.updateAttribute(bubble.metadata.rewardAttribute, 2);
-      return;
-    }
-
-    if (bubble.type === 'routine') {
-      const habit = bubble.metadata?.habit;
-      if (habit === 'smoking') {
-        this.updateAttribute('corpo', 5);
-        this.updateAttribute('liberdade', 3);
-      } else {
-        this.updateAttribute('mente', 2);
-        this.updateAttribute('corpo', 2);
-      }
-    } else {
-      this.updateAttribute('mente', 1);
-    }
   }
 
   private processTimeout(bubble: any) {
