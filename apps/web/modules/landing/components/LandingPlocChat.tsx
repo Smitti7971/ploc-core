@@ -35,11 +35,7 @@ export default function LandingPlocChat({ isOpen }: LandingPlocChatProps) {
         >
           <form
             onSubmit={handleSubmit}
-            className="flex items-center gap-2 p-2 rounded-[25px] border border-white/10 backdrop-blur-md relative overflow-hidden transition-all duration-300"
-            style={{
-              background: 'radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 60%, rgba(255, 255, 255, 0) 100%)',
-              boxShadow: '0 15px 35px rgba(0,0,0,0.3), inset 0 0 15px rgba(255,255,255,0.02)'
-            }}
+            className="flex items-center gap-2 p-2 rounded-[25px] border border-white/10 backdrop-blur-md relative overflow-hidden transition-all duration-300 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.02)_60%,transparent_100%)] shadow-[0_15px_35px_rgba(0,0,0,0.3),inset_0_0_15px_rgba(255,255,255,0.02)]"
           >
             {/* Brilho Especular Curvo Interno */}
             <div className="absolute top-[8%] left-[8%] w-[20%] h-[30%] rounded-full bg-gradient-to-br from-white/20 to-transparent blur-[1px] pointer-events-none" />
@@ -49,8 +45,7 @@ export default function LandingPlocChat({ isOpen }: LandingPlocChatProps) {
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="Pergunte algo ou diga como está seu dia..."
-              className="flex-1 bg-transparent border-none outline-none text-white text-[0.85rem] placeholder:text-white/45 px-4 h-10 font-bold w-full"
-              style={{ fontFamily: 'Outfit, sans-serif' }}
+              className="flex-1 bg-transparent border-none outline-none text-white text-[0.85rem] placeholder:text-white/45 px-4 h-10 font-bold w-full font-outfit"
             />
             <motion.button
               whileHover={{ scale: 1.08 }}

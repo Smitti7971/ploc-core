@@ -115,12 +115,26 @@ class AttributeEngine {
       return; // Ignore absolutely all attribute changes in decor mode!
     }
 
-    // Desativa pontuação e alterações de atributos durante a Fase 1 do Onboarding
-    if (gameMode === 'onboarding_game') {
-      const activeStage = typeof window !== 'undefined' ? localStorage.getItem('ploc_onboarding_stage') || 'priority' : 'priority';
-      if (activeStage !== 'fase2') {
-        return;
+    const activeStage = typeof window !== 'undefined' ? localStorage.getItem('ploc_onboarding_stage') || 'priority' : 'priority';
+    const isOnboardingPhase1 = gameMode === 'onboarding_game' && activeStage !== 'fase2';
+
+    // Se for Onboarding Fase 1, computamos de forma segura de 1 em 1 ponto
+    if (isOnboardingPhase1) {
+      let pillar: keyof UserAttributes | null = bubble.pillar || null;
+      // Forçamos o valor do ponto para no máximo 1 (positivo ou negativo)
+      let diff = bubble.value === 'negative' ? -1 : 1;
+
+      if (pillar) {
+        // Aplica o ponto com limite estrito de 0 a 10
+        this.attributes[pillar] = Math.max(0, Math.min(10, this.attributes[pillar] + diff));
+        this.save();
+        blackboardEventBus.emit(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, {
+          pillar,
+          value: this.attributes[pillar],
+          diff
+        });
       }
+      return;
     }
 
     // ── 1. SE A BOLHA POSSUI EFEITOS MULTIDIMENSIONAIS (FASE 2) ──

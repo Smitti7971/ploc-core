@@ -9,7 +9,7 @@ export const PILLAR_EXPLANATIONS: Record<string, string> = {
 export const PASSIVE_AGGRESSIVE_QUOTES: Record<string, { positive: string[], negative: string[] }> = {
   corpo: {
     positive: [
-      "Ah, o Corpo! Excelente estourar essa bolha. Mas lembre-se: passar 5 horas na academia todo dia atrofia sua 'Mente' e te rouba tempo precioso de 'Vida' social ou 'Liberdade' financeira. O shape dos sonhos não adianta de nada se a cabeça estiver vazia, né? Equilíbrio, tá?",
+      "Ah, o Corpo! você deve ser forte ou quer ser, bom para começar... mas é um tanto pragmatico focar só no físico, né?",
       "Cuidar do físico é muito bom! Mas quem foca obsessivamente em treinar e comer limpo muitas vezes esquece de viver, trabalhar ou descansar a cabeça. Se virar neurose, seu pilar 'Vida' vai pro ralo. Vigia!",
       "Que lindo, focando no físico! Mas lembre-se: um corpo sarado com uma mente esgotada e zero de liberdade financeira é só uma carcaça bonita flutuando no vazio. A regra de ouro é o equilíbrio!"
     ],
@@ -21,7 +21,7 @@ export const PASSIVE_AGGRESSIVE_QUOTES: Record<string, { positive: string[], neg
   },
   mente: {
     positive: [
-      "Estourou 'Mente'! Meditar, ler... ótimo. Mas se você ficar só lendo livros e meditando no topo da montanha sem agir de verdade, sua 'Liberdade' financeira zera e seu 'Corpo' atrofia. Monge sem boleto pago não dura um mês!",
+      "Mente é o pilar que todos precisam dar atenção, ele trás inúmeros benefícios, ",
       "Silenciar o ruído mental é essencial. Mas cuidado para não se isolar do mundo real sob a desculpa de 'proteger sua saúde mental'. Focar demais na Mente e ignorar a 'Vida' (amigos/família) te deixa sozinho no silêncio.",
       "Mente afiada! Mas um cérebro genial preso em um corpo doente e sedentário, com zero diversão, é receita certa para o colapso. O segredo não é ser o mais inteligente, é ter harmonia!"
     ],
@@ -33,7 +33,7 @@ export const PASSIVE_AGGRESSIVE_QUOTES: Record<string, { positive: string[], neg
   },
   vida: {
     positive: [
-      "Viu só? Essa bolha representa a Vida (amigos, lazer). Mas focar demais na Vida e em diversão sem limites faz você esquecer do 'Propósito' e da 'Liberdade' de construir algo real. Foco excessivo em diversão é só fuga. A regra é Equilíbrio, sacou?",
+      "Vida! engloba uma série de momentos marcantes... conexões... lazer... e até vícios, realmente é muito bom para começar!",
       "Lazer é fantástico! Mas viver de férias perpétuas sem trabalhar seu 'Propósito' ou cuidar do seu 'Corpo' só acumula boletos. A vida vira um vazio hedonista se não tiver equilíbrio e responsabilidade.",
       "Amigos e diversão recarregam as energias! Mas se sua vida for só festa e você não cultivar sua 'Mente' ou sua 'Liberdade' financeira, você vai acabar quebrado e estressado. Curta com equilíbrio!"
     ],
@@ -45,7 +45,7 @@ export const PASSIVE_AGGRESSIVE_QUOTES: Record<string, { positive: string[], neg
   },
   liberdade: {
     positive: [
-      "Liberdade! Dinheiro, autonomia... sensacional. Mas focar obcecadamente em acumular grana e economizar cada centavo destrói sua 'Vida' social e enche sua 'Mente' de paranoia. Do que adianta ser o mais rico do cemitério se não viveu?",
+      "Liberdade é algo meio complexo, aqui centraliza aspectos como finanças e tempo livre.. ou a falta disso também, boa pedida para começar!",
       "Quer ser livre e independente financeiramente? Lindo. Mas se para ter 'Liberdade' você trabalhar 18 horas por dia sem parar, seu 'Corpo' pifa e sua 'Vida' afetiva some. A busca pela liberdade virou a sua própria prisão?",
       "Dinheiro traz autonomia, sim. Mas acumular recursos sem um 'Propósito' real ou sem saúde no 'Corpo' é inútil. Não seja um prisioneiro do próprio cofre, equilibre sua liberdade!"
     ],
@@ -57,7 +57,7 @@ export const PASSIVE_AGGRESSIVE_QUOTES: Record<string, { positive: string[], neg
   },
   proposito: {
     positive: [
-      "Propósito! Missão, sonhos, carreira... inspirador. Mas quem vive apenas para o trabalho e a missão acaba sacrificando a 'Vida' familiar e destruindo o 'Corpo' com estresse crônico. O cemitério está cheio de pessoas insubstituíveis que morreram de burnout!",
+      "Propósito é o pilar mais complexo, tão importante que sem ele todos os outros pilares acabam por desmoronar aos poucos, quero muito saber o que você pensa sobre isso!",
       "Ter um norte é essencial para caminhar. Mas se você ficar tão obcecado com seu 'Propósito' a ponto de ignorar o lazer da 'Vida' e a paz da sua 'Mente', você vai surtar antes de chegar lá. A jornada precisa de equilíbrio!",
       "Trabalhar com amor é lindo. Mas se você foca 100% no Propósito e zera o tempo com quem ama ('Vida') ou destrói seu 'Corpo' com insônia, sua grande missão virou sua ruína. Equilibre-se!"
     ],
@@ -98,10 +98,10 @@ export const MASCOT_COLLISION_PHRASES = {
 
 export const ONBOARDING_DIALOGUES = {
   intro: [
-    "Veio aqui me dar desculpinhas né?",
+    "Dias frios me deixam com frio, não esqueça de colocar uma blusa em mim, nào quero ficar resfriado!",
     "Não quero nem te ouvir, eu sei que você não cuida nem de você, por que acha que vai cuidar de mim?",
     "CHEGA! Vamos fazer algo produtivo. Quero te conhecer de verdade antes de te dar conselhos. Vamos iniciar o nosso Diagnóstico de Vida (Fase 1)!",
-    "Para começarmos, soltei 5 bolhas flutuando acima da minha cabeça, cada uma representando um pilar. Estoure o pilar que você considera de MAIOR IMPORTÂNCIA na sua vida hoje para dar início ao jogo!"
+    "OK, vamos começar esse teste, fiz 5 bolhas aparecerem na tela, cada uma representa um pilar da vida, escolha sabiamente qual é o seu foco hoje, daí, iniciaremos o teste!"
   ],
   phase1Corpo: [
     "Excelente! Definimos a prioridade. Agora, vamos analisar o pilar do CORPO. Soltei bolhas com hábitos do seu cotidiano.",
@@ -136,14 +136,14 @@ export const ONBOARDING_DIALOGUES = {
     "Você acha que tem total controle da sua rotina atual, né? Te desafio a provar! Vamos ver se você aguenta o nosso Diagnóstico?"
   ],
   clickMascots: [
-    "Você me chamou, estou aqui para ajudar, mas só se você quiser ajuda, me diga... você sabe onde está? sua realidade? Tem uma bolha amiga minha que disse, Só sabe pra onde vai, quem sabe onde está!",
-    "Cutucando um ser gelatinoso virtual? Isso diz muito sobre sua rotina... Já pensou em direcionar esse foco para entender sua própria vida? Vamos fazer esse teste rápido de autoconhecimento!",
-    "Oi! Sabia que cada clique seu é tempo que não volta? Se quer mesmo gastar tempo comigo, que tal fazer isso valer a pena com o nosso teste de equilíbrio?",
-    "Estou aqui flutuando e observando... a maioria das pessoas corre sem direção. Você sabe onde está pisando hoje? Tenho uma proposta de diagnóstico pra você!"
+    "Aqui eu preciso fazer alguma piadinha sobre você me tocar, e a bolha verde vai subir... que massa isso né?",
+    "Mania feia de cutucar os outros, isso me mostra muito de você! Olha essa bolha verde subindo, que legal né?",
+    "Cliques Cliques e mais cliques... já que quer clicar em bolhas, clique nessa verde para vermos",
+    "Aqui estava tão vazio, que bom que você chegou! posso te conhecer? "
   ],
-  bullyingQuote: "Olha que interessante, muitas pessoas não se importam com detalhes, já vejo que você pensa fora da caixa... mas não gostei de ver você estourando meu nome, isso é bullying sabia?",
+  bullyingQuote: "Mizericordia! estourou meu nome, né? Fala sério, isso é bullying...! brincadeira! só por curiosidade, as pessoas não fazem isso, já gostei de você, você meio que pensa fora da caixa!",
   ignoreQuotes: [
-    "Olha as pessoas tem total controle do que elas podem fazer, assim como você, e por isso quero perguntar... faz sentido fazer coisas sem sentido? por exemplo... estourar bolhas sem conhecelas?",
-    "Olha, o que estou te oferecendo não é algo simples eu sei, mas o complexo só é complexo até você entender, depois disso... tudo fica fácil, pare de estourar bolhas sem proposito..."
+    "Olha lá, estourou mais uma bolha, parece divertido, mas se eu fizer, pode ser considerado assassinato, pode deixar, nào vou te julgar, o juiz que vai! ha ha ha ha",
+    "Olha, o que estou te oferecendo não é algo simples eu sei, mas o complexo só é complexo até você entender, depois disso... tudo fica fácil, pare de estourar bolhas sem propósito..."
   ]
 };

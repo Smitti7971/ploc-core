@@ -84,14 +84,20 @@ export function useBubbleState() {
     setDensity(newDensity);
   };
 
-  // Lógica de cálculo de bolhas ativas para o render loop contínuo
-  const getActiveConcepts = (): BubbleConcept[] => {
+  // Estabilização do estado de activeConcepts usando useEffect
+  const [activeConcepts, setActiveConcepts] = useState<BubbleConcept[]>([]);
+
+  useEffect(() => {
+    if (!isMounted) return;
+
     if (density === 'none') {
-      return [];
+      setActiveConcepts([]);
+      return;
     }
 
-    const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
-    const poolSize = Math.max(12, Math.floor(viewportHeight / 70));
+    const viewportHeight = window.innerHeight;
+    const isPhase1 = ['corpo', 'mente', 'vida', 'liberdade', 'proposito'].includes(onboardingStage);
+    const poolSize = isPhase1 ? 5 : Math.max(12, Math.floor(viewportHeight / 70));
 
     // ── MODO DECORATIVO ──
     if (gameMode === 'decor') {
@@ -113,7 +119,7 @@ export function useBubbleState() {
       if (showStartGameBubble) {
         repeated.push({
           id: 'trigger-onboarding-bubble',
-          word: 'Autoconhecimento',
+          word: 'Começar o Teste',
           pillar: 'corpo',
           ref: 'trigger_onboarding',
           label: 'Iniciar Autoconhecimento',
@@ -130,32 +136,44 @@ export function useBubbleState() {
         });
       }
 
-      return repeated;
+      setActiveConcepts(repeated);
+      return;
     }
 
     // ── MODO ONBOARDING ATIVO ──
     if (onboardingStage === 'priority') {
-      return PRIORITY_CONCEPTS;
+      setActiveConcepts(PRIORITY_CONCEPTS);
+      return;
     }
 
     if (['corpo', 'mente', 'vida', 'liberdade', 'proposito'].includes(onboardingStage)) {
       // Filtra apenas as bolhas do pilar ativo na Fase 1
       const filtered = PHASE1_BUBBLES.filter(b => b.pillar === onboardingStage);
-      const mapped = filtered.map((c, idx) => ({
+      
+      // Baralha os hábitos filtrados para garantir que venham itens diferentes sem repetição idêntica
+      const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+      
+      // Seleciona exatamente o número de bolhas configuradas (5)
+      const selected = shuffled.slice(0, poolSize);
+
+      // Posições horizontais e delays determinísticos perfeitamente distribuídos
+      const horizontalPositions = ['16%', '50%', '84%', '33%', '67%'];
+      const spawnDelays = [0, 3.0, 6.0, 9.0, 12.0];
+
+      const phase1Concepts = selected.map((c, i) => ({
         ...c,
-        id: `phase1-${onboardingStage}-${idx}`
+        id: `phase1-${onboardingStage}-${i}`,
+        left: horizontalPositions[i % horizontalPositions.length],
+        delay: spawnDelays[i % spawnDelays.length]
       })) as BubbleConcept[];
 
-      const repeated: BubbleConcept[] = [];
-      const len = mapped.length || 1;
-      for (let i = 0; i < poolSize; i++) {
-        const item = mapped[i % len];
-        repeated.push({
-          ...item,
-          id: `${item.id}-${i}`
-        });
-      }
-      return repeated;
+      setActiveConcepts(phase1Concepts);
+      return;
+    }
+
+    if (onboardingStage === 'results') {
+      setActiveConcepts([]);
+      return;
     }
 
     // ── FASE 2: SPAWN INTELIGENTE BASEADO NO HISTÓRICO DE ATRIBUTOS (WEIGHTED SPAWN) ──
@@ -196,10 +214,8 @@ export function useBubbleState() {
         });
       }
     }
-    return repeated;
-  };
-
-  const activeConcepts = getActiveConcepts();
+    setActiveConcepts(repeated);
+  }, [isMounted, gameMode, onboardingStage, density, showStartGameBubble]);
 
   return {
     isMounted,

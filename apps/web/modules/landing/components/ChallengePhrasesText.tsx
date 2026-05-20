@@ -8,11 +8,11 @@ interface ChallengePhrasesTextProps {
   phraseIndex: number;
 }
 
-const GRADIENT_MAP = {
-  blue: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)',
-  emerald: 'linear-gradient(135deg, #34d399 0%, #059669 100%)',
-  gold: 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)',
-  violet: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)'
+const TAILWIND_GRADIENTS = {
+  blue: 'bg-gradient-to-r from-sky-400 to-sky-600 bg-clip-text text-transparent',
+  emerald: 'bg-gradient-to-r from-emerald-400 to-emerald-600 bg-clip-text text-transparent',
+  gold: 'bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-transparent',
+  violet: 'bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent'
 };
 
 export default function ChallengePhrasesText({ phraseIndex }: ChallengePhrasesTextProps) {
@@ -29,23 +29,13 @@ export default function ChallengePhrasesText({ phraseIndex }: ChallengePhrasesTe
         animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
         exit={{ opacity: 0, y: -30, filter: 'blur(15px)' }}
         transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-        className="m-0 font-black text-[rgba(255,255,255,0.9)] tracking-[-2px] leading-none uppercase max-w-[850px] px-6 inline-block"
-        style={{
-          fontFamily: 'Outfit, sans-serif',
-          fontSize: 'clamp(2.2rem, 6.5vw, 4.2rem)',
-          textShadow: '0 4px 20px rgba(0,0,0,0.15)'
-        }}
+        className="m-0 font-black text-white/90 tracking-[-2px] leading-none uppercase max-w-[850px] px-6 inline-block font-outfit text-[clamp(2.2rem,6.5vw,4.2rem)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.15)]"
       >
         {parts.length > 1 ? (
           <>
             <span>{parts[0]}</span>
             <span
-              className="inline-block"
-              style={{
-                background: GRADIENT_MAP[phrase.color as keyof typeof GRADIENT_MAP] || GRADIENT_MAP.blue,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
-              }}
+              className={`inline-block ${TAILWIND_GRADIENTS[phrase.color as keyof typeof TAILWIND_GRADIENTS] || TAILWIND_GRADIENTS.blue}`}
             >
               {phrase.highlight}
             </span>

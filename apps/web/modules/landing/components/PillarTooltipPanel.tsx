@@ -40,8 +40,7 @@ export default function PillarTooltipPanel({ activeTooltip, attributes }: Pillar
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="inline-flex flex-col items-center bg-slate-900/45 backdrop-blur-md rounded-[20px] px-6 py-4 max-w-[540px] w-[90%] pointer-events-auto mt-[25px] z-20"
             style={{
-              border: `1.5px solid ${statusColor}35`,
-              boxShadow: '0 20px 40px rgba(0,0,0,0.35), inset 0 0 20px rgba(255,255,255,0.02)'
+              border: `1.5px solid ${statusColor}35`
             }}
           >
             <div className="flex items-center gap-2 mb-2">
@@ -53,15 +52,13 @@ export default function PillarTooltipPanel({ activeTooltip, attributes }: Pillar
                 }}
               />
               <h4
-                className="text-white m-0 text-base font-black tracking-[1.2px] uppercase"
-                style={{ fontFamily: 'Outfit, sans-serif' }}
+                className="text-white m-0 text-base font-black tracking-[1.2px] uppercase font-outfit"
               >
                 {config.label} <span style={{ color: statusColor }}>NÍVEL {value}/5</span>
               </h4>
             </div>
             <p
-              className="text-[0.85rem] text-white/75 m-0 text-center leading-relaxed"
-              style={{ fontFamily: 'Outfit, sans-serif' }}
+              className="text-[0.85rem] text-white/75 m-0 text-center leading-relaxed font-outfit"
             >
               {config.desc}
             </p>

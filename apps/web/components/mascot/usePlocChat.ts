@@ -89,15 +89,18 @@ export function usePlocChat() {
       const completed = localStorage.getItem('ploc_onboarding_completed') === 'true';
       const mode = localStorage.getItem('ploc_game_mode') as 'decor' | 'onboarding_game' | 'normal' || 'decor';
       const savedStage = localStorage.getItem('ploc_onboarding_stage') || 'priority';
+      const savedPopCount = parseInt(localStorage.getItem('ploc_phase1_pop_count') || '0', 10);
 
       if (isAuthenticated || completed) {
         setGameMode('normal');
         localStorage.setItem('ploc_game_mode', 'normal');
         setOnboardingStage('normal');
         setChatStage(3);
+        setPhase1PopCount(0);
       } else {
         setGameMode(mode);
         setOnboardingStage(savedStage);
+        setPhase1PopCount(savedPopCount);
         if (mode === 'onboarding_game') {
           setChatStage(2);
           attributeEngine.setDemoMode(true);
@@ -124,6 +127,13 @@ export function usePlocChat() {
     }
   }, [gameMode, onboardingStage]);
 
+  // Sincroniza phase1PopCount com o localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ploc_phase1_pop_count', phase1PopCount.toString());
+    }
+  }, [phase1PopCount]);
+
   // Limpa as chaves temporárias caso o usuário abandone o onboarding
   const cleanupGameStorage = () => {
     if (typeof window !== 'undefined') {
@@ -133,6 +143,7 @@ export function usePlocChat() {
       localStorage.removeItem('ploc_priority_pillar');
       localStorage.removeItem('ploc_pop_sequence');
       localStorage.removeItem('ploc_total_pops');
+      localStorage.removeItem('ploc_phase1_pop_count');
       // Restaura os atributos do demo para o valor padrão de diagnóstico
       attributeEngine.syncWithBackend({
         body: 5,
@@ -226,8 +237,9 @@ export function usePlocChat() {
         const nextCount = phase1PopCount + 1;
         setPhase1PopCount(nextCount);
 
-        if (nextCount >= 3) {
+        if (nextCount >= 5) {
           setPhase1PopCount(0);
+          localStorage.removeItem('ploc_phase1_pop_count');
           handleAdvanceOnboardingStage();
         }
         return;
@@ -607,6 +619,28 @@ export function usePlocChat() {
     return () => unsub();
   }, [handleSendMessage]);
 
+  // Escuta evento de saída do onboarding game
+  useEffect(() => {
+    const handleExit = () => {
+      cleanupGameStorage();
+      setGameMode('decor');
+      setOnboardingStage('priority');
+      setChatStage(0);
+      setChatMessages([]);
+      setIsChatOpen(false);
+      setShowChoiceButtons(false);
+      setShowPriorityConfirmButtons(false);
+      setTempSelectedPillar(null);
+      setPhase1PopCount(0);
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+
+    const unsub = blackboardEventBus.subscribe('EXIT_ONBOARDING_GAME', handleExit);
+    return () => unsub();
+  }, []);
+
   const handleOpenIntro = () => {
     if (!isChatOpen && !hasSpokenIntro) {
       setHasSpokenIntro(true);
@@ -713,7 +747,7 @@ export function usePlocChat() {
     setShowPriorityConfirmButtons(false);
     
     const pillarNameUpper = tempSelectedPillar.toUpperCase();
-    const nextSpeech = `Excelente escolha! Agora vamos analisar o pilar do ${pillarNameUpper}. Soltei bolhas com hábitos do seu cotidiano. Estoure 3 bolhas que representam coisas que você REALMENTE faz no seu dia a dia.`;
+    const nextSpeech = `Excelente escolha! Agora vamos analisar o pilar do ${pillarNameUpper}. Soltei bolhas com hábitos do seu cotidiano. Estoure 5 bolhas que representam coisas que você REALMENTE faz no seu dia a dia.`;
     
     setChatMessages(prev => [...prev, { sender: 'ploc', text: nextSpeech }]);
     speak(nextSpeech, 12000);

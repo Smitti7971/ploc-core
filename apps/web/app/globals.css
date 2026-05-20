@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+  --font-outfit: 'Outfit', sans-serif;
+}
+
 :root {
   /* Colors from Ploc Visual DNA */
   --ploc-primary: #087bad;
@@ -116,5 +120,10 @@ h1, h2, h3, h4, h5, h6 {
 .ploc-eye-blink {
   animation: ploc-eye-blink 4.2s infinite ease-in-out;
   transform-origin: center;
+}
+
+/* ── Chromium Backdrop-Filter transform prevention ── */
+.no-transform {
+  transform: none !important;
 }
 

@@ -25,6 +25,15 @@ export function PlocFace({
   isHit = false,
   isPositiveHit = false,
 }: PlocFaceProps) {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setIsMobile(window.innerWidth < 768);
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Variação de cores reativas baseadas no humor do Ploc (Azul Ploc vs Vermelho Ira/Dor)
   const isRed = isPissed || isHurt;
 
@@ -597,11 +606,11 @@ export function PlocFace({
       {!isSleeping && activeMouth !== 'none' && (
         <div style={{
           position: 'absolute',
-          bottom: '12%',
+          bottom: isMobile ? '6%' : '12%',
           left: '50%',
           transform: 'translateX(-50%)',
-          width: '54px',
-          height: '40px',
+          width: isMobile ? '36px' : '54px',
+          height: isMobile ? '28px' : '40px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

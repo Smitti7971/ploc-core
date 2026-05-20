@@ -136,9 +136,11 @@ export default function BlackboardPage() {
     });
 
     const unsubExplosion = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_EXPLODED, (bubble: any) => {
-      setPlocReaction('happy');
+      const isNegative = bubble && bubble.value === 'negative';
+      setPlocReaction(isNegative ? 'dizzy' : 'happy');
       if (bubble && typeof bubble.x === 'number') {
-        addWave(bubble.x, bubble.y, '#00ff88'); // Verde Neon Ultra
+        const color = isNegative ? '#ef4444' : '#00ff88'; // Vermelho para negativas, verde neon para positivas
+        addWave(bubble.x, bubble.y, color);
       }
       setTimeout(() => setPlocReaction('idle'), 1500);
     });

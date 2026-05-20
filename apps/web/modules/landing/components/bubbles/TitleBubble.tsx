@@ -146,7 +146,7 @@ export default function TitleBubble({
                 y: { duration: 3.5 + index * 0.5, repeat: Infinity, ease: 'easeInOut', delay: index * 0.4 },
                 x: { duration: 4.0 + index * 0.4, repeat: Infinity, ease: 'easeInOut', delay: index * 0.3 }
               }}
-              className="w-full h-full relative flex items-center justify-center pointer-events-none"
+              className="w-full h-full relative flex items-center justify-center pointer-events-none rounded-full backdrop-blur-md"
             >
               {/* The actual gelatinous bubble shell (Animates scale but has NO text inside to avoid distorting letters) */}
               <motion.div
@@ -159,12 +159,7 @@ export default function TitleBubble({
                   repeat: Infinity,
                   ease: "easeInOut"
                 }}
-                className="absolute inset-0 rounded-full border-[1.5px] border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.06),inset_0_0_12px_rgba(255,255,255,0.18)]"
-                style={{
-                  background: 'radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.12) 60%, rgba(255, 255, 255, 0.04) 100%)',
-                  backdropFilter: 'blur(10px)',
-                  WebkitBackdropFilter: 'blur(10px)',
-                }}
+                className="absolute inset-0 rounded-full border-[1.5px] border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.06),inset_0_0_12px_rgba(255,255,255,0.18)] bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.25)_0%,rgba(255,255,255,0.12)_60%,rgba(255,255,255,0.04)_100%)]"
               >
                 {/* Glass Specular Highlight */}
                 <div className="absolute top-[8%] left-[8%] w-[38%] h-[38%] rounded-full bg-gradient-to-br from-white/60 to-transparent blur-[1px]"></div>
@@ -174,11 +169,9 @@ export default function TitleBubble({
               <motion.span
                 animate={{ y: [-3, 3, -3], rotate: [-3, 3, -3] }}
                 transition={{ duration: 2.2 + index * 0.3, repeat: Infinity, ease: "easeInOut" }}
-                className="text-white text-5xl font-black select-none z-10"
+                className="text-white/95 text-5xl font-black select-none z-10 font-outfit"
                 style={{
-                  fontFamily: 'Outfit, sans-serif',
-                  textShadow: '0 2px 0 #d4d4d8, 0 4px 0 #a1a1aa, 0 6px 10px rgba(0, 0, 0, 0.35)',
-                  color: 'rgba(255, 255, 255, 0.96)'
+                  textShadow: '0 2px 0 #d4d4d8, 0 4px 0 #a1a1aa, 0 6px 10px rgba(0, 0, 0, 0.35)'
                 }}
               >
                 {letter}

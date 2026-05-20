@@ -9,6 +9,7 @@ import TitleBubble from '../bubbles/TitleBubble';
 export function MascotCenter() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isEntering, setIsEntering] = useState(true);
+  const [entryFinished, setEntryFinished] = useState(false);
   const [poppedLetters, setPoppedLetters] = useState<number[]>([]);
 
   const popTimeoutsRef = React.useRef<NodeJS.Timeout[]>([]);
@@ -78,7 +79,9 @@ export function MascotCenter() {
   return (
     <>
       {/* 1. Contêiner do mascote centralizado na tela */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center w-[350px] h-[350px] pointer-events-none z-10">
+      <div 
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center w-[350px] h-[350px] pointer-events-none z-20"
+      >
 
         {/* As Bolhas com o Nome "P-L-O-C" flutuando acima da cabeça (Sway & overlap) - Static position */}
         <div className="absolute -top-[30px] left-1/2 -translate-x-1/2 flex -space-x-6 pointer-events-auto z-20">
@@ -98,10 +101,18 @@ export function MascotCenter() {
         <motion.div
           className="pointer-events-auto relative"
           initial={{ scale: 0.8, opacity: 0, y: 600 }}
-          animate={{
+          animate={entryFinished ? {
+            scale: 1,
+            opacity: 1,
+            y: 0,
+            transform: 'none'
+          } : {
             scale: 1,
             opacity: 1,
             y: 0
+          }}
+          onAnimationComplete={() => {
+            setEntryFinished(true);
           }}
           transition={{
             scale: { duration: 5.0, ease: [0.16, 1, 0.3, 1] },

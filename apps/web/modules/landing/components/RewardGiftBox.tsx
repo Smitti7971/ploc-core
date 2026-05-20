@@ -33,24 +33,15 @@ export default function RewardGiftBox({ visible }: RewardGiftBoxProps) {
           window.dispatchEvent(speechEvent);
           playPlocSound();
         }}
-        className="w-20 h-20 rounded-[24px] backdrop-blur-md flex items-center justify-center cursor-pointer relative"
-        style={{
-          background: 'radial-gradient(circle at 30% 30%, rgba(251, 191, 36, 0.25) 0%, rgba(217, 119, 6, 0.1) 60%, rgba(255, 255, 255, 0.02) 100%)',
-          border: '1.5px dashed rgba(251, 191, 36, 0.5)',
-          boxShadow: '0 12px 36px rgba(251, 191, 36, 0.25), inset 0 0 15px rgba(255,255,255,0.05)'
-        }}
+        className="w-20 h-20 rounded-[24px] backdrop-blur-md flex items-center justify-center cursor-pointer relative bg-[radial-gradient(circle_at_30%_30%,rgba(251,191,36,0.25)_0%,rgba(217,119,6,0.1)_60%,rgba(255,255,255,0.02)_100%)] border border-dashed border-amber-400/50 shadow-[0_12px_36px_rgba(251,191,36,0.25),inset_0_0_15px_rgba(255,255,255,0.05)]"
       >
         {/* Brilho Especular */}
         <div className="absolute top-[8%] left-[8%] w-[32%] h-[32%] rounded-full bg-gradient-to-br from-white/30 to-transparent blur-[1px] pointer-events-none" />
         {/* Ícone de Presente */}
-        <span style={{ fontSize: '2.2rem', filter: 'drop-shadow(0 2px 8px rgba(251, 191, 36, 0.5))' }}>🎁</span>
+        <span className="text-[2.2rem] drop-shadow-[0_2px_8px_rgba(251,191,36,0.5)]">🎁</span>
       </motion.div>
       <span
-        className="text-[rgba(251,191,36,0.95)] text-[0.75rem] font-extrabold tracking-wider uppercase pointer-events-none"
-        style={{
-          fontFamily: 'Outfit, sans-serif',
-          textShadow: '0 2px 4px rgba(0,0,0,0.5)'
-        }}
+        className="text-amber-400/95 text-[0.75rem] font-extrabold tracking-wider uppercase pointer-events-none font-outfit drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
       >
         RECOMPENSA DESTRAVADA!
       </span>

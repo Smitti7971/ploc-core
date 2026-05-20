@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 export const Atmosphere: React.FC = () => {
   return (
-    <div className="absolute inset-0 overflow-hidden z-0 pointer-events-none">
+    <div className="absolute inset-0 overflow-hidden z-[10] pointer-events-none">
       {/* Bolha Superior Esquerda */}
       <motion.div
         animate={{

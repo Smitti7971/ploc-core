@@ -89,42 +89,52 @@ export default function PlocAvatar({
 
   const appearance = propAppearance || localAppearance;
 
-  const [indicators, setIndicators] = useState<any[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const unsub = blackboardEventBus.subscribe(
-      BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED,
-      (change: any) => {
-        if (!change || !change.pillar || change.diff === 0) return;
-        if (change.pillar === 'foco') return;
+    const checkMobile = () => {
+      const isMobileSize = window.innerWidth < 768;
+      setIsMobile(isMobileSize);
 
-        const id = Math.random().toString();
-        setIndicators(prev => {
-          let xOffset = 0;
-          if (prev.length > 0) {
-            const last = prev[prev.length - 1];
-            if (last.xOffset === 0) {
-              xOffset = change.diff > 0 ? 25 : -25;
-            } else {
-              xOffset = -last.xOffset;
-            }
-          }
-          return [...prev, {
-            id,
-            pillar: change.pillar,
-            diff: change.diff,
-            xOffset
-          }];
-        });
+      // Trazer o Ploc de volta para a tela se o redimensionamento o jogou para fora
+      const currentX = x.get();
+      const currentY = y.get();
+      const sizeVal = isMobileSize ? (isLanding ? 90 : 60) : (isLanding ? 120 : 80);
 
-        setTimeout(() => {
-          setIndicators(prev => prev.filter(ind => ind.id !== id));
-        }, 1500);
+      let minX, maxX, minY, maxY;
+
+      if (isLanding) {
+        // Começa no centro absoluto. O deslocamento máximo permitido a partir do centro
+        // é a metade da largura/altura da janela menos a metade do tamanho do Ploc
+        const paddingX = sizeVal / 2;
+        const paddingY = sizeVal / 2;
+        minX = -window.innerWidth / 2 + paddingX;
+        maxX = window.innerWidth / 2 - paddingX;
+        minY = -window.innerHeight / 2 + paddingY;
+        maxY = window.innerHeight / 2 - paddingY;
+      } else {
+        // Limites fora da landing page (canto inferior direito)
+        minX = -window.innerWidth + 100;
+        maxX = 30;
+        minY = -window.innerHeight + 150;
+        maxY = 30;
       }
-    );
 
-    return () => unsub();
-  }, []);
+      // Clamp (limitar) as coordenadas atuais para garantir que o Ploc esteja visível
+      const clampedX = Math.max(minX, Math.min(maxX, currentX));
+      const clampedY = Math.max(minY, Math.min(maxY, currentY));
+
+      if (currentX !== clampedX) x.set(clampedX);
+      if (currentY !== clampedY) y.set(clampedY);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, [x, y, isLanding]);
+
+  const [indicators, setIndicators] = useState<any[]>([]);
+
 
   useEffect(() => {
     x.set(0);
@@ -235,8 +245,47 @@ export default function PlocAvatar({
     showPriorityConfirmButtons,
     handleConfirmPriorityPillar,
     handleResetPriorityPillar,
-    phase1PopCount
+    phase1PopCount,
   } = usePlocChat();
+
+  useEffect(() => {
+    const isPhase1 = gameMode === 'onboarding_game' && ['corpo', 'mente', 'vida', 'liberdade', 'proposito'].includes(onboardingStage);
+
+    const unsub = blackboardEventBus.subscribe(
+      BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED,
+      (change: any) => {
+        if (isPhase1) return;
+
+        if (!change || !change.pillar || change.diff === 0) return;
+        if (change.pillar === 'foco') return;
+
+        const id = Math.random().toString();
+        setIndicators(prev => {
+          let xOffset = 0;
+          if (prev.length > 0) {
+            const last = prev[prev.length - 1];
+            if (last.xOffset === 0) {
+              xOffset = change.diff > 0 ? 25 : -25;
+            } else {
+              xOffset = -last.xOffset;
+            }
+          }
+          return [...prev, {
+            id,
+            pillar: change.pillar,
+            diff: change.diff,
+            xOffset
+          }];
+        });
+
+        setTimeout(() => {
+          setIndicators(prev => prev.filter(ind => ind.id !== id));
+        }, 1500);
+      }
+    );
+
+    return () => unsub();
+  }, [gameMode, onboardingStage]);
 
   const [currentSpokenText, setCurrentSpokenText] = useState('');
   const [isChatInputVisible, setIsChatInputVisible] = useState(false);
@@ -313,14 +362,14 @@ export default function PlocAvatar({
   }, []);
 
   const attributes = attributeEngine.getAttributes();
-  const SIZE = isLanding ? 120 : 80;
+  const SIZE = isMobile ? (isLanding ? 90 : 60) : (isLanding ? 120 : 80);
 
   // Cor base do corpo e membros reativos ao estado de irritação
-  const { bodyColor, limbColor, limbShadow } = useMemo(() => {
-    // Cores base do corpo baseadas na customização escolhida
-    let baseR = 56;
-    let baseG = 189;
-    let baseB = 248;
+  const { bodyColor, limbColor, limbShadow, baseR, baseG, baseB } = useMemo(() => {
+    // Cores base do corpo baseadas na customização escolhida (Azul Cobalto Frio Premium)
+    let baseR = 14;
+    let baseG = 144;
+    let baseB = 255;
 
     const chosenColor = appearance?.bodyColor || 'classic';
     if (chosenColor === 'rose') {
@@ -342,60 +391,107 @@ export default function PlocAvatar({
     } else if (plocState.isPositiveHit) {
       bodyColor = 'rgba(16, 185, 129, 0.45)'; // Verde Esmeralda Lindo e Vibrante para positivo!
     } else if (plocState.isHit) {
-      bodyColor = 'rgba(251, 191, 36, 0.35)'; // Amarelo fraco temporário
+      bodyColor = 'rgba(251, 191, 36, 0.38)'; // Amarelo fraco temporário
     } else if (plocState.angerLevel === 1) {
-      bodyColor = 'rgba(254, 240, 138, 0.55)'; // Level 1: Amarelo Claro
+      bodyColor = 'rgba(254, 240, 138, 0.42)'; // Level 1: Amarelo Claro
     } else if (plocState.angerLevel === 2) {
-      bodyColor = 'rgba(251, 191, 36, 0.6)'; // Level 2: Âmbar / Laranja-Amarelo
+      bodyColor = 'rgba(251, 191, 36, 0.48)'; // Level 2: Âmbar / Laranja-Amarelo
     } else if (plocState.angerLevel === 3) {
-      bodyColor = 'rgba(249, 115, 22, 0.6)'; // Level 3: Laranja Vivo
+      bodyColor = 'rgba(249, 115, 22, 0.55)'; // Level 3: Laranja Vivo
     } else if (plocState.angerLevel === 4) {
-      bodyColor = 'rgba(239, 68, 68, 0.65)'; // Level 4: Vermelho Vivo
+      bodyColor = 'rgba(239, 68, 68, 0.68)'; // Level 4: Vermelho Vivo
     } else if (plocState.angerLevel === 5) {
-      bodyColor = 'rgba(153, 27, 27, 0.8)'; // Level 5: Vermelho Carmesim Escuro (Enfurecido)
+      bodyColor = 'rgba(153, 27, 27, 0.85)'; // Level 5: Vermelho Carmesim Escuro (Enfurecido)
     }
 
-    let limbColor = `rgba(${baseR}, ${baseG}, ${baseB}, 0.4)`;
-    let limbShadow = `0 0 3px rgba(${baseR}, ${baseG}, ${baseB}, 0.2)`;
+    let limbColor = `rgba(${baseR}, ${baseG}, ${baseB}, 0.65)`;
+    let limbShadow = `0 0 3px rgba(${baseR}, ${baseG}, ${baseB}, 0.3)`;
 
     if (isSleeping) {
       limbColor = '#0f172a';
       limbShadow = 'none';
     } else {
       if (plocState.isHurt) {
-        limbColor = 'rgba(244, 63, 94, 0.5)';
-        limbShadow = '0 0 3px rgba(244, 63, 94, 0.2)';
+        limbColor = 'rgba(244, 63, 94, 0.65)';
+        limbShadow = '0 0 3px rgba(244, 63, 94, 0.3)';
       } else if (plocState.isPositiveHit) {
-        limbColor = 'rgba(16, 185, 129, 0.5)';
-        limbShadow = '0 0 3px rgba(16, 185, 129, 0.2)';
+        limbColor = 'rgba(16, 185, 129, 0.65)';
+        limbShadow = '0 0 3px rgba(16, 185, 129, 0.3)';
       } else if (plocState.isHit) {
-        limbColor = 'rgba(251, 191, 36, 0.4)';
-        limbShadow = '0 0 3px rgba(251, 191, 36, 0.15)';
+        limbColor = 'rgba(251, 191, 36, 0.55)';
+        limbShadow = '0 0 3px rgba(251, 191, 36, 0.25)';
       } else if (plocState.angerLevel === 1) {
-        limbColor = 'rgba(254, 240, 138, 0.5)';
-        limbShadow = '0 0 3px rgba(254, 240, 138, 0.2)';
+        limbColor = 'rgba(254, 240, 138, 0.65)';
+        limbShadow = '0 0 3px rgba(254, 240, 138, 0.3)';
       } else if (plocState.angerLevel === 2) {
-        limbColor = 'rgba(251, 191, 36, 0.5)';
-        limbShadow = '0 0 3px rgba(251, 191, 36, 0.2)';
+        limbColor = 'rgba(251, 191, 36, 0.65)';
+        limbShadow = '0 0 3px rgba(251, 191, 36, 0.3)';
       } else if (plocState.angerLevel === 3) {
-        limbColor = 'rgba(249, 115, 22, 0.55)';
-        limbShadow = '0 0 3px rgba(249, 115, 22, 0.3)';
+        limbColor = 'rgba(249, 115, 22, 0.7)';
+        limbShadow = '0 0 3px rgba(249, 115, 22, 0.4)';
       } else if (plocState.angerLevel === 4) {
-        limbColor = 'rgba(239, 68, 68, 0.6)';
-        limbShadow = '0 0 3px rgba(239, 68, 68, 0.3)';
+        limbColor = 'rgba(239, 68, 68, 0.7)';
+        limbShadow = '0 0 3px rgba(239, 68, 68, 0.4)';
       } else if (plocState.angerLevel === 5) {
-        limbColor = 'rgba(153, 27, 27, 0.7)';
-        limbShadow = '0 0 5px rgba(153, 27, 27, 0.4)';
+        limbColor = 'rgba(153, 27, 27, 0.8)';
+        limbShadow = '0 0 5px rgba(153, 27, 27, 0.5)';
       }
     }
 
-    return { bodyColor, limbColor, limbShadow };
+    return { bodyColor, limbColor, limbShadow, baseR, baseG, baseB };
   }, [plocState.angerLevel, plocState.isHurt, plocState.isHit, isSleeping, appearance?.bodyColor]);
 
   if (isHidden) return null;
   if (!isMounted) return null;
 
   const shouldShake = plocState.angerLevel >= 4 || plocState.isHurt || plocState.isHit;
+
+  // Dynamic breathing/wobble keyframes based on states for gelatinous effect
+  const breatheScaleX = isDragging 
+    ? [1, 1, 1] 
+    : (isSleeping 
+        ? [1.08, 1.04, 1.08] 
+        : (plocState.isHurt 
+            ? [1.08, 1.00, 1.08] 
+            : [1.07, 1.03, 1.07]
+          )
+      );
+
+  const breatheScaleY = isDragging 
+    ? [1, 1, 1] 
+    : (isSleeping 
+        ? [0.92, 0.96, 0.92] 
+        : (plocState.isHurt 
+            ? [0.92, 1.00, 0.92] 
+            : [0.93, 0.97, 0.93]
+          )
+      );
+
+  const breatheDuration = isSleeping ? 5 : (plocState.isHurt ? 1.5 : 3.5);
+
+  const breatheRotate = shouldShake 
+    ? [0, -2, 2, -2, 2, 0] 
+    : 0;
+
+  const breatheX = shouldShake 
+    ? [0, -3, 3, -3, 3, 0] 
+    : 0;
+
+  const amoebaBorderRadius = isDragging 
+    ? "50%"
+    : (isSleeping
+        ? [
+            "52% 48% 54% 46% / 44% 42% 58% 56%",
+            "48% 52% 46% 54% / 42% 44% 56% 58%",
+            "52% 48% 54% 46% / 44% 42% 58% 56%"
+          ]
+        : [
+            "50% 50% 48% 48% / 48% 48% 52% 52%",
+            "46% 54% 44% 56% / 53% 47% 53% 47%",
+            "54% 46% 56% 44% / 47% 53% 47% 53%",
+            "50% 50% 48% 48% / 48% 48% 52% 52%"
+          ]
+      );
 
   return (
     <>
@@ -420,8 +516,8 @@ export default function PlocAvatar({
       <motion.div
         ref={containerRef}
         id="ploc-singleton-mount"
-        whileHover={{ scale: 1.03 }}
-        whileTap={{ scale: 0.96 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scaleX: 1.15, scaleY: 0.82 }}
         drag={draggable}
         dragConstraints={typeof window !== 'undefined' ? (
           isLanding ? {
@@ -485,11 +581,9 @@ export default function PlocAvatar({
         animate={{
           opacity: isSleeping ? 0.6 : 1,
           scale: 1,
-          filter: isSleeping ? 'brightness(0.5) saturate(0.8)' : 'brightness(1) saturate(1)',
         }}
         transition={{
           opacity: { duration: isSleeping ? 0.5 : 2.6, ease: "easeInOut" },
-          filter: { duration: isSleeping ? 0.5 : 2.6, ease: "easeInOut" },
           scale: { duration: 0.5 }
         }}
         className="relative cursor-grab select-none touch-none"
@@ -585,9 +679,34 @@ export default function PlocAvatar({
 
         {/* Camada Interna para Flutuar e Respirar (Separada do Drag) */}
         <motion.div
-          animate={{ y: [6, -6, 6] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          className="w-full h-full relative"
+          animate={{
+            y: [6, -6, 6],
+            x: breatheX,
+            rotate: breatheRotate,
+            scaleX: breatheScaleX,
+            scaleY: breatheScaleY,
+            scale: plocState.isHurt ? 1.08 : (isHovered ? 1.05 : 1),
+            borderRadius: amoebaBorderRadius,
+          }}
+          transition={{
+            y: { duration: 3, repeat: Infinity, ease: "easeInOut" },
+            x: shouldShake ? { duration: 0.35, repeat: Infinity, ease: "linear" } : { type: "spring", stiffness: 200, damping: 15 },
+            rotate: shouldShake ? { duration: 0.35, repeat: Infinity, ease: "linear" } : { type: "spring", stiffness: 200, damping: 15 },
+            scaleX: { duration: breatheDuration, repeat: Infinity, ease: "easeInOut" },
+            scaleY: { duration: breatheDuration, repeat: Infinity, ease: "easeInOut" },
+            scale: { type: "spring", stiffness: 240, damping: 9 },
+            borderRadius: { duration: 4, repeat: Infinity, ease: "easeInOut" }
+          }}
+          className="w-full h-full relative border-[1.5px] border-white/20"
+          style={{
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            background: `radial-gradient(circle at 30% 30%, rgba(${baseR}, ${baseG}, ${baseB}, 0.35) 0%, rgba(${baseR}, ${baseG}, ${baseB}, 0.20) 60%, rgba(${baseR}, ${baseG}, ${baseB}, 0.08) 100%)`,
+            boxShadow: shouldShake
+              ? `0 0 25px rgba(244, 63, 94, 0.5), inset 0 4px 12px rgba(255, 255, 255, 0.45), inset 0 -8px 24px rgba(0, 0, 0, 0.2), inset 0 0 12px rgba(255, 255, 255, 0.18)`
+              : `0 15px 45px rgba(${baseR}, ${baseG}, ${baseB}, 0.15), inset 0 4px 12px rgba(255, 255, 255, 0.45), inset 0 -8px 24px rgba(0, 0, 0, 0.2), inset 0 0 12px rgba(255, 255, 255, 0.18)`,
+            transition: 'background 0.4s ease, box-shadow 0.4s ease'
+          }}
         >
           {/* Indicadores Flutuantes Dinâmicos (+1 / -1) */}
           <div className="absolute top-[-25px] left-1/2 -translate-x-1/2 w-full flex justify-center pointer-events-none z-[999999]">
@@ -672,32 +791,17 @@ export default function PlocAvatar({
 
 
 
-          {/* Corpo Gelatinoso do Ploc */}
+          {/* 1. Máscara Circular para elementos internos que precisam de recorte (Brilhos, Roupas, Bolhas internas) */}
           <motion.div
-            animate={{
-              backgroundColor: bodyColor,
-              scale: 1,
-              scaleX: isDragging ? 1 : (isSleeping ? 1.04 : 1),
-              scaleY: isDragging ? 1 : (isSleeping ? 0.96 : 1),
-              rotate: 0,
-            }}
-            transition={{
-              backgroundColor: { duration: 0.4 },
-              scaleX: { type: "spring", stiffness: 180, damping: 9, mass: 0.4 },
-              scaleY: { type: "spring", stiffness: 180, damping: 9, mass: 0.4 },
-              scale: { type: "spring", stiffness: 200, damping: 12 },
-              rotate: { type: "tween", duration: 0.35, ease: "easeInOut" },
-            }}
-            className={`absolute inset-0 rounded-full border border-white/40 overflow-hidden backdrop-blur-[8px] ${
-              shouldShake
-                ? 'ploc-body-shake ploc-gelatin-pissed-anim'
-                : 'ploc-gelatin-breathe-anim'
-            } ${
-              shouldShake
-                ? '[box-shadow:0_0_25px_rgba(244,_63,_94,_0.45),_inset_0_0_12px_rgba(255,_255,_255,_0.2)]'
-                : '[box-shadow:0_10px_40px_rgba(56,_189,_248,_0.3),_inset_0_0_15px_rgba(255,_255,_255,_0.2)]'
-            }`}
+            animate={{ borderRadius: amoebaBorderRadius }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute inset-0 overflow-hidden pointer-events-none z-10"
           >
+            {/* Brilhos 3D Especulares para Efeito de Vidro e Formism */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/35 pointer-events-none z-[1]" />
+            <div className="absolute top-[8%] left-[12%] w-[22%] h-[12%] bg-white/70 rounded-full blur-[0.5px] transform -rotate-12 pointer-events-none z-[2]" />
+            <div className="absolute bottom-[6%] right-[16%] w-[15%] h-[8%] bg-white/25 rounded-full blur-[1.5px] transform rotate-45 pointer-events-none z-[2]" />
+
             {/* Bolhas 3D Internas */}
             <PlocBubbles />
 
@@ -707,8 +811,10 @@ export default function PlocAvatar({
                 {renderClothes(appearance.clothes)}
               </div>
             )}
+          </motion.div>
 
-            {/* Olhos e Expressões Faciais */}
+          {/* 2. Elementos Faciais (Olhos, Expressões, Acessórios) — Não recortados para evitar cortes de chapéus/cílios */}
+          <div className="absolute inset-0 pointer-events-none z-20">
             <PlocFace
               isSleeping={isSleeping}
               isPissed={isPissed}
@@ -719,7 +825,7 @@ export default function PlocAvatar({
               isHit={plocState.isHit}
               isPositiveHit={plocState.isPositiveHit}
             />
-          </motion.div>
+          </div>
 
           {/* Membros Stick (Perninhas e Braços) */}
           <PlocLimbs
@@ -829,7 +935,7 @@ export default function PlocAvatar({
                     className="flex flex-col items-center gap-2 mt-2 select-none"
                   >
                     <span className="text-[10px] text-emerald-400 font-extrabold tracking-widest uppercase font-mono bg-slate-900/80 px-4 py-1.5 rounded-full border border-emerald-500/30 backdrop-blur-[6px] shadow-[0_4px_15px_rgba(16,185,129,0.2)]">
-                      {onboardingStage.toUpperCase()} • {phase1PopCount}/3
+                      {onboardingStage.toUpperCase()} • {phase1PopCount}/5
                     </span>
                   </motion.div>
                 )}
