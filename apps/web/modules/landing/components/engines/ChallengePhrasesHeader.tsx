@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CHALLENGE_PHRASES } from '@/modules/landing/constants/phrases';
+import { CHALLENGE_PHRASES, HEADER_TRANSITION } from '../../constants';
 
 interface ChallengePhrasesTextProps {
   phraseIndex: number;
@@ -28,7 +28,7 @@ export default function ChallengePhrasesText({ phraseIndex }: ChallengePhrasesTe
         initial={{ opacity: 0, y: 30, filter: 'blur(15px)' }}
         animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
         exit={{ opacity: 0, y: -30, filter: 'blur(15px)' }}
-        transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+        transition={HEADER_TRANSITION}
         className="m-0 font-black text-white/90 tracking-[-2px] leading-none uppercase max-w-[850px] px-6 inline-block font-outfit text-[clamp(2.2rem,6.5vw,4.2rem)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.15)]"
       >
         {parts.length > 1 ? (

@@ -2,9 +2,9 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { playPlocSound } from './bubbles/FloatingBubble';
+import { playPlocSound } from '../bubbles';
 
-interface PillarItemProps {
+interface PillarHUDButtonProps {
   pillarKey: string;
   config: {
     label: string;
@@ -16,13 +16,13 @@ interface PillarItemProps {
   onToggleTooltip: (pillarKey: string) => void;
 }
 
-export default function PillarItem({
+export default function PillarHUDButton({
   pillarKey,
   config,
   isActive,
   value,
   onToggleTooltip
-}: PillarItemProps) {
+}: PillarHUDButtonProps) {
   const Icon = config.icon;
 
   const getStatusColor = (val: number) => {

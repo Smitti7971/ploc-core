@@ -1,9 +1,10 @@
 'use client';
-
+ 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send } from 'lucide-react';
 import { blackboardEventBus } from '@/modules/blackboard/events/eventBus';
+import { PANEL_TRANSITION } from '../../constants';
 
 interface LandingPlocChatProps {
   isOpen: boolean;
@@ -30,7 +31,7 @@ export default function LandingPlocChat({ isOpen }: LandingPlocChatProps) {
           initial={{ opacity: 0, y: 15, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 15, scale: 0.95 }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          transition={PANEL_TRANSITION}
           className="w-full max-w-[500px] pointer-events-auto mt-[30px] px-6 z-20"
         >
           <form

@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Brain, Heart, Bird, Flag } from 'lucide-react';
+import { PANEL_TRANSITION } from '../../constants';
 
 export const PILLARS_CONFIG = {
   corpo: { label: 'CORPO', color: '#ef4444', icon: Activity, desc: 'Saúde, sono e energia física. Afetado por exercícios, hidratação e descanso.' },
@@ -37,7 +38,7 @@ export default function PillarTooltipPanel({ activeTooltip, attributes }: Pillar
             initial={{ opacity: 0, y: 15, filter: 'blur(10px)' }}
             animate={{ opacity: 1, y: 20, filter: 'blur(0px)' }}
             exit={{ opacity: 0, y: 15, filter: 'blur(10px)' }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            transition={PANEL_TRANSITION}
             className="inline-flex flex-col items-center bg-slate-900/45 backdrop-blur-md rounded-[20px] px-6 py-4 max-w-[540px] w-[90%] pointer-events-auto mt-[25px] z-20"
             style={{
               border: `1.5px solid ${statusColor}35`

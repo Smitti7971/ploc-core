@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { CHALLENGE_PHRASES } from '@/modules/landing/constants/phrases';
-import { BubbleConcept } from '../components/bubbles/types';
+import { BubbleConcept } from '../components/bubbles';
 import { DECOR_CONCEPTS, PHASE1_BUBBLES, PHASE2_BUBBLES } from '../components/bubbles/bubble-pools';
-import { useBlackboardSync } from './useBlackboardSync';
-import { useGameModeSync } from './useGameModeSync';
-import { useChatInteractions } from './useChatInteractions';
+import { useAttributesSync } from './useAttributesSync';
+import { useGameModeSync, useChatInteractions } from '../components/engines';
 import { attributeEngine } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
 import { blackboardEventBus } from '@/modules/blackboard/events/eventBus';
 
@@ -18,7 +17,7 @@ const PRIORITY_CONCEPTS: BubbleConcept[] = [
   { id: 'prio-proposito', word: 'Propósito', pillar: 'proposito', ref: 'prio_proposito', label: 'Propósito', value: 'positive', points: 0, isGameActive: true, left: '85%', size: 85, duration: 42, delay: 0, theme: 'glass', maxOpacity: 0.8, zIndex: 20 },
 ];
 
-export function useBubbleState() {
+export function useLandingStageState() {
   const [isMounted, setIsMounted] = useState(false);
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [isFirstPageLoad, setIsFirstPageLoad] = useState(true);
@@ -28,7 +27,7 @@ export function useBubbleState() {
   const [showStartGameBubble, setShowStartGameBubble] = useState(false);
 
   // Integrar sub-hooks modulares
-  const { attributes } = useBlackboardSync();
+  const { attributes } = useAttributesSync();
   const { gameMode, rewardBoxVisible, density, setDensity } = useGameModeSync();
   const { isLandingChatOpen } = useChatInteractions();
 

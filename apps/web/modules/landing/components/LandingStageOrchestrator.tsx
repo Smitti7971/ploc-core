@@ -1,16 +1,17 @@
 'use client';
 
 import React from 'react';
-import { useBubbleState } from '../hooks/useBubbleState';
-import FloatingBubblesStage from './bubbles/FloatingBubblesStage';
-import ChallengePhrasesText from './ChallengePhrasesText';
-import LandingPlocChat from './LandingPlocChat';
-import PillarTooltipPanel from './PillarTooltipPanel';
-import PillarsControlGroup from './PillarsControlGroup';
-import RewardGiftBox from './RewardGiftBox';
-import { MascotCenter } from './mascot/MascotCenter';
+import { useLandingStageState } from '../hooks';
+import { FloatingBubblesStage } from './bubbles';
+import {
+  ChallengePhrasesHeader,
+  PillarTooltipDetail,
+  PillarsControlGroup,
+  RewardGiftBox
+} from './engines';
+import { MascotCenter, LandingPlocChat } from './mascot';
 
-export default function BubblePhrases() {
+export default function LandingStageOrchestrator() {
   const {
     isMounted,
     phraseIndex,
@@ -26,7 +27,7 @@ export default function BubblePhrases() {
     onboardingStage,
     toggleTooltip,
     changeDensity
-  } = useBubbleState();
+  } = useLandingStageState();
 
   if (!isMounted) return null;
 
@@ -39,11 +40,11 @@ export default function BubblePhrases() {
 
       {/* ── 1. Letreiro Central e Elementos Flutuantes Centrais ── */}
       <div
-        className="absolute left-0 right-0 w-full text-center pointer-events-none flex flex-col items-center justify-center top-[calc(50%+75px)] z-15"
+         className="absolute left-0 right-0 w-full text-center pointer-events-none flex flex-col items-center justify-center top-[calc(50%+75px)] z-15"
       >
-        <ChallengePhrasesText phraseIndex={phraseIndex} />
+        <ChallengePhrasesHeader phraseIndex={phraseIndex} />
         <LandingPlocChat isOpen={isLandingChatOpen} />
-        <PillarTooltipPanel activeTooltip={activeTooltip} attributes={attributes} />
+        <PillarTooltipDetail activeTooltip={activeTooltip} attributes={attributes} />
       </div>
 
       {/* ── 2. Bolhas Flutuantes (Motor de Colisão & Render) na mesma hierarquia de z-index ── */}

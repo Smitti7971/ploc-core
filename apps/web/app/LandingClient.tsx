@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { AuthCapsule } from '@/modules/auth/components/AuthCapsule';
-import ExitGameButton from '@/modules/landing/components/ExitGameButton';
-import BubblePhrases from '@/modules/landing/components/BubblePhrases';
-
-import { Atmosphere } from '@/modules/landing/particles/Atmosphere';
-import { Vignette } from '@/modules/landing/particles/Vignette';
-import { SodaWave } from '@/modules/landing/particles/SodaWave';
+import {
+  LandingStageOrchestrator,
+  ExitGameButton,
+  AmbientGlowBackground,
+  Vignette,
+  SodaWave
+} from '@/modules/landing';
 
 export default function LandingClient() {
   const [isMounted, setIsMounted] = useState(false);
@@ -29,10 +30,10 @@ export default function LandingClient() {
 
       {/* Cápsula de Entrada superior-direita */}
       <AuthCapsule />
-      <Atmosphere />
+      <AmbientGlowBackground />
 
       {/* ── Módulo Independente de Frases e Bolhas Flutuantes (com Mascote integrado) ── */}
-      <BubblePhrases />
+      <LandingStageOrchestrator />
 
       <Vignette />
     </main>

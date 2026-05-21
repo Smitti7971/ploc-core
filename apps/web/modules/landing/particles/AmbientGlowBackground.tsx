@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-export const Atmosphere: React.FC = () => {
+export const AmbientGlowBackground: React.FC = () => {
   return (
     <div className="absolute inset-0 overflow-hidden z-[10] pointer-events-none">
       {/* Bolha Superior Esquerda */}
@@ -15,11 +15,7 @@ export const Atmosphere: React.FC = () => {
           rotate: [0, 20, -20, 0]
         }}
         transition={{ duration: 40, repeat: Infinity, ease: "easeInOut" }}
-        style={{
-          willChange: 'transform',
-          transform: 'translateZ(0)'
-        }}
-        className="absolute top-[-20%] left-[-10%] w-[80%] h-[80%] rounded-[45%] blur-[100px] bg-[radial-gradient(circle,_rgba(56,189,248,0.07)_0%,_transparent_75%)]"
+        className="absolute top-[-20%] left-[-10%] w-[80%] h-[80%] rounded-[45%] blur-[100px] bg-[radial-gradient(circle,_rgba(56,189,248,0.07)_0%,_transparent_75%)] will-change-transform [transform:translateZ(0)]"
       />
       {/* Bolha Inferior Direita */}
       <motion.div
@@ -30,11 +26,7 @@ export const Atmosphere: React.FC = () => {
           rotate: [0, -25, 25, 0]
         }}
         transition={{ duration: 50, repeat: Infinity, ease: "easeInOut" }}
-        style={{
-          willChange: 'transform',
-          transform: 'translateZ(0)'
-        }}
-        className="absolute bottom-[-25%] right-[-20%] w-[90%] h-[90%] rounded-[40%] blur-[120px] bg-[radial-gradient(circle,_rgba(3,105,161,0.1)_0%,_transparent_75%)]"
+        className="absolute bottom-[-25%] right-[-20%] w-[90%] h-[90%] rounded-[40%] blur-[120px] bg-[radial-gradient(circle,_rgba(3,105,161,0.1)_0%,_transparent_75%)] will-change-transform [transform:translateZ(0)]"
       />
     </div>
   );

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import PlocAvatar from '@/components/mascot/PlocAvatar';
 import { blackboardEventBus } from '@/modules/blackboard/events/eventBus';
-import TitleBubble from '../bubbles/TitleBubble';
+import { TitleBubble } from '../bubbles';
 
 export function MascotCenter() {
   const [isChatOpen, setIsChatOpen] = useState(false);

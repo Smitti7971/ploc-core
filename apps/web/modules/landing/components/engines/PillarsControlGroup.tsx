@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { PILLARS_CONFIG } from './PillarTooltipPanel';
-import PillarItem from './PillarItem';
-import BubbleDensityButton from './BubbleDensityButton';
+import { PILLARS_CONFIG } from './PillarTooltipDetail';
+import PillarHUDButton from './PillarHUDButton';
+import { BubbleDensityButton } from '../bubbles';
 
 interface PillarsControlGroupProps {
   gameMode: 'decor' | 'onboarding_game' | 'normal';
@@ -37,7 +37,7 @@ export default function PillarsControlGroup({
         const value = attributes[key] ?? 3;
 
         return (
-          <PillarItem
+          <PillarHUDButton
             key={key}
             pillarKey={key}
             config={config}

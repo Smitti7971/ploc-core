@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { playPlocSound } from './bubbles/FloatingBubble';
+import { playPlocSound } from './FloatingBubble';
 
 interface BubbleDensityButtonProps {
   gameMode: 'decor' | 'onboarding_game' | 'normal';

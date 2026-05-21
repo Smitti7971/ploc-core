@@ -8,9 +8,10 @@ import { cn } from '@/lib/utils';
 // Import newly encapsulated modules
 import { FloatingBubbleProps, Particle } from './types';
 import { THEME_STYLES } from './constants';
-import { playPlocSound } from './audio';
+import { playPlocSound } from './bubble-pop-sfx';
 import PopParticles from './PopParticles';
 import BubbleBody from './BubbleBody';
+import { SPRING_PRESETS } from '../../constants';
 
 // Re-export utility elements for backwards compatibility
 export { playPlocSound };
@@ -305,7 +306,7 @@ export function FloatingBubble({
         }
       }}
       transition={isPriorityBubble ? {
-        y: { type: 'spring', stiffness: 50, damping: 15, delay: concept.delay },
+        y: { ...SPRING_PRESETS.soft, delay: concept.delay },
         x: { duration: 0.5 }
       } : {
         y: { duration: flightParams.duration, ease: 'linear', delay: flightParams.delay },

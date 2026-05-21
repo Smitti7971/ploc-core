@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { playPlocSound } from './bubbles/FloatingBubble';
+import { playPlocSound } from '../bubbles';
 
 interface RewardGiftBoxProps {
   visible: boolean;

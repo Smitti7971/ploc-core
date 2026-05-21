@@ -3,9 +3,10 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
-import { useGameModeSync } from '../hooks/useGameModeSync';
+import { useGameModeSync } from './useGameModeSync';
 import { blackboardEventBus } from '@/modules/blackboard/events/eventBus';
-import { playPlocSound } from './bubbles/FloatingBubble';
+import { playPlocSound } from '../bubbles';
+import { PANEL_TRANSITION } from '../../constants';
 
 export default function ExitGameButton() {
   const { gameMode } = useGameModeSync();
@@ -22,7 +23,7 @@ export default function ExitGameButton() {
           initial={{ opacity: 0, x: -20, scale: 0.9 }}
           animate={{ opacity: 1, x: 0, scale: 1 }}
           exit={{ opacity: 0, x: -20, scale: 0.9 }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          transition={PANEL_TRANSITION}
           className="absolute top-[25px] left-[25px] z-[9999] pointer-events-auto"
         >
           <motion.button
