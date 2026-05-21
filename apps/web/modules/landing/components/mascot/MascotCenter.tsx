@@ -84,7 +84,7 @@ export function MascotCenter() {
       >
 
         {/* As Bolhas com o Nome "P-L-O-C" flutuando acima da cabeça (Sway & overlap) - Static position */}
-        <div className="absolute -top-[30px] left-1/2 -translate-x-1/2 flex -space-x-6 pointer-events-auto z-20">
+        <div className="absolute -top-[30px] left-1/2 -translate-x-1/2 flex -space-x-6 pointer-events-none z-20">
           {titleLetters.map((letter, i) => (
             <TitleBubble
               key={i}

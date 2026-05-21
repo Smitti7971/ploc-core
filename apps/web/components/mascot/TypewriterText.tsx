@@ -111,23 +111,8 @@ export function TypewriterText({ text, speed: propSpeed }: TypewriterTextProps) 
   }, [text, speed]);
 
   return (
-    <span className="inline-flex flex-wrap justify-center gap-[0.5px]">
-      {Array.from(displayedText).map((char, index) => (
-        <motion.span
-          key={index}
-          animate={{ y: [0, -3, 0] }}
-          transition={{
-            duration: 3.2,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: (index % 12) * 0.2
-          }}
-          className="inline-block"
-          style={{ display: char === ' ' ? 'inline' : 'inline-block', whiteSpace: 'pre' }}
-        >
-          {char}
-        </motion.span>
-      ))}
+    <span className="inline-block text-center whitespace-pre-wrap">
+      {displayedText}
     </span>
   );
 }

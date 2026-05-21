@@ -30,8 +30,6 @@ export const useAuthStore = create<AuthState>()(
 
       setAuth: (token, user) => {
         set({ token, user, isAuthenticated: true });
-        // Sincroniza com cookie para o Middleware (Next.js)
-        document.cookie = `ploc-auth=true; path=/; max-age=${60 * 60 * 24 * 7}`;
       },
 
       updateUser: (updatedFields) =>
@@ -41,8 +39,6 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         set({ token: null, user: null, isAuthenticated: false });
-        // Limpa cookie
-        document.cookie = 'ploc-auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       },
 
       isAuthModalOpen: false,

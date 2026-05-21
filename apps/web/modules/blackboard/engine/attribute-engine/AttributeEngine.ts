@@ -110,6 +110,7 @@ class AttributeEngine {
   }
 
   private processExplosion(bubble: any) {
+    if (bubble?.collided) return;
     const gameMode = typeof window !== 'undefined' ? localStorage.getItem('ploc_game_mode') || 'decor' : 'decor';
     if (gameMode === 'decor') {
       return; // Ignore absolutely all attribute changes in decor mode!

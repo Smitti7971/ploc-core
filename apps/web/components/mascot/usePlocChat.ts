@@ -248,31 +248,7 @@ export function usePlocChat() {
       // ── 3. LÓGICA EM MODO DECORATIVO (DECOR) ──
       if (activeMode === 'decor') {
         if (data.collided) {
-          if (typeof document !== 'undefined' && (!document.hasFocus() || document.hidden)) {
-            return;
-          }
-          const now = Date.now();
-          if (now - lastPassiveSpeechRef.current < 15000 || isSpeaking || showStartGameButton) {
-            return;
-          }
-          lastPassiveSpeechRef.current = now;
-
-          let selectedPhrase = "";
-          if (data.pillar && PILLAR_QUOTES[data.pillar]) {
-            const quotes = PILLAR_QUOTES[data.pillar];
-            selectedPhrase = quotes[Math.floor(Math.random() * quotes.length)];
-          } else {
-            const genericSarcastic = [
-              "Que bolha interessante... Essas bolhas ensinam muita coisa sabia?",
-              "Olha, não leve a mal, mas você tá me olhando de um jeito estranho",
-              "Não se preocupe, as bolhas vão estourar uma hora ou outra!"
-            ];
-            selectedPhrase = genericSarcastic[Math.floor(Math.random() * genericSarcastic.length)];
-          }
-
-          setChatMessages(prev => [...prev, { sender: 'ploc', text: selectedPhrase }]);
-          speakAndTrack(selectedPhrase, 5500, false);
-          setIsChatOpen(true);
+          // DESATIVADO: Ploc não faz discursos nem fala nada ao colidir com bolhas automáticas flutuantes
           return;
         }
 

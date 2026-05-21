@@ -136,6 +136,7 @@ export default function BlackboardPage() {
     });
 
     const unsubExplosion = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_EXPLODED, (bubble: any) => {
+      if (bubble?.collided) return;
       const isNegative = bubble && bubble.value === 'negative';
       setPlocReaction(isNegative ? 'dizzy' : 'happy');
       if (bubble && typeof bubble.x === 'number') {
@@ -354,6 +355,7 @@ export default function BlackboardPage() {
     const unsubscribe = bubbleEngine.subscribe(setBubbles);
 
     const onExplode = (bubble: any) => {
+      if (bubble?.collided) return;
       setLastCompleted(bubble.content);
       setPlocReaction('happy');
       addWave(bubble.x, bubble.y, 'rgba(34, 197, 94, 0.6)'); // Onda Verde (Sucesso)

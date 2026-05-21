@@ -109,8 +109,10 @@ export default function TitleBubble({
 
   return (
     <div
-      onClick={onClick}
-      className="relative w-[90px] h-[90px] select-none pointer-events-auto cursor-pointer"
+      onClick={isPopped ? undefined : onClick}
+      className={`relative w-[90px] h-[90px] select-none ${
+        isPopped ? 'pointer-events-none' : 'pointer-events-auto cursor-pointer'
+      }`}
       style={{ zIndex: 10 + seqIndex }}
     >
       <AnimatePresence>

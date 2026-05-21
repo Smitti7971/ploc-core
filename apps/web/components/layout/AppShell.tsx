@@ -24,14 +24,11 @@ export function AppShell({ children }: AppShellProps) {
   const isSettings = pathname === '/settings';
   const isPlocPage = pathname === '/ploc';
 
-  // Client-side auth guard (backup do middleware)
+  // Client-side auth guard (Redirecionamento para rota protegida se deslogado)
   useEffect(() => {
     const token = localStorage.getItem('ploc_token');
     if (!token && !isAuthenticated) {
       router.replace('/');
-    } else if (isAuthenticated) {
-      // Garante que o cookie existe para o Middleware
-      document.cookie = `ploc-auth=true; path=/; max-age=${60 * 60 * 24 * 7}`;
     }
   }, [isAuthenticated, router]);
 

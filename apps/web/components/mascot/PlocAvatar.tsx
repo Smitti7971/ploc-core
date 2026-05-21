@@ -604,19 +604,21 @@ export default function PlocAvatar({
           handleClick(e);
           setAreActionsVisible(true);
 
-          if (gameMode === 'decor') {
-            handleMascotClick();
-            return;
-          }
-
           if (isLanding) {
             // Emite evento para abrir o input da landing page
             blackboardEventBus.emit('OPEN_LANDING_CHAT', true);
             // E também abre o chat visual do Ploc para mostrar as falas dele!
             setIsChatOpen(true);
-            if (!hasSpokenIntro) {
+            if (gameMode === 'decor') {
+              handleMascotClick();
+            } else if (!hasSpokenIntro) {
               handleOpenIntro();
             }
+            return;
+          }
+
+          if (gameMode === 'decor') {
+            handleMascotClick();
             return;
           }
 

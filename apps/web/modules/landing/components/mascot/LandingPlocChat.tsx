@@ -17,7 +17,7 @@ export default function LandingPlocChat({ isOpen }: LandingPlocChatProps) {
     e.preventDefault();
     if (!inputText.trim()) return;
 
-    blackboardEventBus.emit('USER_SENT_MESSAGE', {
+    blackboardEventBus.emit('SEND_PLOC_MESSAGE', {
       text: inputText,
       sender: 'user'
     });

@@ -32,6 +32,7 @@ class PlocEngine {
   }
 
   private handleBubbleExplosion(bubble: any) {
+    if (bubble?.collided) return;
     console.log('PlocEngine: Reagindo a explosão de bolha (Sucesso)', bubble);
     
     let message = 'Ploc adorou o seu progresso! ✨';

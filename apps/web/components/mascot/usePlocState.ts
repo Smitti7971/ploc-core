@@ -343,7 +343,8 @@ export function usePlocState({ emotion, speak }: UsePlocStateOptions = {}) {
       BLACKBOARD_EVENTS.BUBBLE_EXPLODED,
       (data) => {
         if (data && data.collided) {
-          triggerBubbleCollided(data.word);
+          // DESATIVADO: Ploc não se irrita nem reage fisicamente com colisões automáticas das bolhas
+          // triggerBubbleCollided(data.word);
         }
       }
     );
