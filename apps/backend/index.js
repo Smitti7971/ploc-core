@@ -54,24 +54,15 @@ const allowedOrigins = [
   'http://localhost:3001'
 ].filter(Boolean);
 
-// --- MIDDLEWARE DE CORS MANUAL (FORÇA BRUTA) ---
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  res.header('Access-Control-Allow-Origin', origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
-});
-
-// Configuração de CORS (Fallback)
+// --- CONFIGURAÇÃO DE CORS ---
 app.use(cors({
-  origin: true,
-  credentials: true
+  origin: function (origin, callback) {
+    // Permitir todas as origens temporariamente ou verificar via array se preferir
+    callback(null, true); 
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
 
 // Limitador desativado para desenvolvimento
