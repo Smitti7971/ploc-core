@@ -100,11 +100,14 @@ export const useViceStore = create<ViceStore>()(
 
       setActiveVice: (vice) => {
         let createdLog: ViceLog | null = null;
+        let viceIdToDelete: string | null = null;
+
         set((state) => {
           const now = Date.now();
           let newLogs = [...state.logs];
 
           if (vice === null && state.activeVice) {
+            viceIdToDelete = state.activeVice.viceId;
             createdLog = {
               id: Math.random().toString(36).substring(2, 9),
               viceId: state.activeVice.viceId,
@@ -126,8 +129,8 @@ export const useViceStore = create<ViceStore>()(
         });
         
         syncViceToBackend(vice);
-        if (vice === null && get().activeVice) {
-          apiService.delete(`/vices/${get().activeVice?.viceId}`).catch(console.error);
+        if (viceIdToDelete) {
+          apiService.delete(`/vices/${viceIdToDelete}`).catch(console.error);
         }
         if (createdLog) syncLogToBackend(createdLog);
       },
