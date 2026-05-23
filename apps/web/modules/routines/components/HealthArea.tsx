@@ -1,6 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+/**
+ * ============================================================================
+ * Área de Saúde - HealthArea.tsx
+ * ============================================================================
+ * Descrição: Componente/slide focado no pilar de saúde.
+ * Contém o questionário antitabagismo como demonstração de fluxo.
+ * ============================================================================
+ */import React, { useState } from 'react';
 import { Activity, ChevronRight, Cigarette, Flame, Target, Calendar, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -10,7 +17,7 @@ interface HealthAreaProps {
   hasLeft?: boolean;
   hasRight?: boolean;
 }
-
+// Componente que engloba o questionário e visualização de saúde
 export function HealthArea({ hasLeft = true, hasRight = true }: HealthAreaProps) {
   const router = useRouter();
   const searchParams = useSearchParams();

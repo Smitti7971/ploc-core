@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+
+    "paths": {
+      "@/*": ["./*"],
+      "@components/*": ["./apps/web/components/*"]
+    }
+  },
+  "include": ["apps/web/**/*.tsx", "apps/web/**/*.ts"],
+  "exclude": ["node_modules", "dist", "build"]
+}

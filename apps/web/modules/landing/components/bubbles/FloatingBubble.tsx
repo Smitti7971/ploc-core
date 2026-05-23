@@ -1,6 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+/**
+ * ============================================================================
+ * Bolha Flutuante (Lógica) - FloatingBubble.tsx
+ * ============================================================================
+ * Descrição: O controlador físico de uma bolha. Lida com a trajetória (flightParams),
+ * detecção de colisão manual (bounding box) com o PLOC, o estouro (pop) e o respawn.
+ * ============================================================================
+ */import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { blackboardEventBus, BLACKBOARD_EVENTS } from '@/modules/blackboard/events/eventBus';
 import { cn } from '@/lib/utils';
@@ -17,7 +24,7 @@ import { SPRING_PRESETS } from '../../constants';
 export { playPlocSound };
 export { getBubbleWordColor, getBubbleIcon, getDecorIcon } from './helpers';
 export type { BubbleConcept } from './types';
-
+// Componente lógico de movimento e colisão que engloba o corpo visual
 export function FloatingBubble({
   concept,
   isFirstPageLoad = false,

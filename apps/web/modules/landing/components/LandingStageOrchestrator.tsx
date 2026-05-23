@@ -1,6 +1,13 @@
 'use client';
 
-import React from 'react';
+/**
+ * ============================================================================
+ * Orquestrador da Landing Page - LandingStageOrchestrator.tsx
+ * ============================================================================
+ * Descrição: Componente central da landing page. Orquestra a exibição do mascote,
+ * as bolhas flutuantes (conceitos) e controles laterais.
+ * ============================================================================
+ */import React from 'react';
 import { useLandingStageState } from '../hooks';
 import { FloatingBubblesStage } from './bubbles';
 import {
@@ -10,7 +17,7 @@ import {
   RewardGiftBox
 } from './engines';
 import { MascotCenter, LandingPlocChat } from './mascot';
-
+// Componente que coordena todas as animações e partes da Landing Page
 export default function LandingStageOrchestrator() {
   const {
     isMounted,
@@ -32,7 +39,7 @@ export default function LandingStageOrchestrator() {
   if (!isMounted) return null;
 
   return (
-    <div 
+    <div
       className="absolute inset-0 pointer-events-none w-full h-full overflow-hidden"
     >
       {/* ── 0. O Mascote Ploc Centralizado (Participa da hierarquia global de z-index) ── */}
@@ -40,7 +47,7 @@ export default function LandingStageOrchestrator() {
 
       {/* ── 1. Letreiro Central e Elementos Flutuantes Centrais ── */}
       <div
-         className="absolute left-0 right-0 w-full text-center pointer-events-none flex flex-col items-center justify-center top-[calc(50%+75px)] z-15"
+        className="absolute left-0 right-0 w-full text-center pointer-events-none flex flex-col items-center justify-center top-[calc(50%+75px)] z-15"
       >
         <ChallengePhrasesHeader phraseIndex={phraseIndex} />
         <LandingPlocChat isOpen={isLandingChatOpen} />

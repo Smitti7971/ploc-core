@@ -1,8 +1,15 @@
 'use client';
 
-import React from 'react';
+/**
+ * ============================================================================
+ * Fundo com Brilho Ambiente - AmbientGlowBackground.tsx
+ * ============================================================================
+ * Descrição: Efeito de luz ambiente de fundo (Glow) usando gradients radiais.
+ * Anima lentamente para dar um aspecto vivo à atmosfera da Landing Page.
+ * ============================================================================
+ */import React from 'react';
 import { motion } from 'framer-motion';
-
+// Renderiza as esferas de luz que se movem sutilmente ao fundo
 export const AmbientGlowBackground: React.FC = () => {
   return (
     <div className="absolute inset-0 overflow-hidden z-[10] pointer-events-none">

@@ -1,12 +1,20 @@
 'use client';
 
-import React, { useState } from 'react';
+/**
+ * ============================================================================
+ * Modal de Autenticação - AuthModal.tsx
+ * ============================================================================
+ * Descrição: Interface modal em glassmorphism contendo formulário de login e
+ * registro. Mantém estado de erro e de carregamento durante chamadas à API.
+ * ============================================================================
+ */import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
 import { apiService } from '@/services/api';
 import { cn } from '@/lib/utils';
 import type { User } from '@/types/global.types';
 
+// Componente do Modal que sobrepõe a tela para autenticar o user
 export const AuthModal: React.FC = () => {
   const { isAuthModalOpen, setAuthModalOpen } = useAuthStore();
 

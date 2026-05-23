@@ -1,6 +1,14 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+/**
+ * ============================================================================
+ * Gerenciador de Pilares - PillarManager.tsx
+ * ============================================================================
+ * Descrição: Componente que controla a navegação horizontal entre os diferentes
+ * pilares (Corpo, Mente, Vida, Liberdade, Propósito).
+ * Mantém o estado da aba ativa usando intersection observer (scroll) ou clique.
+ * ============================================================================
+ */import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { PillarPage } from './PillarPage';
 import { BicepsFlexed, Brain, Heart, Bird, Flag, ArrowLeft } from 'lucide-react';
@@ -23,7 +31,7 @@ const PILLAR_COLORS = {
   liberdade: '#2dd4bf',
   proposito: '#c084fc'
 };
-
+// Componente principal de gerenciamento dos pilares no dashboard
 export function PillarManager() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activePillar, setActivePillar] = useState('corpo');

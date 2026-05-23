@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { AppShell } from '@/components/layout/AppShell';
-import { useAuthStore } from '@/store/authStore';
-import { apiService } from '@/services/api';
-import { config } from '@/lib/config';
-import { useRouter } from 'next/navigation';
+// Bloco de imports: React, bibliotecas de UI, Zustand (store), serviços de API e roteamento
+import React, { useState, useEffect } from 'react'; // React hooks para estado e ciclo de vida
+import { motion } from 'framer-motion'; // Biblioteca de animações
+import { AppShell } from '@/components/layout/AppShell'; // Casca de layout global
+import { useAuthStore } from '@/store/authStore'; // Hook da store de autenticação
+import { apiService } from '@/services/api'; // Serviço wrapper pro backend
+import { config } from '@/lib/config'; // Variáveis de ambiente
+import { useRouter } from 'next/navigation'; // Hook de navegação do Next.js
 import { 
   ArrowLeft, 
   User, 
@@ -18,20 +19,22 @@ import {
   Sparkles,
   Globe,
   Smile
-} from 'lucide-react';
+} from 'lucide-react'; // Ícones da UI
 
+// Componente da Página de Configurações do Usuário
 export default function SettingsPage() {
-  const { user, token, updateUser } = useAuthStore();
-  const router = useRouter();
+  // Bloco de Inicialização e Hooks de Roteamento/Estado Global
+  const { user, token, updateUser } = useAuthStore(); // Pega dados e funções da sessão
+  const router = useRouter(); // Hook para navegação
   
-  // Estados Locais
-  const [name, setName] = useState(user?.name || '');
-  const [email, setEmail] = useState(user?.email || '');
-  const [username, setUsername] = useState(user?.username || '');
-  const [isUploading, setIsUploading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  // Bloco de Estados Locais para o Formulário e Interface
+  const [name, setName] = useState(user?.name || ''); // Nome atual no input
+  const [email, setEmail] = useState(user?.email || ''); // Email atual no input
+  const [username, setUsername] = useState(user?.username || ''); // Username atual no input
+  const [isUploading, setIsUploading] = useState(false); // Flag de loading para upload de foto
+  const [isSaving, setIsSaving] = useState(false); // Flag de loading para salvar dados
 
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false); // Flag para confirmar que a store do Zustand carregou no cliente
   
   // Debug para entender o que está acontecendo
   console.log('🛠️ [SettingsPage] Estado Atual:', { 
@@ -41,74 +44,84 @@ export default function SettingsPage() {
     tokenPreview: token ? `${token.substring(0, 10)}...` : 'NULLED'
   });
 
+  // Bloco useEffect: Resolve problema de hidratação do Zustand (SSR vs CSR)
   useEffect(() => {
+    // Inscreve no evento finishHydration do Zustand persist para saber que os dados do LocalStorage estão na store
     const unsub = useAuthStore.persist.onFinishHydration(() => {
       console.log('✅ [SettingsPage] Hidratação Finalizada!');
-      setIsHydrated(true);
+      setIsHydrated(true); // Marca como carregado
     });
 
+    // Se já estava hidratado antes do useEffect rodar, seta como true
     if (useAuthStore.persist.hasHydrated()) {
       setIsHydrated(true);
     }
 
+    // Cleanup: desinscreve o listener
     return () => unsub();
   }, []);
 
-  // Redireciona se não houver token (sessão perdida) - APÓS HIDRATAÇÃO
+  // Bloco useEffect: Proteção de Rota - Redireciona se não houver token (sessão perdida) APÓS HIDRATAÇÃO
   useEffect(() => {
     if (isHydrated && !token && typeof window !== 'undefined') {
       console.warn('⚠️ [SettingsPage] Sessão não encontrada. Redirecionando...');
-      router.push('/');
+      router.push('/'); // Chuta para home/login
     }
   }, [isHydrated, token, router]);
 
 
-  // Sincroniza estados iniciais quando o user carregar
+  // Bloco useEffect: Sincroniza os estados locais do formulário assim que o objeto `user` estiver disponível
   useEffect(() => {
     if (user) {
-      setName(user.name || '');
-      setEmail(user.email || '');
-      setUsername(user.username || '');
+      setName(user.name || ''); // Atualiza o nome com os dados da store
+      setEmail(user.email || ''); // Atualiza email
+      setUsername(user.username || ''); // Atualiza username
     }
-  }, [user]);
+  }, [user]); // Roda sempre que o `user` mudar
 
+  // Bloco de Função: Lida com a seleção e envio da imagem de perfil (Upload)
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0]; // Pega o primeiro arquivo
     if (!file) return;
 
     try {
-      setIsUploading(true);
-      const previewUrl = URL.createObjectURL(file);
-      updateUser({ profilePhoto: previewUrl });
+      setIsUploading(true); // Liga o loading de foto
+      const previewUrl = URL.createObjectURL(file); // Cria URL temporária para mostrar no frontend imediatamente
+      updateUser({ profilePhoto: previewUrl }); // Otimismo UI: Mostra a foto no Ploc/Store antes de confirmar no back
 
-      const formData = new FormData();
+      const formData = new FormData(); // Cria form multipart
       formData.append('file', file);
 
+      // Faz upload para a rota de upload do backend e recebe a URL final da CDN/Cloud
       const uploadData = await apiService.upload<{ url: string }>('/upload?type=avatar', formData);
       
+      // Atualiza o perfil do usuário no DB com a URL nova da foto
       const response = await apiService.put<any>('/users/me', { profilePhoto: uploadData.url }, { token: token || undefined });
 
+      // Atualiza a store com o usuário inteiro vindo do banco
       updateUser(response.user);
       
     } catch (error) {
       console.error(error);
-      alert('Erro ao atualizar foto.');
+      alert('Erro ao atualizar foto.'); // Feedback de erro
     } finally {
-      setIsUploading(false);
+      setIsUploading(false); // Tira o loading
     }
   };
 
+  // Bloco de Função: Envia as alterações de nome e email pro Backend
   const handleSaveChanges = async () => {
-    setIsSaving(true);
+    setIsSaving(true); // Bloqueia o botão e mostra loading
     try {
+      // Faz requisição PUT na API mandando os campos novos do input
       const response = await apiService.put<any>('/users/me', { name, email, username }, { token: token || undefined });
-      updateUser(response.user);
-      alert('Perfil atualizado! ✨');
+      updateUser(response.user); // Salva dados frescos na Store global
+      alert('Perfil atualizado! ✨'); // Sucesso pro user
     } catch (err) {
       console.error(err);
-      alert('Erro ao salvar alterações.');
+      alert('Erro ao salvar alterações.'); // Erro pro user
     } finally {
-      setIsSaving(false);
+      setIsSaving(false); // Desbloqueia o botão
     }
   };
 

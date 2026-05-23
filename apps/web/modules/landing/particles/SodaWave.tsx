@@ -1,7 +1,14 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
-
+/**
+ * ============================================================================
+ * Onda de Bolhas (Efeito Soda) - SodaWave.tsx
+ * ============================================================================
+ * Descrição: Efeito de efervescência inicial. Bolhas transparentes de "refrigerante"
+ * que sobem rapidamente quando a Landing Page é carregada.
+ * ============================================================================
+ */import React, { useEffect, useState, useMemo } from 'react';
+// Componente que orquestra a animação de bolhas subindo do rodapé
 export function SodaWave() {
   const [isActive, setIsActive] = useState(true);
 

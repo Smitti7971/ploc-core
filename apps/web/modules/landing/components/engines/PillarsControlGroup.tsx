@@ -1,6 +1,13 @@
 'use client';
 
-import React from 'react';
+/**
+ * ============================================================================
+ * Grupo de Controle de Pilares - PillarsControlGroup.tsx
+ * ============================================================================
+ * Descrição: Componente que agrupa e exibe os botões de controle de HUD para 
+ * os pilares (Corpo, Mente, Vida, etc.) e o controle de densidade de bolhas.
+ * ============================================================================
+ */import React from 'react';
 import { PILLARS_CONFIG } from './PillarTooltipDetail';
 import PillarHUDButton from './PillarHUDButton';
 import { BubbleDensityButton } from '../bubbles';
@@ -14,7 +21,7 @@ interface PillarsControlGroupProps {
   onChangeDensity: (newDensity: 'none' | 'low' | 'medium' | 'high') => void;
   onboardingStage?: string;
 }
-
+// Componente que renderiza o grupo de botões na interface
 export default function PillarsControlGroup({
   gameMode,
   density,

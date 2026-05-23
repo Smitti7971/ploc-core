@@ -23,11 +23,13 @@ class BubbleEngine {
       try {
         const savedBubbles: BlackboardBubble[] = JSON.parse(saved);
         const now = Date.now();
-        
+
         // Filtra bolhas: inward precisam estar no prazo, outward sempre ficam (overtime)
         this.bubbles = savedBubbles
           .filter(b => {
             const isOutward = b.metadata?.direction === 'outward';
+            const isOldSmoking = b.metadata?.habit === 'smoking' || b.content?.includes('Fumar');
+            if (isOldSmoking) return false;
             return isOutward || (b.deadlineAt || 0) > now;
           })
           .map(b => ({
@@ -39,20 +41,10 @@ class BubbleEngine {
       }
     }
 
-    // Se não houver a bolha de resistência específica, cria ela
-    const hasSmoking = this.bubbles.some(b => b.metadata?.habit === 'smoking');
-    if (!hasSmoking) {
+    // Boilerplate/Tutorial start
+    if (this.bubbles.length === 0) {
       setTimeout(() => {
         this.spawnBubble('insight', 'Bem-vindo ao Radar Ploc! ⏱️', 10);
-        this.spawnBubble('routine', 'Hábito detectado no sonar', 6);
-        
-        // Exemplo: Resistência ao Cigarro (Nasce no Ploc e foge)
-        this.spawnBubble('routine', '🚭 Desejo de Fumar', 60, { 
-          habit: 'smoking',
-          direction: 'outward',
-          totalMinutes: 60,
-          label: 'RESISTIR'
-        });
       }, 1000);
     }
   }
@@ -81,7 +73,7 @@ class BubbleEngine {
   /** Calcula a posição X/Y baseada no tempo restante e ângulo */
   private calculatePosition(minutesRemaining: number, angle: number, totalMinutes: number, direction: 'inward' | 'outward' = 'inward') {
     let distance = 0;
-    
+
     if (direction === 'outward') {
       // Começa no 0 (centro) e vai até a borda (500px fixos para teste visual)
       const progress = Math.min(1, 1 - (minutesRemaining / totalMinutes));
@@ -175,12 +167,12 @@ class BubbleEngine {
       // SE FOR HABITO (OUTWARD), RESPÁUNA AUTOMATICAMENTE PARA CRIAR O LOOPING
       if (direction === 'outward') {
         setTimeout(() => {
-        this.spawnBubble(bubble.type, bubble.content, 60, { 
-          ...bubble.metadata,
-          totalMinutes: 60
-        });
-      }, 800);
- // Delay para garantir que a explosão foi processada
+          this.spawnBubble(bubble.type, bubble.content, 60, {
+            ...bubble.metadata,
+            totalMinutes: 60
+          });
+        }, 800);
+        // Delay para garantir que a explosão foi processada
       }
     }
   }
@@ -189,7 +181,7 @@ class BubbleEngine {
     const impacts: Record<string, number> = {};
     const s = status.toLowerCase().trim();
     const t = (bubble.type || '').toLowerCase().trim();
-    
+
     if (s === 'success' || s === 'resisted') {
       if (t === 'routine') {
         const habit = bubble.metadata?.habit;
@@ -201,7 +193,7 @@ class BubbleEngine {
           impacts['corpo'] = 2;
         }
       } else {
-        impacts['mente'] = 1; 
+        impacts['mente'] = 1;
       }
     } else if (s === 'failed' || s === 'gave_up') {
       impacts['corpo'] = -1;
@@ -214,7 +206,7 @@ class BubbleEngine {
     if (Object.keys(impacts).length === 0 && (s === 'success' || s === 'resisted')) {
       impacts['mente'] = 1;
     }
-    
+
     return impacts;
   }
 
@@ -236,17 +228,17 @@ class BubbleEngine {
       const currentMinutes = bubble.minutesRemaining || 0;
       const direction = bubble.metadata?.direction || 'inward';
       const totalMinutes = bubble.metadata?.totalMinutes || 10;
-      
+
       // Bolhas outward podem ter tempo negativo (continuidade)
       let newMinutes = currentMinutes - dt;
       if (direction !== 'outward') {
         newMinutes = Math.max(0, newMinutes);
       }
-      
+
       // Para cálculo de posição, travamos no 0 para ela não fugir da tela no overtime
       const posMinutes = Math.max(0, newMinutes);
       const { x, y } = this.calculatePosition(posMinutes, bubble.angle || 0, totalMinutes, direction);
-      
+
       const newEnergy = Math.max(0, bubble.energy - 0.1);
 
       if (Math.abs(newMinutes - currentMinutes) > 0.0001) {
@@ -302,7 +294,7 @@ class BubbleEngine {
 
     if (changed) {
       this.notify();
-      if (Math.random() < 0.05) this.save(); 
+      if (Math.random() < 0.05) this.save();
     }
   }
 }

@@ -1,7 +1,6 @@
 'use client';
 
 /**
- * ============================================================================
  * Wrapper Client - PlocAvatarClient.tsx
  * ============================================================================
  * Descrição: Wrapper que força a renderização do PlocAvatar estritamente no lado
@@ -21,10 +20,10 @@ const PlocAvatarInner = dynamic(
   { ssr: false }
 );
 
-export function PlocAvatarClient({ 
-  draggable = true, 
-  emotion = 'calm' 
-}: { 
+export function PlocAvatarClient({
+  draggable = true,
+  emotion = 'calm'
+}: {
   draggable?: boolean;
   emotion?: 'calm' | 'happy' | 'stressed' | 'pissed' | 'sleeping' | 'dizzy';
 }) {

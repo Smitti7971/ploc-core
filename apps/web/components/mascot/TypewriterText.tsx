@@ -17,6 +17,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { usePlocSpeech } from './usePlocSpeech';
+import './typewriter.css';
 
 // 1. Componente dos três pontinhos pulsantes [ ... ] (Pensamento)
 export function ThinkingDots() {
@@ -49,14 +50,12 @@ interface TypewriterTextProps {
 
 export function TypewriterText({ text, speed: propSpeed }: TypewriterTextProps) {
   const [displayedText, setDisplayedText] = useState('');
-  const { isSpeakingMouth } = usePlocSpeech();
   const [speed, setSpeed] = useState(propSpeed || 25);
+  const speedRef = useRef(speed);
 
-  // Mantém uma ref do estado da boca para pausar a digitação em silêncios sem reiniciar o efeito
-  const isSpeakingMouthRef = useRef(isSpeakingMouth);
   useEffect(() => {
-    isSpeakingMouthRef.current = isSpeakingMouth;
-  }, [isSpeakingMouth]);
+    speedRef.current = speed;
+  }, [speed]);
 
   // Calcula a velocidade de digitação em tempo real baseada na duração do áudio fornecida pelo evento
   useEffect(() => {
@@ -69,8 +68,8 @@ export function TypewriterText({ text, speed: propSpeed }: TypewriterTextProps) 
       const customEvent = e as CustomEvent;
       const duration = customEvent.detail?.duration;
       if (duration && typeof duration === 'number' && duration > 0) {
-        // Reservamos 500ms de buffer no final para garantir que o texto termine um pouco antes do áudio
-        const calculatedSpeed = Math.max(10, Math.min(80, (duration - 500) / text.length));
+        // Reservamos 400ms de buffer no final para garantir que o texto termine antes do áudio
+        const calculatedSpeed = Math.max(10, Math.min(80, (duration - 400) / text.length));
         setSpeed(calculatedSpeed);
       }
     };
@@ -82,6 +81,7 @@ export function TypewriterText({ text, speed: propSpeed }: TypewriterTextProps) 
   }, [text, propSpeed]);
 
   useEffect(() => {
+    let isCurrent = true;
     if (!text) {
       setDisplayedText('');
       return;
@@ -90,28 +90,27 @@ export function TypewriterText({ text, speed: propSpeed }: TypewriterTextProps) 
     const chars = Array.from(text);
     let index = 0;
     setDisplayedText('');
+    let timeoutId: NodeJS.Timeout;
 
-    const interval = setInterval(() => {
-      // Pausa a digitação se Ploc estiver em silêncio (boca fechada no áudio)
-      // Permitimos digitar o primeiro e último caractere como salvaguarda
-      if (!isSpeakingMouthRef.current && index > 0 && index < chars.length - 1) {
-        return;
-      }
-
+    const typeNext = () => {
+      if (!isCurrent) return;
       if (index < chars.length) {
         const char = chars[index];
         setDisplayedText((prev) => prev + char);
         index++;
-      } else {
-        clearInterval(interval);
+        timeoutId = setTimeout(typeNext, speedRef.current);
       }
-    }, speed);
+    };
 
-    return () => clearInterval(interval);
-  }, [text, speed]);
+    timeoutId = setTimeout(typeNext, speedRef.current);
+    return () => {
+      isCurrent = false;
+      clearTimeout(timeoutId);
+    };
+  }, [text]);
 
   return (
-    <span className="inline-block text-center whitespace-pre-wrap">
+    <span className="inline-block text-center whitespace-pre-wrap typewriter">
       {displayedText}
     </span>
   );

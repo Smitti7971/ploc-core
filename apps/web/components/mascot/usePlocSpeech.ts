@@ -7,7 +7,7 @@
  * ============================================================================
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { config } from '@/lib/config';
 
 let persistentAudio: HTMLAudioElement | null = null;
@@ -279,7 +279,7 @@ export function usePlocSpeech() {
     };
   }, []);
 
-  const speak = (text: string, duration: number = 4000, options?: { queue?: boolean; silent?: boolean }) => {
+  const speak = useCallback((text: string, duration: number = 4000, options?: { queue?: boolean; silent?: boolean }) => {
     if (options?.queue) {
       speechQueue.push({ text, duration, silent: options?.silent });
       processNextSpeech();
@@ -290,7 +290,7 @@ export function usePlocSpeech() {
         window.dispatchEvent(new CustomEvent('ploc_speech_finished'));
       }, options?.silent);
     }
-  };
+  }, []);
 
   return {
     speak,

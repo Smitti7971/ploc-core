@@ -7,8 +7,12 @@ interface HeroStageProps {
 }
 
 /**
- * HeroStage — O palco principal da Landing Page.
+ * ============================================================================
+ * Palco Principal - HeroStage.tsx
+ * ============================================================================
+ * Descrição: Container wrapper (palco) da Landing Page.
  * Centraliza o mascote e as mensagens com z-index seguro acima da atmosfera.
+ * ============================================================================
  */
 export const HeroStage: React.FC<HeroStageProps> = ({ children }) => {
   return (

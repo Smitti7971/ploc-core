@@ -19,6 +19,7 @@ export function PlocBubbles() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line
     setIsMobile(window.innerWidth < 768);
   }, []);
 

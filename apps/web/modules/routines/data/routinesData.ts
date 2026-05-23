@@ -31,7 +31,7 @@ export const PILLARS_DATA: Record<string, PillarConfig> = {
     icon: Activity,
     summary: 'Saúde, sono e energia física.',
     options: [
-      { id: 'heavy-workout', title: 'Treino Intenso', desc: 'Foco em força total.', image: '/images/routines/workout.png', impacts: [{ pilar: 'corpo', val: 8 }, { pilar: 'mente', val: -2 }] },
+      { id: 'heavy-workout', title: 'TREINO', desc: 'Foco em força total.', image: '/images/routines/workout.png', impacts: [{ pilar: 'corpo', val: 8 }, { pilar: 'mente', val: -2 }] },
       { id: 'diet-strict', title: 'Dieta Restritiva', desc: 'Alimentação limpa.', image: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&q=80&w=400', impacts: [{ pilar: 'corpo', val: 6 }, { pilar: 'vida', val: -4 }] },
       { id: 'sleep-deep', title: 'Sono Profundo', desc: '8h de descanso.', image: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&q=80&w=400', impacts: [{ pilar: 'corpo', val: 5 }, { pilar: 'mente', val: 3 }] }
     ]

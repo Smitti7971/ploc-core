@@ -22,7 +22,7 @@ import {
   ONBOARDING_DIALOGUES
 } from './plocPhrases';
 
-export function usePlocChat() {
+export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleeping: false }) {
   const { speak, isSpeaking } = usePlocSpeech();
   const { setAuthModalOpen, isAuthenticated } = useAuthStore();
 
@@ -203,6 +203,7 @@ export function usePlocChat() {
       collided?: boolean;
     }) => {
       if (!data) return;
+      if (isSleeping) return; // Silêncio absoluto e sem game no sono!
 
       if (data.ref === 'trigger_onboarding' && data.poppedByUser) {
         handleStartOnboardingGame();
@@ -318,11 +319,12 @@ export function usePlocChat() {
 
     const unsubscribe = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_EXPLODED, handleBubbleExploded);
     return () => unsubscribe();
-  }, [speak, isAuthenticated, isSpeaking, gameMode, onboardingStage]);
+  }, [speak, isAuthenticated, isSpeaking, gameMode, onboardingStage, isSleeping]);
 
   // Listener para puxão de orelha em estouro desequilibrado (fase 2)
   useEffect(() => {
     const handleUnbalancedPop = () => {
+      if (isSleeping) return; // Silêncio absoluto no sono!
       if (onboardingStage === 'fase2') {
         const warningText = "Ei! Focar em um único pilar desmorona os outros! A regra é equilíbrio, busque o balanceamento!";
         speak(warningText, 5000, { queue: true });
@@ -333,7 +335,7 @@ export function usePlocChat() {
 
     window.addEventListener('ploc_unbalanced_pop', handleUnbalancedPop);
     return () => window.removeEventListener('ploc_unbalanced_pop', handleUnbalancedPop);
-  }, [speak, onboardingStage]);
+  }, [speak, onboardingStage, isSleeping]);
 
   // Auto-hide legendas
   useEffect(() => {
@@ -570,9 +572,85 @@ export function usePlocChat() {
       return;
     }
 
+    const savedLevel = typeof window !== 'undefined' ? parseInt(localStorage.getItem('ploc_anger_level') || '0', 10) : 0;
+
+    // Se estiver no nível 5 (FURIOSO), recusa todas as tentativas de interação por chat
+    if (savedLevel === 5) {
+      setTimeout(() => {
+        const reply = "NÃO VOU FALAR COM VOCÊ! NÃO TÁ VENDO QUE ESTOU FURIOSO?! 😡👺🔥";
+        setChatMessages(prev => [...prev, { sender: 'ploc', text: reply }]);
+        setIsPending(false);
+        speak(reply, 5000);
+      }, 1000);
+      return;
+    }
+
+    // Se estiver nos níveis 3 ou 4, verifica se é a primeira tentativa naquele nível
+    if (savedLevel === 3 || savedLevel === 4) {
+      const deniedLevel = typeof window !== 'undefined' ? sessionStorage.getItem('ploc_anger_denied_level') : null;
+      if (deniedLevel !== savedLevel.toString()) {
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('ploc_anger_denied_level', savedLevel.toString());
+        }
+        setTimeout(() => {
+          const reply = savedLevel === 3 
+            ? "Não quero papo agora. Me deixa em paz! 😠" 
+            : "ME DEIXA EM PAZ! NÃO VOU RESPONDER NADA! 😡🔥";
+          setChatMessages(prev => [...prev, { sender: 'ploc', text: reply }]);
+          setIsPending(false);
+          speak(reply, 5000);
+        }, 1000);
+        return;
+      }
+    }
+
+    // Limpa a primeira tentativa se estiver calmo
+    if (savedLevel === 0 && typeof window !== 'undefined') {
+      sessionStorage.removeItem('ploc_anger_denied_level');
+    }
+
     try {
       const res = await chatService.sendMessage(text);
-      const reply = res.message || "Não entendi muito bem. Pode repetir?";
+      let reply = res.message || "Não entendi muito bem. Pode repetir?";
+
+      // Aplica prefixos baseados nos níveis
+      if (savedLevel === 1) {
+        const lvl1Prefixes = [
+          "Nossa, que chatice... Mas enfim: ",
+          "Tô meio amuado com você, mas respondo: ",
+          "Humph... se você quer saber: ",
+          "Ainda tô um pouco chateado, tá? Mas tudo bem: "
+        ];
+        const prefix = lvl1Prefixes[Math.floor(Math.random() * lvl1Prefixes.length)];
+        reply = prefix + reply;
+      } else if (savedLevel === 2) {
+        const lvl2Prefixes = [
+          "Sinceramente... Mas tudo bem, respondendo sua pergunta: ",
+          "Que situação desagradável... Mas aqui está: ",
+          "Cara, que frustração... Enfim: ",
+          "Não sei nem o que dizer, mas respondo: "
+        ];
+        const prefix = lvl2Prefixes[Math.floor(Math.random() * lvl2Prefixes.length)];
+        reply = prefix + reply;
+      } else if (savedLevel === 3) {
+        const lvl3Prefixes = [
+          "Grrr... Tá bom, tá bom! Olha aqui: ",
+          "Você é persistente, hein?! Toma sua resposta: ",
+          "Estou muito irritado, mas vou responder para ver se você me deixa quieto: ",
+          "Que chateação... só vou falar essa vez: "
+        ];
+        const prefix = lvl3Prefixes[Math.floor(Math.random() * lvl3Prefixes.length)];
+        reply = prefix + reply;
+      } else if (savedLevel === 4) {
+        const lvl4Prefixes = [
+          "SAI DAQUI! QUE RAIVA! Quer saber?! ",
+          "EU TÔ QUASE EXPLODINDO! Mas toma isso de uma vez: ",
+          "😡 JÁ DISSE QUE NÃO QUERIA FALAR! Mas já que você não para: ",
+          "Não aguento mais essa chatice! Lá vai: "
+        ];
+        const prefix = lvl4Prefixes[Math.floor(Math.random() * lvl4Prefixes.length)];
+        reply = prefix + reply;
+      }
 
       setChatMessages(prev => [...prev, { sender: 'ploc', text: reply }]);
       setIsPending(false);
@@ -608,8 +686,11 @@ export function usePlocChat() {
       setShowPriorityConfirmButtons(false);
       setTempSelectedPillar(null);
       setPhase1PopCount(0);
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('ploc_anger_denied_level');
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
       }
     };
 
@@ -679,6 +760,7 @@ export function usePlocChat() {
   // Escuta estouro dos TitleBubbles (Easter Egg do nome PLOC)
   useEffect(() => {
     const handleTitleBubblesPopped = () => {
+      if (isSleeping) return; // Silêncio absoluto no sono!
       const activeMode = localStorage.getItem('ploc_game_mode') || 'decor';
       if (activeMode !== 'decor') return;
 
@@ -690,11 +772,12 @@ export function usePlocChat() {
 
     const unsub = blackboardEventBus.subscribe('TITLE_BUBBLES_POPPED', handleTitleBubblesPopped);
     return () => unsub();
-  }, [speakAndTrack]);
+  }, [speakAndTrack, isSleeping]);
 
   // Listener para seleção de pilar de prioridade
   useEffect(() => {
     const handleSelected = (pillar: any) => {
+      if (isSleeping) return; // Silêncio absoluto no sono!
       if (onboardingStage !== 'priority') return;
       
       const pillarStr = String(pillar);
@@ -712,7 +795,7 @@ export function usePlocChat() {
 
     const sub = blackboardEventBus.subscribe('PRIORITY_PILLAR_SELECTED', handleSelected);
     return () => sub();
-  }, [onboardingStage, speak]);
+  }, [onboardingStage, speak, isSleeping]);
 
   const handleConfirmPriorityPillar = () => {
     if (!tempSelectedPillar) return;

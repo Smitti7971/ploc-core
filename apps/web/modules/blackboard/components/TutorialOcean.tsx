@@ -1,6 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+/**
+ * ============================================================================
+ * Oceano de Tutorial - TutorialOcean.tsx
+ * ============================================================================
+ * Descrição: Modal de onboarding para novos usuários ensinando as mecânicas 
+ * básicas de interação com o espaço tridimensional (Oceano/Quadro).
+ * ============================================================================
+ */import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Target, MousePointer2, Clock, CheckCircle2 } from 'lucide-react';
 
@@ -40,6 +47,7 @@ const STEPS: TutorialStep[] = [
   }
 ];
 
+// Componente que mostra os passos do tutorial (Slider Modal)
 export function TutorialOcean({ onComplete }: { onComplete: () => void }) {
   const [currentStep, setCurrentStep] = useState(0);
 

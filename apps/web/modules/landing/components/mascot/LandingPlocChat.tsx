@@ -1,5 +1,13 @@
 'use client';
  
+/**
+ * ============================================================================
+ * Chat do Ploc na Landing Page - LandingPlocChat.tsx
+ * ============================================================================
+ * Descrição: Input de texto flutuante para o usuário conversar com o mascote
+ * na Landing Page antes de realizar o login.
+ * ============================================================================
+ */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send } from 'lucide-react';
@@ -9,7 +17,7 @@ import { PANEL_TRANSITION } from '../../constants';
 interface LandingPlocChatProps {
   isOpen: boolean;
 }
-
+// Formulário de input animado que emite o evento de mensagem do usuário
 export default function LandingPlocChat({ isOpen }: LandingPlocChatProps) {
   const [inputText, setInputText] = useState('');
 
@@ -36,11 +44,8 @@ export default function LandingPlocChat({ isOpen }: LandingPlocChatProps) {
         >
           <form
             onSubmit={handleSubmit}
-            className="flex items-center gap-2 p-2 rounded-[25px] border border-white/10 backdrop-blur-md relative overflow-hidden transition-all duration-300 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.02)_60%,transparent_100%)] shadow-[0_15px_35px_rgba(0,0,0,0.3),inset_0_0_15px_rgba(255,255,255,0.02)]"
+            className="flex items-center gap-2 p-2 rounded-[25px] border border-white/10 backdrop-blur-md relative overflow-hidden transition-all duration-300 bg-white/5 hover:bg-white/8 focus-within:bg-white/10 focus-within:border-white/20 shadow-[0_15px_35px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)] focus-within:shadow-[0_15px_35px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.15)]"
           >
-            {/* Brilho Especular Curvo Interno */}
-            <div className="absolute top-[8%] left-[8%] w-[20%] h-[30%] rounded-full bg-gradient-to-br from-white/20 to-transparent blur-[1px] pointer-events-none" />
-
             <input
               type="text"
               value={inputText}

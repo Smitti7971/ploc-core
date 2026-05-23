@@ -11,18 +11,19 @@
  * ============================================================================
  */
 
-import React, { useState, useEffect } from 'react';
-import { AppShell } from '@/components/layout/AppShell';
-import { motion, AnimatePresence } from 'framer-motion';
+// Bloco de Imports do React, bibliotecas de UI e sistema do mascote
+import React, { useState, useEffect } from 'react'; // React hooks para estado e ciclo de vida
+import { AppShell } from '@/components/layout/AppShell'; // Layout principal com dock
+import { motion, AnimatePresence } from 'framer-motion'; // Animações de UI fluidas
 import { 
   Sparkles, Eye, Smile, Scissors, Shirt, Flame, RotateCcw, 
   Heart, Award, Sparkle, CircleDot, Palette, Footprints,
   Clock, Gamepad2, TrendingUp, X, HelpCircle, Info
-} from 'lucide-react';
-import { PlocAppearance, DEFAULT_PLOC_APPEARANCE, PlocEyeType, PlocMouthType, PlocHairType, PlocClothesType, PlocHatType, PlocAuraType, PlocShoesType } from '@/components/mascot/types';
-import { PlocAvatarClient } from '@/components/mascot/PlocAvatarClient';
-import { attributeEngine } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
-import { triggerAchievementUnlock, ACHIEVEMENTS_LIST } from '@/components/mascot/achievements';
+} from 'lucide-react'; // Ícones para os menus de personalização
+import { PlocAppearance, DEFAULT_PLOC_APPEARANCE, PlocEyeType, PlocMouthType, PlocHairType, PlocClothesType, PlocHatType, PlocAuraType, PlocShoesType } from '@/components/mascot/types'; // Tipagens de customização do mascote
+import { PlocAvatarClient } from '@/components/mascot/PlocAvatarClient'; // Componente visual do mascote
+import { attributeEngine } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine'; // Motor que lê os atributos globais do usuário
+import { triggerAchievementUnlock, ACHIEVEMENTS_LIST } from '@/components/mascot/achievements'; // Sistema de conquistas e badges
 
 // Síntese de som procedural retro chique ao vestir roupas/acessórios usando Web Audio API
 const playEquipSound = () => {
@@ -113,58 +114,61 @@ const MOODS_DATA: Record<string, MoodInfo> = {
   }
 };
 
+// Componente principal que renderiza a interface do Guarda-Roupa do Ploc
 export default function PlocCentralPage() {
-  const [isMounted, setIsMounted] = useState(false);
-  const [appearance, setAppearance] = useState<PlocAppearance>(DEFAULT_PLOC_APPEARANCE);
-  const [selectedEmotion, setSelectedEmotion] = useState<'calm' | 'happy' | 'stressed' | 'pissed' | 'sleeping' | 'dizzy'>('calm');
-  const [activeTab, setActiveTab] = useState<'eyes' | 'mouth' | 'hair' | 'clothes' | 'hat' | 'aura' | 'shoes' | 'bodyColor'>('eyes');
+  // Bloco de Estados do componente
+  const [isMounted, setIsMounted] = useState(false); // Flag para resolver erros de hidratação Next.js
+  const [appearance, setAppearance] = useState<PlocAppearance>(DEFAULT_PLOC_APPEARANCE); // Armazena a customização atual visual do mascote
+  const [selectedEmotion, setSelectedEmotion] = useState<'calm' | 'happy' | 'stressed' | 'pissed' | 'sleeping' | 'dizzy'>('calm'); // Guarda a emoção atualmente visualizada no pedestal
+  const [activeTab, setActiveTab] = useState<'eyes' | 'mouth' | 'hair' | 'clothes' | 'hat' | 'aura' | 'shoes' | 'bodyColor'>('eyes'); // Controla qual aba do guarda-roupa está aberta
   
   // Estado para o Modal Explicativo de Humores
-  const [selectedMoodExplain, setSelectedMoodExplain] = useState<string | null>(null);
+  const [selectedMoodExplain, setSelectedMoodExplain] = useState<string | null>(null); // Abre o popup de detalhe se tiver uma emoção selecionada
 
   // Estado para o painel de conquistas
-  const [showAchievements, setShowAchievements] = useState(false);
-  const [unlockedAchievements, setUnlockedAchievements] = useState<Array<{ id: string; date: string }>>([]);
+  const [showAchievements, setShowAchievements] = useState(false); // Mostra ou esconde o modal de badges
+  const [unlockedAchievements, setUnlockedAchievements] = useState<Array<{ id: string; date: string }>>([]); // Guarda lista de conquistas liberadas
 
-  // Blackboard user attributes
+  // Blackboard user attributes: guarda atributos fake RPG do usuário
   const [attributes, setAttributes] = useState({
     corpo: 0,
     mente: 0,
     vida: 0,
     liberdade: 0,
     proposito: 0
-  });
-  const [plocStats, setPlocStats] = useState({ level: 1, clicks: 0, needed: 15 });
+  }); // Objeto com status do level de corpo, mente, vida, etc.
+  const [plocStats, setPlocStats] = useState({ level: 1, clicks: 0, needed: 15 }); // Guarda os status de cliques/fúria do Ploc
 
+  // Bloco useEffect: Sincronização inicial de dados do localStorage e eventos globais
   useEffect(() => {
-    setIsMounted(true);
+    setIsMounted(true); // Confirma montagem no Client Side
 
-    // Carrega customização atual
-    const saved = localStorage.getItem('ploc_appearance');
+    // Carrega customização atual persistida do LocalStorage
+    const saved = localStorage.getItem('ploc_appearance'); // Tenta recuperar a aparência
     if (saved) {
       try {
-        setAppearance(JSON.parse(saved));
-      } catch (e) {}
+        setAppearance(JSON.parse(saved)); // Atualiza estado com os dados salvos
+      } catch (e) {} // Ignora erros de parse silenciosamente
     }
 
-    // Carrega conquistas iniciais
-    const savedAch = localStorage.getItem('ploc_achievements') || '[]';
+    // Carrega conquistas iniciais do LocalStorage
+    const savedAch = localStorage.getItem('ploc_achievements') || '[]'; // Pega conquistas como array string
     try {
-      setUnlockedAchievements(JSON.parse(savedAch));
+      setUnlockedAchievements(JSON.parse(savedAch)); // Tenta jogar as conquistas no estado
     } catch (e) {}
 
-    // Escuta evento de conquistas destravadas em tempo real
+    // Escuta evento de conquistas destravadas em tempo real por outras janelas
     const handleAchUnlocked = () => {
-      const updatedAch = localStorage.getItem('ploc_achievements') || '[]';
+      const updatedAch = localStorage.getItem('ploc_achievements') || '[]'; // Pega a nova lista do storage
       try {
-        setUnlockedAchievements(JSON.parse(updatedAch));
+        setUnlockedAchievements(JSON.parse(updatedAch)); // Sincroniza estado de conquistas
       } catch (e) {}
     };
-    window.addEventListener('ploc_achievement_unlocked', handleAchUnlocked);
+    window.addEventListener('ploc_achievement_unlocked', handleAchUnlocked); // Ouve evento customizado do projeto
 
-    // Carrega atributos e estatísticas físicas
-    const attrs = attributeEngine.getAttributes();
-    setAttributes({
+    // Carrega atributos e estatísticas físicas do Blackboard Engine
+    const attrs = attributeEngine.getAttributes(); // Busca os stats
+    setAttributes({ // Sincroniza a cópia local do estado com o objeto de atributos
       corpo: attrs.corpo,
       mente: attrs.mente,
       vida: attrs.vida,
@@ -172,58 +176,60 @@ export default function PlocCentralPage() {
       proposito: attrs.proposito
     });
 
-    const savedLevel = parseInt(localStorage.getItem('ploc_anger_level') || '1');
-    const savedClicks = parseInt(localStorage.getItem('ploc_anger_clicks') || '0');
-    const needed = Math.floor(Math.pow(savedLevel, 3) * 15);
-    setPlocStats({
+    const savedLevel = parseInt(localStorage.getItem('ploc_anger_level') || '1'); // Busca level de fúria
+    const savedClicks = parseInt(localStorage.getItem('ploc_anger_clicks') || '0'); // Busca contador de cliques de fúria
+    const needed = Math.floor(Math.pow(savedLevel, 3) * 15); // Calcula quanto precisa para evoluir a fúria
+    setPlocStats({ // Define os stats
       level: savedLevel,
       clicks: savedClicks,
       needed
     });
 
+    // Função de limpeza do useEffect: Remove listener ao desmontar componente
     return () => {
-      window.removeEventListener('ploc_achievement_unlocked', handleAchUnlocked);
+      window.removeEventListener('ploc_achievement_unlocked', handleAchUnlocked); // Tira event listener
     };
-  }, []);
+  }, []); // [] Garante que rode só no mount inicial
 
   if (!isMounted) return null;
 
-  // Atualiza um item de customização e salva no localstorage
+  // Bloco de Função: Atualiza um item de customização no Ploc (equipar roupa/acessório)
   const handleEquipItem = (category: keyof PlocAppearance, value: string) => {
-    const updated = {
+    const updated = { // Cria novo objeto alterando a chave correta
       ...appearance,
       [category]: value
     };
-    setAppearance(updated);
-    localStorage.setItem('ploc_appearance', JSON.stringify(updated));
+    setAppearance(updated); // Atualiza estado na tela
+    localStorage.setItem('ploc_appearance', JSON.stringify(updated)); // Persiste no LocalStorage
     
-    // Força disparar storage event local para sincronizar abas do navegador
-    window.dispatchEvent(new Event('storage'));
+    // Força disparar storage event local para sincronizar outras abas e componentes do navegador
+    window.dispatchEvent(new Event('storage')); // Manda aviso manual
 
-    playEquipSound();
+    playEquipSound(); // Toca somzinho retro de equipar (sintético)
 
-    // Desbloqueia Astronauta do Caos se equipou qualquer Aura que não seja 'none'
+    // Verifica lógica de Gamificação: Desbloqueia Astronauta do Caos se equipou qualquer Aura
     if (category === 'aura' && value !== 'none') {
-      triggerAchievementUnlock('astronauta_caos');
+      triggerAchievementUnlock('astronauta_caos'); // Chama engine de conquista
     }
 
-    // Desbloqueia Estilista Gelatinoso se todos os slots de vestuário/aura estão equipados
+    // Verifica lógica de Gamificação: Desbloqueia Estilista Gelatinoso se vestir 1 de cada (menos none)
     if (
-      (category === 'hair' ? value !== 'none' : updated.hair !== 'none') &&
-      (category === 'clothes' ? value !== 'none' : updated.clothes !== 'none') &&
-      (category === 'hat' ? value !== 'none' : updated.hat !== 'none') &&
-      (category === 'shoes' ? value !== 'none' : updated.shoes !== 'none') &&
-      (category === 'aura' ? value !== 'none' : updated.aura !== 'none')
+      (category === 'hair' ? value !== 'none' : updated.hair !== 'none') && // Se for cabelo equipado ou tiver cabelo na state
+      (category === 'clothes' ? value !== 'none' : updated.clothes !== 'none') && // O mesmo pra roupas
+      (category === 'hat' ? value !== 'none' : updated.hat !== 'none') && // Para chateus
+      (category === 'shoes' ? value !== 'none' : updated.shoes !== 'none') && // Para sapatos
+      (category === 'aura' ? value !== 'none' : updated.aura !== 'none') // Para aura
     ) {
-      triggerAchievementUnlock('estilista_gel');
+      triggerAchievementUnlock('estilista_gel'); // Se passou no check gigante, libera achievement estilista
     }
   };
 
+  // Bloco de Função: Reseta as roupas do Ploc pro padrão
   const handleResetAppearance = () => {
-    setAppearance(DEFAULT_PLOC_APPEARANCE);
-    localStorage.setItem('ploc_appearance', JSON.stringify(DEFAULT_PLOC_APPEARANCE));
-    window.dispatchEvent(new Event('storage'));
-    playEquipSound();
+    setAppearance(DEFAULT_PLOC_APPEARANCE); // Volta state para configuração limpa
+    localStorage.setItem('ploc_appearance', JSON.stringify(DEFAULT_PLOC_APPEARANCE)); // Limpa localstorage com padrão
+    window.dispatchEvent(new Event('storage')); // Avisa sistema sobre mudança
+    playEquipSound(); // Toca som
   };
 
   // Itens do Guarda Roupa
@@ -297,22 +303,23 @@ export default function PlocCentralPage() {
     { id: 'lava', label: 'Lava', desc: 'Vermelho vulcânico vivo.', icon: '🔥', hex: 'bg-red-500' }
   ];
 
-  // Identifica a lista ativa baseado no activeTab
+  // Bloco de Função: Identifica a lista de itens ativa baseada na aba selecionada
   const getActiveOptions = () => {
-    switch (activeTab) {
-      case 'eyes': return { options: eyesOptions, category: 'eyes' as const };
-      case 'mouth': return { options: mouthOptions, category: 'mouth' as const };
-      case 'hair': return { options: hairOptions, category: 'hair' as const };
-      case 'clothes': return { options: clothesOptions, category: 'clothes' as const };
-      case 'hat': return { options: hatOptions, category: 'hat' as const };
-      case 'aura': return { options: auraOptions, category: 'aura' as const };
-      case 'shoes': return { options: shoesOptions, category: 'shoes' as const };
-      case 'bodyColor': return { options: bodyColorOptions, category: 'bodyColor' as const };
-      default: return { options: eyesOptions, category: 'eyes' as const };
+    switch (activeTab) { // Olha pra state activeTab ('eyes', 'hair', etc.)
+      case 'eyes': return { options: eyesOptions, category: 'eyes' as const }; // Retorna olhos se for aba eyes
+      case 'mouth': return { options: mouthOptions, category: 'mouth' as const }; // Boca
+      case 'hair': return { options: hairOptions, category: 'hair' as const }; // Cabelo
+      case 'clothes': return { options: clothesOptions, category: 'clothes' as const }; // Roupas
+      case 'hat': return { options: hatOptions, category: 'hat' as const }; // Chapéus
+      case 'aura': return { options: auraOptions, category: 'aura' as const }; // Auras
+      case 'shoes': return { options: shoesOptions, category: 'shoes' as const }; // Sapatos
+      case 'bodyColor': return { options: bodyColorOptions, category: 'bodyColor' as const }; // Cores do gel
+      default: return { options: eyesOptions, category: 'eyes' as const }; // Fallback de olhos
     }
   };
 
-  const { options: currentOptions, category: currentCategory } = getActiveOptions();
+  // Pega as opções ativas da aba clicada
+  const { options: currentOptions, category: currentCategory } = getActiveOptions(); // Extrai opções e category
 
   return (
     <AppShell>

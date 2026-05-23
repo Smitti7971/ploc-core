@@ -5,18 +5,20 @@
  * Provê: fundo padrão, DockMenu, e área de conteúdo segura.
  */
 
+// Bloco de imports – traz dependências e hooks
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { DockMenu } from './DockMenu';
 import { PlocAvatarClient } from '@/components/mascot/PlocAvatarClient';
-import { UserHeader } from './UserHeader';
 import { usePathname } from 'next/navigation';
 
+// Define as props esperadas pelo AppShell
 interface AppShellProps {
   children: React.ReactNode;
 }
 
+// Componente principal que envolve a aplicação protegida
 export function AppShell({ children }: AppShellProps) {
   const { isAuthenticated } = useAuthStore();
   const router = useRouter();
@@ -32,7 +34,8 @@ export function AppShell({ children }: AppShellProps) {
     }
   }, [isAuthenticated, router]);
 
-  return (
+  // Renderiza a estrutura de layout da página
+return (
     <div
       style={{
         position: 'fixed',
@@ -46,6 +49,7 @@ export function AppShell({ children }: AppShellProps) {
       }}
     >
       {/* Conteúdo da página */}
+      {/* Área onde o conteúdo da página será inserido */}
       <main
         style={{
           width: '100%',
@@ -57,16 +61,13 @@ export function AppShell({ children }: AppShellProps) {
       </main>
 
       {/* Menu de navegação global */}
+      {/* Menu de navegação global fixo na base */}
       <DockMenu />
 
-      {/* Header do Usuário (Cápsula Camaleão) - Oculto em settings ou ploc para evitar duplicidade */}
-      {!isSettings && !isPlocPage && (
-        <div style={{ position: 'fixed', top: '30px', right: '30px', zIndex: 100000, pointerEvents: 'none' }}>
-          <UserHeader />
-        </div>
-      )}
+      {/* Header do Usuário movido para AuthCapsule (Global) */}
 
       {/* Mascote Ploc com posicionamento inteligente - Oculto na página dedicada do Ploc */}
+      {/* Avatar do Ploc, posicionado dinamicamente */}
       {!isPlocPage && (
         <div style={{
           position: 'fixed',

@@ -1,3 +1,8 @@
+/**
+ * @module plocPhrases
+ * @description Banco de falas, frases e resmungos do Ploc para diferentes situações e sentimentos.
+ */
+
 export const PILLAR_EXPLANATIONS: Record<string, string> = {
   corpo: "O Corpo é o seu templo físico, sua energia e saúde. Sem ele, você não tem força nem pra estourar bolha! Cuide do seu sono, alimentação e treinos para manter isso alto.",
   mente: "A Mente é a sua saúde mental, foco e resiliência. Estourar bolhas erradas destrói a mente! Tire um tempo para respirar, descansar e organizar seus pensamentos.",
@@ -9,7 +14,7 @@ export const PILLAR_EXPLANATIONS: Record<string, string> = {
 export const PASSIVE_AGGRESSIVE_QUOTES: Record<string, { positive: string[], negative: string[] }> = {
   corpo: {
     positive: [
-      "Ah, o Corpo! você deve ser forte ou quer ser, bom para começar... mas é um tanto pragmatico focar só no físico, né?",
+      "Ah, o Corpo! você deve ser forte ou quer ser, bom para começar... mas é um tanto pragmático focar só no físico, né?",
       "Cuidar do físico é muito bom! Mas quem foca obsessivamente em treinar e comer limpo muitas vezes esquece de viver, trabalhar ou descansar a cabeça. Se virar neurose, seu pilar 'Vida' vai pro ralo. Vigia!",
       "Que lindo, focando no físico! Mas lembre-se: um corpo sarado com uma mente esgotada e zero de liberdade financeira é só uma carcaça bonita flutuando no vazio. A regra de ouro é o equilíbrio!"
     ],
@@ -21,7 +26,7 @@ export const PASSIVE_AGGRESSIVE_QUOTES: Record<string, { positive: string[], neg
   },
   mente: {
     positive: [
-      "Mente é o pilar que todos precisam dar atenção, ele trás inúmeros benefícios, ",
+      "Mente é o pilar que todos precisam dar atenção, ele traz inúmeros benefícios, ",
       "Silenciar o ruído mental é essencial. Mas cuidado para não se isolar do mundo real sob a desculpa de 'proteger sua saúde mental'. Focar demais na Mente e ignorar a 'Vida' (amigos/família) te deixa sozinho no silêncio.",
       "Mente afiada! Mas um cérebro genial preso em um corpo doente e sedentário, com zero diversão, é receita certa para o colapso. O segredo não é ser o mais inteligente, é ter harmonia!"
     ],
@@ -89,7 +94,7 @@ export const MASCOT_COLLISION_PHRASES = {
     "Oba, ponto pra nós!"
   ],
   caboDeGuerra: [
-    "Puts, focou muito em uma coisa e acabou tirando de outra! Foque em outras coisas para equilibrar!",
+    "Putz, focou muito em uma coisa e acabou tirando de outra! Foque em outras coisas para equilibrar!",
     "Ganhamos de um lado, mas perdemos do outro! Lembre-se de balancear os atributos!",
     "Foco excessivo desgasta outros pilares! Tente espalhar mais os seus pontos!",
     "Cuidado, focar apenas em um pilar faz outro decair. Tente focar em outras coisas!"
@@ -98,7 +103,7 @@ export const MASCOT_COLLISION_PHRASES = {
 
 export const ONBOARDING_DIALOGUES = {
   intro: [
-    "Dias frios me deixam com frio, não esqueça de colocar uma blusa em mim, nào quero ficar resfriado!",
+    "Dias frios me deixam com frio, não esqueça de colocar uma blusa em mim, não quero ficar resfriado!",
     "Não quero nem te ouvir, eu sei que você não cuida nem de você, por que acha que vai cuidar de mim?",
     "CHEGA! Vamos fazer algo produtivo. Quero te conhecer de verdade antes de te dar conselhos. Vamos iniciar o nosso Diagnóstico de Vida (Fase 1)!",
     "OK, vamos começar esse teste, fiz 5 bolhas aparecerem na tela, cada uma representa um pilar da vida, escolha sabiamente qual é o seu foco hoje, daí, iniciaremos o teste!"
@@ -141,9 +146,9 @@ export const ONBOARDING_DIALOGUES = {
     "Cliques Cliques e mais cliques... já que quer clicar em bolhas, clique nessa verde para vermos",
     "Aqui estava tão vazio, que bom que você chegou! posso te conhecer? "
   ],
-  bullyingQuote: "Mizericordia! estourou meu nome, né? Fala sério, isso é bullying...! brincadeira! só por curiosidade, as pessoas não fazem isso, já gostei de você, você meio que pensa fora da caixa!",
+  bullyingQuote: "Misericórdia! estourou meu nome, né? Fala sério, isso é bullying...! brincadeira! só por curiosidade, as pessoas não fazem isso, já gostei de você, você meio que pensa fora da caixa!",
   ignoreQuotes: [
-    "Olha lá, estourou mais uma bolha, parece divertido, mas se eu fizer, pode ser considerado assassinato, pode deixar, nào vou te julgar, o juiz que vai! ha ha ha ha",
+    "Olha lá, estourou mais uma bolha, parece divertido, mas se eu fizer, pode ser considerado assassinato, pode deixar, não vou te julgar, o juiz que vai! ha ha ha ha",
     "Olha, o que estou te oferecendo não é algo simples eu sei, mas o complexo só é complexo até você entender, depois disso... tudo fica fácil, pare de estourar bolhas sem propósito..."
   ]
 };

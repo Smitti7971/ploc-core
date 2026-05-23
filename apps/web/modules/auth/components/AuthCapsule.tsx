@@ -1,3 +1,13 @@
+'use client';
+
+/**
+ * ============================================================================
+ * Cápsula de Autenticação - AuthCapsule.tsx
+ * ============================================================================
+ * Descrição: Um botão/cápsula flutuante que permite ao usuário abrir o modal
+ * de login ou cadastro, ou exibir os dados do usuário autenticado.
+ * ============================================================================
+ */
 import React from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -5,9 +15,20 @@ import { useAuthStore } from '@/store/authStore';
 import { AuthModal } from './AuthModal';
 import { UserHeader } from '@/components/layout/UserHeader';
 import { cn } from '@/lib/utils';
+import { usePathname } from 'next/navigation';
 
+// Componente exportado da Cápsula de Entrada
 export const AuthCapsule: React.FC = () => {
-  const { isAuthenticated, setAuthModalOpen } = useAuthStore();
+  const { isAuthenticated, setAuthModalOpen } = useAuthStore(); // Puxa status de auth do zustand
+  const pathname = usePathname();
+  
+  const isSettings = pathname === '/settings';
+  const isPlocPage = pathname === '/ploc';
+
+  // Se estivermos nas páginas onde o UserHeader não deve aparecer (para evitar colisão visual), ocultamos.
+  if (isAuthenticated && (isSettings || isPlocPage)) {
+    return null;
+  }
 
   const handleEnterClick = (e: React.MouseEvent) => {
     e.preventDefault();

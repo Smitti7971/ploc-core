@@ -1,3 +1,15 @@
+/**
+ * ============================================================================
+ * Rosto do Ploc - PlocFace.tsx
+ * ============================================================================
+ * Descrição: Renderiza de forma dinâmica as expressões faciais do Ploc.
+ * 
+ * Principais responsabilidades:
+ * - Desenha os olhos e bocas com base no estado de humor e emoção.
+ * - Anima a boca quando o mascote está falando.
+ * - Adapta a dilatação das pupilas e posicionamento das sobrancelhas conforme o nível de dor/raiva.
+ * ============================================================================
+ */
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 
@@ -8,13 +20,16 @@ interface PlocFaceProps {
   isSpeaking?: boolean;
   appearance?: {
     eyes?: 'bored' | 'cute' | 'anime' | 'nerd' | 'sparkle' | 'spiral';
-    mouth?: 'none' | 'smile' | 'straight' | 'masculine' | 'feminine' | 'shock' | 'sad' | 'wavy';
+    mouth?: 'none' | 'smile' | 'straight' | 'masculine' | 'feminine' | 'shock' | 'sad' | 'wavy' | 'rage';
   };
   angerLevel?: number;
+  angerPercentage?: number;
   isHit?: boolean;
   isPositiveHit?: boolean;
+  isDizzy?: boolean;
 }
 
+// Componente que renderiza SVGs animados representando o rosto do personagem
 export function PlocFace({
   isSleeping,
   isPissed,
@@ -22,8 +37,10 @@ export function PlocFace({
   isSpeaking = false,
   appearance = { eyes: 'bored', mouth: 'straight' },
   angerLevel = 0,
+  angerPercentage = 0,
   isHit = false,
   isPositiveHit = false,
+  isDizzy = false,
 }: PlocFaceProps) {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -66,13 +83,132 @@ export function PlocFace({
   // Determinação das Expressões Dinâmicas de Olhos e Boca
   // -------------------------------------------------------------
   const isEyeClosed = isSleeping || isHit || isPositiveHit || isBlinking;
-  const activeEyes = isEyeClosed ? 'sleeping' : (appearance.eyes || 'bored');
+  const activeEyes = isDizzy ? 'spiral' : (isEyeClosed ? 'sleeping' : (appearance.eyes || 'bored'));
 
-  let activeMouth = isSleeping ? 'none' : (isHurt || isHit ? 'sad' : isPositiveHit ? 'smile' : isPissed ? 'wavy' : (appearance.mouth || 'straight'));
+  let activeMouth = 'straight';
+  if (isSleeping) {
+    activeMouth = 'none';
+  } else if (isDizzy) {
+    activeMouth = 'wavy';
+  } else if (isHurt || isHit) {
+    activeMouth = 'sad';
+  } else if (isPositiveHit) {
+    activeMouth = 'smile';
+  } else {
+    // Reage deterministícamente ao nível de raiva
+    switch (angerLevel) {
+      case 1:
+        activeMouth = 'straight';
+        break;
+      case 2:
+        activeMouth = 'sad';
+        break;
+      case 3:
+        activeMouth = 'wavy';
+        break;
+      case 4:
+        activeMouth = 'shock';
+        break;
+      case 5:
+        activeMouth = 'rage';
+        break;
+      default:
+        if (angerPercentage > 0) {
+          activeMouth = 'straight';
+        } else {
+          activeMouth = appearance.mouth || 'straight';
+        }
+        break;
+    }
+  }
 
   // Override dinâmico para animação de fala (Speaking Mouth State)
+  const isAngryOrHurtState = angerLevel >= 1 || isPissed || isHurt || isHit || (angerLevel === 0 && angerPercentage > 0);
+
   if (isSpeaking && activeMouth !== 'none') {
-    activeMouth = appearance.mouth === 'feminine' ? 'feminine' : 'masculine';
+    if (isAngryOrHurtState) {
+      // Mantemos a boca irritada correspondente ('straight', 'sad', 'wavy', 'shock', 'rage')
+      // e o renderMouth cuidará de animá-la de forma condizente com a fala!
+    } else {
+      activeMouth = appearance.mouth === 'feminine' ? 'feminine' : 'masculine';
+    }
+  }
+
+  // Escala de pupilas baseada em dor ou nível de raiva (constrição por estresse)
+  let pupilScaleX = 1;
+  let pupilScaleY = 1;
+  
+  if (isHurt) {
+    pupilScaleX = 0.5;
+    pupilScaleY = 0.5;
+  } else {
+    switch (angerLevel) {
+      case 1:
+        pupilScaleX = 0.9;
+        pupilScaleY = 0.9;
+        break;
+      case 2:
+        pupilScaleX = 0.8;
+        pupilScaleY = 0.8;
+        break;
+      case 3:
+        pupilScaleX = 0.7;
+        pupilScaleY = 0.7;
+        break;
+      case 4:
+        pupilScaleX = 0.55;
+        pupilScaleY = 0.55;
+        break;
+      case 5:
+        pupilScaleX = 0.4;
+        pupilScaleY = 0.4; // pupilas minúsculas de loucura
+        break;
+      default:
+        pupilScaleX = 1.0;
+        pupilScaleY = 1.0;
+        break;
+    }
+  }
+
+  // Cálculo reativo das sobrancelhas com base em angerLevel e isHurt
+  let eyebrowY = 0;
+  let eyebrowRotate = 0;
+
+  if (isHurt) {
+    eyebrowY = 6;
+    eyebrowRotate = -4; // Expressão de dor / preocupação
+  } else {
+    switch (angerLevel) {
+      case 1:
+        eyebrowY = 1.5;
+        eyebrowRotate = 6;
+        break;
+      case 2:
+        eyebrowY = 3.5;
+        eyebrowRotate = 14;
+        break;
+      case 3:
+        eyebrowY = 5.5;
+        eyebrowRotate = 22;
+        break;
+      case 4:
+        eyebrowY = 7.5;
+        eyebrowRotate = 28;
+        break;
+      case 5:
+        eyebrowY = 9.5;
+        eyebrowRotate = 35; // Extremo furioso
+        break;
+      default:
+        if (isPissed) {
+          eyebrowY = 4;
+          eyebrowRotate = 8;
+        } else {
+          eyebrowY = 0;
+          eyebrowRotate = 0;
+        }
+        break;
+    }
   }
 
   // -------------------------------------------------------------
@@ -89,8 +225,8 @@ export function PlocFace({
               r="20"
               fill={pupilColor}
               animate={{
-                scale: isHurt ? 0.5 : (isPissed ? 0.8 : 1),
-                y: isHurt ? 4 : (isPissed ? 6 : 0),
+                scale: pupilScaleX,
+                y: isHurt ? 4 : (angerLevel === 5 ? 6 : 0),
               }}
               transition={{ type: 'spring', stiffness: 220, damping: 16 }}
             />
@@ -100,7 +236,7 @@ export function PlocFace({
               r="5"
               fill="#ffffff"
               animate={{
-                y: isHurt ? 4 : (isPissed ? 6 : 0),
+                y: isHurt ? 4 : (angerLevel === 5 ? 6 : 0),
               }}
             />
             <motion.circle
@@ -109,7 +245,7 @@ export function PlocFace({
               r="2.5"
               fill="#ffffff"
               animate={{
-                y: isHurt ? 4 : (isPissed ? 6 : 0),
+                y: isHurt ? 4 : (angerLevel === 5 ? 6 : 0),
               }}
             />
           </g>
@@ -124,9 +260,9 @@ export function PlocFace({
               ry="25"
               fill={`url(#anime-eye-grad-${i})`}
               animate={{
-                scaleY: isHurt ? 0.5 : (isPissed ? 0.7 : 1),
-                scaleX: isHurt ? 0.5 : (isPissed ? 0.75 : 1),
-                y: isHurt ? 4 : (isPissed ? 6 : 0),
+                scaleY: pupilScaleY,
+                scaleX: pupilScaleX,
+                y: isHurt ? 4 : (angerLevel === 5 ? 6 : 0),
               }}
               transition={{ type: 'spring', stiffness: 220, damping: 16 }}
             />
@@ -136,7 +272,7 @@ export function PlocFace({
               fill="#ffffff"
               animate={{
                 scale: [1, 1.15, 1],
-                y: isHurt ? 4 : (isPissed ? 6 : 0),
+                y: isHurt ? 4 : (angerLevel === 5 ? 6 : 0),
               }}
               transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
             />
@@ -152,9 +288,9 @@ export function PlocFace({
               stroke="#d97706"
               strokeWidth="2"
               animate={{
-                scale: isHurt ? 0.5 : (isPissed ? 0.7 : [1, 1.15, 1]),
+                scale: pupilScaleX,
                 rotate: [0, 8, 0],
-                y: isHurt ? 4 : (isPissed ? 6 : 0),
+                y: isHurt ? 4 : (angerLevel === 5 ? 6 : 0),
               }}
               transition={{
                 scale: { type: 'spring', stiffness: 220, damping: 16 },
@@ -174,7 +310,8 @@ export function PlocFace({
               strokeLinecap="round"
               animate={{
                 rotate: 360,
-                y: isHurt ? 4 : (isPissed ? 6 : 0),
+                scale: pupilScaleX,
+                y: isHurt ? 4 : (angerLevel === 5 ? 6 : 0),
               }}
               style={{ originX: "50px", originY: "50px" }}
               transition={{
@@ -196,9 +333,9 @@ export function PlocFace({
             fill={pupilColor}
             clipPath={`url(#eye-clip-${i})`}
             animate={{
-              scaleY: isHurt ? 0.5 : (isPissed ? 0.7 : 1),
-              scaleX: isHurt ? 0.5 : (isPissed ? 0.75 : 1),
-              y: isHurt ? 4 : (isPissed ? 6 : 0),
+              scaleY: pupilScaleY,
+              scaleX: pupilScaleX,
+              y: isHurt ? 4 : (angerLevel === 5 ? 6 : 0),
             }}
             transition={{ type: 'spring', stiffness: 220, damping: 16 }}
           />
@@ -235,30 +372,74 @@ export function PlocFace({
               stroke={lashColor}
               strokeWidth="7"
               strokeLinecap="round"
-              fill="none"
-              animate={{
-                y: [0, 1.5, 0],
-              }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              strokeLinejoin="round"
+              fill={isSpeaking ? "#3b0712" : "none"}
+              animate={isSpeaking
+                ? {
+                    d: [
+                      "M 22 36 Q 40 18 58 36 Q 40 18 22 36 Z",
+                      "M 22 36 Q 40 18 58 36 Q 40 46 22 36 Z",
+                      "M 22 36 Q 40 18 58 36 Q 40 18 22 36 Z"
+                    ]
+                  }
+                : {
+                    y: [0, 1.5, 0],
+                  }
+              }
+              transition={isSpeaking ? { duration: 0.45, repeat: Infinity } : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
             />
           </svg>
         );
       case 'shock':
         return (
-          <svg width="100%" height="100%" viewBox="0 0 80 60" fill="none">
-            <motion.ellipse
-              cx="40"
-              cy="30"
-              rx="11"
-              ry="15"
-              stroke={lashColor}
-              strokeWidth="6.5"
-              fill="none"
-              animate={{
-                scale: [1, 1.06, 1],
+          <svg width="100%" height="100%" viewBox="0 0 80 60" fill="none" className="overflow-visible">
+            <motion.g
+              animate={isSpeaking ? {
+                x: [0, -1.5, 1.5, -1, 1, -1.5, 1.5, 0],
+                y: [0, 1, -1, 1.5, -1.5, 1, -1, 0],
+                scaleY: [0.85, 1.15, 0.9, 1.1, 0.85]
+              } : {
+                x: [0, -1, 1, -1.2, 1.2, -0.8, 0.8, 0],
+                y: [0, 0.8, -0.8, 1, -1, 0.8, -0.8, 0],
+                scale: [1, 1.03, 1]
               }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-            />
+              transition={isSpeaking ? {
+                duration: 0.22,
+                repeat: Infinity,
+                ease: "easeInOut"
+              } : {
+                duration: 0.16,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+            >
+              {/* Contorno da boca de dentes cerrados */}
+              <rect
+                x="18"
+                y="18"
+                width="44"
+                height="24"
+                rx="6"
+                fill="#ffffff"
+                stroke={lashColor}
+                strokeWidth="5.5"
+                strokeLinejoin="round"
+              />
+              {/* Linha horizontal divisória dos dentes */}
+              <line
+                x1="18"
+                y1="30"
+                x2="62"
+                y2="30"
+                stroke={lashColor}
+                strokeWidth="4.5"
+                strokeLinecap="round"
+              />
+              {/* Divisórias verticais dos dentes */}
+              <line x1="29" y1="18" x2="29" y2="42" stroke={lashColor} strokeWidth="3" strokeLinecap="round" />
+              <line x1="40" y1="18" x2="40" y2="42" stroke={lashColor} strokeWidth="3" strokeLinecap="round" />
+              <line x1="51" y1="18" x2="51" y2="42" stroke={lashColor} strokeWidth="3" strokeLinecap="round" />
+            </motion.g>
           </svg>
         );
       case 'wavy':
@@ -270,14 +451,26 @@ export function PlocFace({
               strokeWidth="7"
               strokeLinecap="round"
               fill="none"
-              animate={{
+              animate={isSpeaking ? {
+                d: [
+                  "M 20 30 Q 27 22 34 30 T 47 30 T 60 30",
+                  "M 20 30 Q 27 34 34 26 T 47 34 T 60 30",
+                  "M 20 30 Q 27 22 34 30 T 47 30 T 60 30"
+                ],
+                y: [0, -3, 3, 0],
+                scaleY: [1, 1.25, 0.85, 1],
+              } : {
                 d: [
                   "M 20 30 Q 27 22 34 30 T 47 30 T 60 30",
                   "M 20 30 Q 27 38 34 30 T 47 30 T 60 30",
                   "M 20 30 Q 27 22 34 30 T 47 30 T 60 30"
                 ]
               }}
-              transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+              transition={isSpeaking ? {
+                duration: 0.35,
+                repeat: Infinity,
+                ease: "easeInOut"
+              } : { duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
             />
           </svg>
         );
@@ -388,15 +581,104 @@ export function PlocFace({
             </svg>
           </motion.div>
         );
+      case 'rage':
+        return (
+          <motion.div
+            style={{ 
+              width: '120%', 
+              height: '120%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              position: 'relative'
+            }}
+            animate={isSpeaking ? {
+              x: [0, -2, 2, -1, 1, 0],
+              y: [0, 1, -1, 1, -1, 0],
+              scale: [1.2, 1.3, 1.15, 1.25, 1.2],
+              scaleY: [0.85, 1.15, 0.9, 1.1, 0.85]
+            } : {
+              x: [0, -2, 2, -1, 1, 0],
+              y: [0, 1, -1, 1, -1, 0],
+              scale: [1.2, 1.25, 1.2],
+            }}
+            transition={isSpeaking ? {
+              duration: 0.25,
+              repeat: Infinity,
+              ease: "easeInOut"
+            } : {
+              duration: 0.15,
+              repeat: Infinity,
+              ease: "linear"
+            }}
+          >
+            <svg width="100%" height="100%" viewBox="0 0 80 60" className="overflow-visible">
+              <defs>
+                <clipPath id="rage-mouth-clip">
+                  <path d="M 12 20 C 8 35, 18 56, 40 56 C 62 56, 72 35, 68 20 C 68 12, 12 12, 12 20 Z" />
+                </clipPath>
+              </defs>
+              <path
+                d="M 12 20 C 8 35, 18 56, 40 56 C 62 56, 72 35, 68 20 C 68 12, 12 12, 12 20 Z"
+                fill="#1e0505"
+                stroke={lashColor}
+                strokeWidth="5.5"
+                strokeLinejoin="round"
+              />
+              <g clipPath="url(#rage-mouth-clip)">
+                {/* Dentes Superiores Afiados */}
+                <path d="M 16 15 L 24 15 L 20 28 Z" fill="#ffffff" />
+                <path d="M 56 15 L 64 15 L 60 28 Z" fill="#ffffff" />
+                <path d="M 28 15 L 34 15 L 31 22 Z" fill="#ffffff" />
+                <path d="M 37 15 L 43 15 L 40 22 Z" fill="#ffffff" />
+                <path d="M 46 15 L 52 15 L 49 22 Z" fill="#ffffff" />
+
+                {/* Dentes Inferiores Afiados */}
+                <path d="M 22 57 L 28 57 L 25 46 Z" fill="#ffffff" />
+                <path d="M 52 57 L 58 57 L 55 46 Z" fill="#ffffff" />
+                <path d="M 34 57 L 40 57 L 37 49 Z" fill="#ffffff" />
+                <path d="M 43 57 L 49 57 L 46 49 Z" fill="#ffffff" />
+
+                {/* Língua trêmula */}
+                <motion.path
+                  d="M 20 48 Q 40 38 60 48 C 60 55, 20 55, 20 48 Z"
+                  fill="#f43f5e"
+                  animate={{
+                    y: [0, -2, 1, -1, 0],
+                    scaleY: [1, 1.15, 0.9, 1],
+                  }}
+                  transition={{
+                    duration: 0.12,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                />
+              </g>
+            </svg>
+          </motion.div>
+        );
       case 'straight':
       default:
         return (
           <svg width="100%" height="100%" viewBox="0 0 80 60" fill="none">
-            <path
+            <motion.path
               d="M 30 30 L 50 30"
+              fill={isSpeaking ? "#3b0712" : "none"}
               stroke={lashColor}
               strokeWidth="6"
               strokeLinecap="round"
+              strokeLinejoin="round"
+              animate={isSpeaking
+                ? {
+                    d: [
+                      "M 28 30 C 28 30, 40 30, 52 30 L 52 30 C 52 30, 40 30, 28 30 Z",
+                      "M 28 25 C 28 25, 40 22, 52 25 L 52 35 C 52 35, 40 38, 28 35 Z",
+                      "M 28 30 C 28 30, 40 30, 52 30 L 52 30 C 52 30, 40 30, 28 30 Z"
+                    ]
+                  }
+                : {}
+              }
+              transition={isSpeaking ? { duration: 0.4, repeat: Infinity } : {}}
             />
           </svg>
         );
@@ -457,7 +739,7 @@ export function PlocFace({
                           scaleY: escleraScaleY,
                           originY: 0.32,
                         }}
-                        transition={{ duration: 0.18, ease: "easeInOut" }}
+                        transition={{ duration: 2.2, ease: "easeInOut" }}
                       />
                     </clipPath>
 
@@ -478,8 +760,8 @@ export function PlocFace({
                       strokeWidth="4"
                       strokeLinecap="round"
                       animate={{
-                        y: isHurt ? 6 : (isPissed ? 4 : 0),
-                        rotate: isHurt ? -4 : (isPissed ? (i === 0 ? 5 : -5) : 0),
+                        y: eyebrowY,
+                        rotate: isHurt ? eyebrowRotate : (i === 0 ? eyebrowRotate : -eyebrowRotate),
                         originX: i === 0 ? "80%" : "20%",
                       }}
                       transition={{ type: 'spring', stiffness: 220, damping: 15 }}
@@ -494,7 +776,7 @@ export function PlocFace({
                       scaleY: escleraScaleY,
                       originY: 0.32,
                     }}
-                    transition={{ duration: 0.18, ease: "easeInOut" }}
+                    transition={{ duration: 2.2, ease: "easeInOut" }}
                   />
 
                   {/* Renderizador de Pupila Personalizado */}

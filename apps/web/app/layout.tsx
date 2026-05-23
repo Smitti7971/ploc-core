@@ -15,6 +15,9 @@ export const metadata: Metadata = {
   manifest: '/site.webmanifest',
 };
 
+import { AuthCapsule } from '@/modules/auth/components/AuthCapsule';
+import { GlobalBackButton } from '@/components/layout/GlobalBackButton';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,6 +32,8 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
       </head>
       <body>
+        <GlobalBackButton />
+        <AuthCapsule />
         {children}
       </body>
     </html>

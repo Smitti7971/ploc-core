@@ -1,11 +1,21 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+/**
+ * ============================================================================
+ * Centro do Mascote - MascotCenter.tsx
+ * ============================================================================
+ * Descrição: O componente orquestrador central do mascote na Landing Page.
+ * Controla a animação de entrada cinematográfica, o estouro das bolhas 
+ * de título (P-L-O-C) e o posicionamento do avatar.
+ * ============================================================================
+ */import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import PlocAvatar from '@/components/mascot/PlocAvatar';
 import { blackboardEventBus } from '@/modules/blackboard/events/eventBus';
 import { TitleBubble } from '../bubbles';
+import { PlocOnboardingControls } from './PlocOnboardingControls';
 
+// Renderiza o grupo central com o Ploc, animação de entrada e as bolhas de título
 export function MascotCenter() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isEntering, setIsEntering] = useState(true);
@@ -17,15 +27,17 @@ export function MascotCenter() {
 
   // Gera uma ordem aleatória de surgimento estável para as 4 letras [0, 1, 2, 3] no mount
   // Garante que o index do primeiro a nascer (spawnOrder[0]) seja sempre maior que o do último (spawnOrder[3])
-  const spawnOrder = useMemo(() => {
-    let order = [0, 1, 2, 3];
+  const [spawnOrder, setSpawnOrder] = useState<number[]>([0, 1, 2, 3]);
+
+  useEffect(() => {
+    const order = [0, 1, 2, 3];
     while (true) {
       order.sort(() => Math.random() - 0.5);
       if (order[0] > order[3]) {
         break;
       }
     }
-    return order;
+    setTimeout(() => setSpawnOrder(order), 0);
   }, []);
 
   const popBubble = (i: number, isManual = false) => {
@@ -51,19 +63,19 @@ export function MascotCenter() {
     const shuffled = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
 
     // Cinematic Timing Sequence:
-    // - Ploc rises slowly for 5.0s.
-    // - Ploc wakes up gracefully at 1.25s (1/4 of rising duration) while still rising!
+    // - Ploc rises slowly for 7.5s.
+    // - Ploc wakes up gracefully at 2.5s (mid-rise) while rising!
     const wakeTimeout = setTimeout(() => {
       setIsEntering(false); // Triggers waking up mid-rise!
-    }, 1250);
+    }, 2500);
 
-    // Auto-pop sequence starts much later at 8.5s, giving user time to play/pop manually!
+    // Auto-pop sequence starts much later at 9.5s, giving user time to play/pop manually!
     // Explodes the remaining bubbles in a rapid, satisfying chain sequence (400ms interval)
     const popTimeouts = [
-      setTimeout(() => popBubble(shuffled[0]), 8500),
-      setTimeout(() => popBubble(shuffled[1]), 8900),
-      setTimeout(() => popBubble(shuffled[2]), 9300),
-      setTimeout(() => popBubble(shuffled[3]), 9700),
+      setTimeout(() => popBubble(shuffled[0]), 9500),
+      setTimeout(() => popBubble(shuffled[1]), 9900),
+      setTimeout(() => popBubble(shuffled[2]), 10300),
+      setTimeout(() => popBubble(shuffled[3]), 10700),
     ];
     popTimeoutsRef.current = popTimeouts;
 
@@ -79,7 +91,7 @@ export function MascotCenter() {
   return (
     <>
       {/* 1. Contêiner do mascote centralizado na tela */}
-      <div 
+      <div
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center w-[350px] h-[350px] pointer-events-none z-20"
       >
 
@@ -100,7 +112,7 @@ export function MascotCenter() {
         {/* O Ploc */}
         <motion.div
           className="pointer-events-auto relative"
-          initial={{ scale: 0.8, opacity: 0, y: 600 }}
+          initial={{ scale: 0.8, opacity: 0, y: 350 }}
           animate={entryFinished ? {
             scale: 1,
             opacity: 1,
@@ -115,12 +127,15 @@ export function MascotCenter() {
             setEntryFinished(true);
           }}
           transition={{
-            scale: { duration: 5.0, ease: [0.16, 1, 0.3, 1] },
-            opacity: { duration: 5.0, ease: [0.16, 1, 0.3, 1] },
-            y: { duration: 5.0, ease: [0.16, 1, 0.3, 1] }
+            scale: { duration: 7.5, ease: [0.76, 0, 0.24, 1] },
+            opacity: { duration: 7.5, ease: [0.76, 0, 0.24, 1] },
+            y: { duration: 7.5, ease: [0.76, 0, 0.24, 1] }
           }}
         >
-          <PlocAvatar emotion={isEntering ? 'sleeping' : 'calm'} />
+          <PlocAvatar 
+            emotion={isEntering ? 'sleeping' : 'calm'} 
+            renderCustomControls={(chatProps) => <PlocOnboardingControls {...chatProps} />}
+          />
         </motion.div>
       </div>
     </>

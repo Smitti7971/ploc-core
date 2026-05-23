@@ -1,6 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+/**
+ * ============================================================================
+ * Bolha de Título - TitleBubble.tsx
+ * ============================================================================
+ * Descrição: Componente das bolhas de título interativas que formam "PLOC"
+ * no topo da landing page inicial. Inclui lógica de partículas e som de pop.
+ * ============================================================================
+ */import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Particle {
@@ -72,7 +79,7 @@ interface TitleBubbleProps {
   isPopped: boolean;
   onClick: () => void;
 }
-
+// Componente que renderiza as letras estouráveis do nome do mascote
 export default function TitleBubble({
   letter,
   index,
@@ -81,6 +88,7 @@ export default function TitleBubble({
   onClick
 }: TitleBubbleProps) {
   const [particles, setParticles] = useState<Particle[]>([]);
+  const [isFullyGone, setIsFullyGone] = useState(false);
 
   useEffect(() => {
     if (isPopped) {
@@ -98,10 +106,17 @@ export default function TitleBubble({
         });
       }
       setParticles(newParticles);
+      const timer = setTimeout(() => {
+        setIsFullyGone(true);
+      }, 1000);
+      return () => clearTimeout(timer);
     } else {
       setParticles([]);
+      setIsFullyGone(false);
     }
   }, [isPopped]);
+
+  if (isFullyGone) return <div className="w-[90px] h-[90px] pointer-events-none" />;
 
   // Unique organic sway path per letter (simulating idle bubble selector physics)
   const swayY = [0, index % 2 === 0 ? -10 : -6, 0];

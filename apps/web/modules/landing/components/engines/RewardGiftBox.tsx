@@ -1,13 +1,20 @@
 'use client';
 
-import React from 'react';
+/**
+ * ============================================================================
+ * Caixa de Presente e Recompensa - RewardGiftBox.tsx
+ * ============================================================================
+ * Descrição: Componente que exibe a caixa de presente animada, que aparece 
+ * como recompensa durante a interação de onboarding.
+ * ============================================================================
+ */import React from 'react';
 import { motion } from 'framer-motion';
 import { playPlocSound } from '../bubbles';
 
 interface RewardGiftBoxProps {
   visible: boolean;
 }
-
+// Caixa de recompensa clicável com alerta sonoro
 export default function RewardGiftBox({ visible }: RewardGiftBoxProps) {
   if (!visible) return null;
 

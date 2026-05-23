@@ -7,15 +7,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Calendar, 
-  CheckSquare, 
-  Sparkles, 
-  Heart, 
-  User, 
+import {
+  GalleryHorizontal,
+  Ghost,
   Settings,
-  Presentation
+  Radar
 } from 'lucide-react';
 
 interface DockItem {
@@ -25,26 +21,29 @@ interface DockItem {
   label: string;
 }
 
+// Definição da lista de itens do Dock, contendo ícone, rota de destino, cor tema e rótulo
 const DOCK_ITEMS: DockItem[] = [
-  { icon: <Presentation size={20} />,    route: '/',           color: '#facc15', label: 'Blackboard' },
-  { icon: <Sparkles size={20} />,        route: '/dashboard',  color: '#60a5fa', label: 'Rotinas' },
-  { icon: <Heart size={20} />,           route: '/ploc',       color: '#ec4899', label: 'Ploc' },
-  { icon: <Settings size={20} />,        route: '/settings',   color: '#94a3b8', label: 'Config' },
+  { icon: <Ghost size={20} />, route: '/ploc', color: '#ffffffff', label: 'Ploc' },
+  { icon: <Radar size={20} />, route: '/', color: '#ffffffff', label: 'Blackboard' },
+  { icon: <GalleryHorizontal size={20} />, route: '/dashboard', color: '#ffffffff', label: 'Rotinas' },
+  { icon: <Settings size={20} />, route: '/settings', color: '#ffffffff', label: 'Config' },
 ];
 
+// Componente principal do Menu Inferior Flutuante
 export function DockMenu() {
-  const pathname = usePathname();
+  const pathname = usePathname(); // Resgata a rota atual da URL para acender ícone ativo
 
+  // Retorna a casca da Doc em glassmorphism fixada na base da tela
   return (
     <div
       id="global-dock-menu"
       style={{
-        position: 'fixed',
-        bottom: '20px',
+        position: 'fixed', // Fixo na tela inteira
+        bottom: '20px', // Distância da margem inferior
         left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 999998,
-        pointerEvents: 'none',
+        transform: 'translateX(-50%)', // Centraliza horizontalmente perfeitamente
+        zIndex: 999998, // Quase infinito para sempre sobrepor tudo (menos Ploc)
+        pointerEvents: 'none', // Não bloqueia clique em áreas invisíveis da dock
       }}
     >
       <div

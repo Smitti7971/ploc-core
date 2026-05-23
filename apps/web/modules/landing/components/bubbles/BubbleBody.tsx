@@ -1,6 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+/**
+ * ============================================================================
+ * Corpo da Bolha - BubbleBody.tsx
+ * ============================================================================
+ * Descrição: Componente visual (o "corpo") de uma bolha flutuante.
+ * Gerencia cores de tema, ícones, formatação do texto e reações visuais 
+ * quando a bolha é selecionada ou está em modo "decorativo".
+ * ============================================================================
+ */import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { BubbleConcept } from './types';
@@ -62,7 +70,7 @@ interface BubbleBodyProps {
   size: number;
   innerKey: number;
 }
-
+// Componente que renderiza a casca visual da bolha, texto e os estilos de tema
 export default function BubbleBody({
   concept,
   gameMode,

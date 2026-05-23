@@ -1,8 +1,10 @@
 'use client';
 
 /**
- * BlackboardPage.tsx — O novo espaço de trabalho imersivo do Ploc.
- * Design: Quadro negro (chalkboard) com notas adesivas e o Ploc flutuando.
+ * @module BlackboardPage
+ * @description O quadro principal de interação do Ploc. Um canvas de panning/zoom infinito
+ * que gerencia o estado da câmera, orquestra as bolhas de tarefas, anotações (post-its) e
+ * a interação com o mascote virtual.
  */
 
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
@@ -22,19 +24,32 @@ import {
   Activity as ActivityIcon,
   Sparkles,
   HelpCircle,
-  ChevronRight
+  ChevronRight,
+  Map,
+  ZoomIn,
+  ZoomOut
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform, useMotionValueEvent, animate } from 'framer-motion';
 import { DockMenu } from '@/components/layout/DockMenu';
-import { UserHeader } from '@/components/layout/UserHeader';
+
 import { AttributeMonitor } from './AttributeMonitor';
 import { bubbleEngine } from '../engine/bubble-engine/BubbleEngine';
 import { BlackboardBubble } from '../types/bubbles';
 import { blackboardEventBus, BLACKBOARD_EVENTS } from '../events/eventBus';
+import { ViceBubble } from '../../libertesse/components/ViceBubble';
 import { routineEngine } from '../engine/routine-engine/RoutineEngine';
 import { TutorialOcean } from './TutorialOcean';
 import { attributeEngine } from '../engine/attribute-engine/AttributeEngine';
 import { plocEngine } from '../engine/ploc-engine/PlocEngine';
+
+// Components extraídos
+import { BlackboardStickyNote } from './BlackboardStickyNote';
+import { BlackboardBubbleItem } from './BlackboardBubbleItem';
+
+import { AmbientGlowBackground } from '../../landing/particles/AmbientGlowBackground';
+import { Vignette } from '../../landing/particles/Vignette';
+import { SodaWave } from '../../landing/particles/SodaWave';
+import { useViceStore } from '../../libertesse/store/viceStore';
 
 interface StickyNote {
   id: number;
@@ -59,8 +74,6 @@ const BUBBLE_COLORS: Record<string, string> = {
   outward: '#ef4444'     // Hábito/Cigarro
 };
 
-export type SonarTheme = 'radio_wave' | 'submarine' | 'holographic' | 'clockwork';
-
 export default function BlackboardPage() {
   const { user, token, logout } = useAuthStore();
   const router = useRouter();
@@ -73,7 +86,7 @@ export default function BlackboardPage() {
     });
 
     if (useAuthStore.persist.hasHydrated()) {
-      setIsHydrated(true);
+      setTimeout(() => setIsHydrated(true), 0);
     }
 
     return () => unsub();
@@ -90,20 +103,18 @@ export default function BlackboardPage() {
   const [capsuleOpen, setCapsuleOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
+  const [showMinimap, setShowMinimap] = useState(false);
   const [showAttributes, setShowAttributes] = useState(false);
-  const [scale, setScale] = useState(1);
+  const scale = 1; // Constante mantida para compatibilidade visual dos filhos
   const [bubbles, setBubbles] = useState<BlackboardBubble[]>([]);
-  const [isPanning, setIsPanning] = useState(false);
-  const [panStart, setPanStart] = useState({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
   const [viewMode, setViewMode] = useState<'free' | '1h' | 'day' | 'week' | 'month'>('day');
-  const [isCentered, setIsCentered] = useState(true);
   const [lastCompleted, setLastCompleted] = useState<string | null>(null);
   const [plocReaction, setPlocReaction] = useState<'idle' | 'happy' | 'stressed' | 'dizzy'>('idle');
   const [score, setScore] = useState(attributeEngine.getScore());
   const [showFocusInfo, setShowFocusInfo] = useState(false);
   const [selectedBubble, setSelectedBubble] = useState<BlackboardBubble | null>(null);
   const [interactionNote, setInteractionNote] = useState('');
-  const [sonarTheme, setSonarTheme] = useState<SonarTheme>('radio_wave');
+  const [sodaWaveKey, setSodaWaveKey] = useState(0);
 
   // Janela de tempo baseada no modo de visualização
   const getWindowMinutes = useCallback(() => {
@@ -120,14 +131,144 @@ export default function BlackboardPage() {
 
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [plocState, setPlocState] = useState(plocEngine.getState());
+  const [plocMessage, setPlocMessage] = useState<string | null>(null);
+
+  const [activeWaves, setActiveWaves] = useState<{ id: number; x: number; y: number; color: string }[]>([]);
+
+  const mapX = useMotionValue(0);
+  const mapY = useMotionValue(0);
+  const mapScale = useMotionValue(1);
+
+  // === LÓGICA DE CONSUMO ATIVO (LIBERTESSE) ===
+  const { activeVice, endConsumption } = useViceStore();
+  const [consumptionElapsed, setConsumptionElapsed] = useState(0);
+
   useEffect(() => {
-    const unsub = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, (change: any) => {
+    let interval: NodeJS.Timeout;
+    if (activeVice?.isConsuming && activeVice.consumptionStartTime) {
+      interval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - activeVice.consumptionStartTime!) / 1000);
+        setConsumptionElapsed(elapsed);
+
+        // Auto-encerra quando zera o cronômetro
+        const limit = activeVice.defaultConsumptionSeconds || 300;
+        if (elapsed >= limit) {
+          endConsumption(elapsed);
+        }
+      }, 1000);
+    } else {
+      setConsumptionElapsed(0);
+    }
+    return () => clearInterval(interval);
+  }, [activeVice?.isConsuming, activeVice?.consumptionStartTime, activeVice?.defaultConsumptionSeconds, endConsumption]);
+
+  const formatConsumingTime = (seconds: number) => {
+    const absSeconds = Math.abs(seconds);
+    const m = Math.floor(absSeconds / 60);
+    const s = absSeconds % 60;
+    return `${seconds < 0 ? '+' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+  const activeSecondsRemaining = (activeVice?.defaultConsumptionSeconds || 300) - consumptionElapsed;
+  // ============================================
+  const [minScale, setMinScale] = useState(0.25);
+
+  const userClosedMinimap = useRef(false);
+  const autoOpenedMinimap = useRef(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const vh = window.innerHeight;
+      setMinScale(Math.max(0.1, vh / 3000));
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useMotionValueEvent(mapX, "change", (latestX) => {
+    const latestY = mapY.get();
+    const distance = Math.sqrt(latestX * latestX + latestY * latestY);
+
+    // Auto-abre quando afasta muito do centro
+    if (distance > 500 && !showMinimap && !userClosedMinimap.current) {
+      setShowMinimap(true);
+      autoOpenedMinimap.current = true;
+    } else if (distance <= 500 && showMinimap && autoOpenedMinimap.current && !userClosedMinimap.current) {
+      setShowMinimap(false);
+      autoOpenedMinimap.current = false;
+    }
+
+    // Auto-fecha quando volta pro centro
+    if (distance < 50) {
+      if (showMinimap) {
+        setShowMinimap(false);
+      }
+      userClosedMinimap.current = false;
+      autoOpenedMinimap.current = false;
+    }
+  });
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault(); // Apenas previne rolagem se for pinch ou ctrl+wheel
+      }
+
+      // Fator de zoom sutil para roda do mouse e pinch
+      const zoomFactor = 0.001;
+      const currentScale = mapScale.get();
+      let newScale = currentScale - e.deltaY * zoomFactor;
+
+      newScale = Math.max(minScale, Math.min(newScale, 1.5));
+      mapScale.set(newScale);
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, [minScale, mapScale]);
+
+  const recenterMap = () => {
+    animate(mapX, 0, { type: 'spring', stiffness: 300, damping: 30 });
+    animate(mapY, 0, { type: 'spring', stiffness: 300, damping: 30 });
+    animate(mapScale, 1, { type: 'spring', stiffness: 300, damping: 30 });
+  };
+
+  const zoomIn = () => {
+    const target = Math.min(mapScale.get() + 0.2, 1.5);
+    animate(mapScale, target, { duration: 0.2 });
+  };
+  const zoomOut = () => {
+    const target = Math.max(mapScale.get() - 0.2, minScale);
+    animate(mapScale, target, { duration: 0.2 });
+  };
+
+  const miniDotX = useTransform(mapX, [-1500, 1500], [-50, 50]);
+  const miniDotY = useTransform(mapY, [-1500, 1500], [-50, 50]);
+  // O viewport no minimapa diminui quando damos zoom out (segundo expectativa do usuário)
+  // Então scale 1.5 = w-24 h-24, scale minScale = w-8 h-8
+  const miniViewportSize = useTransform(mapScale, [1.5, minScale], [24, 8]);
+
+  const addWave = (x: number, y: number, color: string) => {
+    const id = Date.now() + Math.random();
+    setActiveWaves(prev => [...prev, { id, x, y, color }]);
+    setTimeout(() => {
+      setActiveWaves(prev => prev.filter(w => w.id !== id));
+    }, 2000);
+  };
+
+  useEffect(() => {
+    const unsubscribe = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, (change: { pillar: string; value: number }) => {
       if (change.pillar === 'foco') {
         setScore(change.value);
       }
     });
     // Reações do Ploc a eventos das bolhas
-    const unsubTimeout = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_TIMEOUT, (bubble: any) => {
+    const unsubscribeTimeout = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_TIMEOUT, (bubble: BlackboardBubble) => {
       setPlocReaction('dizzy');
       if (bubble && typeof bubble.x === 'number') {
         addWave(bubble.x, bubble.y, '#ef4444'); // Vermelho para perda
@@ -135,7 +276,7 @@ export default function BlackboardPage() {
       setTimeout(() => setPlocReaction('idle'), 2000);
     });
 
-    const unsubExplosion = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_EXPLODED, (bubble: any) => {
+    const unsubscribeExplosion = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_EXPLODED, (bubble: BlackboardBubble & { collided?: boolean; value?: string }) => {
       if (bubble?.collided) return;
       const isNegative = bubble && bubble.value === 'negative';
       setPlocReaction(isNegative ? 'dizzy' : 'happy');
@@ -147,9 +288,9 @@ export default function BlackboardPage() {
     });
 
     return () => {
-      unsub();
-      unsubTimeout();
-      unsubExplosion();
+      unsubscribe();
+      unsubscribeTimeout();
+      unsubscribeExplosion();
     };
   }, [score]);
 
@@ -160,111 +301,17 @@ export default function BlackboardPage() {
     }
   }, [user]);
 
-  const [showTutorial, setShowTutorial] = useState(false);
-  const [plocState, setPlocState] = useState(plocEngine.getState());
-  const [plocMessage, setPlocMessage] = useState<string | null>(null);
-  const [scrollPos, setScrollPos] = useState({ x: 1000, y: 1000 });
-  const [viewportSize, setViewportSize] = useState({ w: 1920, h: 1080 });
-  const [activeWaves, setActiveWaves] = useState<{ id: number; x: number; y: number; color: string }[]>([]);
 
-  const addWave = (x: number, y: number, color: string) => {
-    const id = Date.now() + Math.random();
-    setActiveWaves(prev => [...prev, { id, x, y, color }]);
-    setTimeout(() => {
-      setActiveWaves(prev => prev.filter(w => w.id !== id));
-    }, 2000);
-  };
-
-  const centerOnOrigin = useCallback((behavior: any = 'smooth') => {
-    const canvas = document.getElementById('blackboard-canvas');
-    if (canvas) {
-      const scrollX = 1000 - canvas.clientWidth / 2;
-      const scrollY = 1000 - canvas.clientHeight / 2;
-
-      // Garante que behavior seja uma string válida para o scrollTo
-      const scrollBehavior = typeof behavior === 'string' ? behavior : 'smooth';
-      canvas.scrollTo({ left: scrollX, top: scrollY, behavior: scrollBehavior as ScrollBehavior });
-    }
-  }, []);
-
-  const centerOnPosition = useCallback((x: number, y: number, behavior: any = 'smooth') => {
-    const canvas = document.getElementById('blackboard-canvas');
-    if (canvas) {
-      // Cálculo considerando que transform-origin está em center center (1000, 1000)
-      const visualX = 1000 + (x - 1000) * scale;
-      const visualY = 1000 + (y - 1000) * scale;
-      const scrollX = visualX - canvas.clientWidth / 2;
-      const scrollY = visualY - canvas.clientHeight / 2;
-
-      const scrollBehavior = typeof behavior === 'string' ? behavior : 'smooth';
-      canvas.scrollTo({ left: scrollX, top: scrollY, behavior: scrollBehavior as ScrollBehavior });
-    }
-  }, [scale]);
-
-  useEffect(() => {
-    centerOnOrigin('instant');
-  }, []);
-
-  // Efeito para centralizar e focar quando uma bolha é selecionada
-  useEffect(() => {
-    if (selectedBubble) {
-      const isOutward = (selectedBubble as any).metadata?.direction === 'outward';
-      const totalMins = (selectedBubble as any).metadata?.totalMinutes || 10;
-
-      let visualDist = 0;
-      if (isOutward) {
-        const progress = 1 - ((selectedBubble.minutesRemaining || 0) / totalMins);
-        visualDist = progress * 500;
-      } else {
-        visualDist = Math.max(120, ((selectedBubble.minutesRemaining || 0) / windowMinutes) * 500);
-      }
-
-      const visualX = 1000 + Math.cos(selectedBubble.angle || 0) * visualDist;
-      const visualY = 1000 + Math.sin(selectedBubble.angle || 0) * visualDist;
-
-      centerOnPosition(visualX, visualY);
-    }
-  }, [selectedBubble, centerOnPosition, windowMinutes]);
-
-  // Efeito reativo para mudanças de visão
-  useEffect(() => {
-    centerOnOrigin('smooth');
-  }, [viewMode]);
-
-  // Monitor Scroll to show/hide Center button
-  useEffect(() => {
-    const canvas = document.getElementById('blackboard-canvas');
-    if (!canvas) return;
-
-    const handleScroll = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-
-      // O centro ideal é sempre 4000 (centro do canvas 8000x8000)
-      const targetScrollX = 1000 - (w / 2);
-      const targetScrollY = 1000 - (h / 2);
-
-      const threshold = 150; // px de margem de erro
-      const isNear = Math.abs(canvas.scrollLeft - targetScrollX) < threshold &&
-        Math.abs(canvas.scrollTop - targetScrollY) < threshold;
-
-      setIsCentered(prev => {
-        if (prev !== isNear) return isNear;
-        return prev;
-      });
-    };
-
-    canvas.addEventListener('scroll', handleScroll);
-    return () => canvas.removeEventListener('scroll', handleScroll);
-  }, []);
 
   // Load notes from localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem('ploc_blackboard_notes');
-      if (saved) setNotes(JSON.parse(saved));
+      if (saved) {
+        setTimeout(() => setNotes(JSON.parse(saved)), 0);
+      }
     } catch {
-      setNotes([]);
+      setTimeout(() => setNotes([]), 0);
     }
   }, []);
 
@@ -303,58 +350,23 @@ export default function BlackboardPage() {
   const updateNotePosition = (id: number, x: number, y: number) =>
     saveNotes(notes.map((n) => (n.id === id ? { ...n, x, y } : n)));
 
-  // --- State e Refs ---
-  const scaleRef = useRef(scale);
-  const lastZoomTime = useRef(0);
-
-  useEffect(() => {
-    scaleRef.current = scale;
-  }, [scale]);
-
-  const zoomDebounceRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Zoom Logic (Mouse-Anchored Zoom - Performance Ultra)
-  useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-
-      const canvas = document.getElementById('blackboard-canvas');
-      const bg = canvas?.querySelector('.canvas-background') as HTMLElement;
-      if (!canvas || !bg) return;
-
-      const delta = e.deltaY > 0 ? -0.05 : 0.05;
-      const oldScale = scaleRef.current;
-      // Escala entre 0.15 (15%) e 3 (300%) para evitar instabilidade no browser
-      const newScale = Math.min(Math.max(oldScale + delta, 0.15), 3);
-
-      if (oldScale === newScale) return;
-
-      scaleRef.current = newScale;
-
-      // ATUALIZAÇÃO VISUAL IMEDIATA (Pula o React para suavidade)
-      // Usamos center center para manter o Ploc (4000, 4000) estável
-      bg.style.transformOrigin = 'center center';
-      bg.style.transform = `scale(${newScale})`;
-
-      // Sincroniza o React de forma debounced
-      if (zoomDebounceRef.current) clearTimeout(zoomDebounceRef.current);
-      zoomDebounceRef.current = setTimeout(() => {
-        setScale(newScale);
-      }, 100);
-    };
-
-    window.addEventListener('wheel', handleWheel, { passive: false });
-    return () => {
-      window.removeEventListener('wheel', handleWheel);
-      if (zoomDebounceRef.current) clearTimeout(zoomDebounceRef.current);
-    };
-  }, []);
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => { });
+      setIsFullScreen(true);
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => { });
+      }
+      setIsFullScreen(false);
+    }
+  };
 
   // Bubble Engine Subscription & Event Listeners
   useEffect(() => {
     const unsubscribe = bubbleEngine.subscribe(setBubbles);
 
-    const onExplode = (bubble: any) => {
+    const onExplode = (bubble: BlackboardBubble & { collided?: boolean; value?: string }) => {
       if (bubble?.collided) return;
       setLastCompleted(bubble.content);
       setPlocReaction('happy');
@@ -365,7 +377,7 @@ export default function BlackboardPage() {
       }, 3000);
     };
 
-    const onTimeout = (bubble: any) => {
+    const onTimeout = (bubble: BlackboardBubble) => {
       setPlocReaction('dizzy');
       addWave(4000, 4000, 'rgba(239, 68, 68, 0.6)'); // Onda Vermelha (Colisão no Centro)
       setTimeout(() => {
@@ -377,8 +389,8 @@ export default function BlackboardPage() {
     blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_TIMEOUT, onTimeout);
 
     const unsubPloc = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, setPlocState);
-    const unsubReaction = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.PLOC_REACTION, (reaction: any) => {
-      setPlocReaction(reaction.type.toLowerCase() as any);
+    const unsubReaction = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.PLOC_REACTION, (reaction: { type: string; message?: string }) => {
+      setPlocReaction(reaction.type.toLowerCase() as 'idle' | 'happy' | 'stressed' | 'dizzy');
       if (reaction.message) {
         setPlocMessage(reaction.message);
         setTimeout(() => setPlocMessage(null), 4000);
@@ -389,7 +401,7 @@ export default function BlackboardPage() {
     // Verificar se é o primeiro acesso para o tutorial
     const hasSeenTutorial = localStorage.getItem('ploc_tutorial_seen');
     if (!hasSeenTutorial) {
-      setShowTutorial(true);
+      setTimeout(() => setShowTutorial(true), 0);
     }
 
     return () => {
@@ -399,95 +411,7 @@ export default function BlackboardPage() {
     };
   }, []);
 
-  // Auto-center on mount
-  useEffect(() => {
-    centerOnOrigin('auto');
-  }, []);
 
-  const toggleFullScreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => { });
-      setIsFullScreen(true);
-      // Zoom out automático para dar impressão de "abrir a visão"
-      setScale(0.5);
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen().catch(() => { });
-      }
-      setIsFullScreen(false);
-      // Volta ao zoom padrão
-      setScale(1.0);
-    }
-  };
-
-  // Panning Handlers
-  const handlePanStart = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (target.id === 'blackboard-canvas' || target.classList.contains('canvas-background')) {
-      const canvas = document.getElementById('blackboard-canvas');
-      if (canvas) {
-        setIsPanning(true);
-        setPanStart({
-          x: e.clientX,
-          y: e.clientY,
-          scrollLeft: canvas.scrollLeft,
-          scrollTop: canvas.scrollTop
-        });
-      }
-    }
-  };
-
-  const handlePanMove = useCallback((e: MouseEvent) => {
-    if (!isPanning) return;
-
-    const canvas = document.getElementById('blackboard-canvas');
-    if (canvas) {
-      const dx = e.clientX - panStart.x;
-      const dy = e.clientY - panStart.y;
-      const newLeft = panStart.scrollLeft - dx;
-      const newTop = panStart.scrollTop - dy;
-
-      canvas.scrollLeft = newLeft;
-      canvas.scrollTop = newTop;
-
-      // Sincronizar estado para os marcadores (Imediato para evitar lag visual)
-      setScrollPos({ x: newLeft, y: newTop });
-    }
-  }, [isPanning, panStart]);
-
-  const handlePanEnd = useCallback(() => {
-    setIsPanning(false);
-  }, []);
-
-  useEffect(() => {
-    if (isPanning) {
-      window.addEventListener('mousemove', handlePanMove);
-      window.addEventListener('mouseup', handlePanEnd);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handlePanMove);
-      window.removeEventListener('mouseup', handlePanEnd);
-    };
-  }, [isPanning, handlePanMove, handlePanEnd]);
-
-  useEffect(() => {
-    const canvas = document.getElementById('blackboard-canvas');
-    if (!canvas) return;
-
-    const updateScroll = () => {
-      setScrollPos({ x: canvas.scrollLeft, y: canvas.scrollTop });
-      setViewportSize({ w: canvas.clientWidth, h: canvas.clientHeight });
-    };
-
-    canvas.addEventListener('scroll', updateScroll);
-    window.addEventListener('resize', updateScroll);
-    updateScroll();
-
-    return () => {
-      canvas.removeEventListener('scroll', updateScroll);
-      window.removeEventListener('resize', updateScroll);
-    };
-  }, []);
 
   const spawnRandomAttributeBubble = () => {
     const types = [
@@ -498,499 +422,360 @@ export default function BlackboardPage() {
       { attr: 'mente', content: 'Estudo Profundo 📚', type: 'study' }
     ];
     const pick = types[Math.floor(Math.random() * types.length)];
-    bubbleEngine.spawnBubble(pick.type as any, pick.content, 10, { rewardAttribute: pick.attr });
+    bubbleEngine.spawnBubble(pick.type as BlackboardBubble['type'], pick.content, 10, { rewardAttribute: pick.attr });
   };
 
   return (
     <div
-      className="blackboard-page"
+      className="blackboard-page w-screen h-screen bg-[#0a0c0a] overflow-hidden relative font-sans touch-none"
       ref={containerRef}
-      style={{
-        width: '100vw',
-        height: '100vh',
-        background: '#0a0c0a',
-        overflow: 'hidden',
-        position: 'relative',
-        fontFamily: "'Inter', sans-serif",
-        touchAction: 'none'
-      }}
     >
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        backgroundImage: `url("https://www.transparenttextures.com/patterns/black-linen.png")`,
-        opacity: 0.2,
-        pointerEvents: 'none',
-        zIndex: 1
-      }} />
-
-      {/* Seletor de Tema do Radar (Floating) */}
-      <div style={{
-        position: 'fixed',
-        top: '200px',
-        left: '20px',
-        zIndex: 100,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '6px',
-        padding: '8px',
-        background: 'rgba(0,0,0,0.4)',
-        backdropFilter: 'blur(10px)',
-        borderRadius: '12px',
-        border: '1px solid rgba(255,255,255,0.1)'
-      }}>
-        {(['radio_wave', 'submarine', 'holographic', 'clockwork'] as SonarTheme[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setSonarTheme(t)}
-            style={{
-              padding: '4px 10px',
-              fontSize: '10px',
-              textTransform: 'uppercase',
-              letterSpacing: '1px',
-              borderRadius: '6px',
-              background: sonarTheme === t ? 'rgba(56, 189, 248, 0.2)' : 'transparent',
-              color: sonarTheme === t ? '#38bdf8' : '#666',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            {t.replace('_', ' ')}
-          </button>
-        ))}
-      </div>
+      <AmbientGlowBackground />
+      <Vignette />
+      <SodaWave key={sodaWaveKey} />
 
       <div
         id="blackboard-canvas"
-        onMouseDown={handlePanStart}
-        style={{
-          width: '100%',
-          height: '100%',
-          overflow: 'auto',
-          position: 'relative',
-          padding: 0,
-          margin: 0,
-          cursor: isPanning ? 'grabbing' : 'grab',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-          background: '#0a0c0a'
-        }}
+        className="w-full h-full relative p-0 m-0 bg-transparent overflow-hidden"
       >
-        <div style={{
-          width: '2000px',
-          height: '2000px',
-          position: 'relative',
-          flexShrink: 0
-        }}>
-          <div
-            className="canvas-background"
-            style={{
-              width: '2000px',
-              height: '2000px',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              transform: `scale(${scale})`,
-              transformOrigin: 'center center', // Zoom perfeito pelo centro
-              willChange: 'transform',
-              background: '#0a0c0a',
-              overflow: 'hidden'
-            }}
+        <motion.div
+          drag
+          dragConstraints={{ left: -1500, right: 1500, top: -1500, bottom: 1500 }}
+          dragElastic={0}
+          dragMomentum={true}
+          style={{ x: mapX, y: mapY }}
+          whileTap={{ cursor: "grabbing" }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[10000px] h-[10000px] cursor-grab active:cursor-grabbing touch-none z-[2]"
+        >
+          <motion.div
+            style={{ scale: mapScale }}
+            className="w-full h-full relative origin-center"
           >
-
-            <AnimatePresence>
-              {showGrid && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    backgroundImage: `
-                    linear-gradient(rgba(56, 189, 248, 0.05) 2px, transparent 2px),
-                    linear-gradient(90deg, rgba(56, 189, 248, 0.05) 2px, transparent 2px),
-                    linear-gradient(rgba(56, 189, 248, 0.02) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(56, 189, 248, 0.02) 1px, transparent 1px)
-                  `,
-                    backgroundSize: '100px 100px, 100px 100px, 20px 20px, 20px 20px',
-                    pointerEvents: 'none',
-                    zIndex: 0
-                  }}
-                />
-              )}
-            </AnimatePresence>
-
-            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 5 }}>
-              {notes.map((note) => (
-                <StickyNoteEl
-                  key={note.id}
-                  note={note}
-                  onDelete={() => deleteNote(note.id)}
-                  onContentChange={(c: string) => updateNoteContent(note.id, c)}
-                  onColorCycle={() => cycleNoteColor(note.id)}
-                  onPositionChange={(x: number, y: number) => updateNotePosition(note.id, x, y)}
-                  onSave={() => localStorage.setItem('ploc_blackboard_notes', JSON.stringify(notes))}
-                />
-              ))}
-            </div>
-
             <div
-              id="ploc-anchor"
+              className="canvas-background absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[50000px] h-[50000px] bg-transparent overflow-visible pointer-events-none"
               style={{
-                position: 'absolute',
-                left: '50%',
-                top: '50%',
-                width: '0px',
-                height: '0px',
-                zIndex: 20
+                backgroundImage: showGrid
+                  ? `linear-gradient(rgba(56, 189, 248, 0.05) 2px, transparent 2px),
+                   linear-gradient(90deg, rgba(56, 189, 248, 0.05) 2px, transparent 2px),
+                   linear-gradient(rgba(56, 189, 248, 0.02) 1px, transparent 1px),
+                   linear-gradient(90deg, rgba(56, 189, 248, 0.02) 1px, transparent 1px)`
+                  : `radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px)`,
+                backgroundSize: showGrid
+                  ? '100px 100px, 100px 100px, 20px 20px, 20px 20px'
+                  : '40px 40px'
               }}
             >
-              <motion.div
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  top: 0,
-                  pointerEvents: 'all',
-                }}
-                initial={{ x: "-50%", y: "-50%", scale: 0.7 }}
-                animate={{
-                  x: plocReaction === 'dizzy' ? ["-50%", "-52%", "-48%", "-52%", "-48%", "-50%"] : "-50%",
-                  y: "-50%",
-                  // Escalonamento Óptico Inteligente: O elemento não encolhe além do tamanho real
-                  // mas pode crescer se o usuário der um zoom muito próximo para ver detalhes.
-                  scale: (plocReaction === 'happy' ? 0.8 : 0.7) * Math.max(1, 1 / scale),
-                }}
-                transition={{
-                  scale: { type: 'spring', stiffness: 300, damping: 20 },
-                  x: { duration: 0.4 }
-                }}
-              >
-                <PlocAvatarClient
-                  draggable={false}
-                  emotion={plocState.emotion === 'calm' ? (plocReaction === 'idle' ? 'calm' : plocReaction as any) : plocState.emotion as any}
-                />
-              </motion.div>
-              {/* Radar Temporal (Sonar) */}
-              <SonarAuras
-                centerX={0}
-                centerY={0}
-                theme={sonarTheme}
-              />
 
-              {/* Balão de Fala do Ploc (Centralizado e Dinâmico) */}
-              <AnimatePresence>
-                {plocMessage && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20, scale: 0.8, x: '-50%' }}
-                    animate={{ opacity: 1, y: -110, scale: 1, x: '-50%' }}
-                    exit={{ opacity: 0, scale: 0.8, x: '-50%' }}
-                    style={{
-                      position: 'absolute',
-                      left: '0px',
-                      width: 'max-content',
-                      maxWidth: '280px',
-                      background: 'rgba(15, 23, 42, 0.9)',
-                      backdropFilter: 'blur(20px)',
-                      padding: '12px 20px',
-                      borderRadius: '24px',
-                      color: '#fff',
-                      fontSize: '0.85rem',
-                      fontWeight: 800,
-                      textAlign: 'center',
-                      boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
-                      border: '1px solid rgba(56, 189, 248, 0.3)',
-                      zIndex: 300,
-                      pointerEvents: 'none'
-                    }}
-                  >
-                    {plocMessage}
-                    {/* Triângulo do Balão (Seta) */}
-                    <div style={{
-                      position: 'absolute',
-                      bottom: '-8px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      width: '0',
-                      height: '0',
-                      borderLeft: '10px solid transparent',
-                      borderRight: '10px solid transparent',
-                      borderTop: '10px solid rgba(15, 23, 42, 0.9)'
-                    }} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+              {/* Minimapa / HUD Renderizado por Fora, mas Grid aplicada aqui para senso de direção */}
 
-            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 150 }}>
-              <AnimatePresence mode="popLayout">
-                {bubbles
-                  .filter(b => (b.minutesRemaining || 0) <= windowMinutes * 2)
-                  .map((bubble) => {
-                    const isOutward = (bubble as any).metadata?.direction === 'outward';
-                    const isGoalReached = isOutward && (bubble.minutesRemaining || 0) <= 0.08;
-
-                    let visualDist = 0;
-                    const totalMins = (bubble.metadata as any)?.totalMinutes || 10;
-                    if (isOutward) {
-                      const progress = Math.min(1, 1 - ((bubble.minutesRemaining || 0) / totalMins));
-                      visualDist = progress * 500;
-                    } else {
-                      visualDist = Math.max(120, ((bubble.minutesRemaining || 0) / windowMinutes) * 500);
-                    }
-
-                    const visualX = 1000 + Math.cos(bubble.angle || 0) * visualDist;
-                    const visualY = 1000 + Math.sin(bubble.angle || 0) * visualDist;
-                    const isSelected = selectedBubble?.id === bubble.id;
-
-                    return (
-                      <div key={bubble.id} style={{ position: 'absolute', left: 0, top: 0, pointerEvents: 'none' }}>
-                        <BubbleItem
-                          bubble={{ ...bubble, x: visualX, y: visualY }}
-                          windowMinutes={isOutward ? totalMins : windowMinutes}
-                          canvasScale={scale}
-                          onExplode={() => {
-                            setShowAttributes(false);
-                            setShowFocusInfo(false);
-                            setShowTutorial(false);
-                            setSelectedBubble(bubble);
-                            setInteractionNote('');
-                          }}
-                        />
-
-                        <AnimatePresence>
-                          {isSelected && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.8, x: visualX - 120, y: visualY - 260 }}
-                              animate={{ opacity: 1, scale: 1, x: visualX - 120, y: visualY - 280 }}
-                              exit={{ opacity: 0, scale: 0.8, x: visualX - 120, y: visualY - 260 }}
-                              style={{
-                                position: 'absolute',
-                                width: '240px',
-                                background: 'rgba(15, 23, 42, 0.95)',
-                                backdropFilter: 'blur(16px)',
-                                border: `1px solid ${isGoalReached ? 'rgba(16, 185, 129, 0.4)' : (isOutward ? 'rgba(239, 68, 68, 0.4)' : 'rgba(56, 189, 248, 0.4)')}`,
-                                borderRadius: '16px',
-                                padding: '16px',
-                                boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-                                zIndex: 200,
-                                pointerEvents: 'all'
-                              }}
-                            >
-                              <div style={{
-                                position: 'absolute',
-                                bottom: '-8px',
-                                left: '50%',
-                                transform: 'translateX(-50%)',
-                                width: '0',
-                                height: '0',
-                                borderLeft: '10px solid transparent',
-                                borderRight: '10px solid transparent',
-                                borderTop: `10px solid ${isGoalReached ? 'rgba(16, 185, 129, 0.95)' : (isOutward ? 'rgba(239, 68, 68, 0.95)' : 'rgba(15, 23, 42, 0.95)')}`,
-                              }} />
-                              <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px' }}>
-                                {bubble.content}
-                              </div>
-
-                              <div style={{
-                                background: isGoalReached ? 'rgba(16, 185, 129, 0.15)' : (isOutward ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)'),
-                                padding: '8px',
-                                borderRadius: '8px',
-                                fontSize: '0.75rem',
-                                color: isGoalReached ? '#10b981' : (isOutward ? '#fca5a5' : '#86efac'),
-                                marginBottom: '12px'
-                              }}>
-                                {isGoalReached ? (
-                                  <>🏆 <b>META ALCANÇADA!</b><br />Parabéns por resistir. Clique em <b>Concluir</b> para resetar o ciclo e ganhar <b>+15 Moedas</b>.</>
-                                ) : isOutward ? (
-                                  <>⚠️ Desistir agora: <b>-10 Moedas</b><br />Vencer: <b>+20 Moedas</b></>
-                                ) : (
-                                  <>✨ Bônus de Foco: <b>+5 Moedas</b></>
-                                )}
-                              </div>
-
-                              <textarea
-                                value={interactionNote}
-                                onChange={(e) => setInteractionNote(e.target.value)}
-                                placeholder="Notas da atividade..."
-                                style={{
-                                  width: '100%',
-                                  background: 'rgba(255,255,255,0.05)',
-                                  border: '1px solid rgba(255,255,255,0.1)',
-                                  borderRadius: '8px',
-                                  padding: '8px',
-                                  color: '#fff',
-                                  fontSize: '0.8rem',
-                                  minHeight: '60px',
-                                  marginBottom: '12px',
-                                  resize: 'none',
-                                  outline: 'none'
-                                }}
-                              />
-
-                              <div style={{ display: 'flex', gap: '8px' }}>
-                                <button
-                                  onClick={() => setSelectedBubble(null)}
-                                  style={{
-                                    flex: 1,
-                                    padding: '8px',
-                                    background: 'transparent',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    color: 'rgba(255,255,255,0.6)',
-                                    borderRadius: '8px',
-                                    fontSize: '0.75rem',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  Cancelar
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    bubbleEngine.explodeBubble(bubble.id, interactionNote);
-                                    setSelectedBubble(null);
-                                    setInteractionNote('');
-                                  }}
-                                  style={{
-                                    flex: 1,
-                                    padding: '8px',
-                                    background: isGoalReached ? '#10b981' : (isOutward ? '#ef4444' : '#38bdf8'),
-                                    border: 'none',
-                                    color: '#fff',
-                                    borderRadius: '8px',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 'bold',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  {isGoalReached ? 'Resetar Ciclo' : (isOutward ? 'Ceder' : 'Concluir')}
-                                </button>
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    );
-                  })}
-              </AnimatePresence>
-
-              <AnimatePresence>
-                {activeWaves.map(wave => (
-                  <motion.div
-                    key={wave.id}
-                    initial={{ width: 0, height: 0, opacity: 1, x: '-50%', y: '-50%' }}
-                    animate={{
-                      width: 1500,
-                      height: 1500,
-                      opacity: 0,
-                      borderWidth: [4, 20, 0]
-                    }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 1.2, ease: "circOut" }}
-                    style={{
-                      position: 'absolute',
-                      left: `${wave.x}px`,
-                      top: `${wave.y}px`,
-                      borderRadius: '50%',
-                      border: `4px solid ${wave.color}`,
-                      boxShadow: `0 0 50px ${wave.color}`,
-                      pointerEvents: 'none',
-                      zIndex: 200
-                    }}
+              <div className="absolute inset-0 pointer-events-none z-[5]">
+                {notes.map((note) => (
+                  <BlackboardStickyNote
+                    key={note.id}
+                    note={note}
+                    onDelete={() => deleteNote(note.id)}
+                    onContentChange={(c: string) => updateNoteContent(note.id, c)}
+                    onColorCycle={() => cycleNoteColor(note.id)}
+                    onPositionChange={(x: number, y: number) => updateNotePosition(note.id, x, y)}
+                    onSave={() => localStorage.setItem('ploc_blackboard_notes', JSON.stringify(notes))}
                   />
                 ))}
-              </AnimatePresence>
+              </div>
+
+              <div
+                id="ploc-anchor"
+                className="absolute left-1/2 top-1/2 w-0 h-0 z-20"
+              >
+                <motion.div
+                  className="absolute left-0 top-0 pointer-events-none flex items-center justify-center"
+                  initial={{ x: "-50%", y: "-50%", scale: 1.0 }}
+                  animate={{
+                    x: plocReaction === 'dizzy' ? ["-50%", "-52%", "-48%", "-52%", "-48%", "-50%"] : "-50%",
+                    y: "-50%",
+                    // Escalonamento Fixo: O elemento cancela o zoom do mapa perfeitamente,
+                    // garantindo que fique sempre no tamanho base (100px).
+                    scale: (plocReaction === 'happy' ? 1.1 : 1.0) * (1 / scale),
+                  }}
+                  transition={{
+                    scale: { type: 'spring', stiffness: 300, damping: 20 },
+                    x: { duration: 0.4 }
+                  }}
+                >
+                  {/* A BOLHA DO PLOC (SONAR DE 500px) */}
+                  <motion.div
+                    animate={!activeVice?.isConsuming ? {
+                      scaleX: [1, 1.03, 0.97, 1],
+                      scaleY: [1, 0.97, 1.03, 1],
+                      borderRadius: [
+                        "50% 50% 48% 48% / 48% 48% 52% 52%",
+                        "46% 54% 44% 56% / 53% 47% 53% 47%",
+                        "54% 46% 56% 44% / 47% 53% 47% 53%",
+                        "50% 50% 48% 48% / 48% 48% 52% 52%"
+                      ]
+                    } : { borderRadius: '50%' }}
+                    transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+                    className="absolute w-[500px] h-[500px] border border-sky-400/20 bg-sky-400/5 flex items-center justify-center pointer-events-none z-0 overflow-hidden"
+                    style={{
+                      boxShadow: 'inset 0 0 40px rgba(56, 189, 248, 0.1), 0 0 20px rgba(56, 189, 248, 0.05)'
+                    }}
+                  >
+                    {/* EFEITO SONAR NORMAL */}
+                    {!activeVice?.isConsuming && (
+                      <>
+                        <motion.div
+                          animate={{ scale: [1, 1.05, 1], opacity: [0.3, 0.6, 0.3] }}
+                          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                          className="w-full h-full rounded-full border border-sky-400/30"
+                        />
+                        <motion.div
+                          animate={{ scale: [0.8, 1.1, 0.8], opacity: [0.1, 0.3, 0.1] }}
+                          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+                          className="absolute w-3/4 h-3/4 rounded-full border border-sky-400/20"
+                        />
+                      </>
+                    )}
+                  </motion.div>
+
+                  {/* PLOC AVATAR */}
+                  <div className="pointer-events-auto z-10">
+                    <PlocAvatarClient
+                      draggable={false}
+                      emotion={activeVice?.isConsuming ? 'dizzy' : (plocState.emotion === 'calm' ? (plocReaction === 'idle' ? 'calm' : plocReaction as 'calm' | 'happy' | 'stressed' | 'pissed' | 'sleeping' | 'dizzy') : plocState.emotion as 'calm' | 'happy' | 'stressed' | 'pissed' | 'sleeping' | 'dizzy')}
+                    />
+                  </div>
+
+                  {/* FUMAÇA E UI DO CONSUMO ATIVO */}
+                  <AnimatePresence>
+                    {activeVice?.isConsuming && (
+                      <motion.div
+                        className="absolute inset-0 z-20 pointer-events-none"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0, transition: { duration: 1.5, ease: "easeInOut" } }}
+                      >
+                        {/* FUMAÇA (z-index maior que o Ploc) */}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          {[...Array(6)].map((_, i) => (
+                            <motion.div
+                              key={`smoke-${i}`}
+                              className="absolute w-[300px] h-[300px] bg-slate-800/60 rounded-full mix-blend-overlay"
+                              style={{ filter: 'blur(25px)' }}
+                              animate={{
+                                scale: [1, 1.3, 1],
+                                x: [0, (i % 2 === 0 ? 30 : -30), 0],
+                                y: [0, (i % 3 === 0 ? -30 : 30), 0],
+                                opacity: [0.3, 0.8, 0.3],
+                                rotate: [0, 90, 0]
+                              }}
+                              transition={{ duration: 3 + i, repeat: Infinity, ease: 'easeInOut' }}
+                            />
+                          ))}
+                        </div>
+
+                        {/* UI DO CONSUMO ATIVO (BOTÃO PARAR E TIMER) */}
+                        <div className="absolute -top-[160px] left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-auto z-[400] scale-90">
+                          <div className="bg-red-500/10 border border-red-500/30 backdrop-blur-md px-4 py-1.5 rounded-2xl mb-2 flex flex-col items-center justify-center shadow-[0_0_15px_rgba(239,68,68,0.2)] min-w-[140px]">
+                            <span className="text-[0.5rem] font-bold text-red-400 uppercase tracking-[0.15em] mb-0.5 text-center ml-[0.15em]">Tempo real de uso</span>
+                            <span className={`font-mono font-black text-lg leading-none text-center ${activeSecondsRemaining < 0 ? 'text-red-500' : 'text-white'}`}>
+                              {formatConsumingTime(activeSecondsRemaining)}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => endConsumption(consumptionElapsed)}
+                            className="bg-red-500 hover:bg-red-600 text-white font-black px-5 py-2.5 rounded-xl text-[0.6rem] tracking-widest transition-colors shadow-lg whitespace-nowrap"
+                          >
+                            FINALIZAR
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+                {/* Radar Temporal (Sonar) Removido */}
+
+                {/* Balão de Fala do Ploc (Centralizado e Dinâmico) */}
+                <AnimatePresence>
+                  {plocMessage && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20, scale: 0.8, x: '-50%' }}
+                      animate={{ opacity: 1, y: -110, scale: 1, x: '-50%' }}
+                      exit={{ opacity: 0, scale: 0.8, x: '-50%' }}
+                      className="absolute left-0 w-max max-w-[280px] bg-slate-900/90 backdrop-blur-xl px-5 py-3 rounded-3xl text-white text-[0.85rem] font-extrabold text-center shadow-[0_20px_40px_rgba(0,0,0,0.4)] border border-sky-400/30 z-[300] pointer-events-none"
+                    >
+                      {plocMessage}
+                      {/* Triângulo do Balão (Seta) */}
+                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[10px] border-t-slate-900/90" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Bolha de Pensamento do Libertesse (Controle de Vícios) */}
+                <ViceBubble canvasScale={scale} />
+
+
+              </div>
+
+              <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 150 }}>
+                <AnimatePresence mode="popLayout">
+                  {bubbles
+                    .filter(b => (b.minutesRemaining || 0) <= windowMinutes * 2)
+                    .map((bubble) => {
+                      const metadata = bubble.metadata as { direction?: string, totalMinutes?: number } | undefined;
+                      const isOutward = metadata?.direction === 'outward';
+                      const isGoalReached = isOutward && (bubble.minutesRemaining || 0) <= 0.08;
+
+                      let visualDist = 0;
+                      const totalMins = metadata?.totalMinutes || 10;
+                      const maxDist = typeof window !== 'undefined' ? Math.min(window.innerWidth, window.innerHeight) / 2 - 80 : 500;
+                      if (isOutward) {
+                        const progress = Math.min(1, 1 - ((bubble.minutesRemaining || 0) / totalMins));
+                        visualDist = progress * maxDist;
+                      } else {
+                        visualDist = Math.max(120, Math.min(maxDist, ((bubble.minutesRemaining || 0) / windowMinutes) * maxDist));
+                      }
+
+                      const visualX = 1000 + Math.cos(bubble.angle || 0) * visualDist;
+                      const visualY = 1000 + Math.sin(bubble.angle || 0) * visualDist;
+                      const isSelected = selectedBubble?.id === bubble.id;
+
+                      return (
+                        <div key={bubble.id} style={{ position: 'absolute', left: 0, top: 0, pointerEvents: 'none' }}>
+                          <BlackboardBubbleItem
+                            bubble={{ ...bubble, x: visualX, y: visualY }}
+                            windowMinutes={isOutward ? totalMins : windowMinutes}
+                            canvasScale={scale}
+                            onExplode={() => {
+                              setShowAttributes(false);
+                              setShowFocusInfo(false);
+                              setShowTutorial(false);
+                              setSelectedBubble(bubble);
+                              setInteractionNote('');
+                            }}
+                          />
+
+                          <AnimatePresence>
+                            {isSelected && (
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.8, x: visualX - 120, y: visualY - 260 }}
+                                animate={{ opacity: 1, scale: 1, x: visualX - 120, y: visualY - 280 }}
+                                exit={{ opacity: 0, scale: 0.8, x: visualX - 120, y: visualY - 260 }}
+                                style={{
+                                  position: 'absolute',
+                                  width: '240px',
+                                  background: 'rgba(15, 23, 42, 0.95)',
+                                  backdropFilter: 'blur(16px)',
+                                  border: `1px solid ${isGoalReached ? 'rgba(16, 185, 129, 0.4)' : (isOutward ? 'rgba(239, 68, 68, 0.4)' : 'rgba(56, 189, 248, 0.4)')}`,
+                                  borderRadius: '16px',
+                                  padding: '16px',
+                                  boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+                                  zIndex: 200,
+                                  pointerEvents: 'all'
+                                }}
+                              >
+                                <div style={{
+                                  position: 'absolute',
+                                  bottom: '-8px',
+                                  left: '50%',
+                                  transform: 'translateX(-50%)',
+                                  width: '0',
+                                  height: '0',
+                                  borderLeft: '10px solid transparent',
+                                  borderRight: '10px solid transparent',
+                                  borderTop: `10px solid ${isGoalReached ? 'rgba(16, 185, 129, 0.95)' : (isOutward ? 'rgba(239, 68, 68, 0.95)' : 'rgba(15, 23, 42, 0.95)')}`,
+                                }} />
+                                <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px' }}>
+                                  {bubble.content}
+                                </div>
+
+                                <div className={`p-2 rounded-lg text-xs mb-3 ${isGoalReached ? 'bg-emerald-500/15 text-emerald-500' : (isOutward ? 'bg-red-500/10 text-red-300' : 'bg-green-500/10 text-green-300')
+                                  }`}>
+                                  {isGoalReached ? (
+                                    <>🏆 <b>META ALCANÇADA!</b><br />Parabéns por resistir. Clique em <b>Concluir</b> para resetar o ciclo e ganhar <b>+15 Moedas</b>.</>
+                                  ) : isOutward ? (
+                                    <>⚠️ Desistir agora: <b>-10 Moedas</b><br />Vencer: <b>+20 Moedas</b></>
+                                  ) : (
+                                    <>✨ Bônus de Foco: <b>+5 Moedas</b></>
+                                  )}
+                                </div>
+
+                                <textarea
+                                  value={interactionNote}
+                                  onChange={(e) => setInteractionNote(e.target.value)}
+                                  placeholder="Notas da atividade..."
+                                  className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white text-[0.8rem] min-h-[60px] mb-3 resize-none outline-none"
+                                />
+
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => setSelectedBubble(null)}
+                                    className="flex-1 p-2 bg-transparent border border-white/10 text-white/60 rounded-lg text-xs cursor-pointer"
+                                  >
+                                    Cancelar
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      bubbleEngine.explodeBubble(bubble.id, interactionNote);
+                                      setSelectedBubble(null);
+                                      setInteractionNote('');
+                                    }}
+                                    className={`flex-1 p-2 border-none text-white rounded-lg text-xs font-bold cursor-pointer ${isGoalReached ? 'bg-emerald-500' : (isOutward ? 'bg-red-500' : 'bg-sky-400')
+                                      }`}
+                                  >
+                                    {isGoalReached ? 'Resetar Ciclo' : (isOutward ? 'Ceder' : 'Concluir')}
+                                  </button>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      );
+                    })}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                  {activeWaves.map(wave => (
+                    <motion.div
+                      key={wave.id}
+                      initial={{ width: 0, height: 0, opacity: 1, x: '-50%', y: '-50%' }}
+                      animate={{
+                        width: 1500,
+                        height: 1500,
+                        opacity: 0,
+                        borderWidth: [4, 20, 0]
+                      }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 1.2, ease: "circOut" }}
+                      className="absolute rounded-full pointer-events-none z-[200]"
+                      style={{
+                        left: `${wave.x}px`,
+                        top: `${wave.y}px`,
+                        border: `4px solid ${wave.color}`,
+                        boxShadow: `0 0 50px ${wave.color}`
+                      }}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
+
+        {/* Interface / HUD (Fixo) */}
       </div>
       <motion.div
-        style={{
-          position: 'fixed',
-          bottom: '120px',
-          right: '40px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-          zIndex: 100
-        }}
+        className="fixed bottom-[120px] right-[40px] flex flex-col gap-3 z-[100]"
       >
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={spawnRandomAttributeBubble}
-          style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '50%',
-            background: 'rgba(56, 189, 248, 0.2)',
-            backdropFilter: 'blur(15px)',
-            border: '1px solid rgba(56, 189, 248, 0.4)',
-            color: '#38bdf8',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-          }}
-        >
-          <Sparkles size={24} />
-        </motion.button>
-
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => {
-            setShowAttributes(false);
-            setShowFocusInfo(false);
-            setSelectedBubble(null);
-            setShowTutorial(true);
-          }}
-          style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.05)',
-            backdropFilter: 'blur(15px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            color: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-          }}
-        >
-          <HelpCircle size={24} />
-        </motion.button>
-
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={addNote}
-          style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(15px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#fff',
-            cursor: 'pointer',
-          }}
+          className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex items-center justify-center text-white cursor-pointer"
         >
           <Plus size={32} strokeWidth={1.5} />
         </motion.button>
       </motion.div>
 
-      <div style={{
-        position: 'fixed',
-        top: '90px',
-        left: '30px',
-        zIndex: 100001,
-      }}>
+      <div className="fixed top-[90px] left-[30px] z-[100001]">
         {/* PlocCoins Wallet - MOEDAS DE FOCO */}
         <motion.div
           key={score}
@@ -1004,40 +789,10 @@ export default function BlackboardPage() {
           animate={{ x: 0, opacity: 1 }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          style={{
-            background: 'rgba(15, 15, 15, 0.9)',
-            backdropFilter: 'blur(10px)',
-            padding: '6px 14px',
-            borderRadius: '20px',
-            border: '1px solid rgba(251, 191, 36, 0.4)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            cursor: 'pointer',
-            boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
-            pointerEvents: 'all'
-          }}
+          className="bg-[#0f0f0f]/90 backdrop-blur-md px-3.5 py-1.5 rounded-[20px] border border-amber-400/40 flex items-center gap-2.5 cursor-pointer shadow-[0_8px_30px_rgba(0,0,0,0.5)] pointer-events-auto"
         >
-          <div style={{
-            width: '20px',
-            height: '20px',
-            borderRadius: '50%',
-            background: 'linear-gradient(45deg, #f59e0b, #fbbf24)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '0.75rem',
-            fontWeight: 900,
-            color: '#000',
-            boxShadow: '0 0 10px rgba(251, 191, 36, 0.3)'
-          }}>$</div>
-          <span style={{
-            fontSize: '1.1rem',
-            fontWeight: 700,
-            color: '#fbbf24',
-            fontFamily: 'monospace',
-            letterSpacing: '1px'
-          }}>
+          <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-amber-500 to-amber-400 flex items-center justify-center text-xs font-black text-black shadow-[0_0_10px_rgba(251,191,36,0.3)]">$</div>
+          <span className="text-[1.1rem] font-bold text-amber-400 font-mono tracking-[1px]">
             {score.toLocaleString('pt-BR')}
           </span>
         </motion.div>
@@ -1046,44 +801,15 @@ export default function BlackboardPage() {
       {/* Modal Explicativo das Moedas de Foco */}
       <AnimatePresence>
         {showFocusInfo && (
-          <div style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.8)',
-            backdropFilter: 'blur(10px)',
-            zIndex: 200000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px'
-          }} onClick={() => setShowFocusInfo(false)}>
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200000] flex items-center justify-center p-5" onClick={() => setShowFocusInfo(false)}>
             <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              style={{
-                background: '#1a1c1a',
-                border: '1px solid rgba(251, 191, 36, 0.3)',
-                padding: '30px',
-                borderRadius: '24px',
-                maxWidth: '400px',
-                textAlign: 'center',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.6)'
-              }}
+              className="bg-[#1a1c1a] border border-amber-400/30 p-[30px] rounded-[24px] max-w-[400px] text-center shadow-[0_20px_60px_rgba(0,0,0,0.6)]"
             >
-              <div style={{
-                width: '60px',
-                height: '60px',
-                borderRadius: '50%',
-                background: 'linear-gradient(45deg, #f59e0b, #fbbf24)',
-                margin: '0 auto 20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '2rem',
-                boxShadow: '0 0 30px rgba(251, 191, 36, 0.4)'
-              }}>🪙</div>
+              <div className="w-[60px] h-[60px] rounded-full bg-gradient-to-tr from-amber-500 to-amber-400 mx-auto mb-5 flex items-center justify-center text-3xl shadow-[0_0_30px_rgba(251,191,36,0.4)]">🪙</div>
               <h2 style={{ color: '#fbbf24', marginBottom: '15px', fontWeight: 900 }}>MOEDAS DE FOCO</h2>
               <p style={{ color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, marginBottom: '20px' }}>
                 Estas moedas representam a sua **Energia de Produtividade**. Elas são o combustível para o crescimento do Ploc!
@@ -1117,195 +843,90 @@ export default function BlackboardPage() {
         )}
       </AnimatePresence>
 
-      <div style={{
-        position: 'fixed',
-        top: '30px',
-        right: '30px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        zIndex: 100001,
-        pointerEvents: 'none'
-      }}>
-        {/* Ciclo de Visão Temporal */}
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => {
-            const modes: ('1h' | 'day' | 'week')[] = ['1h', 'day', 'week'];
-            const nextMode = modes[(modes.indexOf(viewMode as any) + 1) % modes.length];
-            setViewMode(nextMode);
+      <div className="fixed top-[90px] right-[30px] flex flex-col items-end gap-3 z-[100001] pointer-events-none">
+        <div className="flex items-center gap-3">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            onClick={() => {
+              userClosedMinimap.current = showMinimap; // Registra se o usuário fechou manualmente
+              setShowMinimap(!showMinimap);
+            }}
+            className={`w-11 h-11 rounded-[50px] backdrop-blur-xl flex items-center justify-center cursor-pointer pointer-events-auto ${showMinimap ? 'bg-sky-400/20 border border-sky-400/40 text-sky-400' : 'bg-white/5 border border-white/10 text-white'
+              }`}
+          >
+            <Map size={18} />
+          </motion.button>
 
-            // Escala ideal para ver o radar completo (1000px de diâmetro)
-            // Agora 1.0 (100%) é o nosso alvo panorâmico
-            let nextScale = 1;
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            onClick={() => setShowGrid(!showGrid)}
+            className={`w-11 h-11 rounded-[50px] backdrop-blur-xl flex items-center justify-center cursor-pointer pointer-events-auto ${showGrid ? 'bg-sky-400/20 border border-sky-400/40 text-sky-400' : 'bg-white/5 border border-white/10 text-white'
+              }`}
+          >
+            <Grid3X3 size={18} />
+          </motion.button>
 
-            setScale(nextScale);
-            // O centerPloc será disparado pelo useEffect [viewMode]
-          }}
-          style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '50px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            color: '#38bdf8',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            pointerEvents: 'all',
-            fontSize: '9px',
-            fontWeight: 'bold'
-          }}
-        >
-          <Clock size={16} />
-          <span style={{ marginTop: '-2px' }}>{viewMode.toUpperCase()}</span>
-        </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            onClick={() => {
+              const newState = !showAttributes;
+              if (newState) {
+                setShowFocusInfo(false);
+                setShowTutorial(false);
+                setSelectedBubble(null);
+              }
+              setShowAttributes(newState);
+            }}
+            className={`attribute-bubble w-11 h-11 rounded-[50px] backdrop-blur-xl flex items-center justify-center cursor-pointer pointer-events-auto ${showAttributes ? 'bg-yellow-400/20 border border-yellow-400/40 text-yellow-400' : 'bg-white/5 border border-white/10 text-white'
+              }`}
+          >
+            <ActivityIcon size={18} />
+          </motion.button>
 
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          onClick={() => setShowGrid(!showGrid)}
-          style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '50px',
-            background: showGrid ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255,255,255,0.05)',
-            backdropFilter: 'blur(20px)',
-            border: showGrid ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid rgba(255,255,255,0.1)',
-            color: showGrid ? '#38bdf8' : '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            pointerEvents: 'all'
-          }}
-        >
-          <Grid3X3 size={18} />
-        </motion.button>
-
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          onClick={() => {
-            const newState = !showAttributes;
-            if (newState) {
-              setShowFocusInfo(false);
-              setShowTutorial(false);
-              setSelectedBubble(null);
-            }
-            setShowAttributes(newState);
-          }}
-          className="attribute-bubble"
-          style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '50px',
-            background: showAttributes ? 'rgba(250, 204, 21, 0.2)' : 'rgba(255,255,255,0.05)',
-            backdropFilter: 'blur(20px)',
-            border: showAttributes ? '1px solid rgba(250, 204, 21, 0.4)' : '1px solid rgba(255,255,255,0.1)',
-            color: showAttributes ? '#facc15' : '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            pointerEvents: 'all'
-          }}
-        >
-          <ActivityIcon size={18} />
-        </motion.button>
-
-        {/* Indicador de Zoom */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          background: 'rgba(255,255,255,0.05)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: '50px',
-          padding: '0 16px',
-          height: '44px',
-          border: '1px solid rgba(255,255,255,0.1)',
-          color: '#fff',
-          fontSize: '0.75rem',
-          fontWeight: 900,
-          pointerEvents: 'all'
-        }}>
-          {Math.round(scale * 100)}%
         </div>
 
-        <ViewportMarkers
-          bubbles={bubbles}
-          scrollPos={scrollPos}
-          scale={scale}
-          onFocusTask={(task: any) => {
-            setShowAttributes(false);
-            setShowFocusInfo(false);
-            setShowTutorial(false);
-            setSelectedBubble(task);
-            // O useEffect de selectedBubble cuidará do scrollIntoView
-          }}
-        />
+        {/* Modal/Dropdown do Minimapa */}
+        <AnimatePresence>
+          {showMinimap && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.9 }}
+              className="flex flex-col gap-2"
+            >
+              {/* Controles de Câmera */}
+              <div className="flex items-center justify-between w-[100px] bg-black/40 border border-white/10 backdrop-blur-md rounded-xl p-1 pointer-events-auto shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+                <button onClick={zoomOut} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 text-white/70 hover:text-white transition-colors">
+                  <ZoomOut size={16} />
+                </button>
+                <button onClick={recenterMap} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 text-sky-400 transition-colors" title="Centralizar no Ploc">
+                  <Target size={16} />
+                </button>
+                <button onClick={zoomIn} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 text-white/70 hover:text-white transition-colors">
+                  <ZoomIn size={16} />
+                </button>
+              </div>
 
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          onClick={toggleFullScreen}
-          style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '50px',
-            background: 'rgba(255,255,255,0.05)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            color: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            pointerEvents: 'all'
-          }}
-        >
-          {isFullScreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-        </motion.button>
+              {/* Minimapa */}
+              <div className="w-[100px] h-[100px] rounded-xl bg-black/60 border border-white/10 backdrop-blur-md overflow-hidden pointer-events-none shadow-[0_4px_20px_rgba(0,0,0,0.5)] relative flex items-center justify-center">
+                {/* Grade Interna do Minimapa */}
+                <div className="absolute inset-0 opacity-20" style={{
+                  backgroundImage: `radial-gradient(rgba(255, 255, 255, 1) 1px, transparent 1px)`,
+                  backgroundSize: '10px 10px'
+                }}></div>
 
-        {/* Cápsula do Usuário integrada no mesmo flex para empurrar os botões ao expandir */}
-        <UserHeader />
+                {/* Indicador de Viewport (Câmera) com tamanho responsivo ao zoom */}
+                <motion.div
+                  className="absolute top-1/2 left-1/2 rounded-full border border-sky-400/80 bg-sky-400/20 shadow-[0_0_8px_rgba(56,189,248,0.5)] transform -translate-x-1/2 -translate-y-1/2 origin-center"
+                  style={{ x: miniDotX, y: miniDotY, width: miniViewportSize, height: miniViewportSize }}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* ── Botão Centralizar Contextual (Só aparece se estiver longe do Ploc) ── */}
-      <AnimatePresence>
-        {!isCentered && (
-          <motion.button
-            key="center-ploc-btn"
-            initial={{ opacity: 0, scale: 0.8, y: -20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: -20 }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={centerOnOrigin}
-            style={{
-              position: 'fixed',
-              top: '90px',
-              right: '30px',
-              width: '44px',
-              height: '44px',
-              borderRadius: '50%',
-              background: 'rgba(56, 189, 248, 0.2)',
-              backdropFilter: 'blur(15px)',
-              border: '1px solid rgba(56, 189, 248, 0.4)',
-              color: '#38bdf8',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              zIndex: 100000,
-              boxShadow: '0 8px 32px rgba(56, 189, 248, 0.1)'
-            }}
-          >
-            <Target size={20} />
-          </motion.button>
-        )}
-      </AnimatePresence>
+
 
       {/* ── Menu de Navegação Global (Dock) ────────────────── */}
       <DockMenu />
@@ -1319,16 +940,9 @@ export default function BlackboardPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2 }}
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100%',
-              zIndex: 9000,
-              pointerEvents: 'none' // Permite clicar no oceano através do wrapper
-            }}
+            className="fixed top-0 left-0 w-full z-[100005] pointer-events-none" // Permite clicar no oceano através do wrapper
           >
-            <div style={{ pointerEvents: 'all' }}>
+            <div className="pointer-events-auto">
               <AttributeMonitor onClose={() => setShowAttributes(false)} />
             </div>
           </motion.div>
@@ -1345,437 +959,4 @@ export default function BlackboardPage() {
     </div>
   );
 }
-
-const StickyNoteEl = memo(({ note, onDelete, onContentChange, onColorCycle, onPositionChange, onSave }: any) => {
-  const [dragging, setDragging] = useState(false);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('.note-btn')) return;
-    setDragging(true);
-    setOffset({ x: e.clientX - note.x, y: e.clientY - note.y });
-    e.preventDefault();
-  };
-
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!dragging) return;
-    onPositionChange(e.clientX - offset.x, e.clientY - offset.y);
-  }, [dragging, offset, onPositionChange]);
-
-  const handleMouseUp = useCallback(() => {
-    if (dragging) { setDragging(false); onSave(); }
-  }, [dragging, onSave]);
-
-  useEffect(() => {
-    if (dragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [dragging, handleMouseMove, handleMouseUp]);
-
-  const colorMap: Record<string, string> = {
-    '': '#fef3c7', // Amarelo clássico
-    'note-blue': '#dbeafe',
-    'note-green': '#dcfce7',
-    'note-pink': '#fce7f3',
-    'note-purple': '#f3e8ff',
-  };
-
-  return (
-    <motion.div
-      initial={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1, rotate: (note.id % 4) - 2 }}
-      style={{
-        position: 'absolute',
-        left: `${note.x}px`,
-        top: `${note.y}px`,
-        pointerEvents: 'all',
-        zIndex: dragging ? 1000 : 1,
-        background: colorMap[note.colorClass] || '#fef3c7',
-        borderRadius: '2px', // Mais quadrado como post-it
-        padding: '12px',
-        minWidth: '220px',
-        boxShadow: dragging ? '0 20px 40px rgba(0,0,0,0.5)' : '2px 5px 15px rgba(0,0,0,0.3)',
-        transition: 'box-shadow 0.2s ease',
-        transform: `rotate(${(note.id % 4) - 2}deg)`
-      }}
-    >
-      <div
-        onMouseDown={handleMouseDown}
-        style={{ cursor: 'grab', display: 'flex', justifyContent: 'flex-end', gap: '8px', marginBottom: '8px' }}
-      >
-        <button className="note-btn" onClick={onColorCycle} style={{ background: 'none', border: 'none', cursor: 'pointer', filter: 'grayscale(1)' }}>🎨</button>
-        <button className="note-btn" onClick={onDelete} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}>✕</button>
-      </div>
-      <textarea
-        defaultValue={note.content}
-        onChange={(e) => onContentChange(e.target.value)}
-        placeholder="Escreva algo..."
-        style={{
-          width: '100%',
-          minHeight: '120px',
-          background: 'transparent',
-          border: 'none',
-          outline: 'none',
-          color: '#1a1c1a',
-          fontSize: '1rem',
-          lineHeight: '1.4',
-          resize: 'both',
-          fontFamily: "'Inter', sans-serif",
-          fontWeight: 500
-        }}
-      />
-      {/* ── Detalhe de "Fita Adesiva" ────────────────── */}
-      <div style={{
-        position: 'absolute',
-        top: '-15px',
-        left: '50%',
-        transform: 'translateX(-50%) rotate(-1deg)',
-        width: '60px',
-        height: '25px',
-        background: 'rgba(255,255,255,0.4)',
-        backdropFilter: 'blur(2px)',
-        zIndex: -1
-      }} />
-    </motion.div>
-  );
-});
-
-
-
-/** Item de Bolha (Task/Insight) */
-const BubbleItem = memo(({ bubble, onExplode, windowMinutes = 10, canvasScale = 1 }: {
-  bubble: BlackboardBubble,
-  onExplode: () => void,
-  windowMinutes?: number,
-  canvasScale?: number
-}) => {
-  const Icon = bubble.type === 'bright_idea' ? Sparkles : (bubble.type === 'knowledge' ? Brain : ActivityIcon);
-  const themeColor = BUBBLE_COLORS[bubble.type] || '#38bdf8';
-  const isOutward = (bubble as any).metadata?.direction === 'outward';
-
-  const opticalScale = Math.max(1, 1 / canvasScale);
-  const isPerformanceMode = canvasScale < 0.6;
-
-  const isGoalReached = isOutward && (bubble.minutesRemaining || 0) <= 0;
-  const mainColor = isGoalReached ? '#10b981' : (isOutward ? '#ef4444' : themeColor);
-
-  return (
-    <motion.div
-      id={`bubble-${bubble.id}`}
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{
-        y: [0, -12, 0],
-        x: [0, 8, 0, -8, 0],
-        scale: opticalScale,
-        opacity: 1
-      }}
-      exit={{
-        scale: opticalScale * 4,
-        opacity: 0,
-        filter: 'brightness(2) blur(10px)',
-        transition: { duration: 0.4, ease: "easeOut" }
-      }}
-      transition={{
-        y: { duration: 3 + Math.random() * 2, repeat: Infinity, ease: "easeInOut" },
-        x: { duration: 5 + Math.random() * 2, repeat: Infinity, ease: "easeInOut" },
-        scale: { type: 'spring', stiffness: 300, damping: 20 },
-        opacity: { duration: 0.3 }
-      }}
-      style={{
-        position: 'absolute',
-        left: `${bubble.x - bubble.size / 2}px`,
-        top: `${bubble.y - bubble.size / 2}px`,
-        width: `${bubble.size}px`,
-        height: `${bubble.size}px`,
-        transformOrigin: 'center center',
-        borderRadius: '50%',
-        backgroundColor: isOutward ? 'transparent' : `${mainColor}20`,
-        backgroundImage: isOutward
-          ? `radial-gradient(circle, ${mainColor}40 0%, ${mainColor}10 100%)`
-          : 'none',
-        backdropFilter: 'blur(12px)',
-        border: `2px solid ${mainColor}99`,
-        boxShadow: `0 0 20px ${mainColor}44`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#fff',
-        cursor: 'pointer',
-        pointerEvents: 'all',
-        zIndex: 100,
-        transform: `translateZ(0)`
-      }}
-      whileHover={{
-        scale: 1.2 * opticalScale,
-        backgroundColor: isOutward ? 'transparent' : `${mainColor}40`,
-        backgroundImage: isOutward
-          ? `radial-gradient(circle, ${mainColor}60 0%, ${mainColor}20 100%)`
-          : 'none'
-      }}
-      onClick={onExplode}
-    >
-      {/* Reflexo Especular (Efeito de Bolha) */}
-      <div style={{
-        position: 'absolute',
-        top: '15%',
-        left: '15%',
-        width: '30%',
-        height: '30%',
-        background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 80%)',
-        borderRadius: '50%',
-        filter: 'blur(1px)',
-        zIndex: 3
-      }} />
-
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '4px',
-        position: 'relative',
-        zIndex: 2
-      }}>
-        {isOutward ? (
-          <div style={{ fontSize: bubble.size * 0.4 }}>🚭</div>
-        ) : (
-          <Icon size={bubble.size * 0.35} color={themeColor} />
-        )}
-        <span style={{
-          fontSize: '10px',
-          fontWeight: '900',
-          fontFamily: 'monospace',
-          color: isGoalReached ? '#dcfce7' : (isOutward ? '#fca5a5' : '#fff'),
-          textShadow: `0 0 5px ${mainColor}`,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          textAlign: 'center',
-          lineHeight: 1
-        }}>
-          {isOutward && (
-            <span style={{ fontSize: '7px', marginBottom: '2px' }}>
-              {isGoalReached ? 'META ALCANÇADA' : 'RESISTIR'}
-            </span>
-          )}
-          {(() => {
-            const absMins = Math.abs(bubble.minutesRemaining || 0);
-            const totalSecs = Math.floor(absMins * 60);
-            const m = Math.floor(totalSecs / 60);
-            const s = totalSecs % 60;
-            return `${isGoalReached ? '+' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-          })()}
-        </span>
-      </div>
-
-      {bubble.energy > 0 && (
-        <svg
-          viewBox={`0 0 ${bubble.size} ${bubble.size}`}
-          width={bubble.size}
-          height={bubble.size}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            transform: 'rotate(-90deg)',
-            transformOrigin: 'center',
-            pointerEvents: 'none',
-            zIndex: 3
-          }}
-        >
-          <circle
-            cx={bubble.size / 2}
-            cy={bubble.size / 2}
-            r={bubble.size / 2 - 3}
-            fill="none"
-            stroke={mainColor}
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeDasharray={2 * Math.PI * (bubble.size / 2 - 3)}
-            strokeDashoffset={isGoalReached ? 0 : (2 * Math.PI * (bubble.size / 2 - 3) * (1 - (bubble.minutesRemaining || 0) / (bubble.metadata?.totalMinutes || 10)))}
-            style={{
-              filter: `drop-shadow(0 0 5px ${mainColor})`,
-              transition: 'stroke-dashoffset 0.5s ease, stroke 0.5s ease'
-            }}
-          />
-        </svg>
-      )}
-    </motion.div>
-  );
-});
-
-
-/** Marcadores Direcionais para Bolhas Fora da Tela */
-const ViewportMarkers = ({ bubbles, scrollPos, scale, onFocusTask }: any) => {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 100002 }}>
-      {bubbles.map((bubble: any) => {
-        const el = document.getElementById(`bubble-${bubble.id}`);
-        if (!el) return null;
-
-        const rect = el.getBoundingClientRect();
-        const bubbleScreenX = rect.left + rect.width / 2;
-        const bubbleScreenY = rect.top + rect.height / 2;
-
-        // Verifica se qualquer parte da bolha está visível na tela
-        const isVisible = (
-          rect.top < h &&
-          rect.bottom > 0 &&
-          rect.left < w &&
-          rect.right > 0
-        );
-
-        if (isVisible) return null;
-
-        // Calcular direção a partir do centro da tela para a bolha
-        const dx = bubbleScreenX - (w / 2);
-        const dy = bubbleScreenY - (h / 2);
-        const angle = Math.atan2(dy, dx);
-
-        const margin = 50;
-        let edgeX, edgeY;
-
-        const aspect = w / h;
-        const tanAngle = Math.abs(Math.tan(angle));
-
-        if (tanAngle < 1 / aspect) {
-          edgeX = dx > 0 ? w - margin : margin;
-          edgeY = (h / 2) + (dx > 0 ? (w / 2 - margin) * Math.tan(angle) : -(w / 2 - margin) * Math.tan(angle));
-        } else {
-          edgeY = dy > 0 ? h - margin : margin;
-          edgeX = (w / 2) + (dy > 0 ? (h / 2 - margin) / Math.tan(angle) : -(h / 2 - margin) / Math.tan(angle));
-        }
-
-        const themeColor = BUBBLE_COLORS[bubble.type] || '#38bdf8';
-        const isOutward = (bubble as any).metadata?.direction === 'outward';
-
-        return (
-          <motion.div
-            key={`marker-${bubble.id}`}
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0 }}
-            style={{
-              position: 'absolute',
-              left: edgeX,
-              top: edgeY,
-              width: '38px',
-              height: '38px',
-              x: '-50%',
-              y: '-50%',
-              borderRadius: '50%',
-              background: 'rgba(15, 23, 42, 0.95)',
-              backdropFilter: 'blur(10px)',
-              border: `2px solid ${themeColor}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: `0 0 15px ${themeColor}60`,
-              zIndex: 10000,
-              pointerEvents: 'all',
-              cursor: 'pointer'
-            }}
-            whileHover={{ scale: 1.2, boxShadow: `0 0 25px ${themeColor}` }}
-            onClick={() => onFocusTask(bubble)}
-          >
-            {/* Seta Direcional */}
-            <div style={{
-              position: 'absolute',
-              transform: `rotate(${angle}rad) translateX(24px)`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <ChevronRight size={16} color={themeColor} />
-            </div>
-
-            {/* Miniatura do Conteúdo */}
-            <div style={{ fontSize: '14px', zIndex: 2 }}>
-              {isOutward ? '🚭' : bubble.type === 'work' ? '💼' : bubble.type === 'study' ? '📚' : '✨'}
-            </div>
-          </motion.div>
-        );
-      })}
-    </div>
-  );
-};
-
-
-
-/** Componente de Radar/Sonar com Temas Selecionáveis */
-const SonarAuras = memo(({ centerX, centerY, theme = 'radio_wave' }: {
-  centerX: number,
-  centerY: number,
-  theme?: SonarTheme
-}) => {
-  // 1. TEMA: RADIO WAVE (Ondas Cinematográficas)
-  const RadioWaveTheme = () => (
-    <div style={{ position: 'absolute', left: centerX, top: centerY, width: '1000px', height: '1000px', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}>
-      {[0, 2, 4].map((delay) => (
-        <motion.div
-          key={delay}
-          animate={{ scale: [0, 1.2], opacity: [0, 0.5, 0] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeOut", delay }}
-          style={{ position: 'absolute', left: '50%', top: '50%', x: '-50%', y: '-50%', width: '1000px', height: '1000px', borderRadius: '50%', background: `radial-gradient(circle, transparent 40%, #ef444411 60%, #ef444466 80%, #ef4444 95%, transparent 100%)` }}
-        />
-      ))}
-    </div>
-  );
-
-  // 2. TEMA: SUBMARINE (Varredura PPI)
-  const SubmarineTheme = () => (
-    <div style={{ position: 'absolute', left: centerX, top: centerY, width: '1000px', height: '1000px', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}>
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-        style={{ position: 'absolute', left: '50%', top: '50%', width: '1000px', height: '1000px', x: '-50%', y: '-50%', borderRadius: '50%', background: `conic-gradient(from 0deg, #ef4444 0deg, #ef444433 20deg, transparent 90deg)`, opacity: 0.6 }}
-      />
-      <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: '1000px', height: '1000px', borderRadius: '50%', border: '2px solid rgba(239, 68, 68, 0.2)' }} />
-    </div>
-  );
-
-  // 3. TEMA: HOLOGRAPHIC (HUD Moderno)
-  const HolographicTheme = () => (
-    <div style={{ position: 'absolute', left: centerX, top: centerY, width: '1000px', height: '1000px', transform: 'translate(-50%, -50%)', pointerEvents: 'none', maskImage: 'radial-gradient(circle, transparent 80px, black 120px)', WebkitMaskImage: 'radial-gradient(circle, transparent 80px, black 120px)' }}>
-      {[900, 700, 400].map((size, i) => (
-        <motion.div key={i} animate={{ rotate: i % 2 === 0 ? 360 : -360 }} transition={{ duration: 10 + i * 5, repeat: Infinity, ease: "linear" }}
-          style={{ position: 'absolute', left: '50%', top: '50%', width: `${size}px`, height: `${size}px`, x: '-50%', y: '-50%', borderRadius: '50%', border: '1px dashed rgba(56, 189, 248, 0.3)' }}
-        />
-      ))}
-    </div>
-  );
-
-  // 4. TEMA: CLOCKWORK (Engrenagens RPG)
-  const ClockworkTheme = () => (
-    <div style={{ position: 'absolute', left: centerX, top: centerY, width: '1000px', height: '1000px', transform: 'translate(-50%, -50%)', pointerEvents: 'none', maskImage: 'radial-gradient(circle, transparent 80px, black 120px)', WebkitMaskImage: 'radial-gradient(circle, transparent 80px, black 120px)' }}>
-      <motion.div animate={{ rotate: 360 }} transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-        style={{ position: 'absolute', left: '50%', top: '50%', width: '1000px', height: '1000px', x: '-50%', y: '-50%', borderRadius: '50%', backgroundImage: `repeating-conic-gradient(from 0deg, #f59e0b 0deg, #f59e0b 2deg, transparent 2deg, transparent 10deg)`, opacity: 0.4 }}
-      />
-      <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}>
-        {[...Array(6)].map((_, i) => (
-          <motion.div key={i} animate={{ rotate: 360 }} transition={{ duration: 4 + i, repeat: Infinity, ease: "linear" }}
-            style={{ position: 'absolute', width: '160px', height: '1px', background: `linear-gradient(90deg, transparent, #f59e0b, transparent)`, transformOrigin: 'center center', opacity: 0.3 }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-
-  return (
-    <>
-      {theme === 'radio_wave' && <RadioWaveTheme />}
-      {theme === 'submarine' && <SubmarineTheme />}
-      {theme === 'holographic' && <HolographicTheme />}
-      {theme === 'clockwork' && <ClockworkTheme />}
-    </>
-  );
-});
 

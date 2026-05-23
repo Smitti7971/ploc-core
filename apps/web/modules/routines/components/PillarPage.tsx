@@ -1,6 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+/**
+ * ============================================================================
+ * Página de Pilar Único - PillarPage.tsx
+ * ============================================================================
+ * Descrição: Página que renderiza as informações detalhadas de um pilar específico.
+ * Mostra o status atual (gauge), descrição, rotinas ativas e um catálogo de 
+ * novas rotinas que podem ser adotadas.
+ * ============================================================================
+ */import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Brain, Heart, Bird, Flag, 
@@ -10,7 +18,7 @@ import { attributeEngine, UserAttributes } from '@/modules/blackboard/engine/att
 import { bubbleEngine } from '@/modules/blackboard/engine/bubble-engine/BubbleEngine';
 
 import { PILLARS_DATA, IMPACT_ICONS, RoutineOption } from '../data/routinesData';
-
+// Componente de página individual para renderização de um pilar
 export function PillarPage({ pillarId }: { pillarId: string }) {
   const config = PILLARS_DATA[pillarId];
   if (!config) return null;
@@ -143,9 +151,9 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
       </div>
 
       {/* Seção: Rotinas Ativas */}
-      <div style={{ zIndex: 1 }}>
+      <div style={{ zIndex: 1, paddingBottom: '2rem' }}>
         <h3 style={{ color: '#fff', fontSize: '0.7rem', fontWeight: 900, letterSpacing: '2px', marginBottom: '1rem', opacity: 0.5 }}>
-          ROTINAS ATIVAS NO OCEANO
+          ROTINAS ATIVAS
         </h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div style={{ 
@@ -159,84 +167,6 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
               Nenhuma rotina ativa para este pilar agora.
             </p>
           </div>
-        </div>
-      </div>
-
-      {/* Seção: Catálogo de Rotinas */}
-      <div style={{ zIndex: 1, paddingBottom: '10rem' }}>
-        <h3 style={{ color: '#fff', fontSize: '0.7rem', fontWeight: 900, letterSpacing: '2px', marginBottom: '1rem', opacity: 0.5 }}>
-          CATÁLOGO DE EVOLUÇÃO
-        </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {config.options.map(opt => (
-            <motion.div
-              key={opt.id}
-              whileHover={{ scale: 1.01 }}
-              data-routine-id={opt.id}
-              data-pillar-id={pillarId}
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: '24px',
-                cursor: 'pointer',
-                display: 'flex',
-                overflow: 'hidden',
-                minHeight: '120px'
-              }}
-            >
-              {/* Thumbnail Banner */}
-              <div style={{ 
-                width: '40%', 
-                position: 'relative',
-                background: '#1a1d1a'
-              }}>
-                <img 
-                  src={opt.image} 
-                  alt={opt.title}
-                  style={{ 
-                    width: '100%', 
-                    height: '100%', 
-                    objectFit: 'cover',
-                    opacity: 0.7
-                  }} 
-                />
-                <div style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: `linear-gradient(90deg, transparent 50%, rgba(10,12,10,0.8) 100%)`
-                }} />
-              </div>
-
-              {/* Content Side */}
-              <div style={{ flex: 1, padding: '1rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <h4 style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 800, margin: '0 0 2px' }}>{opt.title}</h4>
-                <p style={{ color: '#64748b', fontSize: '0.7rem', margin: '0 0 10px', lineHeight: '1.4' }}>{opt.desc}</p>
-                
-                {/* Indicadores Minimalistas */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {opt.impacts.map((imp, idx) => {
-                    const ImpIcon = IMPACT_ICONS[imp.pilar];
-                    const isPositive = imp.val > 0;
-                    const impColor = isPositive ? '#22c55e' : '#ef4444';
-                    
-                    return (
-                      <div key={idx} style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '4px', 
-                        color: impColor,
-                        fontSize: '0.6rem',
-                        fontWeight: 900
-                      }}>
-                        <ImpIcon size={10} />
-                        <span>{isPositive ? `+${imp.val}` : imp.val}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </motion.div>
-          ))}
         </div>
       </div>
     </div>

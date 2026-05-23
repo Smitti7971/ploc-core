@@ -1,6 +1,13 @@
 'use client';
 
-import React from 'react';
+/**
+ * ============================================================================
+ * Detalhe de Tooltip do Pilar - PillarTooltipDetail.tsx
+ * ============================================================================
+ * Descrição: Componente que exibe os detalhes do pilar quando o usuário clica 
+ * ou passa o mouse no HUD de um pilar específico.
+ * ============================================================================
+ */import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Brain, Heart, Bird, Flag } from 'lucide-react';
 import { PANEL_TRANSITION } from '../../constants';
@@ -17,7 +24,7 @@ interface PillarTooltipPanelProps {
   activeTooltip: string | null;
   attributes: any;
 }
-
+// Painel animado que mostra a descrição de um pilar
 export default function PillarTooltipPanel({ activeTooltip, attributes }: PillarTooltipPanelProps) {
   return (
     <AnimatePresence>

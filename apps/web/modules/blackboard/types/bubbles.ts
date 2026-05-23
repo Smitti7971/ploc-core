@@ -5,7 +5,10 @@ export type BubbleType =
   | 'routine' 
   | 'memory' 
   | 'insight'
-  | 'bright_idea';
+  | 'bright_idea'
+  | 'work'
+  | 'study'
+  | 'health';
 
 export interface BlackboardBubble {
   id: string;
@@ -21,5 +24,5 @@ export interface BlackboardBubble {
   deadlineAt?: number; // Quando deve chegar ao centro (Ploc)
   minutesRemaining?: number;
   angle?: number;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
