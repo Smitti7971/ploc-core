@@ -27,45 +27,54 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
   // Local state initialized from store
   const [costPerUse, setCostPerUse] = useState<string>(activeVice?.costPerUse?.toString() || '');
   const [isEditingCost, setIsEditingCost] = useState(false);
-  const [tick, setTick] = useState(0);
+  const [isShowingCostDetails, setIsShowingCostDetails] = useState(false);
+  const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
-    const interval = setInterval(() => setTick(t => t + 1), 60000);
-    return () => clearInterval(interval);
+    const initialTimeout = setTimeout(() => setNow(Date.now()), 0);
+    const interval = setInterval(() => setNow(Date.now()), 60000);
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
   }, []);
 
   const timeActiveText = React.useMemo(() => {
+    if (!now) return null;
     if (!activeVice || activeVice.viceId !== viceId) return null;
     const startLog = [...viceLogs].reverse().find(l => l.viceId === viceId && l.type === 'start');
     if (!startLog) return null;
-    const diffSeconds = Math.floor((Date.now() - startLog.timestamp) / 1000);
+    const diffSeconds = Math.floor((now - startLog.timestamp) / 1000);
     const d = Math.floor(diffSeconds / 86400);
     const h = Math.floor((diffSeconds % 86400) / 3600);
     const m = Math.floor((diffSeconds % 3600) / 60);
     if (d > 0) return `${d}d ${h}h`;
     if (h > 0) return `${h}h ${m}m`;
     return `${m}m`;
-  }, [activeVice, viceLogs, viceId, tick]);
+  }, [activeVice, viceLogs, viceId, now]);
 
   useEffect(() => {
     if (isOpen) {
-      setStep(initialStep || 'options');
-      setCustomViceName(activeVice?.viceId === 'personalizado' ? (activeVice.customName || '') : '');
+      const timeoutId = setTimeout(() => {
+        setCustomViceName(activeVice?.viceId === 'personalizado' ? (activeVice.customName || '') : '');
+        
+        if (viceId) {
+          if (initialStep) {
+            setStep(initialStep);
+          } else if (activeVice && activeVice.viceId === viceId) {
+            setStep('active_options');
+          } else {
+            setStep('options');
+          }
+          setCostPerUse(activeVice?.costPerUse?.toString() || '');
+        } else {
+          setStep(initialStep || 'options');
+        }
+      }, 0);
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [isOpen, initialStep, activeVice]);
-
-  useEffect(() => {
-    if (isOpen && viceId) {
-      if (initialStep) {
-        setStep(initialStep);
-      } else if (activeVice && activeVice.viceId === viceId) {
-        setStep('active_options');
-      } else {
-        setStep('options');
-      }
-      setCostPerUse(activeVice?.costPerUse?.toString() || '');
-    }
-  }, [isOpen, viceId, activeVice, initialStep]);
+  }, [isOpen, initialStep, activeVice, viceId]);
 
   const handleStartAcompanhe = () => {
     if (!viceId) return;
@@ -73,7 +82,7 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
       viceId: viceId!,
       customName: viceId === 'personalizado' ? customViceName : undefined,
       mode: 'acompanhe',
-      startTime: Date.now(),
+      startTime: new Date().getTime(),
       expectedFrequency
     });
     setStep('active_options');
@@ -85,9 +94,8 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
       viceId: viceId!,
       customName: viceId === 'personalizado' ? customViceName : undefined,
       mode: 'diminua',
-      startTime: Date.now(),
-      timerLimitSeconds: totalSeconds,
-      reductionTarget: parseFloat(reductionTarget || '0')
+      startTime: new Date().getTime(),
+      timerLimitSeconds: totalSeconds
     });
     handleClose();
   };
@@ -262,12 +270,20 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
                       <span className="text-white text-xs font-extrabold text-sky-400">{maiorJejum > 0 ? formatTime(maiorJejum) : '--'}</span>
                     </div>
                     <div 
-                      onClick={() => setIsEditingCost(true)}
-                      className={`border border-white/10 rounded-xl p-1.5 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${!costPerUse ? 'bg-white/5 hover:bg-white/10' : 'bg-red-500/10 border-red-500/20'}`}
+                      onClick={() => {
+                        if (activeVice?.costPerUse) {
+                          setIsShowingCostDetails(prev => !prev);
+                          setIsEditingCost(false);
+                        } else {
+                          setIsEditingCost(prev => !prev);
+                          setIsShowingCostDetails(false);
+                        }
+                      }}
+                      className={`border border-white/10 rounded-xl p-1.5 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${!activeVice?.costPerUse ? 'bg-white/5 hover:bg-white/10' : 'bg-red-500/10 border-red-500/20 hover:bg-red-500/20'}`}
                     >
                       <span className="text-[0.5rem] text-slate-400 font-bold uppercase tracking-widest mb-1 leading-tight">Gasto<br/>Atual</span>
-                      <span className={`text-xs font-extrabold ${costPerUse ? 'text-red-400' : 'text-slate-500 text-[0.6rem]'}`}>
-                        {costPerUse ? `R$ ${costPerUse}` : 'Registrar'}
+                      <span className={`text-xs font-extrabold ${activeVice?.costPerUse ? 'text-red-400' : 'text-slate-500 text-[0.6rem]'}`}>
+                        {activeVice?.costPerUse ? `R$ ${(activeVice.costPerUse * totalGeral).toFixed(2).replace('.', ',')}` : 'Registrar'}
                       </span>
                     </div>
                   </div>
@@ -282,8 +298,8 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
                       >
                         <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-3 mt-1">
                           <p className="text-slate-300 text-sm">
-                            Qual foi o valor pago na sua última compra? <br/>
-                            <span className="text-xs text-slate-500">Isso ativará o contador de economia gerada pelo jejum.</span>
+                            Qual foi o valor do último maço (20 un)? <br/>
+                            <span className="text-xs text-slate-500">O valor de cada consumo será calculado automaticamente.</span>
                           </p>
                           <div className="flex gap-2">
                             <input
@@ -292,7 +308,11 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
                               value={costPerUse}
                               onChange={(e) => setCostPerUse(e.target.value.replace(/[^0-9,.]/g, ''))}
                               onKeyDown={(e) => {
-                                if (e.key === 'Enter') setIsEditingCost(false);
+                                if (e.key === 'Enter') {
+                                  setIsEditingCost(false);
+                                  const parsed = parseFloat(costPerUse.replace(',', '.'));
+                                  if (!isNaN(parsed)) setStoreCostPerUse(parsed / 20);
+                                }
                               }}
                               placeholder="R$ 0,00"
                               className="flex-1 bg-black/30 border border-white/10 rounded-xl px-4 py-2 text-white text-sm outline-none focus:border-white/30"
@@ -300,12 +320,55 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
                             <button
                               onClick={() => {
                                 setIsEditingCost(false);
-                                setStoreCostPerUse(parseFloat(costPerUse.replace(',', '.')));
+                                const parsed = parseFloat(costPerUse.replace(',', '.'));
+                                if (!isNaN(parsed)) setStoreCostPerUse(parsed / 20);
                               }}
                               className="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white font-bold px-4 py-2 rounded-xl transition-colors text-xs tracking-widest"
                             >
                               SALVAR
                             </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <AnimatePresence>
+                    {isShowingCostDetails && activeVice?.costPerUse && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex flex-col gap-4 mt-1">
+                          <div className="flex justify-between items-center border-b border-red-500/20 pb-3">
+                            <span className="text-sm font-bold text-slate-300">Resumo de Gastos</span>
+                            <button 
+                              onClick={() => {
+                                setIsShowingCostDetails(false);
+                                setIsEditingCost(true);
+                                setCostPerUse((activeVice.costPerUse! * 20).toFixed(2).replace('.', ','));
+                              }}
+                              className="text-xs text-sky-400 font-bold uppercase hover:text-sky-300"
+                            >
+                              Editar Valor
+                            </button>
+                          </div>
+                          
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="flex flex-col">
+                              <span className="text-[0.6rem] text-slate-400 uppercase font-bold tracking-widest mb-1">Total Geral</span>
+                              <span className="text-red-400 font-black text-sm">R$ {(activeVice.costPerUse * totalGeral).toFixed(2).replace('.', ',')}</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[0.6rem] text-slate-400 uppercase font-bold tracking-widest mb-1">Gasto Hoje</span>
+                              <span className="text-red-400 font-black text-sm">R$ {(activeVice.costPerUse * totalHoje).toFixed(2).replace('.', ',')}</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[0.6rem] text-slate-400 uppercase font-bold tracking-widest mb-1">Por Unidade</span>
+                              <span className="text-slate-300 font-black text-sm">R$ {activeVice.costPerUse.toFixed(2).replace('.', ',')}</span>
+                            </div>
                           </div>
                         </div>
                       </motion.div>
@@ -341,7 +404,7 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
                             {log.motivator && (
                                <div className="mt-2 bg-black/20 rounded-lg p-2 border border-white/5">
                                  <p className="text-[0.6rem] text-slate-500 uppercase font-bold mb-0.5">Motivador</p>
-                                 <p className="text-xs text-slate-300 italic">"{log.motivator}"</p>
+                                 <p className="text-xs text-slate-300 italic">&quot;{log.motivator}&quot;</p>
                                </div>
                             )}
                           </>
@@ -490,8 +553,16 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
     document.body
   );
 }
+interface OptionCardProps {
+  title: string;
+  desc: string;
+  icon: React.ElementType;
+  color: string;
+  onClick?: () => void;
+  disabled?: boolean;
+}
 
-function OptionCard({ title, desc, icon: Icon, color, onClick, disabled }: any) {
+function OptionCard({ title, desc, icon: Icon, color, onClick, disabled }: OptionCardProps) {
   return (
     <motion.button
       whileHover={!disabled ? { scale: 1.02 } : {}}

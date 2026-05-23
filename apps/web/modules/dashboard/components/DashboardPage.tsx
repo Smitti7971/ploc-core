@@ -77,6 +77,67 @@ const TABS = [
   { id: 'ranking', label: 'RANKING', icon: Trophy },
 ];
 
+const MOCK_APRENDA = [
+  { title: "Instrumentos", desc: "Violão", image: "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800&q=80" },
+  { title: "Instrumentos", desc: "Teclado", image: "https://images.unsplash.com/photo-1552422535-c45813c61732?w=800&q=80" },
+  { title: "Línguas", desc: "Inglês", image: "https://images.unsplash.com/photo-1528642474498-1af0c17fd8c3?w=800&q=80" },
+  { title: "Línguas", desc: "Espanhol", image: "https://images.unsplash.com/photo-1566378822998-1e43c5b81dfc?w=800&q=80" },
+  { title: "Hobbies", desc: "Poker", image: "https://images.unsplash.com/photo-1540324155970-1c6dc00115db?w=800&q=80" },
+  { title: "Hobbies", desc: "Pesca", image: "https://images.unsplash.com/photo-1506509657088-77c05b82c610?w=800&q=80" },
+];
+
+const MOCK_ACOMPANHE = [
+  { title: "Crescimento de Pets", image: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=800&q=80" },
+  { title: "Crescimento dos filhos", image: "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=800&q=80" },
+  { title: "Cuidados de Planta", image: "https://images.unsplash.com/photo-1466692476877-3aa0c8225d25?w=800&q=80" },
+  { title: "Acompanhamento de remédios", image: "https://images.unsplash.com/photo-1584308666744-24d5e4a8dc7b?w=800&q=80" },
+];
+
+const MOCK_VIAJE = [
+  { title: "Trilhas nacionais", image: "https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&q=80" },
+  { title: "Praias", image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80" },
+  { title: "Parques", image: "https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=800&q=80" },
+  { title: "Eventos", image: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80" },
+];
+
+const MOCK_POUPE = [
+  { title: "Carro", image: "https://images.unsplash.com/photo-1541443131876-44b03de101c5?w=800&q=80" },
+  { title: "Presentes", image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=800&q=80" },
+  { title: "Construção", image: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&q=80" },
+  { title: "Contas de consumo", image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80" },
+];
+
+const MOCK_PLANEJE = [
+  { title: "Avanços de obra", image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&q=80" },
+  { title: "Nascimento do filho", image: "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=800&q=80" },
+  { title: "Crescimento de Pets", image: "https://images.unsplash.com/photo-1517849845537-4d257902454a?w=800&q=80" },
+  { title: "Crescimento de Plantas", image: "https://images.unsplash.com/photo-1416879598555-2518ff0b14f8?w=800&q=80" },
+  { title: "Criação de moveis", image: "https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=800&q=80" },
+];
+
+const MOCK_JEJUE = [
+  { title: "Jejum extenso", image: "https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=800&q=80" },
+  { title: "Jejum intermitente", image: "https://images.unsplash.com/photo-1447078806655-40579c2520d6?w=800&q=80" },
+  { title: "Jejum de dopamina", image: "https://images.unsplash.com/photo-1550859492-d5da9d8e45f3?w=800&q=80" },
+];
+
+const MOCK_HIDRATE = [
+  { title: "Controle de agua", image: "https://images.unsplash.com/photo-1523362628745-0c100150b504?w=800&q=80" },
+];
+
+const getMockForMethod = (methodId: string) => {
+  switch (methodId) {
+    case 'aprenda': return MOCK_APRENDA;
+    case 'acompanhe': return MOCK_ACOMPANHE;
+    case 'viaje': return MOCK_VIAJE;
+    case 'poupe': return MOCK_POUPE;
+    case 'planeje': return MOCK_PLANEJE;
+    case 'jejue': return MOCK_JEJUE;
+    case 'hidrate-se': return MOCK_HIDRATE;
+    default: return [];
+  }
+};
+
 export default function DashboardPage() {
   const [activePillar, setActivePillar] = useState<string | null>(null);
   const [activeMethod, setActiveMethod] = useState('rotinas');
@@ -433,42 +494,72 @@ export default function DashboardPage() {
       )}
 
       {activeMethod !== 'rotinas' && activeMethod !== 'libertesse' && (
-        <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center px-6 pb-20">
+        <div className="flex-1 min-h-0 w-full flex flex-col items-center px-6 pb-24 overflow-y-auto pt-8">
           {(() => {
             const methodDef = METHODS.find(m => m.id === activeMethod);
             if (!methodDef) return null;
             const Icon = methodDef.icon;
+            const items = getMockForMethod(activeMethod);
 
             return (
-              <motion.div 
-                key={methodDef.id}
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="w-full max-w-sm bg-[#0f1115] border border-white/5 rounded-3xl p-8 flex flex-col items-center justify-center gap-4 shadow-[0_0_40px_rgba(255,255,255,0.02)] relative overflow-hidden"
-              >
-                {/* Efeito de brilho no fundo do card com cor dinâmica */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${methodDef.bg} pointer-events-none`} />
-                
-                <div className={`w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-2 z-10 shadow-lg backdrop-blur-md relative overflow-hidden text-${methodDef.color}`}>
-                  <div className="absolute inset-0 bg-white/5 animate-pulse" />
-                  <Icon size={28} />
+              <div className="w-full max-w-sm flex flex-col gap-8">
+                {/* Cabeçalho do Método */}
+                <motion.div 
+                  key={methodDef.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex flex-col items-center gap-3 relative"
+                >
+                  <div className={`w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center relative overflow-hidden text-${methodDef.color}`}>
+                    <div className="absolute inset-0 bg-white/5 animate-pulse" />
+                    <Icon size={28} />
+                  </div>
+                  <h3 className="text-white font-black text-2xl tracking-widest uppercase mt-1">
+                    {methodDef.label}
+                  </h3>
+                  <p className="text-slate-400 text-center text-[0.8rem] font-medium leading-relaxed max-w-[280px]">
+                    {methodDef.desc}
+                  </p>
+                </motion.div>
+
+                {/* Grid de Cards Genéricos */}
+                <div className="grid grid-cols-2 gap-3 pb-8">
+                  {items.map((item, idx) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="relative w-full aspect-square rounded-[20px] overflow-hidden border border-white/10 group cursor-pointer"
+                    >
+                      <img src={item.image} alt={item.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                      
+                      <div className="absolute inset-0 p-3 flex flex-col justify-end">
+                        {'desc' in item && item.desc && (
+                          <span className={`text-[0.6rem] font-black text-${methodDef.color} uppercase tracking-wider mb-[2px] opacity-90 drop-shadow-md`}>
+                            {item.title}
+                          </span>
+                        )}
+                        <h4 className="text-white font-extrabold text-sm leading-tight drop-shadow-lg">
+                          {'desc' in item && item.desc ? item.desc : item.title}
+                        </h4>
+                      </div>
+                    </motion.div>
+                  ))}
+                  
+                  {/* Card Extra: Em breve */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: items.length * 0.05 }}
+                    className="relative w-full aspect-square rounded-[20px] overflow-hidden border border-white/5 bg-white/5 flex flex-col items-center justify-center group cursor-pointer hover:bg-white/10 transition-colors"
+                  >
+                    <PlusCircle size={24} className="text-white/30 mb-2" />
+                    <span className="text-white/40 font-bold text-xs">MAIS EM BREVE</span>
+                  </motion.div>
                 </div>
-                
-                <h3 className="text-white font-black text-lg tracking-widest text-center z-10 uppercase">
-                  {methodDef.label}
-                </h3>
-                
-                <p className="text-slate-400 text-center text-xs font-medium z-10 leading-relaxed">
-                  {methodDef.desc}
-                </p>
-                
-                <div className="mt-4 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 flex items-center gap-2 z-10">
-                  <Clock size={12} className={`text-${methodDef.color}`} />
-                  <span className="text-white/70 text-[0.6rem] font-bold tracking-widest uppercase">
-                    EM DESENVOLVIMENTO
-                  </span>
-                </div>
-              </motion.div>
+              </div>
             );
           })()}
         </div>

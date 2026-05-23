@@ -17,6 +17,7 @@ export interface ActiveVice {
   consumptionStartTime?: number;
   defaultConsumptionSeconds?: number; // Padrão 5 min = 300s
   costPerUse?: number; // Gasto atual
+  currentMotivator?: string; // Salva o motivador para quando o tempo acabar
 }
 
 export interface ViceLog {
@@ -36,8 +37,9 @@ interface ViceStore {
   resetTimer: () => void;
   
   // GAP Phase functions
-  startConsumption: () => void;
+  startConsumption: (motivator?: string) => void;
   endConsumption: (actualSecondsUsed: number, motivator?: string) => void;
+  cancelConsumption: () => void;
   addFastingTime: (additionalSeconds: number) => void;
   setDefaultConsumptionSeconds: (seconds: number) => void;
   setCostPerUse: (cost: number) => void;
@@ -83,13 +85,25 @@ export const useViceStore = create<ViceStore>()(
           : null
       })),
       
-      startConsumption: () => set((state) => ({
+      startConsumption: (motivator) => set((state) => ({
         activeVice: state.activeVice
           ? { 
               ...state.activeVice, 
               isConsuming: true, 
               consumptionStartTime: Date.now(),
-              defaultConsumptionSeconds: state.activeVice.defaultConsumptionSeconds || 300 // default 5 min
+              defaultConsumptionSeconds: state.activeVice.defaultConsumptionSeconds || 300, // default 5 min
+              currentMotivator: motivator
+            }
+          : null
+      })),
+
+      cancelConsumption: () => set((state) => ({
+        activeVice: state.activeVice
+          ? {
+              ...state.activeVice,
+              isConsuming: false,
+              consumptionStartTime: undefined,
+              currentMotivator: undefined
             }
           : null
       })),
@@ -99,6 +113,8 @@ export const useViceStore = create<ViceStore>()(
 
         const now = Date.now();
         const fastingSeconds = Math.floor((now - state.activeVice.startTime) / 1000) - actualSecondsUsed;
+        const finalMotivator = motivator || state.activeVice.currentMotivator;
+
         const newLog: ViceLog = {
           id: Math.random().toString(36).substring(2, 9),
           viceId: state.activeVice.viceId,
@@ -107,7 +123,7 @@ export const useViceStore = create<ViceStore>()(
           durationSeconds: actualSecondsUsed,
           fastingSeconds: fastingSeconds > 0 ? fastingSeconds : 0,
           cost: state.activeVice.costPerUse,
-          motivator: motivator?.trim() || undefined
+          motivator: finalMotivator?.trim() || undefined
         };
 
         return {
@@ -116,7 +132,8 @@ export const useViceStore = create<ViceStore>()(
             isConsuming: false,
             consumptionStartTime: undefined,
             defaultConsumptionSeconds: actualSecondsUsed, // adapta o padrão
-            startTime: now // reinicia jejum
+            startTime: now, // reinicia jejum
+            currentMotivator: undefined
           },
           logs: [newLog, ...state.logs]
         };

@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Flame, Wine, WineOff, Pill, Eye, EyeOff, Check, Cigarette, CigaretteOff, X, RotateCcw, History } from 'lucide-react';
 import { useViceStore } from '../store/viceStore';
 import { ViceOptionsModal } from './ViceOptionsModal';
+import { blackboardEventBus, BLACKBOARD_EVENTS } from '../../blackboard/events/eventBus';
+import { usePlocSpeech } from '../../../components/mascot/usePlocSpeech';
 
 const VICE_ICONS_OFF: Record<string, React.ElementType> = {
   tabagismo: CigaretteOff,
@@ -32,6 +34,7 @@ interface ViceBubbleProps {
 
 export function ViceBubble({ canvasScale = 1 }: ViceBubbleProps) {
   const { activeVice, resetTimer, setActiveVice, startConsumption, endConsumption, addFastingTime, setDefaultConsumptionSeconds } = useViceStore();
+  const { speak } = usePlocSpeech();
 
   const [showMotivatorModal, setShowMotivatorModal] = useState(false);
   const [motivatorInput, setMotivatorInput] = useState('');
@@ -83,17 +86,30 @@ export function ViceBubble({ canvasScale = 1 }: ViceBubbleProps) {
   const handleBubbleClick = () => {
     setShowMotivatorModal(true);
     setShowResistInput(false);
+
+    if (activeVice?.mode === 'diminua' && !isCountUp) {
+      const phrases = [
+        "Você tem certeza disso?",
+        "Não ceda agora, você consegue!",
+        "Por favor, nào encha minha bolha de fumaça!",
+        "Eu to torcendo por você, só mais um pouco!"
+      ];
+      const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+
+      // Visual reaction
+      blackboardEventBus.emit(BLACKBOARD_EVENTS.PLOC_REACTION, {
+        type: 'happy',
+        message: randomPhrase
+      });
+
+      // Audio speech
+      speak(randomPhrase, 4000);
+    }
   };
 
   const handleRegistrar = () => {
-    const actualSecondsUsed = activeVice.defaultConsumptionSeconds || 300;
-    
-    if (activeVice.mode === 'diminua' && isCountUp) {
-      endConsumption(actualSecondsUsed, motivatorInput);
-    } else {
-      endConsumption(actualSecondsUsed, motivatorInput);
-    }
-    
+    startConsumption(motivatorInput);
+
     setShowMotivatorModal(false);
     setMotivatorInput('');
   };
@@ -127,6 +143,7 @@ export function ViceBubble({ canvasScale = 1 }: ViceBubbleProps) {
         className="absolute left-[20px] z-[300] pointer-events-auto flex flex-col items-center justify-center"
       >
         <motion.div
+          initial={{ borderRadius: "50% 50% 48% 48% / 48% 48% 52% 52%" }}
           animate={{
             y: [0, -12, 0],
             x: [0, 8, 0, -8, 0],
@@ -336,7 +353,7 @@ export function ViceBubble({ canvasScale = 1 }: ViceBubbleProps) {
               {showConfirmEnd ? (
                 <div className="mt-4 flex flex-col items-center gap-2 border-t border-white/10 pt-4">
                   <span className="text-red-400 text-xs font-bold tracking-wider text-center leading-relaxed">
-                    Tem certeza que deseja encerrar a estratégia?<br/>
+                    Tem certeza que deseja encerrar a estratégia?<br />
                     <span className="opacity-80">Seu progresso atual será perdido.</span>
                   </span>
                   <div className="flex gap-2 w-full mt-2">

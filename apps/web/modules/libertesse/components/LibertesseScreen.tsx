@@ -15,11 +15,15 @@ export const VICES = [
 export function LibertesseScreen() {
   const [selectedViceId, setSelectedViceId] = useState<string | null>(null);
   const { activeVice, setActiveVice, logs } = useViceStore();
-  const [tick, setTick] = useState(0);
+  const [now, setNow] = useState<number | null>(null);
 
   React.useEffect(() => {
-    const interval = setInterval(() => setTick(t => t + 1), 60000);
-    return () => clearInterval(interval);
+    const initialTimeout = setTimeout(() => setNow(Date.now()), 0);
+    const interval = setInterval(() => setNow(Date.now()), 60000);
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
   }, []);
 
   const handleSelectVice = (viceId: string) => {
@@ -31,10 +35,11 @@ export function LibertesseScreen() {
   };
 
   const getTimeActiveText = (viceId: string) => {
+    if (!now) return null;
     if (!activeVice || activeVice.viceId !== viceId) return null;
     const startLog = [...logs].reverse().find(l => l.viceId === viceId && l.type === 'start');
     if (!startLog) return null;
-    const diffSeconds = Math.floor((Date.now() - startLog.timestamp) / 1000);
+    const diffSeconds = Math.floor((now - startLog.timestamp) / 1000);
     const d = Math.floor(diffSeconds / 86400);
     const h = Math.floor((diffSeconds % 86400) / 3600);
     const m = Math.floor((diffSeconds % 3600) / 60);

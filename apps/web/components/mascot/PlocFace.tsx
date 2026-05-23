@@ -451,6 +451,7 @@ export function PlocFace({
               strokeWidth="7"
               strokeLinecap="round"
               fill="none"
+              initial={{ d: "M 20 30 Q 27 22 34 30 T 47 30 T 60 30" }}
               animate={isSpeaking ? {
                 d: [
                   "M 20 30 Q 27 22 34 30 T 47 30 T 60 30",
@@ -460,11 +461,8 @@ export function PlocFace({
                 y: [0, -3, 3, 0],
                 scaleY: [1, 1.25, 0.85, 1],
               } : {
-                d: [
-                  "M 20 30 Q 27 22 34 30 T 47 30 T 60 30",
-                  "M 20 30 Q 27 38 34 30 T 47 30 T 60 30",
-                  "M 20 30 Q 27 22 34 30 T 47 30 T 60 30"
-                ]
+                y: [0, -2, 0, 2, 0],
+                rotate: [0, -2, 0, 2, 0]
               }}
               transition={isSpeaking ? {
                 duration: 0.35,
