@@ -150,7 +150,9 @@ export default function DashboardPage() {
   const logs = useViceStore(state => state.logs);
   
   useEffect(() => {
-    setAttributes(attributeEngine.getAttributes() as unknown as Record<string, number>);
+    setTimeout(() => {
+      setAttributes(attributeEngine.getAttributes() as unknown as Record<string, number>);
+    }, 0);
   }, []);
 
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -204,18 +206,26 @@ export default function DashboardPage() {
     return '#ef4444'; // Vermelho (Crítico)
   };
 
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
   const timeActiveText = React.useMemo(() => {
-    if (!activeVice) return null;
+    if (!activeVice || !now) return null;
     const startLog = [...logs].reverse().find(l => l.viceId === activeVice.viceId && l.type === 'start');
     if (!startLog) return null;
-    const diffSeconds = Math.floor((Date.now() - startLog.timestamp) / 1000);
+    const diffSeconds = Math.floor((now - startLog.timestamp) / 1000);
     const d = Math.floor(diffSeconds / 86400);
     const h = Math.floor((diffSeconds % 86400) / 3600);
     const m = Math.floor((diffSeconds % 3600) / 60);
     if (d > 0) return `${d}d ${h}h`;
     if (h > 0) return `${h}h ${m}m`;
     return `${m}m`;
-  }, [activeVice, logs]);
+  }, [activeVice, logs, now]);
 
   return (
     <div className="w-screen h-[100dvh] bg-black text-white flex flex-col relative overflow-hidden pb-20 pt-20">
@@ -532,6 +542,7 @@ export default function DashboardPage() {
                       transition={{ delay: idx * 0.05 }}
                       className="relative w-full aspect-square rounded-[20px] overflow-hidden border border-white/10 group cursor-pointer"
                     >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={item.image} alt={item.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
                       
