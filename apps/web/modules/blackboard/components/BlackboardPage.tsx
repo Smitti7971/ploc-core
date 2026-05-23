@@ -142,6 +142,48 @@ export default function BlackboardPage() {
   const mapY = useMotionValue(0);
   const mapScale = useMotionValue(1);
 
+  // --- PINCH TO ZOOM LOGIC ---
+  const initialPinchDist = useRef<number | null>(null);
+  const initialScale = useRef<number>(1);
+
+  const getPinchDistance = (e: React.TouchEvent) => {
+    if (e.touches.length < 2) return 0;
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      initialPinchDist.current = getPinchDistance(e);
+      initialScale.current = mapScale.get();
+    } else {
+      initialPinchDist.current = null;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && initialPinchDist.current !== null) {
+      // Evita o comportamento padrão do navegador
+      // e previne scrolls indesejados durante o pinch
+      // (O touch-none do container geralmente já resolve, mas é uma garantia)
+      const dist = getPinchDistance(e);
+      const scaleChange = dist / initialPinchDist.current;
+      let newScale = initialScale.current * scaleChange;
+      
+      if (newScale < 0.2) newScale = 0.2;
+      if (newScale > 3) newScale = 3;
+      
+      mapScale.set(newScale);
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (e.touches.length < 2) {
+      initialPinchDist.current = null;
+    }
+  };
+
   // === LÓGICA DE CONSUMO ATIVO (LIBERTESSE) ===
   const { activeVice, endConsumption, cancelConsumption } = useViceStore();
   const [consumptionElapsed, setConsumptionElapsed] = useState(0);
@@ -449,6 +491,9 @@ export default function BlackboardPage() {
           style={{ x: mapX, y: mapY }}
           whileTap={{ cursor: "grabbing" }}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[10000px] h-[10000px] cursor-grab active:cursor-grabbing touch-none z-[2]"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           <motion.div
             style={{ scale: mapScale }}

@@ -80,6 +80,9 @@ model User {
   stats                UserStats?
   statTransactions     StatTransaction[]
   taskExecutions       TaskExecution[]
+  // Libertesse (Vícios)
+  vices                Vice[]
+  viceLogs             ViceLog[]
 }
 
 model UserStats {
@@ -230,4 +233,58 @@ model Task {
   @@index([completed])
   @@index([status])
   @@index([priority])
+}
+
+// --- LIBERTESSE (Vices) ---
+
+model Vice {
+  id                        String    @id @default(uuid())
+  viceId                    String    // Identificador base (ex: 'smoking', 'social_media')
+  customName                String?   // Nome customizado se houver
+  mode                      String    // 'acompanhe', 'diminua', 'pare'
+  startTime                 BigInt    // timestamp (ms) do inicio do ciclo atual
+  expectedFrequency         String?   // Para modo acompanhe
+  timerLimitSeconds         Int?      // Limite do timer (diminua/pare)
+  reductionTarget           Int?      // Meta de redução (diminua)
+  
+  // Consumo ativo
+  isConsuming               Boolean   @default(false)
+  consumptionStartTime      BigInt?   // timestamp
+  defaultConsumptionSeconds Int       @default(300)
+  costPerUse                Float?    // Custo por consumo
+  currentMotivator          String?   // Motivador atual
+
+  userId                    String
+  user                      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  logs                      ViceLog[]
+
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([viceId])
+  @@unique([userId, viceId])
+}
+
+model ViceLog {
+  id                String   @id @default(uuid())
+  type              String   // 'consumption', 'expense', 'start', 'end'
+  timestamp         BigInt   // timestamp do evento
+  durationSeconds   Int?
+  fastingSeconds    Int?
+  cost              Float?
+  motivator         String?
+
+  viceId            String
+  vice              Vice     @relation(fields: [viceId], references: [id], onDelete: Cascade)
+
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt         DateTime @default(now())
+
+  @@index([viceId])
+  @@index([userId])
+  @@index([type])
 }

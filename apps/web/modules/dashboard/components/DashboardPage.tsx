@@ -153,6 +153,7 @@ export default function DashboardPage() {
     setTimeout(() => {
       setAttributes(attributeEngine.getAttributes() as unknown as Record<string, number>);
     }, 0);
+    useViceStore.getState().fetchVices();
   }, []);
 
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -228,14 +229,14 @@ export default function DashboardPage() {
   }, [activeVice, logs, now]);
 
   return (
-    <div className="w-screen h-[100dvh] bg-black text-white flex flex-col relative overflow-hidden pb-20 pt-20">
+    <div className="w-full h-[100dvh] bg-black text-white flex flex-col relative overflow-hidden pb-20 pt-20">
       <style>{`
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
       
       {/* DASHBOARD PILLARS ROW com Status */}
-      <div className="w-full flex justify-center gap-4 py-4 z-10 overflow-x-auto px-4 snap-x scrollbar-hide shrink-0">
+      <div className="w-full flex justify-start md:justify-center gap-4 py-4 z-10 overflow-x-auto px-4 snap-x scrollbar-hide">
         {Object.values(PILLARS_DATA).map((pillar) => {
           const Icon = pillar.icon;
           const val = attributes[pillar.id] ?? 50;

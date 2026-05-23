@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { apiService } from '@/services/api';
 
 export type ViceMode = 'acompanhe' | 'diminua' | 'pare' | null;
 
@@ -7,17 +8,16 @@ export interface ActiveVice {
   viceId: string;
   customName?: string;
   mode: ViceMode;
-  startTime: number; // timestamp de início do ciclo atual
-  expectedFrequency?: string; // Para modo acompanhe
-  timerLimitSeconds?: number; // Para modo diminua (jejum)
-  reductionTarget?: number; // Para modo diminua
+  startTime: number; 
+  expectedFrequency?: string; 
+  timerLimitSeconds?: number; 
+  reductionTarget?: number; 
   
-  // GAP Phase (Active Consumption)
   isConsuming?: boolean;
   consumptionStartTime?: number;
-  defaultConsumptionSeconds?: number; // Padrão 5 min = 300s
-  costPerUse?: number; // Gasto atual
-  currentMotivator?: string; // Salva o motivador para quando o tempo acabar
+  defaultConsumptionSeconds?: number; 
+  costPerUse?: number; 
+  currentMotivator?: string; 
 }
 
 export interface ViceLog {
@@ -33,10 +33,13 @@ export interface ViceLog {
 
 interface ViceStore {
   activeVice: ActiveVice | null;
+  logs: ViceLog[];
+  
+  fetchVices: () => Promise<void>;
+  
   setActiveVice: (vice: ActiveVice | null) => void;
   resetTimer: () => void;
   
-  // GAP Phase functions
   startConsumption: (motivator?: string) => void;
   endConsumption: (actualSecondsUsed: number, motivator?: string) => void;
   cancelConsumption: () => void;
@@ -44,155 +47,231 @@ interface ViceStore {
   setDefaultConsumptionSeconds: (seconds: number) => void;
   setCostPerUse: (cost: number) => void;
   
-  // History logs
-  logs: ViceLog[];
   addLog: (log: Omit<ViceLog, 'id' | 'timestamp'>) => void;
   clearLogs: (viceId: string) => void;
 }
 
+const syncViceToBackend = (vice: ActiveVice | null) => {
+  if (vice) {
+    apiService.post('/api/vices', vice).catch(console.error);
+  }
+};
+
+const syncLogToBackend = (log: ViceLog) => {
+  apiService.post('/api/vices/log', log).catch(console.error);
+};
+
 export const useViceStore = create<ViceStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       activeVice: null,
-      setActiveVice: (vice) => set((state) => {
-        const now = Date.now();
-        let newLogs = [...state.logs];
+      logs: [],
 
-        // Se estiver encerrando a estratégia
-        if (vice === null && state.activeVice) {
-          newLogs.unshift({
+      fetchVices: async () => {
+        try {
+          const vices = await apiService.get<any[]>('/api/vices');
+          if (vices && vices.length > 0) {
+            const active = vices[0];
+            set({
+              activeVice: {
+                viceId: active.viceId,
+                customName: active.customName,
+                mode: active.mode,
+                startTime: Number(active.startTime),
+                expectedFrequency: active.expectedFrequency,
+                timerLimitSeconds: active.timerLimitSeconds,
+                reductionTarget: active.reductionTarget,
+                isConsuming: active.isConsuming,
+                consumptionStartTime: active.consumptionStartTime ? Number(active.consumptionStartTime) : undefined,
+                defaultConsumptionSeconds: active.defaultConsumptionSeconds,
+                costPerUse: active.costPerUse,
+                currentMotivator: active.currentMotivator
+              },
+              logs: active.logs.map((l: any) => ({
+                ...l,
+                timestamp: Number(l.timestamp)
+              })) || []
+            });
+          }
+        } catch (error) {
+          console.error("Erro ao buscar vícios no backend:", error);
+        }
+      },
+
+      setActiveVice: (vice) => {
+        let createdLog: ViceLog | null = null;
+        set((state) => {
+          const now = Date.now();
+          let newLogs = [...state.logs];
+
+          if (vice === null && state.activeVice) {
+            createdLog = {
+              id: Math.random().toString(36).substring(2, 9),
+              viceId: state.activeVice.viceId,
+              type: 'end',
+              timestamp: now
+            };
+            newLogs.unshift(createdLog);
+          } else if (vice !== null && (!state.activeVice || state.activeVice.viceId !== vice.viceId)) {
+            createdLog = {
+              id: Math.random().toString(36).substring(2, 9),
+              viceId: vice.viceId,
+              type: 'start',
+              timestamp: now
+            };
+            newLogs.unshift(createdLog);
+          }
+
+          return { activeVice: vice, logs: newLogs };
+        });
+        
+        syncViceToBackend(vice);
+        if (vice === null && get().activeVice) {
+          apiService.delete(`/api/vices/${get().activeVice?.viceId}`).catch(console.error);
+        }
+        if (createdLog) syncLogToBackend(createdLog);
+      },
+
+      resetTimer: () => {
+        set((state) => ({
+          activeVice: state.activeVice 
+            ? { ...state.activeVice, startTime: Date.now(), isConsuming: false, consumptionStartTime: undefined } 
+            : null
+        }));
+        syncViceToBackend(get().activeVice);
+      },
+      
+      startConsumption: (motivator) => {
+        set((state) => ({
+          activeVice: state.activeVice
+            ? { 
+                ...state.activeVice, 
+                isConsuming: true, 
+                consumptionStartTime: Date.now(),
+                defaultConsumptionSeconds: state.activeVice.defaultConsumptionSeconds || 300,
+                currentMotivator: motivator
+              }
+            : null
+        }));
+        syncViceToBackend(get().activeVice);
+      },
+
+      cancelConsumption: () => {
+        set((state) => ({
+          activeVice: state.activeVice
+            ? {
+                ...state.activeVice,
+                isConsuming: false,
+                consumptionStartTime: undefined,
+                currentMotivator: undefined
+              }
+            : null
+        }));
+        syncViceToBackend(get().activeVice);
+      },
+
+      endConsumption: (actualSecondsUsed, motivator) => {
+        let createdLog: ViceLog | null = null;
+        set((state) => {
+          if (!state.activeVice) return state;
+
+          const now = Date.now();
+          const fastingSeconds = Math.floor((now - state.activeVice.startTime) / 1000) - actualSecondsUsed;
+          const finalMotivator = motivator || state.activeVice.currentMotivator;
+
+          createdLog = {
             id: Math.random().toString(36).substring(2, 9),
             viceId: state.activeVice.viceId,
-            type: 'end',
-            timestamp: now
-          });
-        }
-        // Se estiver iniciando uma estratégia (ou trocando)
-        else if (vice !== null && (!state.activeVice || state.activeVice.viceId !== vice.viceId)) {
-          newLogs.unshift({
-            id: Math.random().toString(36).substring(2, 9),
-            viceId: vice.viceId,
-            type: 'start',
-            timestamp: now
-          });
-        }
+            type: 'consumption',
+            timestamp: now,
+            durationSeconds: actualSecondsUsed,
+            fastingSeconds: fastingSeconds > 0 ? fastingSeconds : 0,
+            cost: state.activeVice.costPerUse,
+            motivator: finalMotivator?.trim() || undefined
+          };
 
-        return { activeVice: vice, logs: newLogs };
-      }),
-      resetTimer: () => set((state) => ({
-        activeVice: state.activeVice 
-          ? { ...state.activeVice, startTime: Date.now(), isConsuming: false, consumptionStartTime: undefined } 
-          : null
-      })),
-      
-      startConsumption: (motivator) => set((state) => ({
-        activeVice: state.activeVice
-          ? { 
-              ...state.activeVice, 
-              isConsuming: true, 
-              consumptionStartTime: Date.now(),
-              defaultConsumptionSeconds: state.activeVice.defaultConsumptionSeconds || 300, // default 5 min
-              currentMotivator: motivator
-            }
-          : null
-      })),
-
-      cancelConsumption: () => set((state) => ({
-        activeVice: state.activeVice
-          ? {
+          return {
+            activeVice: {
               ...state.activeVice,
               isConsuming: false,
               consumptionStartTime: undefined,
+              defaultConsumptionSeconds: actualSecondsUsed, 
+              startTime: now, 
               currentMotivator: undefined
-            }
-          : null
-      })),
+            },
+            logs: [createdLog, ...state.logs]
+          };
+        });
+        syncViceToBackend(get().activeVice);
+        if (createdLog) syncLogToBackend(createdLog);
+      },
 
-      endConsumption: (actualSecondsUsed, motivator) => set((state) => {
-        if (!state.activeVice) return state;
+      addFastingTime: (additionalSeconds) => {
+        set((state) => {
+          if (!state.activeVice) return state;
+          const currentElapsed = Math.floor((Date.now() - state.activeVice.startTime) / 1000);
+          const currentLimit = state.activeVice.timerLimitSeconds || 0;
+          
+          let newStartTime = state.activeVice.startTime;
+          let newLimit = currentLimit;
 
-        const now = Date.now();
-        const fastingSeconds = Math.floor((now - state.activeVice.startTime) / 1000) - actualSecondsUsed;
-        const finalMotivator = motivator || state.activeVice.currentMotivator;
-
-        const newLog: ViceLog = {
-          id: Math.random().toString(36).substring(2, 9),
-          viceId: state.activeVice.viceId,
-          type: 'consumption',
-          timestamp: now,
-          durationSeconds: actualSecondsUsed,
-          fastingSeconds: fastingSeconds > 0 ? fastingSeconds : 0,
-          cost: state.activeVice.costPerUse,
-          motivator: finalMotivator?.trim() || undefined
-        };
-
-        return {
-          activeVice: {
-            ...state.activeVice,
-            isConsuming: false,
-            consumptionStartTime: undefined,
-            defaultConsumptionSeconds: actualSecondsUsed, // adapta o padrão
-            startTime: now, // reinicia jejum
-            currentMotivator: undefined
-          },
-          logs: [newLog, ...state.logs]
-        };
-      }),
-
-      addFastingTime: (additionalSeconds) => set((state) => {
-        if (!state.activeVice) return state;
-        const currentElapsed = Math.floor((Date.now() - state.activeVice.startTime) / 1000);
-        const currentLimit = state.activeVice.timerLimitSeconds || 0;
-        
-        let newStartTime = state.activeVice.startTime;
-        let newLimit = currentLimit;
-
-        if (currentElapsed >= currentLimit) {
-          // Já estava no Meta Atingida, e resolveu resistir mais X min.
-          // O timer atual vira um novo ciclo de Resista com limite = X min
-          newStartTime = Date.now();
-          newLimit = additionalSeconds;
-        } else {
-          // Estava no Resista e resolveu somar mais tempo?
-          newLimit = currentLimit + additionalSeconds;
-        }
-
-        return {
-          activeVice: {
-            ...state.activeVice,
-            startTime: newStartTime,
-            timerLimitSeconds: newLimit
+          if (currentElapsed >= currentLimit) {
+            newStartTime = Date.now();
+            newLimit = additionalSeconds;
+          } else {
+            newLimit = currentLimit + additionalSeconds;
           }
-        };
-      }),
 
-      setDefaultConsumptionSeconds: (seconds) => set((state) => ({
-        activeVice: state.activeVice
-          ? { ...state.activeVice, defaultConsumptionSeconds: seconds }
-          : null
-      })),
+          return {
+            activeVice: {
+              ...state.activeVice,
+              startTime: newStartTime,
+              timerLimitSeconds: newLimit
+            }
+          };
+        });
+        syncViceToBackend(get().activeVice);
+      },
 
-      setCostPerUse: (cost) => set((state) => ({
-        activeVice: state.activeVice
-          ? { ...state.activeVice, costPerUse: cost }
-          : null
-      })),
+      setDefaultConsumptionSeconds: (seconds) => {
+        set((state) => ({
+          activeVice: state.activeVice
+            ? { ...state.activeVice, defaultConsumptionSeconds: seconds }
+            : null
+        }));
+        syncViceToBackend(get().activeVice);
+      },
 
-      logs: [],
-      addLog: (log) => set((state) => ({
-        logs: [
-          {
+      setCostPerUse: (cost) => {
+        set((state) => ({
+          activeVice: state.activeVice
+            ? { ...state.activeVice, costPerUse: cost }
+            : null
+        }));
+        syncViceToBackend(get().activeVice);
+      },
+
+      addLog: (log) => {
+        let createdLog: ViceLog | null = null;
+        set((state) => {
+          createdLog = {
             ...log,
             id: Math.random().toString(36).substring(2, 9),
             timestamp: Date.now()
-          },
-          ...state.logs
-        ]
-      })),
+          };
+          return {
+            logs: [createdLog, ...state.logs]
+          };
+        });
+        if (createdLog) syncLogToBackend(createdLog);
+      },
       
-      clearLogs: (viceId) => set((state) => ({
-        logs: state.logs.filter(l => l.viceId !== viceId)
-      }))
+      clearLogs: (viceId) => {
+        set((state) => ({
+          logs: state.logs.filter(l => l.viceId !== viceId)
+        }));
+        // Note: not syncing log deletion yet to keep it simple, typically you wouldn't clear logs in DB this easily.
+      }
     }),
     {
       name: 'ploc-vice-storage',

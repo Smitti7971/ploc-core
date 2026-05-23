@@ -12,6 +12,7 @@ const uploadRoutes = require('./routes/uploadRoutes');
 const authMiddleware = require('./middleware/authMiddleware');
 const healthRoutes = require('./routes/healthRoutes');
 const routineRoutes = require('./routes/routineRoutes');
+const viceRoutes = require('./routes/viceRoutes');
 
 const path = require('path');
 
@@ -124,6 +125,7 @@ app.use('/api/users', authMiddleware, userRoutes);
 // Rotas de Tarefas e Rotinas (PROTEGIDAS)
 app.use('/api/tasks', authMiddleware, taskRoutes);
 app.use('/api/routines', authMiddleware, routineRoutes);
+app.use('/api/vices', viceRoutes); // AuthMiddleware já está dentro do viceRoutes
 app.get('/api/ping-routines', (req, res) => res.json({ message: "Routine route is registered! 🚀" }));
 
 // Rotas de IA (Proteção agora é interna por rota)
