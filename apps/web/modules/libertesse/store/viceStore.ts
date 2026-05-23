@@ -51,14 +51,22 @@ interface ViceStore {
   clearLogs: (viceId: string) => void;
 }
 
-const syncViceToBackend = (vice: ActiveVice | null) => {
+const syncViceToBackend = async (vice: ActiveVice | null) => {
   if (vice) {
-    apiService.post('/vices', vice).catch(console.error);
+    try {
+      await apiService.post('/vices', vice);
+    } catch (e) {
+      console.error(e);
+    }
   }
 };
 
-const syncLogToBackend = (log: ViceLog) => {
-  apiService.post('/vices/log', log).catch(console.error);
+const syncLogToBackend = async (log: ViceLog) => {
+  try {
+    await apiService.post('/vices/log', log);
+  } catch (e) {
+    console.error(e);
+  }
 };
 
 export const useViceStore = create<ViceStore>()(
@@ -127,12 +135,14 @@ export const useViceStore = create<ViceStore>()(
 
           return { activeVice: vice, logs: newLogs };
         });
-        
-        syncViceToBackend(vice);
-        if (viceIdToDelete) {
-          apiService.delete(`/vices/${viceIdToDelete}`).catch(console.error);
-        }
-        if (createdLog) syncLogToBackend(createdLog);
+        // To prevent race conditions, we can't use async in set(), but we can do the API calls here
+        (async () => {
+          await syncViceToBackend(vice);
+          if (viceIdToDelete) {
+            await apiService.delete(`/vices/${viceIdToDelete}`).catch(console.error);
+          }
+          if (createdLog) await syncLogToBackend(createdLog);
+        })();
       },
 
       resetTimer: () => {
@@ -205,8 +215,10 @@ export const useViceStore = create<ViceStore>()(
             logs: [createdLog, ...state.logs]
           };
         });
-        syncViceToBackend(get().activeVice);
-        if (createdLog) syncLogToBackend(createdLog);
+        (async () => {
+          await syncViceToBackend(get().activeVice);
+          if (createdLog) await syncLogToBackend(createdLog);
+        })();
       },
 
       addFastingTime: (additionalSeconds) => {
