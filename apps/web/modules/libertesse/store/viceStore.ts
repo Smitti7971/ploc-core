@@ -53,12 +53,12 @@ interface ViceStore {
 
 const syncViceToBackend = (vice: ActiveVice | null) => {
   if (vice) {
-    apiService.post('/api/vices', vice).catch(console.error);
+    apiService.post('/vices', vice).catch(console.error);
   }
 };
 
 const syncLogToBackend = (log: ViceLog) => {
-  apiService.post('/api/vices/log', log).catch(console.error);
+  apiService.post('/vices/log', log).catch(console.error);
 };
 
 export const useViceStore = create<ViceStore>()(
@@ -69,7 +69,7 @@ export const useViceStore = create<ViceStore>()(
 
       fetchVices: async () => {
         try {
-          const vices = await apiService.get<any[]>('/api/vices');
+          const vices = await apiService.get<any[]>('/vices');
           if (vices && vices.length > 0) {
             const active = vices[0];
             set({
@@ -127,7 +127,7 @@ export const useViceStore = create<ViceStore>()(
         
         syncViceToBackend(vice);
         if (vice === null && get().activeVice) {
-          apiService.delete(`/api/vices/${get().activeVice?.viceId}`).catch(console.error);
+          apiService.delete(`/vices/${get().activeVice?.viceId}`).catch(console.error);
         }
         if (createdLog) syncLogToBackend(createdLog);
       },
