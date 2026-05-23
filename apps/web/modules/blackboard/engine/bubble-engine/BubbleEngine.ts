@@ -226,8 +226,8 @@ class BubbleEngine {
 
     this.bubbles = this.bubbles.map(bubble => {
       const currentMinutes = bubble.minutesRemaining || 0;
-      const direction = bubble.metadata?.direction || 'inward';
-      const totalMinutes = bubble.metadata?.totalMinutes || 10;
+      const direction = (bubble.metadata?.direction as 'inward' | 'outward') || 'inward';
+      const totalMinutes = (bubble.metadata?.totalMinutes as number) || 10;
 
       // Bolhas outward podem ter tempo negativo (continuidade)
       let newMinutes = currentMinutes - dt;

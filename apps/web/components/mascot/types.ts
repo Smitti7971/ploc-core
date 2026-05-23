@@ -11,7 +11,7 @@
  * ============================================================================
  */
 
-export type PlocMode = 'sleeping' | 'active' | 'stressing' | 'pissed';
+export type PlocMode = 'sleeping' | 'active' | 'stressing' | 'pissed' | 'dizzy';
 
 export interface PlocState {
   mode: PlocMode;

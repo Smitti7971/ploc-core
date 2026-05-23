@@ -143,7 +143,7 @@ export default function DashboardPage() {
   const [activeMethod, setActiveMethod] = useState('rotinas');
   const [activeTab, setActiveTab] = useState(TABS[0].id);
   const [selectedViceId, setSelectedViceId] = useState<string | null>(null);
-  const [modalInitialStep, setModalInitialStep] = useState<'options' | 'active_options' | 'history' | 'form_acompanhe' | 'form_diminua' | undefined>();
+  const [modalInitialStep, setModalInitialStep] = useState<'options' | 'active_options' | 'history' | 'form_acompanhe' | 'form_diminua' | 'confirm_end' | undefined>();
   const [attributes, setAttributes] = useState<Record<string, number>>({});
   
   const activeVice = useViceStore(state => state.activeVice);
@@ -536,13 +536,13 @@ export default function DashboardPage() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
                       
                       <div className="absolute inset-0 p-3 flex flex-col justify-end">
-                        {'desc' in item && item.desc && (
+                        {('desc' in item && typeof item.desc === 'string') ? (
                           <span className={`text-[0.6rem] font-black text-${methodDef.color} uppercase tracking-wider mb-[2px] opacity-90 drop-shadow-md`}>
                             {item.title}
                           </span>
-                        )}
+                        ) : null}
                         <h4 className="text-white font-extrabold text-sm leading-tight drop-shadow-lg">
-                          {'desc' in item && item.desc ? item.desc : item.title}
+                          {('desc' in item && typeof item.desc === 'string') ? item.desc : item.title}
                         </h4>
                       </div>
                     </motion.div>
