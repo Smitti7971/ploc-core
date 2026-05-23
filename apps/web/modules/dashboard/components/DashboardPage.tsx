@@ -438,6 +438,7 @@ export default function DashboardPage() {
                   >
                     {/* Product Banner */}
                     <div className="h-24 w-full relative bg-[#1a1d1a]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img 
                         src={routine.image} 
                         alt={routine.title}
