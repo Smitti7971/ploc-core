@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
+import { getAssetUrl } from '@/lib/config';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Settings, LogOut, User } from 'lucide-react';
@@ -50,7 +51,7 @@ export function UserHeader() {
           flexShrink: 0
         }}>
           {user?.profilePhoto ? (
-            <img src={user.profilePhoto} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={getAssetUrl(user.profilePhoto)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
             (user?.name || 'U').charAt(0).toUpperCase()
           )}

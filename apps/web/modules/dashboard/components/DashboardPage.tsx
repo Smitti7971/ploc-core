@@ -43,6 +43,8 @@ import {
   Trophy,
   PlusCircle
 } from 'lucide-react';
+import { UserHeader } from '@/components/layout/UserHeader';
+import { getAssetUrl } from '@/lib/config';
 import { PillarPage } from '@/modules/routines/components/PillarPage';
 import { PILLARS_DATA, IMPACT_ICONS } from '@/modules/routines/data/routinesData';
 import { LibertesseScreen, VICES } from '../../libertesse/components/LibertesseScreen';
@@ -441,7 +443,7 @@ export default function DashboardPage() {
                     <div className="h-24 w-full relative bg-[#1a1d1a]">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img 
-                        src={routine.image} 
+                        src={getAssetUrl(routine.image)} 
                         alt={routine.title}
                         className="w-full h-full object-cover opacity-60"
                       />
@@ -545,7 +547,7 @@ export default function DashboardPage() {
                       className="relative w-full aspect-square rounded-[20px] overflow-hidden border border-white/10 group cursor-pointer"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={item.image} alt={item.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                      <img src={getAssetUrl(item.image)} alt={item.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
                       
                       <div className="absolute inset-0 p-3 flex flex-col justify-end">

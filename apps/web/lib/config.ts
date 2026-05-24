@@ -29,3 +29,12 @@ export const config = {
     userKey: 'ploc_user',
   },
 } as const;
+
+export const getAssetUrl = (url?: string | null) => {
+  if (!url) return '';
+  if (url.includes('localhost:') && typeof window !== 'undefined') {
+    const backendRoot = config.api.baseUrl.replace(/\/api\/?$/, '');
+    return url.replace(/^https?:\/\/localhost:\d+/, backendRoot);
+  }
+  return url;
+};

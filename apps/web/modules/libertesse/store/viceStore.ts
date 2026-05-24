@@ -31,6 +31,34 @@ export interface ViceLog {
   motivator?: string;
 }
 
+interface ViceResponse {
+  id: string;
+  viceId: string;
+  customName?: string;
+  mode: ViceMode;
+  startTime: number;
+  expectedFrequency?: string;
+  timerLimitSeconds?: number;
+  reductionTarget?: number;
+  isConsuming: boolean;
+  consumptionStartTime?: number;
+  defaultConsumptionSeconds: number;
+  costPerUse?: number;
+  currentMotivator?: string;
+  logs: ViceLogResponse[];
+}
+
+interface ViceLogResponse {
+  id: string;
+  viceId: string;
+  type: 'consumption' | 'expense' | 'start' | 'end';
+  timestamp: number;
+  durationSeconds?: number;
+  fastingSeconds?: number;
+  cost?: number;
+  motivator?: string;
+}
+
 interface ViceStore {
   activeVice: ActiveVice | null;
   logs: ViceLog[];
@@ -77,7 +105,7 @@ export const useViceStore = create<ViceStore>()(
 
       fetchVices: async () => {
         try {
-          const vices = await apiService.get<any[]>('/vices');
+          const vices = await apiService.get<ViceResponse[]>('/vices');
           if (vices && vices.length > 0) {
             const active = vices[0];
             set({
@@ -96,7 +124,7 @@ export const useViceStore = create<ViceStore>()(
                 currentMotivator: active.currentMotivator
               },
               logs: vices.flatMap(v => 
-                (v.logs || []).map((l: any) => ({
+                (v.logs || []).map((l: ViceLogResponse) => ({
                   ...l,
                   viceId: v.viceId, // Force string ID instead of UUID
                   timestamp: Number(l.timestamp)
@@ -115,7 +143,7 @@ export const useViceStore = create<ViceStore>()(
 
         set((state) => {
           const now = Date.now();
-          let newLogs = [...state.logs];
+          const newLogs = [...state.logs];
 
           if (vice === null && state.activeVice) {
             viceIdToDelete = state.activeVice.viceId;

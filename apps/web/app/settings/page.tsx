@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'; // Biblioteca de animações
 import { AppShell } from '@/components/layout/AppShell'; // Casca de layout global
 import { useAuthStore } from '@/store/authStore'; // Hook da store de autenticação
 import { apiService } from '@/services/api'; // Serviço wrapper pro backend
-import { config } from '@/lib/config'; // Variáveis de ambiente
+import { getAssetUrl } from '@/lib/config'; // Variáveis de ambiente
 import { useRouter } from 'next/navigation'; // Hook de navegação do Next.js
 import { 
   ArrowLeft, 
@@ -191,7 +191,7 @@ export default function SettingsPage() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
                 }}>
                   {user?.profilePhoto ? (
-                    <img src={user.profilePhoto} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={getAssetUrl(user.profilePhoto)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
                     <div style={{ fontSize: '2rem', fontWeight: 900 }}>{user?.name?.charAt(0) || 'P'}</div>
                   )}

@@ -590,37 +590,7 @@ export default function BlackboardPage() {
                     )}
                   </motion.div>
 
-                  {/* FUMAÇA DE FUNDO (Atrás do Ploc) */}
-                  <AnimatePresence>
-                    {activeVice?.isConsuming && (
-                      <motion.div
-                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full overflow-hidden z-0 pointer-events-none flex items-center justify-center"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0, transition: { duration: 1.5, ease: "easeInOut" } }}
-                      >
-                        {[...Array(6)].map((_, i) => (
-                          <motion.div
-                            key={`smoke-back-${i}`}
-                            className="absolute bg-slate-700/50 rounded-full mix-blend-normal"
-                            style={{ 
-                              width: 350 + i * 30, 
-                              height: 350 + i * 30, 
-                              filter: `blur(${15 + i * 5}px)` 
-                            }}
-                            animate={{
-                              scale: [1, 1.3, 0.9, 1.2, 1],
-                              x: [0, (i % 2 === 0 ? 60 : -60), (i % 3 === 0 ? -30 : 30), 0],
-                              y: [0, (i % 3 === 0 ? -60 : 60), (i % 2 === 0 ? 30 : -30), 0],
-                              opacity: [0.3, 0.6, 0.2, 0.5, 0.3],
-                              rotate: [0, 180, 360]
-                            }}
-                            transition={{ duration: 6 + i * 2, repeat: Infinity, ease: 'easeInOut' }}
-                          />
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  {/* FUMAÇA DE FUNDO removida para otimização de performance */}
 
                   {/* PLOC AVATAR */}
                   <div className="pointer-events-auto z-10">
@@ -639,29 +609,7 @@ export default function BlackboardPage() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0, transition: { duration: 1.5, ease: "easeInOut" } }}
                       >
-                        {/* FUMAÇA DE FRENTE (Nuvens esporádicas que passam na frente dele) */}
-                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full overflow-hidden flex items-center justify-center pointer-events-none z-30">
-                          {[...Array(4)].map((_, i) => (
-                            <motion.div
-                              key={`smoke-front-${i}`}
-                              className="absolute bg-slate-500/70 rounded-full mix-blend-overlay"
-                              style={{ 
-                                width: 250 + i * 20, 
-                                height: 250 + i * 20, 
-                                filter: `blur(${10 + i * 4}px)` 
-                              }}
-                              animate={{
-                                scale: [1, 1.6, 0.8, 1.4, 1],
-                                // Movimento mais fechado para cruzar o rosto dele com frequência
-                                x: [0, (i % 2 === 0 ? -120 : 120), (i % 3 === 0 ? 80 : -80), 0],
-                                y: [0, (i % 3 === 0 ? 120 : -120), (i % 2 === 0 ? -80 : 80), 0],
-                                opacity: [0.2, 0.8, 0.3, 0.9, 0.2],
-                                rotate: [0, -180, -360]
-                              }}
-                              transition={{ duration: 5 + i * 2, repeat: Infinity, ease: 'easeInOut' }}
-                            />
-                          ))}
-                        </div>
+                        {/* FUMAÇA DE FRENTE removida para otimização de performance */}
 
                         {/* UI DO CONSUMO ATIVO (BOTÃO PARAR E TIMER) */}
                         <div className="absolute -top-[160px] left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-auto z-[400] scale-90">
