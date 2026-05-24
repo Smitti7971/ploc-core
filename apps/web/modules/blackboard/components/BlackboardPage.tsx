@@ -38,7 +38,6 @@ import { BlackboardBubble } from '../types/bubbles';
 import { blackboardEventBus, BLACKBOARD_EVENTS } from '../events/eventBus';
 import { ViceBubble } from '../../libertesse/components/ViceBubble';
 import { routineEngine } from '../engine/routine-engine/RoutineEngine';
-import { TutorialOcean } from './TutorialOcean';
 import { attributeEngine } from '../engine/attribute-engine/AttributeEngine';
 import { plocEngine } from '../engine/ploc-engine/PlocEngine';
 
@@ -48,7 +47,6 @@ import { BlackboardBubbleItem } from './BlackboardBubbleItem';
 
 import { AmbientGlowBackground } from '../../landing/particles/AmbientGlowBackground';
 import { Vignette } from '../../landing/particles/Vignette';
-import { SodaWave } from '../../landing/particles/SodaWave';
 import { useViceStore } from '../../libertesse/store/viceStore';
 import { usePlocSpeech } from '../../../components/mascot/usePlocSpeech';
 
@@ -115,7 +113,6 @@ export default function BlackboardPage() {
   const [showFocusInfo, setShowFocusInfo] = useState(false);
   const [selectedBubble, setSelectedBubble] = useState<BlackboardBubble | null>(null);
   const [interactionNote, setInteractionNote] = useState('');
-  const [sodaWaveKey, setSodaWaveKey] = useState(0);
 
   // Janela de tempo baseada no modo de visualização
   const getWindowMinutes = useCallback(() => {
@@ -132,7 +129,6 @@ export default function BlackboardPage() {
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [showTutorial, setShowTutorial] = useState(false);
   const [plocState, setPlocState] = useState(plocEngine.getState());
   const [plocMessage, setPlocMessage] = useState<string | null>(null);
 
@@ -443,12 +439,6 @@ export default function BlackboardPage() {
       setTimeout(() => setPlocReaction('idle'), 4000);
     });
 
-    // Verificar se é o primeiro acesso para o tutorial
-    const hasSeenTutorial = localStorage.getItem('ploc_tutorial_seen');
-    if (!hasSeenTutorial) {
-      setTimeout(() => setShowTutorial(true), 0);
-    }
-
     return () => {
       unsubscribe();
       unsubPloc();
@@ -477,7 +467,6 @@ export default function BlackboardPage() {
     >
       <AmbientGlowBackground />
       <Vignette />
-      <SodaWave key={sodaWaveKey} />
 
       <div
         id="blackboard-canvas"
@@ -691,7 +680,6 @@ export default function BlackboardPage() {
           key={score}
           onClick={() => {
             setShowAttributes(false);
-            setShowTutorial(false);
             setSelectedBubble(null);
             setShowFocusInfo(true);
           }}
@@ -856,14 +844,6 @@ export default function BlackboardPage() {
               <AttributeMonitor onClose={() => setShowAttributes(false)} />
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {showTutorial && (
-          <TutorialOcean onComplete={() => {
-            setShowTutorial(false);
-            localStorage.setItem('ploc_tutorial_seen', 'true');
-          }} />
         )}
       </AnimatePresence>
     </div>
