@@ -36,7 +36,7 @@ import { AttributeMonitor } from './AttributeMonitor';
 import { bubbleEngine } from '../engine/bubble-engine/BubbleEngine';
 import { BlackboardBubble } from '../types/bubbles';
 import { blackboardEventBus, BLACKBOARD_EVENTS } from '../events/eventBus';
-import { ViceBubble } from '../../libertesse/components/ViceBubble';
+import { ViceBubble } from '../../dashboard/components/libertesse/components/ViceBubble';
 import { routineEngine } from '../engine/routine-engine/RoutineEngine';
 import { attributeEngine } from '../engine/attribute-engine/AttributeEngine';
 import { plocEngine } from '../engine/ploc-engine/PlocEngine';
@@ -47,7 +47,7 @@ import { BlackboardBubbleItem } from './BlackboardBubbleItem';
 
 import { AmbientGlowBackground } from '../../landing/particles/AmbientGlowBackground';
 import { Vignette } from '../../landing/particles/Vignette';
-import { useViceStore } from '../../libertesse/store/viceStore';
+import { useViceStore } from '../../dashboard/components/libertesse/store/viceStore';
 import { usePlocSpeech } from '../../../components/mascot/usePlocSpeech';
 
 interface StickyNote {

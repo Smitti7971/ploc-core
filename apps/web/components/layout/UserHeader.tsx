@@ -21,8 +21,8 @@ export function UserHeader() {
       style={{
         display: 'flex',
         alignItems: 'center',
-        padding: '6px',
-        gap: isOpen ? '12px' : '0px',
+        padding: '4px',
+        gap: isOpen ? '10px' : '0px',
         cursor: 'pointer',
         background: 'rgba(255, 255, 255, 0.05)',
         backdropFilter: 'blur(20px)',
@@ -31,21 +31,21 @@ export function UserHeader() {
         border: '1px solid rgba(255, 255, 255, 0.1)',
         boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
         transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-        minHeight: '44px',
+        minHeight: '36px',
         pointerEvents: 'all'
       }}
     >
         {/* Foto / Avatar */}
         <div style={{
-          width: '32px',
-          height: '32px',
+          width: '28px',
+          height: '28px',
           borderRadius: '50%',
           background: 'linear-gradient(135deg, #38bdf8, #818cf8)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontWeight: 900,
-          fontSize: '0.75rem',
+          fontSize: '0.7rem',
           color: '#fff',
           overflow: 'hidden',
           flexShrink: 0
@@ -63,17 +63,21 @@ export function UserHeader() {
           flexDirection: 'column',
           justifyContent: 'center',
           gap: '2px',
-          marginLeft: isOpen ? '0px' : '8px',
-          marginRight: isOpen ? '0px' : '4px'
+          marginLeft: isOpen ? '0px' : '6px',
+          marginRight: isOpen ? '0px' : '6px'
         }}>
           <span style={{ 
-            fontSize: '0.6rem', 
-            fontWeight: 900, 
+            fontSize: '0.65rem', 
+            fontWeight: 800, 
             color: '#fff', 
             opacity: 0.9,
-            letterSpacing: '0.5px'
+            letterSpacing: '0.3px',
+            whiteSpace: 'nowrap',
+            maxWidth: '80px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
           }}>
-            LVL {user?.stats?.level || 1}
+            {user?.name?.split(' ')[0] || 'Usuário'}
           </span>
           <div style={{ 
             width: '40px', 

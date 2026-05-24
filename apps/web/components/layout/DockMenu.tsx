@@ -11,7 +11,8 @@ import {
   GalleryHorizontal,
   Ghost,
   Settings,
-  Radar
+  Radar,
+  Calendar
 } from 'lucide-react';
 
 interface DockItem {
@@ -23,9 +24,10 @@ interface DockItem {
 
 // Definição da lista de itens do Dock, contendo ícone, rota de destino, cor tema e rótulo
 const DOCK_ITEMS: DockItem[] = [
-  { icon: <Ghost size={20} />, route: '/ploc', color: '#ffffffff', label: 'Ploc' },
+  { icon: <Calendar size={20} />, route: '/calendar', color: '#ffffffff', label: 'Calendário' },
   { icon: <Radar size={20} />, route: '/', color: '#ffffffff', label: 'Blackboard' },
   { icon: <GalleryHorizontal size={20} />, route: '/dashboard', color: '#ffffffff', label: 'Rotinas' },
+  { icon: <Ghost size={20} />, route: '/ploc', color: '#ffffffff', label: 'Ploc' },
   { icon: <Settings size={20} />, route: '/settings', color: '#ffffffff', label: 'Config' },
 ];
 

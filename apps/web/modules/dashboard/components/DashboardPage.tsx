@@ -47,10 +47,11 @@ import { UserHeader } from '@/components/layout/UserHeader';
 import { getAssetUrl } from '@/lib/config';
 import { PillarPage } from '@/modules/routines/components/PillarPage';
 import { PILLARS_DATA, IMPACT_ICONS } from '@/modules/routines/data/routinesData';
-import { LibertesseScreen, VICES } from '../../libertesse/components/LibertesseScreen';
-import { ViceOptionsModal } from '../../libertesse/components/ViceOptionsModal';
+import { LibertesseScreen, VICES } from '../components/libertesse/components/LibertesseScreen';
+import { ViceOptionsModal } from '../components/libertesse/components/ViceOptionsModal';
 import { attributeEngine } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
-import { useViceStore } from '../../libertesse/store/viceStore';
+import { useViceStore } from '../components/libertesse/store/viceStore';
+import { PlanejeScreen } from '../components/planeje/components/PlanejeScreen';
 
 const allRoutines = Object.values(PILLARS_DATA).flatMap(pillar => 
   pillar.options.map(opt => ({
@@ -507,7 +508,13 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {activeMethod !== 'rotinas' && activeMethod !== 'libertesse' && (
+      {activeMethod === 'planeje' && (
+        <div className="flex-1 min-h-0 w-full relative flex flex-col pt-2">
+          <PlanejeScreen />
+        </div>
+      )}
+
+      {activeMethod !== 'rotinas' && activeMethod !== 'libertesse' && activeMethod !== 'planeje' && (
         <div className="flex-1 min-h-0 w-full flex flex-col items-center px-6 pb-24 overflow-y-auto pt-8">
           {(() => {
             const methodDef = METHODS.find(m => m.id === activeMethod);

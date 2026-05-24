@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Flame, Wine, WineOff, Pill, Eye, EyeOff, Check, Cigarette, CigaretteOff, X, RotateCcw, History } from 'lucide-react';
 import { useViceStore } from '../store/viceStore';
 import { ViceOptionsModal } from './ViceOptionsModal';
-import { blackboardEventBus, BLACKBOARD_EVENTS } from '../../blackboard/events/eventBus';
-import { usePlocSpeech } from '../../../components/mascot/usePlocSpeech';
+import { blackboardEventBus, BLACKBOARD_EVENTS } from '@/modules/blackboard/events/eventBus';
+import { usePlocSpeech } from '@/components/mascot/usePlocSpeech';
 
 const VICE_ICONS_OFF: Record<string, React.ElementType> = {
   tabagismo: CigaretteOff,
