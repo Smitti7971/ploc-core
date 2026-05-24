@@ -770,7 +770,6 @@ export default function BlackboardPage() {
               const newState = !showAttributes;
               if (newState) {
                 setShowFocusInfo(false);
-                setShowTutorial(false);
                 setSelectedBubble(null);
               }
               setShowAttributes(newState);
