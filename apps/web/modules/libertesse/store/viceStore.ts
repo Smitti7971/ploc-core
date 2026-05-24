@@ -95,10 +95,13 @@ export const useViceStore = create<ViceStore>()(
                 costPerUse: active.costPerUse,
                 currentMotivator: active.currentMotivator
               },
-              logs: active.logs.map((l: any) => ({
-                ...l,
-                timestamp: Number(l.timestamp)
-              })) || []
+              logs: vices.flatMap(v => 
+                (v.logs || []).map((l: any) => ({
+                  ...l,
+                  viceId: v.viceId, // Force string ID instead of UUID
+                  timestamp: Number(l.timestamp)
+                }))
+              )
             });
           }
         } catch (error) {
