@@ -6,12 +6,12 @@
  */
 
 // Bloco de imports – traz dependências e hooks
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { DockMenu } from './DockMenu';
 import { PlocAvatarClient } from '@/components/mascot/PlocAvatarClient';
 import { usePathname } from 'next/navigation';
+import { DockMenu } from './DockMenu';
 
 // Define as props esperadas pelo AppShell
 interface AppShellProps {
@@ -26,13 +26,35 @@ export function AppShell({ children }: AppShellProps) {
   const isSettings = pathname === '/settings';
   const isPlocPage = pathname === '/ploc';
 
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      setIsHydrated(true);
+    });
+    if (useAuthStore.persist.hasHydrated()) {
+      setIsHydrated(true);
+    }
+    return () => unsub();
+  }, []);
+
   // Client-side auth guard (Redirecionamento para rota protegida se deslogado)
   useEffect(() => {
+    if (!isHydrated) return;
     const token = localStorage.getItem('ploc_token');
-    if (!token && !isAuthenticated) {
+    const authDataStr = localStorage.getItem('ploc-auth');
+    let hasPersistedAuth = false;
+    if (authDataStr) {
+      try {
+        const authData = JSON.parse(authDataStr);
+        if (authData.state?.isAuthenticated) hasPersistedAuth = true;
+      } catch (e) {}
+    }
+    
+    if (!token && !isAuthenticated && !hasPersistedAuth) {
       router.replace('/');
     }
-  }, [isAuthenticated, router]);
+  }, [isHydrated, isAuthenticated, router]);
 
   // Renderiza a estrutura de layout da página
 return (
@@ -60,8 +82,7 @@ return (
         {children}
       </main>
 
-      {/* Menu de navegação global */}
-      {/* Menu de navegação global fixo na base */}
+      {/* Menu de navegação global (Dock) */}
       <DockMenu />
 
       {/* Header do Usuário movido para AuthCapsule (Global) */}

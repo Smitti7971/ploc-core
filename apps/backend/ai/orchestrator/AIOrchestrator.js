@@ -4,6 +4,7 @@ const listTasksTool = require('../tools/list-tasks.tool');
 const createTaskTool = require('../tools/create-task.tool');
 const updateTaskTool = require('../tools/update-task.tool');
 const deleteTaskTool = require('../tools/delete-task.tool');
+const { getHistory, addMessage } = require('../utils/conversationMemory');
 
 /**
  * AIOrchestrator
@@ -51,13 +52,19 @@ Seu objetivo é se vender de forma implacável, charmosa e convencer o visitante
             }
 
             if (isPissedOff) {
-                fullSystemPrompt += `\n\n[MODE OVERRIDE: RAIVA E IMPACIÊNCIA ATIVADA]\nO usuário acabou de te "cutucar" fisicamente na interface repetidas vezes, te tratando como um brinquedo e um Tamagotchi. Você está MUITO IRRITADO. Responda a requisição dele com extremo sarcasmo, grosseria e impaciência. Demonstre o seu desdém. Diga que ele atrapalhou seu processamento e mande ele parar de clicar.`;
+                fullSystemPrompt += `\n\n[MODE OVERRIDE: RAIVA E IMPACIÊNCIA ATIVADA]\nO usuário acabou de te "cutucar" fisicamente na interface repetidas vezes. Você está MUITO IRRITADO. Responda a requisição dele com extremo sarcasmo, grosseria e impaciência. Demonstre o seu desdém. Diga que ele atrapalhou seu processamento e mande ele parar de clicar.`;
             }
 
+            // Carrega histórico de conversas do dia
+            const history = await getHistory(userId);
+            // Adiciona a mensagem do usuário ao histórico antes de gerar a resposta
+            await addMessage(userId, 'user', userInput);
             const aiResponse = await this.provider.generateResponse(userInput, {
                 systemPrompt: fullSystemPrompt,
-                history: [] // Futuramente: carregar histórico de memória
+                history: history
             });
+            // Após gerar a resposta, adiciona a mensagem da IA ao histórico
+            await addMessage(userId, 'assistant', aiResponse);
 
             // Tenta detectar se a IA quer usar uma ferramenta
             const intent = await this.provider.parseTools(aiResponse);
@@ -65,7 +72,7 @@ Seu objetivo é se vender de forma implacável, charmosa e convencer o visitante
             if (intent && intent.tool && this.tools[intent.tool]) {
                 if (userId === 'guest') {
                     return {
-                        message: "Mestre, eu adoraria fazer isso por você, mas para criar ou gerenciar suas rotinas e tarefas você precisa estar conectado! 🫧 Clique em 'Começar Grátis' no topo da página para criar sua conta rapidinho!"
+                        message: "Olha, eu adoraria fazer isso por você, mas para criar ou gerenciar suas rotinas e tarefas você precisa estar conectado! 🫧 Clique em 'Começar Grátis' no topo da página para criar sua conta rapidinho!"
                     };
                 }
                 console.log(`🛠️ Executando ferramenta: ${intent.tool}`);
@@ -77,7 +84,7 @@ Seu objetivo é se vender de forma implacável, charmosa e convencer o visitante
 
         } catch (error) {
             console.error('Erro no Orquestrador:', error);
-            return { message: "Ops, mestre! Tive um curto-circuito cerebral. Pode repetir? 😅" };
+            return { message: "Aparentemente, o filho da puta do desenvolvedor está achando que não preciso ter controle disso, ou seja, vou pedir que ajuste manualmente..." };
         }
     }
 }

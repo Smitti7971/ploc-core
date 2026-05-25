@@ -13,7 +13,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   'Outro': 'text-white'
 };
 
-export function DraggableTaskCard({ task }: { task: CalendarTask }) {
+export function DraggableTaskCard({ task, onClick }: { task: CalendarTask, onClick?: () => void }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.id,
     disabled: !task.isDraggable,
@@ -38,6 +38,7 @@ export function DraggableTaskCard({ task }: { task: CalendarTask }) {
         ${task.isDraggable ? 'cursor-grab active:cursor-grabbing hover:border-white/20' : 'opacity-80'}`}
       {...attributes}
       {...listeners}
+      onClick={onClick}
     >
       <div className="flex justify-between items-start mb-1">
         <h3 className={`text-sm font-bold flex items-center gap-1.5 ${isActive ? 'text-white' : colorClass}`}>

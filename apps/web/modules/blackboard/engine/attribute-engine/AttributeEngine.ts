@@ -29,8 +29,6 @@ class AttributeEngine {
 
   constructor() {
     this.init();
-    blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_EXPLODED, (bubble) => this.processExplosion(bubble));
-    blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_TIMEOUT, (bubble) => this.processTimeout(bubble));
   }
 
   private init() {
@@ -109,90 +107,7 @@ class AttributeEngine {
     }
   }
 
-  private processExplosion(bubble: any) {
-    if (bubble?.collided) return;
-    const gameMode = typeof window !== 'undefined' ? localStorage.getItem('ploc_game_mode') || 'decor' : 'decor';
-    if (gameMode === 'decor') {
-      return; // Ignore absolutely all attribute changes in decor mode!
-    }
-
-    const activeStage = typeof window !== 'undefined' ? localStorage.getItem('ploc_onboarding_stage') || 'priority' : 'priority';
-    const isOnboardingPhase1 = gameMode === 'onboarding_game' && activeStage !== 'fase2';
-
-    // Se for Onboarding Fase 1, computamos de forma segura de 1 em 1 ponto
-    if (isOnboardingPhase1) {
-      let pillar: keyof UserAttributes | null = bubble.pillar || null;
-      // Forçamos o valor do ponto para no máximo 1 (positivo ou negativo)
-      let diff = bubble.value === 'negative' ? -1 : 1;
-
-      if (pillar) {
-        // Aplica o ponto com limite estrito de 0 a 10
-        this.attributes[pillar] = Math.max(0, Math.min(10, this.attributes[pillar] + diff));
-        this.save();
-        blackboardEventBus.emit(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, {
-          pillar,
-          value: this.attributes[pillar],
-          diff
-        });
-      }
-      return;
-    }
-
-    // ── 1. SE A BOLHA POSSUI EFEITOS MULTIDIMENSIONAIS (FASE 2) ──
-    if (bubble.impacts) {
-      const impacts = bubble.impacts;
-      const pillarsList: Array<keyof UserAttributes> = ['corpo', 'mente', 'vida', 'liberdade', 'proposito'];
-      pillarsList.forEach(p => {
-        const val = impacts[p] || 0;
-        if (val !== 0) {
-          this.attributes[p] = Math.max(0, Math.min(10, this.attributes[p] + val));
-          blackboardEventBus.emit(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, {
-            pillar: p,
-            value: this.attributes[p],
-            diff: val
-          });
-        }
-      });
-      this.save();
-      return;
-    }
-
-    // ── 2. SE NÃO POSSUI IMPACTS (FASE 1 OU OUTROS CASOS) ──
-    let pillar: keyof UserAttributes | null = bubble.pillar || null;
-    let diff = typeof bubble.points === 'number' ? bubble.points : 1;
-
-    // Fallback de metadados
-    if (bubble.metadata?.pillar) {
-      pillar = bubble.metadata.pillar;
-    }
-    if (typeof bubble.metadata?.value === 'number') {
-      diff = bubble.metadata.value;
-    }
-
-    if (pillar) {
-      this.attributes[pillar] = Math.max(0, Math.min(10, this.attributes[pillar] + diff));
-      this.save();
-      blackboardEventBus.emit(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, {
-        pillar,
-        value: this.attributes[pillar],
-        diff
-      });
-      return;
-    }
-
-    // Recompensa genérica
-    this.updateScore(10);
-  }
-
-  private processTimeout(bubble: any) {
-    const gameMode = typeof window !== 'undefined' ? localStorage.getItem('ploc_game_mode') || 'decor' : 'decor';
-    if (gameMode === 'decor' || gameMode === 'onboarding_game') {
-      return; // Ignore absolutely all attribute changes in decor and onboarding game mode!
-    }
-    this.updateScore(-5); // Perda por distração
-    const pillars: Array<keyof UserAttributes> = ['corpo', 'mente', 'vida', 'liberdade', 'proposito'];
-    pillars.forEach(p => this.updateAttribute(p, -1));
-  }
+  // A lógica de processamento de bolhas foi removida temporariamente a pedido do usuário
 
   private updateScore(diff: number) {
     this.score = Math.max(0, this.score + diff);
@@ -243,39 +158,7 @@ class AttributeEngine {
     }
   }
 
-  getBubbleImpact(bubble: any, status: string): Record<string, number> {
-    const impacts: Record<string, number> = {};
-    const s = status.toLowerCase().trim();
-    const t = (bubble.type || '').toLowerCase().trim();
-
-    if (s === 'success' || s === 'resisted') {
-      if (t === 'routine') {
-        const habit = bubble.metadata?.habit;
-        if (habit === 'smoking') {
-          impacts['corpo'] = 5;
-          impacts['liberdade'] = 3;
-        } else {
-          impacts['mente'] = 2;
-          impacts['corpo'] = 2;
-        }
-      } else {
-        impacts['mente'] = 1;
-      }
-    } else if (s === 'failed' || s === 'gave_up') {
-      impacts['corpo'] = -1;
-      impacts['mente'] = -1;
-      impacts['vida'] = -1;
-      impacts['liberdade'] = -1;
-      impacts['proposito'] = -1;
-    }
-
-    // Garantia final
-    if (Object.keys(impacts).length === 0 && (s === 'success' || s === 'resisted')) {
-      impacts['mente'] = 1;
-    }
-
-    return impacts;
-  }
+  // Função de cálculo de impactos de bolha removida.
 
   getAttributes() {
     return this.attributes;

@@ -14,7 +14,7 @@ export const VICES = [
 
 export function LibertesseScreen() {
   const [selectedViceId, setSelectedViceId] = useState<string | null>(null);
-  const { activeVice, setActiveVice, logs } = useViceStore();
+  const { activeVices, setActiveVice, removeActiveVice, logs } = useViceStore();
   const [now, setNow] = useState<number | null>(null);
 
   React.useEffect(() => {
@@ -30,16 +30,14 @@ export function LibertesseScreen() {
     setSelectedViceId(viceId);
   };
 
-  const handleStop = () => {
-    setActiveVice(null);
-  };
-
   const getTimeActiveText = (viceId: string) => {
     if (!now) return null;
-    if (!activeVice || activeVice.viceId !== viceId) return null;
-    const startLog = [...logs].reverse().find(l => l.viceId === viceId && l.type === 'start');
-    if (!startLog) return null;
-    const diffSeconds = Math.floor((now - startLog.timestamp) / 1000);
+    const activeVice = activeVices[viceId];
+    if (!activeVice || !activeVice.startTime) return null;
+    
+    const diffSeconds = Math.floor((now - activeVice.startTime) / 1000);
+    if (diffSeconds < 0) return '0m';
+    
     const d = Math.floor(diffSeconds / 86400);
     const h = Math.floor((diffSeconds % 86400) / 3600);
     const m = Math.floor((diffSeconds % 3600) / 60);
@@ -49,18 +47,16 @@ export function LibertesseScreen() {
   };
 
   return (
-    <div className="flex-1 min-h-0 w-full px-4 overflow-y-auto pb-10 scrollbar-hide">
+    <div className="w-full px-4 pb-6">
       <div className="mb-6 mt-2">
         <h2 className="text-xl font-black text-white mb-2 tracking-widest">LIBERTESSE</h2>
         <p className="text-slate-400 text-sm font-medium">Acompanhe, diminua ou pare com vícios que limitam sua liberdade.</p>
       </div>
 
-
-
       <div className="flex flex-col gap-4">
         {VICES.map((vice) => {
           const Icon = vice.icon;
-          const isActive = activeVice?.viceId === vice.id;
+          const isActive = !!activeVices[vice.id];
 
           return (
             <motion.div

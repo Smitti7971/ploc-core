@@ -19,8 +19,10 @@ export const toISODate = (date: Date) => {
 export const getWeekDays = (baseDate: Date) => {
   const week = [];
   const startOfWeek = new Date(baseDate);
-  // Defaulting to Sunday as first day of the week
-  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+  // Defaulting to Monday as first day of the week
+  const day = startOfWeek.getDay();
+  const diff = day === 0 ? 6 : day - 1; // if Sunday, go back 6 days. Otherwise, go back (day - 1) days.
+  startOfWeek.setDate(startOfWeek.getDate() - diff);
   startOfWeek.setHours(0, 0, 0, 0);
 
   for (let i = 0; i < 7; i++) {
@@ -39,18 +41,28 @@ export const getWeekDays = (baseDate: Date) => {
 };
 
 // Nova função para carrossel infinito do Dia
-export const getSurroundingDays = (centerDate: Date, range: number = 3) => {
+export const getSurroundingDays = (centerDate: Date, pastWeeks: number = 4, futureWeeks: number = 4) => {
   const days = [];
-  for (let i = -range; i <= range; i++) {
-    const d = new Date(centerDate);
+  const startOfWeek = new Date(centerDate);
+  const day = startOfWeek.getDay();
+  const diff = day === 0 ? 6 : day - 1; // Monday as first day
+  startOfWeek.setDate(startOfWeek.getDate() - diff);
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const pastDays = pastWeeks * 7;
+  const totalDays = (pastWeeks + 1 + futureWeeks) * 7;
+
+  for (let i = -pastDays; i < totalDays - pastDays; i++) {
+    const d = new Date(startOfWeek);
     d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() + i);
+    d.setDate(startOfWeek.getDate() + i);
     days.push({
       dateObj: d,
       dateStr: toISODate(d),
       dayName: getLocalizedDayName(d),
       dateNum: d.getDate(),
-      isToday: d.toDateString() === new Date().toDateString()
+      isToday: d.toDateString() === new Date().toDateString(),
+      isMonday: d.getDay() === 1
     });
   }
   return days;
@@ -61,8 +73,9 @@ export const getMonthDays = (baseDate: Date) => {
   const startOfMonth = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
   const endOfMonth = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0);
 
-  // Pad start with previous month days to align to Sunday
-  const startPadding = startOfMonth.getDay();
+  // Pad start with previous month days to align to Monday
+  const startDay = startOfMonth.getDay();
+  const startPadding = startDay === 0 ? 6 : startDay - 1;
   for (let i = startPadding - 1; i >= 0; i--) {
     const d = new Date(startOfMonth);
     d.setDate(startOfMonth.getDate() - (i + 1));
@@ -76,7 +89,8 @@ export const getMonthDays = (baseDate: Date) => {
   }
 
   // Pad end to complete the last week
-  const endPadding = 6 - endOfMonth.getDay();
+  const endDay = endOfMonth.getDay();
+  const endPadding = endDay === 0 ? 0 : 7 - endDay;
   for (let i = 1; i <= endPadding; i++) {
     const d = new Date(endOfMonth);
     d.setDate(endOfMonth.getDate() + i);

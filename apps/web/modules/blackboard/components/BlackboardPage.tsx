@@ -7,28 +7,11 @@
  * a interação com o mascote virtual.
  */
 
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 import { PlocAvatarClient } from '@/components/mascot/PlocAvatarClient';
-import {
-  Settings,
-  LogOut,
-  Maximize2,
-  Minimize2,
-  Grid3X3,
-  Plus,
-  Target,
-  Clock,
-  Brain,
-  Activity as ActivityIcon,
-  Sparkles,
-  HelpCircle,
-  ChevronRight,
-  Map,
-  ZoomIn,
-  ZoomOut
-} from 'lucide-react';
+import { Target, ZoomIn, ZoomOut, Plus, Map, Grid3X3, Activity as ActivityIcon } from 'lucide-react';
 import { motion, AnimatePresence, useMotionValue, useTransform, useMotionValueEvent, animate } from 'framer-motion';
 import { DockMenu } from '@/components/layout/DockMenu';
 
@@ -37,13 +20,10 @@ import { bubbleEngine } from '../engine/bubble-engine/BubbleEngine';
 import { BlackboardBubble } from '../types/bubbles';
 import { blackboardEventBus, BLACKBOARD_EVENTS } from '../events/eventBus';
 import { ViceBubble } from '../../dashboard/components/libertesse/components/ViceBubble';
-import { routineEngine } from '../engine/routine-engine/RoutineEngine';
 import { attributeEngine } from '../engine/attribute-engine/AttributeEngine';
-import { plocEngine } from '../engine/ploc-engine/PlocEngine';
 
 // Components extraídos
 import { BlackboardStickyNote } from './BlackboardStickyNote';
-import { BlackboardBubbleItem } from './BlackboardBubbleItem';
 
 import { AmbientGlowBackground } from '../../landing/particles/AmbientGlowBackground';
 import { Vignette } from '../../landing/particles/Vignette';
@@ -60,21 +40,9 @@ interface StickyNote {
 
 const NOTE_COLORS = ['', 'note-blue', 'note-green', 'note-pink', 'note-purple'] as const;
 
-const BUBBLE_COLORS: Record<string, string> = {
-  task: '#ef4444',       // Corpo
-  knowledge: '#38bdf8',  // Mente
-  insight: '#facc15',    // Vida
-  routine: '#2dd4bf',    // Liberdade
-  bright_idea: '#c084fc', // Propósito
-  work: '#3b82f6',
-  study: '#a855f7',
-  health: '#10b981',
-  personal: '#f59e0b',
-  outward: '#ef4444'     // Hábito/Cigarro
-};
 
 export default function BlackboardPage() {
-  const { user, token, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const router = useRouter();
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -99,44 +67,38 @@ export default function BlackboardPage() {
   }, [isHydrated, user, router]);
 
   const [notes, setNotes] = useState<StickyNote[]>([]);
-  const [capsuleOpen, setCapsuleOpen] = useState(false);
-  const [isFullScreen, setIsFullScreen] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
   const [showMinimap, setShowMinimap] = useState(false);
   const [showAttributes, setShowAttributes] = useState(false);
   const scale = 1; // Constante mantida para compatibilidade visual dos filhos
-  const [bubbles, setBubbles] = useState<BlackboardBubble[]>([]);
-  const [viewMode, setViewMode] = useState<'free' | '1h' | 'day' | 'week' | 'month'>('day');
-  const [lastCompleted, setLastCompleted] = useState<string | null>(null);
   const [plocReaction, setPlocReaction] = useState<'idle' | 'happy' | 'stressed' | 'dizzy'>('idle');
   const [score, setScore] = useState(attributeEngine.getScore());
   const [showFocusInfo, setShowFocusInfo] = useState(false);
-  const [selectedBubble, setSelectedBubble] = useState<BlackboardBubble | null>(null);
-  const [interactionNote, setInteractionNote] = useState('');
 
   // Janela de tempo baseada no modo de visualização
-  const getWindowMinutes = useCallback(() => {
-    switch (viewMode) {
-      case '1h': return 60;
-      case 'day': return 1440;
-      case 'week': return 10080;
-      case 'month': return 43200;
-      default: return 60;
-    }
-  }, [viewMode]);
 
-  const windowMinutes = getWindowMinutes();
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [plocState, setPlocState] = useState(plocEngine.getState());
+  const [plocState] = useState<{ emotion: string, energy: number, lastAction: string }>({ emotion: 'calm', energy: 50, lastAction: 'none' });
   const [plocMessage, setPlocMessage] = useState<string | null>(null);
 
-  const [activeWaves, setActiveWaves] = useState<{ id: number; x: number; y: number; color: string }[]>([]);
 
   const mapX = useMotionValue(0);
   const mapY = useMotionValue(0);
   const mapScale = useMotionValue(1);
+
+  // --- RESPONSIVE ZOOM FOR MOBILE ---
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) {
+        // Ajusta o zoom inicial no Mobile para caber a bolha do Ploc inteira (500px + margem)
+        const idealScale = window.innerWidth / 550;
+        mapScale.set(Math.min(idealScale, 0.70));
+      }
+    }
+  }, [mapScale]);
 
   // --- PINCH TO ZOOM LOGIC ---
   const initialPinchDist = useRef<number | null>(null);
@@ -166,10 +128,10 @@ export default function BlackboardPage() {
       const dist = getPinchDistance(e);
       const scaleChange = dist / initialPinchDist.current;
       let newScale = initialScale.current * scaleChange;
-      
+
       if (newScale < 0.2) newScale = 0.2;
       if (newScale > 3) newScale = 3;
-      
+
       mapScale.set(newScale);
     }
   };
@@ -181,21 +143,22 @@ export default function BlackboardPage() {
   };
 
   // === LÓGICA DE CONSUMO ATIVO (LIBERTESSE) ===
-  const { activeVice, endConsumption, cancelConsumption } = useViceStore();
+  const { activeVices, endConsumption, cancelConsumption } = useViceStore();
+  const activeConsumingVice = Object.values(activeVices).find(v => v.isConsuming);
   const [consumptionElapsed, setConsumptionElapsed] = useState(0);
   const { speak } = usePlocSpeech();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (activeVice?.isConsuming && activeVice.consumptionStartTime) {
+    if (activeConsumingVice?.isConsuming && activeConsumingVice.consumptionStartTime) {
       interval = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - activeVice.consumptionStartTime!) / 1000);
+        const elapsed = Math.floor((Date.now() - activeConsumingVice.consumptionStartTime!) / 1000);
         setConsumptionElapsed(elapsed);
 
         // Auto-encerra quando zera o cronômetro
-        const limit = activeVice.defaultConsumptionSeconds || 300;
+        const limit = 300; // Fixo em 5 minutos
         if (elapsed >= limit) {
-          endConsumption(elapsed);
+          endConsumption(activeConsumingVice.viceId, elapsed);
         }
       }, 1000);
     } else {
@@ -203,7 +166,7 @@ export default function BlackboardPage() {
       return () => clearTimeout(timeout);
     }
     return () => clearInterval(interval);
-  }, [activeVice?.isConsuming, activeVice?.consumptionStartTime, activeVice?.defaultConsumptionSeconds, endConsumption]);
+  }, [activeConsumingVice?.isConsuming, activeConsumingVice?.consumptionStartTime, activeConsumingVice?.defaultConsumptionSeconds, activeConsumingVice?.viceId, endConsumption]);
 
   const formatConsumingTime = (seconds: number) => {
     const absSeconds = Math.abs(seconds);
@@ -211,7 +174,7 @@ export default function BlackboardPage() {
     const s = absSeconds % 60;
     return `${seconds < 0 ? '+' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
-  const activeSecondsRemaining = (activeVice?.defaultConsumptionSeconds || 300) - consumptionElapsed;
+  const activeSecondsRemaining = 300 - consumptionElapsed;
   // ============================================
   const [minScale, setMinScale] = useState(0.25);
 
@@ -294,13 +257,6 @@ export default function BlackboardPage() {
   // Então scale 1.5 = w-24 h-24, scale minScale = w-8 h-8
   const miniViewportSize = useTransform(mapScale, [1.5, minScale], [24, 8]);
 
-  const addWave = (x: number, y: number, color: string) => {
-    const id = Date.now() + Math.random();
-    setActiveWaves(prev => [...prev, { id, x, y, color }]);
-    setTimeout(() => {
-      setActiveWaves(prev => prev.filter(w => w.id !== id));
-    }, 2000);
-  };
 
   useEffect(() => {
     const unsubscribe = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, (change: { pillar: string; value: number }) => {
@@ -311,9 +267,6 @@ export default function BlackboardPage() {
     // Reações do Ploc a eventos das bolhas
     const unsubscribeTimeout = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_TIMEOUT, (bubble: BlackboardBubble) => {
       setPlocReaction('dizzy');
-      if (bubble && typeof bubble.x === 'number') {
-        addWave(bubble.x, bubble.y, '#ef4444'); // Vermelho para perda
-      }
       setTimeout(() => setPlocReaction('idle'), 2000);
     });
 
@@ -321,10 +274,6 @@ export default function BlackboardPage() {
       if (bubble?.collided) return;
       const isNegative = bubble && bubble.value === 'negative';
       setPlocReaction(isNegative ? 'dizzy' : 'happy');
-      if (bubble && typeof bubble.x === 'number') {
-        const color = isNegative ? '#ef4444' : '#00ff88'; // Vermelho para negativas, verde neon para positivas
-        addWave(bubble.x, bubble.y, color);
-      }
       setTimeout(() => setPlocReaction('idle'), 1500);
     });
 
@@ -391,36 +340,22 @@ export default function BlackboardPage() {
   const updateNotePosition = (id: number, x: number, y: number) =>
     saveNotes(notes.map((n) => (n.id === id ? { ...n, x, y } : n)));
 
-  const toggleFullScreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => { });
-      setIsFullScreen(true);
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen().catch(() => { });
-      }
-      setIsFullScreen(false);
-    }
-  };
+
 
   // Bubble Engine Subscription & Event Listeners
   useEffect(() => {
-    const unsubscribe = bubbleEngine.subscribe(setBubbles);
+    const unsubscribe = bubbleEngine.subscribe(() => {});
 
     const onExplode = (bubble: BlackboardBubble & { collided?: boolean; value?: string }) => {
       if (bubble?.collided) return;
-      setLastCompleted(bubble.content);
       setPlocReaction('happy');
-      addWave(bubble.x, bubble.y, 'rgba(34, 197, 94, 0.6)'); // Onda Verde (Sucesso)
       setTimeout(() => {
-        setLastCompleted(null);
         setPlocReaction('idle');
       }, 3000);
     };
 
-    const onTimeout = (bubble: BlackboardBubble) => {
+    const onTimeout = () => {
       setPlocReaction('dizzy');
-      addWave(4000, 4000, 'rgba(239, 68, 68, 0.6)'); // Onda Vermelha (Colisão no Centro)
       setTimeout(() => {
         setPlocReaction('idle');
       }, 3000);
@@ -429,36 +364,20 @@ export default function BlackboardPage() {
     blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_EXPLODED, onExplode);
     blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_TIMEOUT, onTimeout);
 
-    const unsubPloc = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, setPlocState);
-    const unsubReaction = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.PLOC_REACTION, (reaction: { type: string; message?: string }) => {
-      setPlocReaction(reaction.type.toLowerCase() as 'idle' | 'happy' | 'stressed' | 'dizzy');
-      if (reaction.message) {
-        setPlocMessage(reaction.message);
+    const unsubReaction = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.PLOC_REACTION, (data: { message?: string }) => {
+      setPlocMessage(data.message || null);
+      if (data.message) {
         setTimeout(() => setPlocMessage(null), 4000);
       }
-      setTimeout(() => setPlocReaction('idle'), 4000);
     });
 
     return () => {
       unsubscribe();
-      unsubPloc();
       unsubReaction();
     };
   }, []);
 
 
-
-  const spawnRandomAttributeBubble = () => {
-    const types = [
-      { attr: 'corpo', content: 'Treino Intenso 🏋️‍♂️', type: 'routine' },
-      { attr: 'vida', content: 'Tempo em Família 🏠', type: 'routine' },
-      { attr: 'liberdade', content: 'Momento Offline 🌲', type: 'routine' },
-      { attr: 'proposito', content: 'Trabalho com Significado 🎯', type: 'work' },
-      { attr: 'mente', content: 'Estudo Profundo 📚', type: 'study' }
-    ];
-    const pick = types[Math.floor(Math.random() * types.length)];
-    bubbleEngine.spawnBubble(pick.type as BlackboardBubble['type'], pick.content, 10, { rewardAttribute: pick.attr });
-  };
 
   return (
     <div
@@ -540,7 +459,7 @@ export default function BlackboardPage() {
                 >
                   {/* A BOLHA DO PLOC (SONAR DE 500px) */}
                   <motion.div
-                    animate={!activeVice?.isConsuming ? {
+                    animate={!activeConsumingVice?.isConsuming ? {
                       scaleX: [1, 1.03, 0.97, 1],
                       scaleY: [1, 0.97, 1.03, 1],
                       borderRadius: [
@@ -563,7 +482,7 @@ export default function BlackboardPage() {
                     }}
                   >
                     {/* EFEITO SONAR NORMAL */}
-                    {!activeVice?.isConsuming && (
+                    {!activeConsumingVice?.isConsuming && (
                       <>
                         <motion.div
                           animate={{ scale: [1, 1.05, 1], opacity: [0.3, 0.6, 0.3] }}
@@ -585,13 +504,13 @@ export default function BlackboardPage() {
                   <div className="pointer-events-auto z-10">
                     <PlocAvatarClient
                       draggable={false}
-                      emotion={activeVice?.isConsuming ? 'dizzy' : (plocState.emotion === 'calm' ? (plocReaction === 'idle' ? 'calm' : plocReaction as 'calm' | 'happy' | 'stressed' | 'pissed' | 'sleeping' | 'dizzy') : plocState.emotion as 'calm' | 'happy' | 'stressed' | 'pissed' | 'sleeping' | 'dizzy')}
+                      emotion={activeConsumingVice?.isConsuming ? 'dizzy' : (plocState.emotion === 'calm' ? (plocReaction === 'idle' ? 'calm' : plocReaction as 'calm' | 'happy' | 'stressed' | 'pissed' | 'sleeping' | 'dizzy') : plocState.emotion as 'calm' | 'happy' | 'stressed' | 'pissed' | 'sleeping' | 'dizzy')}
                     />
                   </div>
 
                   {/* FUMAÇA E UI DO CONSUMO ATIVO */}
                   <AnimatePresence>
-                    {activeVice?.isConsuming && (
+                    {activeConsumingVice?.isConsuming && (
                       <motion.div
                         className="absolute inset-0 z-20 pointer-events-none"
                         initial={{ opacity: 0 }}
@@ -611,7 +530,7 @@ export default function BlackboardPage() {
                           <div className="flex gap-2">
                             <button
                               onClick={() => {
-                                cancelConsumption();
+                                cancelConsumption(activeConsumingVice.viceId);
                                 speak("Essa é a melhor escolha que fez!!", 4000);
                               }}
                               className="bg-zinc-700/80 hover:bg-zinc-600 text-white font-bold px-4 py-2.5 rounded-xl text-[0.55rem] tracking-widest transition-colors shadow-lg whitespace-nowrap backdrop-blur-md"
@@ -619,7 +538,7 @@ export default function BlackboardPage() {
                               REVERTER
                             </button>
                             <button
-                              onClick={() => endConsumption(consumptionElapsed)}
+                              onClick={() => endConsumption(activeConsumingVice.viceId, consumptionElapsed)}
                               className="bg-red-500 hover:bg-red-600 text-white font-black px-5 py-2.5 rounded-xl text-[0.6rem] tracking-widest transition-colors shadow-lg whitespace-nowrap"
                             >
                               FINALIZAR
@@ -648,8 +567,16 @@ export default function BlackboardPage() {
                   )}
                 </AnimatePresence>
 
-                {/* Bolha de Pensamento do Libertesse (Controle de Vícios) */}
-                <ViceBubble canvasScale={scale} />
+                {/* Bolhas de Pensamento do Libertesse (Controle de Vícios) */}
+                {Object.keys(activeVices).map((viceId, index) => (
+                  <ViceBubble
+                    key={viceId}
+                    viceId={viceId}
+                    canvasScale={scale}
+                    index={index}
+                    total={Object.keys(activeVices).length}
+                  />
+                ))}
 
 
               </div>
@@ -680,7 +607,6 @@ export default function BlackboardPage() {
           key={score}
           onClick={() => {
             setShowAttributes(false);
-            setSelectedBubble(null);
             setShowFocusInfo(true);
           }}
           initial={{ x: -20, opacity: 0 }}
@@ -770,7 +696,6 @@ export default function BlackboardPage() {
               const newState = !showAttributes;
               if (newState) {
                 setShowFocusInfo(false);
-                setSelectedBubble(null);
               }
               setShowAttributes(newState);
             }}
@@ -827,8 +752,6 @@ export default function BlackboardPage() {
 
       {/* ── Menu de Navegação Global (Dock) ────────────────── */}
       <DockMenu />
-
-
       <AnimatePresence>
         {showAttributes && (
           <motion.div

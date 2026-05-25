@@ -9,9 +9,10 @@ interface WeekViewProps {
   allEvents: CalendarTask[];
   onMoveTask: (taskId: string, newDateStr: string) => void;
   onOpenTaskModal: (dateStr: string) => void;
+  onTaskClick?: (task: CalendarTask) => void;
 }
 
-export function WeekView({ baseDate, allEvents, onMoveTask, onOpenTaskModal }: WeekViewProps) {
+export function WeekView({ baseDate, allEvents, onMoveTask, onOpenTaskModal, onTaskClick }: WeekViewProps) {
   const weekDays = getWeekDays(baseDate);
 
   // Sensores para DND que ignoram cliques normais (permite rolar no touch)
@@ -48,6 +49,7 @@ export function WeekView({ baseDate, allEvents, onMoveTask, onOpenTaskModal }: W
               isToday={day.isToday}
               tasks={dayTasks}
               onAddClick={() => onOpenTaskModal(day.dateStr)}
+              onTaskClick={onTaskClick}
             />
           );
         })}

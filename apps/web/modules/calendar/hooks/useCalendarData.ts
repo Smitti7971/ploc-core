@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useViceStore } from '../../dashboard/components/libertesse/store/viceStore';
 import { useCalendarStore, CalendarTask } from '../store/calendarStore';
 import { toISODate } from '../utils/dateUtils';
@@ -10,9 +10,23 @@ const LOG_META: Record<string, { title: string, category: string, color: string 
   expense: { title: 'Gasto', category: 'Libertesse', color: 'text-amber-400' },
 };
 
+const VICES_MAP: Record<string, string> = {
+  tabagismo: 'TABAGISMO',
+  alcoolismo: 'ALCOOLISMO',
+  drogas: 'DROGAS',
+  pornografia: 'PORNOGRAFIA',
+  personalizado: 'PERSONALIZADO'
+};
+
 export const useCalendarData = () => {
-  const { logs, activeVice } = useViceStore();
-  const { tasks, addTask, updateTask, deleteTask, moveTaskToDate } = useCalendarStore();
+  const { logs, activeVices, fetchVices } = useViceStore();
+  const { tasks, fetchTasks, addTask, updateTask, deleteTask, moveTaskToDate } = useCalendarStore();
+
+  // Load data if not loaded
+  useEffect(() => {
+    fetchVices();
+    fetchTasks();
+  }, [fetchVices, fetchTasks]);
 
   const allEvents = useMemo(() => {
     const events: CalendarTask[] = [];
@@ -22,6 +36,11 @@ export const useCalendarData = () => {
       const meta = LOG_META[log.type] || { title: 'Evento', category: 'Libertesse', color: 'text-white' };
       const d = new Date(log.timestamp);
       
+      const customName = activeVices[log.viceId]?.customName;
+      const viceName = log.viceId === 'personalizado' && customName 
+        ? customName 
+        : VICES_MAP[log.viceId] || 'LIBERTESSE';
+
       let description = '';
       if (log.type === 'consumption') {
         description = log.durationSeconds ? `Duração: ${log.durationSeconds}s` : 'Consumo rápido';
@@ -34,7 +53,7 @@ export const useCalendarData = () => {
 
       events.push({
         id: `log_${log.id}`,
-        title: meta.title,
+        title: `[${viceName}] ${meta.title}`,
         description,
         dateStr: toISODate(d),
         timeStr: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -51,32 +70,53 @@ export const useCalendarData = () => {
     });
 
     // 3. Adicionar Consumo Ativo se houver
-    if (activeVice?.isConsuming && activeVice.consumptionStartTime) {
-      const now = new Date();
-      events.push({
-        id: 'active_consumption_now',
-        title: 'Consumindo Agora',
-        description: activeVice.currentMotivator ? `Motivo: ${activeVice.currentMotivator}` : 'Cronômetro rodando...',
-        dateStr: toISODate(now),
-        timeStr: 'Agora',
-        color: 'text-sky-400',
-        isDraggable: false,
-        status: 'active',
-        category: 'Libertesse'
-      });
-    }
+    Object.values(activeVices).forEach(activeVice => {
+      const viceName = activeVice.viceId === 'personalizado' && activeVice.customName
+        ? activeVice.customName
+        : VICES_MAP[activeVice.viceId] || 'LIBERTESSE';
+        
+      if (activeVice.isConsuming && activeVice.consumptionStartTime) {
+        const now = new Date();
+
+        events.push({
+          id: `active_consumption_${activeVice.viceId}`,
+          title: `[${viceName}] Consumindo Agora`,
+          description: activeVice.currentMotivator ? `Motivo: ${activeVice.currentMotivator}` : 'Cronômetro rodando...',
+          dateStr: toISODate(now),
+          timeStr: 'Agora',
+          color: 'text-sky-400',
+          isDraggable: false,
+          status: 'active',
+          category: 'Libertesse'
+        });
+      } else {
+        // Evento genérico para indicar que o vício está sendo monitorado hoje
+        const today = new Date();
+        events.push({
+          id: `tracking_${activeVice.viceId}_${toISODate(today)}`,
+          title: `[${viceName}] Monitoramento Ativo`,
+          description: activeVice.mode === 'diminua' ? 'Desafio de redução em andamento' : 'Acompanhamento de uso',
+          dateStr: toISODate(today),
+          timeStr: new Date(activeVice.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          color: 'text-emerald-400/70',
+          isDraggable: false,
+          status: 'pending',
+          category: 'Libertesse'
+        });
+      }
+    });
 
     return events;
-  }, [logs, activeVice, tasks]);
+  }, [logs, activeVices, tasks]);
 
   const getEventsByDate = (dateStr: string) => {
     return allEvents.filter(e => e.dateStr === dateStr).sort((a, b) => {
-      // Sort active first, then by time, then by title
+      // Ordena 'active' primeiro, depois por tempo decrescente (mais recente no topo)
       if (a.status === 'active') return -1;
       if (b.status === 'active') return 1;
-      const timeA = a.timeStr || '23:59';
-      const timeB = b.timeStr || '23:59';
-      return timeA.localeCompare(timeB);
+      const timeA = a.timeStr || '00:00';
+      const timeB = b.timeStr || '00:00';
+      return timeB.localeCompare(timeA);
     });
   };
 

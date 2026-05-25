@@ -61,11 +61,6 @@ Este documento serve como repositório para a visão criativa do PLOC, garantind
 
 ---
 
-## 🛠️ Infraestrutura e Manutenção
-- **Mecanismo de Cache Automático (Cache Busting)**: Implementado na v0.0.9 via query strings dinâmicas (`?v=N.N.N`) e política de `no-store` no Nginx. ✅
-
-
----
 
 ## 🚀 Funcionalidades Premium (High-End)
 - **Modo Flutuante (Picture-in-Picture)**: Janela flutuante do Ploc que fica sobre outros apps (Desktop) para assistência contínua.
@@ -129,18 +124,6 @@ Este documento serve como repositório para a visão criativa do PLOC, garantind
 
 ---
 
-## 🫧 Painel Hidráulico de Atmosferas (Atmos Control Hub)
-- **Evolução da Cápsula de Frequência**: 
-    - O botão flutuante monocromático do canto direito serve de portal para a "Física da Tela".
-    - **Expansão Líquida**: Ao segurar o botão de frequência por 1.5 segundos, ele se expande em um lindo painel glassmórfico de controle.
-    - **Transição de Elementos**: Permite ao usuário trocar o tipo de partícula que preenche e flutua no fundo do aplicativo:
-        - *Bolhas de Sabão* (Clássico - colisão e estouros caricatos).
-        - *Folhas de Outono* (Relaxante - física de balanço lateral com vento, acumulando no rodapé da tela).
-        - *Partículas de Fogo* (Energizante - flutuação rápida com faíscas que se desfazem na gravidade).
-        - *Estrelas Cadentes* (Foco Noturno - linhas rápidas horizontais e diagonais).
-    - **Sintonia de Áudio Correspondente**: Cada atmosfera traz efeitos sonoros correspondentes sintetizados na Web Audio API em tempo real (som de folhas secas ao tocar nelas, estalos de madeira ao estourar fogo, etc.).
-
----
 
 ## 🎚️ Console Central de Estados (Central Status Console)
 *Visível apenas em Desktop por questões de espaço*
@@ -202,3 +185,34 @@ O sistema identifica automaticamente a rotina ou ferramenta que o usuário está
 ** só para conhecimento, FUTURAMENTE vou colocar a personalidade de cada ploc como se fosse algo randomico, ou seja, cada usuário quando cadastrar uma conta, vai seguir com o onboardin, e criar a base para fazer o lvl inicial do personagem. (Os status serão inseridos de acordo com as respostas no onboarding) porém, o ploc deve dar a impressão de ser uma outra entidade, vou colocar ele com humores randomicos. Ele vai ter um humor fixo, uma historinha de vida (baseada no onboarding, para tentar ser o mais proximo do usuário) e um Hobbie (que será meio que correlacionado com o user, mas não o mesmo, isso seria para insentivar o usuário a sair da BOLHA dele)
 
 *Documento em constante evolução. Registre aqui antes de codar.*
+
+
+7. **LIBERTESSE**
+    - Simples Mudança em Libertesse, ao ficar verde o ato de fumar, já sinaliza que está fumando e aparece a opção de fumar...
+    - Isso vai fazer com que o registro seja rapido, dois botões, um de Seguir e outro de PEnsar bem, Caso o usuário, pare os 5 minutos para fumar, fica registrado, Caso ele retorne, o Tempo volta... nesse estado podemos colocar um input que será opcional...  (descreva o que te fez ceder ao impulso para que eu possa entender melhor o que fazer...) 
+
+8. **BOLHAS DESBLOQUEAVEIS**
+    - Qual Planos de Bolhas completos para tipos especificos de pillar, que ficam ao lado das bolhas do ploc, mas apenas com os icones, e para ter acesso a elas, o usuário terá que assinar um premium ou comprar com os pontos de foco...
+    - No Mapa ficam Bolhas de aprendizados especificos, TAREFAS (que ficam voando de um lado para o outro, essas bolhas dão premios simples ao estouralas), Como Habilidades para o PLOC, skins e Tarefas únicas... Como Circuitos de treino com videos, humores do PLOC, Iténs de desbloqueio de personalidade do PLOC.
+
+9. **Sinais de necessidades dentro do APP**
+    - Botões que mostram se há algum tipo de pendencia ou alerta dentro do APP... como inserção de informação, promoções de produtos...
+
+10. **Comprar Produtos de afiliados**
+    - Como cursos e fazer esses cursos serem padronizados para nosso padrão de play.
+    
+11. **O Jogo é jogar a Vida**
+    - Cada Rotina escolhida, deve ter Etapas e precisa que respostas sejam feitas para o PLOC, para entender que está hapto para seguir para o novo tópico. 
+    - Pontos entregues para Balancear o pillares da vida, e isso que deve ser o Chamariz para termos como vender os cursos.
+
+ tO lASCADO COM ISSO, POR QUE PRECISO CRIAR UMA LOGICA QUE USE PARA REFLETIR COISAS BOAS, SEM QUE O USUÁRIO FAÇA APENAS UMA COISA QUE DÊ HABILIDADES.
+
+12. **LVL Baseado em dificuldade de tarefas**
+    - Leveis iniciais, ganham tarefas simples como (beber água, levanta e espreguiça, etc)
+    - Rotinas para serem desbloqueadas, o Player deve provar que saiu do Lvl 1 - Academia simples, Corrida simples, coisas simples!
+    - Deve ser algo muito simples, como se o USUÁRIO tivesse que provar ser merecedor de novas rotinas, prove para mim.
+    - Pontos de foco, demonstram que o usuário está hapto para adquirir uma nova rotina, por ter aguardado o tempo certo de uso.
+
+    
+    
+    

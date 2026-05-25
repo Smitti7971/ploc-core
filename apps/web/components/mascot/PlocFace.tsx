@@ -45,10 +45,18 @@ export function PlocFace({
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    setIsMobile(window.innerWidth < 768);
+    
+    // Adia a primeira verificação para evitar renderização em cascata síncrona
+    const timer = setTimeout(() => {
+      setIsMobile(window.innerWidth < 768);
+    }, 0);
+
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   // Variação de cores reativas baseadas no humor do Ploc (Azul Ploc vs Vermelho Ira/Dor)
@@ -137,7 +145,7 @@ export function PlocFace({
   // Escala de pupilas baseada em dor ou nível de raiva (constrição por estresse)
   let pupilScaleX = 1;
   let pupilScaleY = 1;
-  
+
   if (isHurt) {
     pupilScaleX = 0.5;
     pupilScaleY = 0.5;
@@ -301,23 +309,24 @@ export function PlocFace({
         );
       case 'spiral':
         return (
-          <g clipPath={`url(#eye-clip-${i})`}>
-            <motion.path
-              d="M 50 50 M 50 50 A 5 5 0 0 1 45 45 A 10 10 0 0 1 55 35 A 15 15 0 0 1 35 55 A 20 20 0 0 1 70 30"
-              fill="none"
-              stroke={lashColor}
-              strokeWidth="4"
-              strokeLinecap="round"
-              animate={{
-                rotate: 360,
-                scale: pupilScaleX,
-                y: isHurt ? 4 : (angerLevel === 5 ? 6 : 0),
-              }}
-              style={{ originX: "50px", originY: "50px" }}
-              transition={{
-                rotate: { duration: 2, repeat: Infinity, ease: "linear" }
-              }}
-            />
+          <g style={{ transformOrigin: '50px 50px', transform: 'scale(1.15)' }}>
+            <g>
+              <path
+                d="M 50 50 A 5 5 0 0 1 60 50 A 15 15 0 0 1 30 50 A 25 25 0 0 1 80 50 A 35 35 0 0 1 10 50"
+                fill="none"
+                stroke={lashColor}
+                strokeWidth="10"
+                strokeLinecap="round"
+              />
+              <animateTransform
+                attributeName="transform"
+                type="rotate"
+                from="0 50 50"
+                to="360 50 50"
+                dur="1.5s"
+                repeatCount="indefinite"
+              />
+            </g>
           </g>
         );
       case 'nerd':
@@ -325,9 +334,9 @@ export function PlocFace({
       default:
         return (
           <motion.rect
-            x="41"
+            x="30"
             y="30"
-            width="18"
+            width="32"
             height="32"
             rx="9"
             fill={pupilColor}
@@ -376,15 +385,15 @@ export function PlocFace({
               fill={isSpeaking ? "#3b0712" : "none"}
               animate={isSpeaking
                 ? {
-                    d: [
-                      "M 22 36 Q 40 18 58 36 Q 40 18 22 36 Z",
-                      "M 22 36 Q 40 18 58 36 Q 40 46 22 36 Z",
-                      "M 22 36 Q 40 18 58 36 Q 40 18 22 36 Z"
-                    ]
-                  }
+                  d: [
+                    "M 22 36 Q 40 18 58 36 Q 40 18 22 36 Z",
+                    "M 22 36 Q 40 18 58 36 Q 40 46 22 36 Z",
+                    "M 22 36 Q 40 18 58 36 Q 40 18 22 36 Z"
+                  ]
+                }
                 : {
-                    y: [0, 1.5, 0],
-                  }
+                  y: [0, 1.5, 0],
+                }
               }
               transition={isSpeaking ? { duration: 0.45, repeat: Infinity } : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
             />
@@ -582,11 +591,11 @@ export function PlocFace({
       case 'rage':
         return (
           <motion.div
-            style={{ 
-              width: '120%', 
-              height: '120%', 
-              display: 'flex', 
-              alignItems: 'center', 
+            style={{
+              width: '120%',
+              height: '120%',
+              display: 'flex',
+              alignItems: 'center',
               justifyContent: 'center',
               position: 'relative'
             }}
@@ -668,12 +677,12 @@ export function PlocFace({
               strokeLinejoin="round"
               animate={isSpeaking
                 ? {
-                    d: [
-                      "M 28 30 C 28 30, 40 30, 52 30 L 52 30 C 52 30, 40 30, 28 30 Z",
-                      "M 28 25 C 28 25, 40 22, 52 25 L 52 35 C 52 35, 40 38, 28 35 Z",
-                      "M 28 30 C 28 30, 40 30, 52 30 L 52 30 C 52 30, 40 30, 28 30 Z"
-                    ]
-                  }
+                  d: [
+                    "M 28 30 C 28 30, 40 30, 52 30 L 52 30 C 52 30, 40 30, 28 30 Z",
+                    "M 28 25 C 28 25, 40 22, 52 25 L 52 35 C 52 35, 40 38, 28 35 Z",
+                    "M 28 30 C 28 30, 40 30, 52 30 L 52 30 C 52 30, 40 30, 28 30 Z"
+                  ]
+                }
                 : {}
               }
               transition={isSpeaking ? { duration: 0.4, repeat: Infinity } : {}}
@@ -685,6 +694,7 @@ export function PlocFace({
 
   const isAlertEye = activeEyes === 'cute' || activeEyes === 'anime' || activeEyes === 'sparkle';
   const escleraScaleY = isSleeping ? 0.05 : (isAlertEye ? 1.25 : 1);
+  const isSpiral = activeEyes === 'spiral';
 
   return (
     <>
@@ -750,7 +760,7 @@ export function PlocFace({
                   </defs>
 
                   {/* Sobrancelha Superior Caída/Tired */}
-                  {!isSleeping && (
+                  {!isSleeping && !isSpiral && (
                     <motion.path
                       d="M 14 20 Q 50 24 86 20"
                       fill="none"
@@ -767,21 +777,23 @@ export function PlocFace({
                   )}
 
                   {/* Esclera Branca Interna */}
-                  <motion.path
-                    d="M 14 42 C 14 42, 50 42, 86 42 C 86 62, 72 76, 50 76 C 28 76, 14 62, 14 42 Z"
-                    fill="#ffffff"
-                    animate={{
-                      scaleY: escleraScaleY,
-                      originY: 0.32,
-                    }}
-                    transition={{ duration: 2.2, ease: "easeInOut" }}
-                  />
+                  {!isSpiral && (
+                    <motion.path
+                      d="M 14 42 C 14 42, 50 42, 86 42 C 86 62, 72 76, 50 76 C 28 76, 14 62, 14 42 Z"
+                      fill="#ffffff"
+                      animate={{
+                        scaleY: escleraScaleY,
+                        originY: 0.32,
+                      }}
+                      transition={{ duration: 2.2, ease: "easeInOut" }}
+                    />
+                  )}
 
                   {/* Renderizador de Pupila Personalizado */}
                   {!isSleeping && renderPupil(activeEyes, i)}
 
                   {/* Sombra da Pálpebra Superior */}
-                  {!isSleeping && (
+                  {!isSleeping && !isSpiral && (
                     <motion.path
                       d="M 14 42 C 14 42, 50 42, 86 42 C 86 52, 72 52, 50 52 C 28 52, 14 52, 14 42 Z"
                       fill={creaseColor}
@@ -796,7 +808,7 @@ export function PlocFace({
                   )}
 
                   {/* Sombra da Pálpebra Inferior */}
-                  {!isSleeping && (
+                  {!isSleeping && !isSpiral && (
                     <motion.path
                       d="M 14 64 C 14 64, 50 64, 86 64 C 86 64, 72 76, 50 76 C 28 76, 14 64, 14 64 Z"
                       fill="#000000"
@@ -810,7 +822,7 @@ export function PlocFace({
                   )}
 
                   {/* Sombreado das Olheiras */}
-                  {!isSleeping && (
+                  {!isSleeping && !isSpiral && (
                     <motion.path
                       d={`M ${20 + shiftX} 71 Q ${50 + shiftX} 77 ${80 + shiftX} 71 Q ${50 + shiftX} 150 ${20 + shiftX} 71 Z`}
                       fill={`url(#eye-bag-grad-${i})`}
@@ -823,7 +835,7 @@ export function PlocFace({
                   )}
 
                   {/* Linha da Bolsa das Olheiras */}
-                  {!isSleeping && (
+                  {!isSleeping && !isSpiral && (
                     <motion.path
                       d={`M ${20 + shiftX} 76 Q ${50 + shiftX} 81 ${76 + shiftX} 76`}
                       fill="none"
@@ -839,22 +851,24 @@ export function PlocFace({
                   )}
 
                   {/* Cílio Superior 010 */}
-                  <motion.path
-                    d={i === 0
-                      ? "M 4 52 C 4 52, 12 42, 50 42 C 88 42, 96 44, 96 44"
-                      : "M 4 44 C 4 44, 12 42, 50 42 C 88 42, 96 52, 96 52"
-                    }
-                    fill="none"
-                    stroke={lashColor}
-                    strokeWidth="8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    animate={{
-                      y: isSleeping ? 18 : 0,
-                      scaleY: isSleeping ? 0.15 : 1,
-                    }}
-                    transition={{ duration: 0.18, ease: "easeInOut" }}
-                  />
+                  {!isSpiral && (
+                    <motion.path
+                      d={i === 0
+                        ? "M 4 52 C 4 52, 12 42, 50 42 C 88 42, 96 44, 96 44"
+                        : "M 4 44 C 4 44, 12 42, 50 42 C 88 42, 96 52, 96 52"
+                      }
+                      fill="none"
+                      stroke={lashColor}
+                      strokeWidth="8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      animate={{
+                        y: isSleeping ? 18 : 0,
+                        scaleY: isSleeping ? 0.15 : 1,
+                      }}
+                      transition={{ duration: 0.18, ease: "easeInOut" }}
+                    />
+                  )}
 
                   {/* Óculos Nerd */}
                   {!isSleeping && activeEyes === 'nerd' && (

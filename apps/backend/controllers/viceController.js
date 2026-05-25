@@ -74,8 +74,9 @@ exports.syncVice = async (req, res) => {
       typeof value === 'bigint' ? Number(value) : value
     )));
   } catch (error) {
-    console.error('[POST /vices]', error);
-    res.status(500).json({ error: 'Erro ao sincronizar vício.' });
+    console.error('[POST /vices] Payload:', req.body);
+    console.error('[POST /vices] Error:', error.message, error.stack);
+    res.status(500).json({ error: 'Erro ao sincronizar vício.', details: error.message });
   }
 };
 
@@ -97,28 +98,44 @@ exports.syncViceLog = async (req, res) => {
       return res.status(404).json({ error: 'Vício não encontrado.' });
     }
 
-    const log = await prisma.viceLog.upsert({
-      where: { id: id || 'new-log-uuid' },
-      update: {
-        type,
-        timestamp: BigInt(timestamp),
-        durationSeconds,
-        fastingSeconds,
-        cost,
-        motivator
-      },
-      create: {
-        id: id || undefined,
-        viceId: vice.id,
-        userId,
-        type,
-        timestamp: BigInt(timestamp),
-        durationSeconds,
-        fastingSeconds,
-        cost,
-        motivator
-      }
-    });
+    let log;
+    if (id) {
+      log = await prisma.viceLog.upsert({
+        where: { id },
+        update: {
+          type,
+          timestamp: BigInt(timestamp),
+          durationSeconds,
+          fastingSeconds,
+          cost,
+          motivator
+        },
+        create: {
+          id,
+          viceId: vice.id,
+          userId,
+          type,
+          timestamp: BigInt(timestamp),
+          durationSeconds,
+          fastingSeconds,
+          cost,
+          motivator
+        }
+      });
+    } else {
+      log = await prisma.viceLog.create({
+        data: {
+          viceId: vice.id,
+          userId,
+          type,
+          timestamp: BigInt(timestamp),
+          durationSeconds,
+          fastingSeconds,
+          cost,
+          motivator
+        }
+      });
+    }
 
     res.json(JSON.parse(JSON.stringify(log, (key, value) =>
       typeof value === 'bigint' ? Number(value) : value

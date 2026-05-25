@@ -9,7 +9,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { chatService } from '@/modules/chat/services/chatService';
 import { usePlocSpeech } from './usePlocSpeech';
 import { blackboardEventBus, BLACKBOARD_EVENTS } from '@/modules/blackboard/events/eventBus';
@@ -58,9 +58,9 @@ export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleepi
   // Estados e Refs para Gatilhos do Onboarding
   const [showStartGameButton, setShowStartGameButton] = useState(false);
   const speechEndTimestampRef = useRef<number>(0);
-  const startGameButtonTimeoutRef = useRef<any>(null);
+  const startGameButtonTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const speakAndTrack = (text: string, duration: number, showTriggerButton: boolean = false) => {
+  const speakAndTrack = useCallback((text: string, duration: number, showTriggerButton: boolean = false) => {
     if (startGameButtonTimeoutRef.current) {
       clearTimeout(startGameButtonTimeoutRef.current);
       startGameButtonTimeoutRef.current = null;
@@ -77,7 +77,7 @@ export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleepi
     } else {
       setShowStartGameButton(false);
     }
-  };
+  }, [speak]);
 
   useEffect(() => {
     blackboardEventBus.emit('SHOW_START_GAME_BUBBLE', showStartGameButton);
@@ -86,34 +86,37 @@ export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleepi
   // Inicialização e Sincronização de Estados com o LocalStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const completed = localStorage.getItem('ploc_onboarding_completed') === 'true';
-      const mode = localStorage.getItem('ploc_game_mode') as 'decor' | 'onboarding_game' | 'normal' || 'decor';
-      const savedStage = localStorage.getItem('ploc_onboarding_stage') || 'priority';
-      const savedPopCount = parseInt(localStorage.getItem('ploc_phase1_pop_count') || '0', 10);
+      const timer = setTimeout(() => {
+        const completed = localStorage.getItem('ploc_onboarding_completed') === 'true';
+        const mode = localStorage.getItem('ploc_game_mode') as 'decor' | 'onboarding_game' | 'normal' || 'decor';
+        const savedStage = localStorage.getItem('ploc_onboarding_stage') || 'priority';
+        const savedPopCount = parseInt(localStorage.getItem('ploc_phase1_pop_count') || '0', 10);
 
-      if (isAuthenticated || completed) {
-        setGameMode('normal');
-        localStorage.setItem('ploc_game_mode', 'normal');
-        setOnboardingStage('normal');
-        setChatStage(3);
-        setPhase1PopCount(0);
-      } else {
-        setGameMode(mode);
-        setOnboardingStage(savedStage);
-        setPhase1PopCount(savedPopCount);
-        if (mode === 'onboarding_game') {
-          setChatStage(2);
-          attributeEngine.setDemoMode(true);
+        if (isAuthenticated || completed) {
+          setGameMode('normal');
+          localStorage.setItem('ploc_game_mode', 'normal');
+          setOnboardingStage('normal');
+          setChatStage(3);
+          setPhase1PopCount(0);
         } else {
-          // Garante que o jogo decorativo comece com as chaves limpas
-          localStorage.setItem('ploc_pop_count', '0');
-          localStorage.setItem('ploc_pop_cycle_level', '0');
+          setGameMode(mode);
+          setOnboardingStage(savedStage);
+          setPhase1PopCount(savedPopCount);
+          if (mode === 'onboarding_game') {
+            setChatStage(2);
+            attributeEngine.setDemoMode(true);
+          } else {
+            // Garante que o jogo decorativo comece com as chaves limpas
+            localStorage.setItem('ploc_pop_count', '0');
+            localStorage.setItem('ploc_pop_cycle_level', '0');
+          }
         }
-      }
 
-      if (localStorage.getItem('ploc_reward_unlocked') === 'true') {
-        setRewardBoxVisible(true);
-      }
+        if (localStorage.getItem('ploc_reward_unlocked') === 'true') {
+          setRewardBoxVisible(true);
+        }
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [isAuthenticated]);
 
@@ -135,7 +138,7 @@ export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleepi
   }, [phase1PopCount]);
 
   // Limpa as chaves temporárias caso o usuário abandone o onboarding
-  const cleanupGameStorage = () => {
+  const cleanupGameStorage = useCallback(() => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('ploc_pop_count');
       localStorage.removeItem('ploc_pop_cycle_level');
@@ -158,7 +161,7 @@ export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleepi
         streakDays: 0
       });
     }
-  };
+  }, []);
 
   // Falas ricas e diversificadas por pilar para colisão passiva (modo decorativo)
   const PILLAR_QUOTES: Record<'corpo' | 'mente' | 'vida' | 'liberdade' | 'proposito', string[]> = {
@@ -188,6 +191,74 @@ export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleepi
       "Ter um norte. Sem rumo, qualquer vento forte te arrasta para o colapso."
     ]
   };
+
+  // Obtém a sequência circular de pilares começando pela prioridade escolhida
+  const getPhase1Sequence = useCallback(() => {
+    const priority = typeof window !== 'undefined' ? localStorage.getItem('ploc_priority_pillar') || 'corpo' : 'corpo';
+    const all = ['corpo', 'mente', 'vida', 'liberdade', 'proposito'];
+    const idx = all.indexOf(priority);
+    if (idx === -1) return all;
+    return [...all.slice(idx), ...all.slice(0, idx)];
+  }, []);
+
+  // Avança pelos estágios da Fase 1 (Diagnóstico)
+  const handleAdvanceOnboardingStage = useCallback(() => {
+    const sequence = getPhase1Sequence();
+    const currentIdx = sequence.indexOf(onboardingStage);
+
+    if (currentIdx !== -1 && currentIdx < sequence.length - 1) {
+      const nextPillar = sequence[currentIdx + 1];
+      setOnboardingStage(nextPillar);
+
+      // Mapeamento de diálogos correspondentes ao próximo pilar
+      const DIALOG_MAP: Record<string, string[]> = {
+        corpo: ONBOARDING_DIALOGUES.phase1Corpo || [],
+        mente: ONBOARDING_DIALOGUES.phase1Mente || [],
+        vida: ONBOARDING_DIALOGUES.phase1Vida || [],
+        liberdade: ONBOARDING_DIALOGUES.phase1Liberdade || [],
+        proposito: ONBOARDING_DIALOGUES.phase1Proposito || []
+      };
+
+      const nextDialog = DIALOG_MAP[nextPillar];
+      const text = (nextDialog[0] || '') + " " + (nextDialog[1] || `Agora vamos analisar os seus hábitos do pilar ${nextPillar.toUpperCase()}.`);
+      setChatMessages(prev => [...prev, { sender: 'ploc', text }]);
+      speak(text, 8000);
+    } else {
+      setOnboardingStage('results');
+
+      const attrs = attributeEngine.getAttributes();
+      const sorted = (Object.keys(attrs) as Array<keyof typeof attrs>)
+        .sort((a, b) => attrs[a] - attrs[b]);
+      const minP = sorted[0].toUpperCase();
+      const maxP = sorted[sorted.length - 1].toUpperCase();
+
+      const resultsMsg = `Diagnóstico Concluído! 📊 Seu raio-X atual dos pilares:
+      💪 Corpo: ${attrs.corpo}/10
+      🧠 Mente: ${attrs.mente}/10
+      ❤️ Vida: ${attrs.vida}/10
+      💸 Liberdade: ${attrs.liberdade}/10
+      🎯 Propósito: ${attrs.proposito}/10
+
+      Sua maior força atual é o pilar de ${maxP}! E sua maior vulnerabilidade é o pilar de ${minP}, que precisa de atenção urgente.
+      Pronto para iniciar a Fase 2: O Desafio de Equilíbrio Supremo? ⚖️`;
+
+      setChatMessages(prev => [...prev, { sender: 'ploc', text: resultsMsg }]);
+      speak(resultsMsg, 16000);
+    }
+  }, [getPhase1Sequence, onboardingStage, speak]);
+
+  const handleStartOnboardingGame = useCallback(() => {
+    cleanupGameStorage();
+    setShowStartGameButton(false);
+    setGameMode('onboarding_game');
+    setOnboardingStage('priority');
+    setChatStage(2);
+    setIsChatOpen(true);
+
+    const prioText = ONBOARDING_DIALOGUES.intro[3];
+    setChatMessages(prev => [...prev, { sender: 'ploc', text: prioText }]);
+    speak(prioText, 8000);
+  }, [cleanupGameStorage, speak]);
 
   // Listener para o contador de cliques em bolhas e reações do Ploc
   useEffect(() => {
@@ -319,7 +390,7 @@ export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleepi
 
     const unsubscribe = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_EXPLODED, handleBubbleExploded);
     return () => unsubscribe();
-  }, [speak, isAuthenticated, isSpeaking, gameMode, onboardingStage, isSleeping]);
+  }, [speak, isAuthenticated, isSpeaking, gameMode, onboardingStage, isSleeping, handleStartOnboardingGame, handleAdvanceOnboardingStage]);
 
   // Listener para puxão de orelha em estouro desequilibrado (fase 2)
   useEffect(() => {
@@ -341,11 +412,16 @@ export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleepi
   useEffect(() => {
     const lastMsg = chatMessages.filter(m => m.sender === 'ploc').slice(-1)[0];
     if (lastMsg && isChatOpen) {
-      setVisiblePlocText(lastMsg.text);
-      const timer = setTimeout(() => {
+      const showTimer = setTimeout(() => {
+        setVisiblePlocText(lastMsg.text);
+      }, 0);
+      const hideTimer = setTimeout(() => {
         setVisiblePlocText('');
       }, 7000);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(showTimer);
+        clearTimeout(hideTimer);
+      };
     }
   }, [chatMessages, isChatOpen]);
 
@@ -445,65 +521,11 @@ export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleepi
     }
   }, [gameMode, onboardingStage, isGamePaused, speak, firstPillarTo5, firstPillarTo10, hasReachedLvl5, hasReachedLvl10]);
 
-  // Obtém a sequência circular de pilares começando pela prioridade escolhida
-  const getPhase1Sequence = () => {
-    const priority = typeof window !== 'undefined' ? localStorage.getItem('ploc_priority_pillar') || 'corpo' : 'corpo';
-    const all = ['corpo', 'mente', 'vida', 'liberdade', 'proposito'];
-    const idx = all.indexOf(priority);
-    if (idx === -1) return all;
-    return [...all.slice(idx), ...all.slice(0, idx)];
-  };
-
-  // Avança pelos estágios da Fase 1 (Diagnóstico)
-  const handleAdvanceOnboardingStage = () => {
-    const sequence = getPhase1Sequence();
-    const currentIdx = sequence.indexOf(onboardingStage);
-
-    if (currentIdx !== -1 && currentIdx < sequence.length - 1) {
-      const nextPillar = sequence[currentIdx + 1];
-      setOnboardingStage(nextPillar);
-
-      // Mapeamento de diálogos correspondentes ao próximo pilar
-      const DIALOG_MAP: Record<string, string[]> = {
-        corpo: ONBOARDING_DIALOGUES.phase1Corpo || [],
-        mente: ONBOARDING_DIALOGUES.phase1Mente || [],
-        vida: ONBOARDING_DIALOGUES.phase1Vida || [],
-        liberdade: ONBOARDING_DIALOGUES.phase1Liberdade || [],
-        proposito: ONBOARDING_DIALOGUES.phase1Proposito || []
-      };
-
-      const nextDialog = DIALOG_MAP[nextPillar];
-      const text = (nextDialog[0] || '') + " " + (nextDialog[1] || `Agora vamos analisar os seus hábitos do pilar ${nextPillar.toUpperCase()}.`);
-      setChatMessages(prev => [...prev, { sender: 'ploc', text }]);
-      speak(text, 8000);
-    } else {
-      setOnboardingStage('results');
-
-      const attrs = attributeEngine.getAttributes();
-      const sorted = (Object.keys(attrs) as Array<keyof typeof attrs>)
-        .sort((a, b) => attrs[a] - attrs[b]);
-      const minP = sorted[0].toUpperCase();
-      const maxP = sorted[sorted.length - 1].toUpperCase();
-
-      const resultsMsg = `Diagnóstico Concluído! 📊 Seu raio-X atual dos pilares:
-      💪 Corpo: ${attrs.corpo}/10
-      🧠 Mente: ${attrs.mente}/10
-      ❤️ Vida: ${attrs.vida}/10
-      💸 Liberdade: ${attrs.liberdade}/10
-      🎯 Propósito: ${attrs.proposito}/10
-
-      Sua maior força atual é o pilar de ${maxP}! E sua maior vulnerabilidade é o pilar de ${minP}, que precisa de atenção urgente.
-      Pronto para iniciar a Fase 2: O Desafio de Equilíbrio Supremo? ⚖️`;
-
-      setChatMessages(prev => [...prev, { sender: 'ploc', text: resultsMsg }]);
-      speak(resultsMsg, 16000);
-    }
-  };
 
   // Inicia oficialmente o minijogo da Fase 2 (Multidimensional)
   const handleStartPhase2 = () => {
     setOnboardingStage('fase2');
-    
+
     // Zera atributos temporários no motor para o minijogo (começam em 3 de base para que seja um desafio equilibrá-los no nível 5)
     attributeEngine.syncWithBackend({
       body: 3,
@@ -523,7 +545,7 @@ export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleepi
     speak(text, 14000);
   };
 
-  const handleSendMessage = async (text: string) => {
+  const handleSendMessage = useCallback(async (text: string) => {
     if (!text.trim()) return;
 
     setChatMessages(prev => [...prev, { sender: 'user', text }]);
@@ -593,8 +615,8 @@ export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleepi
           sessionStorage.setItem('ploc_anger_denied_level', savedLevel.toString());
         }
         setTimeout(() => {
-          const reply = savedLevel === 3 
-            ? "Não quero papo agora. Me deixa em paz! 😠" 
+          const reply = savedLevel === 3
+            ? "Não quero papo agora. Me deixa em paz! 😠"
             : "ME DEIXA EM PAZ! NÃO VOU RESPONDER NADA! 😡🔥";
           setChatMessages(prev => [...prev, { sender: 'ploc', text: reply }]);
           setIsPending(false);
@@ -611,7 +633,7 @@ export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleepi
 
     try {
       const res = await chatService.sendMessage(text);
-      let reply = res.message || "Não entendi muito bem. Pode repetir?";
+      let reply = res.message || "Aparentemente, o filho da puta do desenvolvedor está achando que não preciso ter controle disso, ou seja, vou pedir que ajuste manualmente...";
 
       // Aplica prefixos baseados nos níveis
       if (savedLevel === 1) {
@@ -660,11 +682,11 @@ export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleepi
       setChatMessages(prev => [...prev, { sender: 'ploc', text: "Tive um curto-circuito na conexão. Vamos tentar de novo?" }]);
       setIsPending(false);
     }
-  };
+  }, [chatStage, gameMode, speak, cleanupGameStorage]);
 
   // Escuta envio de mensagem vindo da landing page
   useEffect(() => {
-    const handleReceivedMsg = (data: any) => {
+    const handleReceivedMsg = (data?: { text?: string }) => {
       if (data && typeof data.text === 'string') {
         handleSendMessage(data.text);
       }
@@ -730,18 +752,6 @@ export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleepi
     setAuthModalOpen(true);
   };
 
-  const handleStartOnboardingGame = () => {
-    cleanupGameStorage();
-    setShowStartGameButton(false);
-    setGameMode('onboarding_game');
-    setOnboardingStage('priority');
-    setChatStage(2);
-    setIsChatOpen(true);
-
-    const prioText = ONBOARDING_DIALOGUES.intro[3];
-    setChatMessages(prev => [...prev, { sender: 'ploc', text: prioText }]);
-    speak(prioText, 8000);
-  };
 
   const handleMascotClick = () => {
     const activeMode = localStorage.getItem('ploc_game_mode') || 'decor';
@@ -776,18 +786,18 @@ export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleepi
 
   // Listener para seleção de pilar de prioridade
   useEffect(() => {
-    const handleSelected = (pillar: any) => {
+    const handleSelected = (pillar: unknown) => {
       if (isSleeping) return; // Silêncio absoluto no sono!
       if (onboardingStage !== 'priority') return;
-      
+
       const pillarStr = String(pillar);
       setTempSelectedPillar(pillarStr);
       setShowPriorityConfirmButtons(true);
-      
+
       const quotes = PASSIVE_AGGRESSIVE_QUOTES[pillarStr as keyof typeof PASSIVE_AGGRESSIVE_QUOTES]?.positive || [];
       const baseQuote = quotes[0] || `Você selecionou o pilar ${pillarStr.toUpperCase()}.`;
       const explanation = `${baseQuote}\n\nDeseja focar nele? Ou clique em outra bolha para escolher outro.`;
-      
+
       setChatMessages(prev => [...prev, { sender: 'ploc', text: explanation }]);
       speak(explanation, 12000);
       setIsChatOpen(true);
@@ -799,18 +809,18 @@ export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleepi
 
   const handleConfirmPriorityPillar = () => {
     if (!tempSelectedPillar) return;
-    
+
     localStorage.setItem('ploc_priority_pillar', tempSelectedPillar);
     blackboardEventBus.emit('PRIORITY_PILLAR_CONFIRMED', tempSelectedPillar);
-    
+
     setShowPriorityConfirmButtons(false);
-    
+
     const pillarNameUpper = tempSelectedPillar.toUpperCase();
     const nextSpeech = `Excelente escolha! Agora vamos analisar o pilar do ${pillarNameUpper}. Soltei bolhas com hábitos do seu cotidiano. Estoure 5 bolhas que representam coisas que você REALMENTE faz no seu dia a dia.`;
-    
+
     setChatMessages(prev => [...prev, { sender: 'ploc', text: nextSpeech }]);
     speak(nextSpeech, 12000);
-    
+
     setTimeout(() => {
       setOnboardingStage(tempSelectedPillar);
       setPhase1PopCount(0);
@@ -820,9 +830,9 @@ export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleepi
   const handleResetPriorityPillar = () => {
     setTempSelectedPillar(null);
     setShowPriorityConfirmButtons(false);
-    
+
     blackboardEventBus.emit('PRIORITY_PILLAR_RESET');
-    
+
     const resetSpeech = "Tudo bem, pode escolher outro pilar então.";
     setChatMessages(prev => [...prev, { sender: 'ploc', text: resetSpeech }]);
     speak(resetSpeech, 5000);
@@ -845,7 +855,7 @@ export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleepi
     gameMode,
     setGameMode,
     isGamePaused,
-     showChoiceButtons,
+    showChoiceButtons,
     rewardBoxVisible,
     setRewardBoxVisible,
     handleContinuePlaying,

@@ -7,6 +7,7 @@ interface DayViewProps {
   selectedDate: Date;
   tasks: CalendarTask[];
   onOpenTaskModal: (dateStr: string) => void;
+  onTaskClick?: (task: CalendarTask) => void;
   dateStr: string;
   onPrevDay?: () => void;
   onNextDay?: () => void;
@@ -26,7 +27,7 @@ const swipePower = (offset: number, velocity: number) => {
   return Math.abs(offset) * velocity;
 };
 
-export function DayView({ selectedDate, tasks, onOpenTaskModal, dateStr, onPrevDay, onNextDay }: DayViewProps) {
+export function DayView({ selectedDate, tasks, onOpenTaskModal, onTaskClick, dateStr, onPrevDay, onNextDay }: DayViewProps) {
   return (
     <motion.div 
       key={dateStr} // Força re-render para animação de troca
@@ -51,6 +52,19 @@ export function DayView({ selectedDate, tasks, onOpenTaskModal, dateStr, onPrevD
       <div className="absolute left-0 top-3 bottom-8 w-[2px] bg-sky-500/20 rounded-full" />
 
       <div className="flex flex-col gap-6">
+        {/* Botão Adicionar (Empty State ou Topo da lista) */}
+        <div className="pl-10">
+          <button 
+            onClick={() => onOpenTaskModal(dateStr)}
+            className="w-full py-6 text-center border-2 border-dashed border-white/10 rounded-3xl bg-white/5 hover:bg-white/10 hover:border-white/20 transition-all flex flex-col items-center justify-center gap-2"
+          >
+            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/60">
+              <span className="text-xl">+</span>
+            </div>
+            <p className="text-white/60 font-medium">Adicionar Tarefa</p>
+          </button>
+        </div>
+
         {tasks.map((task) => {
           const isActive = task.status === 'active';
           const isCompleted = task.status === 'completed';
@@ -65,9 +79,11 @@ export function DayView({ selectedDate, tasks, onOpenTaskModal, dateStr, onPrevD
               </div>
 
               {/* Card da Tarefa */}
-              <div className={`p-5 rounded-3xl backdrop-blur-md transition-colors 
+              <div 
+                onClick={() => onTaskClick?.(task)}
+                className={`p-5 rounded-3xl backdrop-blur-md transition-colors cursor-pointer
                   ${isActive
-                    ? 'bg-sky-500 shadow-[0_10px_40px_rgba(14,165,233,0.3)]'
+                    ? 'bg-sky-500 shadow-[0_10px_40px_rgba(14,165,233,0.3)] hover:brightness-110'
                     : 'bg-white/5 border border-white/10 hover:bg-white/10'}`}
               >
                 <div className="flex justify-between items-start mb-2">
@@ -112,18 +128,6 @@ export function DayView({ selectedDate, tasks, onOpenTaskModal, dateStr, onPrevD
           );
         })}
 
-        {/* Botão Adicionar (Empty State ou Final da lista) */}
-        <div className="pl-10 mt-4">
-          <button 
-            onClick={() => onOpenTaskModal(dateStr)}
-            className="w-full py-8 text-center border-2 border-dashed border-white/10 rounded-3xl bg-white/5 hover:bg-white/10 hover:border-white/20 transition-all flex flex-col items-center justify-center gap-2"
-          >
-            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/60">
-              <span className="text-xl">+</span>
-            </div>
-            <p className="text-white/60 font-medium">Adicionar Tarefa</p>
-          </button>
-        </div>
       </div>
     </motion.div>
   );

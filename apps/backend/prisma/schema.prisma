@@ -225,8 +225,10 @@ model Task {
   routine       Routine?   @relation(fields: [routineId], references: [id], onDelete: SetNull)
   createdAt     DateTime   @default(now())
   scheduledDate DateTime   @default(now())
-  scheduledTime String?    // Horário (ex: "08:00")
+  scheduledTime String?    // Horário (ex: "08:00"). Se nulo, é dia inteiro.
   completedAt   DateTime?
+  color         String?    // Cor opcional da tarefa (ex: "text-rose-400 bg-rose-500/10")
+  isDraggable   Boolean    @default(true) // Se a tarefa pode ser arrastada no calendário
 
   @@index([userId])
   @@index([routineId])

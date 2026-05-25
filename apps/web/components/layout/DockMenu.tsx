@@ -2,7 +2,7 @@
 
 /**
  * DockMenu.tsx — Menu de Navegação Global
- * Design preservado: ilha flutuante no bottom, ícones coloridos, item ativo destacado.
+ * Design atualizado: Barra fixa de 100% de largura na base, apenas visível no Blackboard.
  */
 
 import Link from 'next/link';
@@ -24,52 +24,100 @@ interface DockItem {
 
 // Definição da lista de itens do Dock, contendo ícone, rota de destino, cor tema e rótulo
 const DOCK_ITEMS: DockItem[] = [
-  { icon: <Calendar size={20} />, route: '/calendar', color: '#ffffffff', label: 'Calendário' },
-  { icon: <Radar size={20} />, route: '/', color: '#ffffffff', label: 'Blackboard' },
-  { icon: <GalleryHorizontal size={20} />, route: '/dashboard', color: '#ffffffff', label: 'Rotinas' },
-  { icon: <Ghost size={20} />, route: '/ploc', color: '#ffffffff', label: 'Ploc' },
-  { icon: <Settings size={20} />, route: '/settings', color: '#ffffffff', label: 'Config' },
+  { icon: <Calendar size={20} />, route: '/calendar', color: '#ffffff', label: 'Calendário' },
+  { icon: <Radar size={20} />, route: '/', color: '#ffffff', label: 'Blackboard' },
+  { icon: <GalleryHorizontal size={20} />, route: '/dashboard', color: '#ffffff', label: 'Rotinas' },
+  { icon: <Ghost size={20} />, route: '/ploc', color: '#ffffff', label: 'Ploc' },
+  { icon: <Settings size={20} />, route: '/settings', color: '#ffffff', label: 'Config' },
 ];
+
+import { useState, useEffect, useRef } from 'react';
 
 // Componente principal do Menu Inferior Flutuante
 export function DockMenu() {
   const pathname = usePathname(); // Resgata a rota atual da URL para acender ícone ativo
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollY = useRef(0);
 
-  // Retorna a casca da Doc em glassmorphism fixada na base da tela
+  useEffect(() => {
+    // Na Blackboard (rota '/'), a navbar nunca deve sumir
+    if (pathname === '/') {
+      setIsVisible(true);
+      return;
+    }
+
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (!target || typeof target.scrollTop !== 'number') return;
+      
+      const currentScrollY = target.scrollTop;
+      
+      // Ignorar scrolls muito curtos ou no topo da página
+      if (currentScrollY < 10) {
+        setIsVisible(true);
+        lastScrollY.current = currentScrollY;
+        return;
+      }
+      
+      if (currentScrollY > lastScrollY.current + 5) {
+        // Rolando para baixo -> Esconder
+        setIsVisible(false);
+      } else if (currentScrollY < lastScrollY.current - 5) {
+        // Rolando para cima -> Mostrar
+        setIsVisible(true);
+      }
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, true);
+    return () => window.removeEventListener('scroll', handleScroll, true);
+  }, [pathname]);
+
+  // Retorna a barra de navegação glassmorphism fixada na base da tela
   return (
     <div
       id="global-dock-menu"
       style={{
-        position: 'fixed', // Fixo na tela inteira
-        bottom: '20px', // Distância da margem inferior
-        left: '50%',
-        transform: 'translateX(-50%)', // Centraliza horizontalmente perfeitamente
-        zIndex: 999998, // Quase infinito para sempre sobrepor tudo (menos Ploc)
-        pointerEvents: 'none', // Não bloqueia clique em áreas invisíveis da dock
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        width: '100%',
+        zIndex: 999998,
+        pointerEvents: 'none',
+        transform: isVisible ? 'translateY(0)' : 'translateY(100%)',
+        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
       <div
-        className="ploc-dock-island"
+        className="ploc-bottom-nav"
         style={{
           pointerEvents: 'auto',
           background: 'rgba(15, 23, 42, 0.85)',
           backdropFilter: 'blur(30px)',
           WebkitBackdropFilter: 'blur(30px)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: '28px',
-          padding: '10px 16px',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          padding: '12px 16px',
+          paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+          boxShadow: '0 -10px 40px rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center'
         }}
       >
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            justifyContent: 'space-around',
+            width: '100%',
+            maxWidth: '400px',
+            gap: '8px',
           }}
         >
           {DOCK_ITEMS.map((item) => {
-            const isActive = pathname === item.route || pathname.startsWith(item.route + '/');
+            const isActive = item.route === '/' 
+              ? pathname === '/' 
+              : (pathname === item.route || pathname.startsWith(item.route + '/'));
+              
             return (
               <Link
                 key={item.route}

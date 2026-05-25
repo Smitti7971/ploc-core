@@ -13,25 +13,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Home, 
-  Sparkles, 
-  BookOpen, 
-  Clock, 
-  Settings, 
-  ChevronLeft, 
-  ChevronRight, 
-  X, 
-  ArrowRight, 
-  Activity, 
-  Search, 
-  Filter, 
-  Play, 
-  CheckCircle2, 
-  TrendingUp, 
-  TrendingDown, 
-  Wand2, 
-  History, 
+import {
+  BookOpen,
+  Clock,
+  X,
+  Activity,
+  Search,
+  Filter,
+  Wand2,
+  History,
   Edit,
   LineChart,
   Plane,
@@ -43,7 +33,6 @@ import {
   Trophy,
   PlusCircle
 } from 'lucide-react';
-import { UserHeader } from '@/components/layout/UserHeader';
 import { getAssetUrl } from '@/lib/config';
 import { PillarPage } from '@/modules/routines/components/PillarPage';
 import { PILLARS_DATA, IMPACT_ICONS } from '@/modules/routines/data/routinesData';
@@ -53,7 +42,7 @@ import { attributeEngine } from '@/modules/blackboard/engine/attribute-engine/At
 import { useViceStore } from '../components/libertesse/store/viceStore';
 import { PlanejeScreen } from '../components/planeje/components/PlanejeScreen';
 
-const allRoutines = Object.values(PILLARS_DATA).flatMap(pillar => 
+const allRoutines = Object.values(PILLARS_DATA).flatMap(pillar =>
   pillar.options.map(opt => ({
     ...opt,
     sourcePillar: pillar.id,
@@ -148,10 +137,11 @@ export default function DashboardPage() {
   const [selectedViceId, setSelectedViceId] = useState<string | null>(null);
   const [modalInitialStep, setModalInitialStep] = useState<'options' | 'active_options' | 'history' | 'form_acompanhe' | 'form_diminua' | 'confirm_end' | undefined>();
   const [attributes, setAttributes] = useState<Record<string, number>>({});
-  
-  const activeVice = useViceStore(state => state.activeVice);
-  const logs = useViceStore(state => state.logs);
-  
+
+  const activeVices = useViceStore(state => state.activeVices);
+  const activeVicesList = Object.values(activeVices || {});
+
+
   useEffect(() => {
     setTimeout(() => {
       setAttributes(attributeEngine.getAttributes() as unknown as Record<string, number>);
@@ -161,23 +151,7 @@ export default function DashboardPage() {
 
   const carouselRef = useRef<HTMLDivElement>(null);
 
-  // Redireciona para "Adote" se não houver rotina ativa no primeiro render
-  useEffect(() => {
-    if (!activeVice && activeMethod === 'rotinas' && activeTab === 'ativas') {
-      setTimeout(() => {
-        if (carouselRef.current) {
-          const container = carouselRef.current;
-          const screenWidth = container.clientWidth;
-          container.scrollTo({
-            left: screenWidth * 1,
-            behavior: 'instant'
-          });
-          setActiveTab('adote');
-        }
-      }, 50);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // O redirecionamento automático para "Adote" foi removido para evitar pulos inesperados no F5
 
   // Rolagem suave para a aba clicada
   const scrollToTab = (tabId: string, index: number) => {
@@ -218,26 +192,29 @@ export default function DashboardPage() {
     return () => clearInterval(timer);
   }, []);
 
-  const timeActiveText = React.useMemo(() => {
-    if (!activeVice || !now) return null;
-    const startLog = [...logs].reverse().find(l => l.viceId === activeVice.viceId && l.type === 'start');
-    if (!startLog) return null;
-    const diffSeconds = Math.floor((now - startLog.timestamp) / 1000);
+  const getTimeActiveText = (viceId: string) => {
+    if (!now) return null;
+    const activeVice = activeVices[viceId];
+    if (!activeVice || !activeVice.startTime) return null;
+
+    const diffSeconds = Math.floor((now - activeVice.startTime) / 1000);
+    if (diffSeconds < 0) return '0m';
+
     const d = Math.floor(diffSeconds / 86400);
     const h = Math.floor((diffSeconds % 86400) / 3600);
     const m = Math.floor((diffSeconds % 3600) / 60);
     if (d > 0) return `${d}d ${h}h`;
     if (h > 0) return `${h}h ${m}m`;
     return `${m}m`;
-  }, [activeVice, logs, now]);
+  };
 
   return (
-    <div className="w-full h-[100dvh] bg-black text-white flex flex-col relative overflow-hidden pb-20 pt-20">
+    <div className="w-full h-[100dvh] bg-black text-white flex flex-col relative overflow-x-hidden overflow-y-auto pb-6 pt-20">
       <style>{`
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
-      
+
       {/* DASHBOARD PILLARS ROW com Status */}
       <div className="w-full flex justify-between md:justify-center gap-1 md:gap-4 py-4 z-10 px-2 md:px-4">
         {Object.values(PILLARS_DATA).map((pillar) => {
@@ -253,7 +230,7 @@ export default function DashboardPage() {
               onClick={() => setActivePillar(pillar.id)}
               className="flex flex-col items-center gap-1 md:gap-2 cursor-pointer flex-1"
             >
-              <div 
+              <div
                 className="w-10 h-10 md:w-14 md:h-14 rounded-full flex items-center justify-center backdrop-blur-md relative"
                 style={{
                   background: 'rgba(255,255,255,0.03)',
@@ -262,7 +239,7 @@ export default function DashboardPage() {
                 }}
               >
                 <Icon size={24} color={statusColor} />
-                
+
                 {/* Badge de Nível */}
                 <div className="absolute -bottom-1 -right-1 w-5 h-5 md:w-6 md:h-6 rounded-full bg-black border border-white/20 flex items-center justify-center text-[0.45rem] md:text-[0.55rem] font-bold shadow-lg">
                   <span style={{ color: statusColor }}>{val}</span>
@@ -287,18 +264,17 @@ export default function DashboardPage() {
                 onClick={() => {
                   setActiveMethod(method.id);
                   if (method.id === 'rotinas') {
-                    if (activeVice) {
+                    if (activeVicesList.length > 0) {
                       setTimeout(() => scrollToTab('ativas', 0), 50);
                     } else {
                       setTimeout(() => scrollToTab('adote', 1), 50);
                     }
                   }
                 }}
-                className={`shrink-0 snap-center px-3 py-1.5 rounded-full flex items-center gap-1.5 text-[0.65rem] font-black tracking-wider transition-all duration-300 ${
-                  activeMethod === method.id 
-                  ? 'bg-white text-black shadow-lg shadow-white/20' 
+                className={`shrink-0 snap-center px-3 py-1.5 rounded-full flex items-center gap-1.5 text-[0.65rem] font-black tracking-wider transition-all duration-300 ${activeMethod === method.id
+                  ? 'bg-white text-black shadow-lg shadow-white/20'
                   : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'
-                }`}
+                  }`}
               >
                 {Icon && <Icon size={14} strokeWidth={2.5} />}
                 {method.label}
@@ -322,7 +298,7 @@ export default function DashboardPage() {
               const prevTab = TABS[TABS.findIndex(t => t.id === activeTab) - 1];
               const Icon = prevTab.icon;
               return (
-                <button 
+                <button
                   onClick={() => scrollToTab(prevTab.id, TABS.findIndex(t => t.id === activeTab) - 1)}
                   className="w-12 h-12 rounded-full bg-black/60 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/80 hover:border-sky-400/50 hover:text-sky-400 transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)] group"
                   title={`Ir para ${prevTab.label}`}
@@ -337,7 +313,7 @@ export default function DashboardPage() {
               const nextTab = TABS[TABS.findIndex(t => t.id === activeTab) + 1];
               const Icon = nextTab.icon;
               return (
-                <button 
+                <button
                   onClick={() => scrollToTab(nextTab.id, TABS.findIndex(t => t.id === activeTab) + 1)}
                   className="w-12 h-12 rounded-full bg-black/60 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/80 hover:border-sky-400/50 hover:text-sky-400 transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)] group"
                   title={`Ir para ${nextTab.label}`}
@@ -348,67 +324,69 @@ export default function DashboardPage() {
             })()}
           </div>
 
-          <div 
+          <div
             ref={carouselRef}
             onScroll={handleScroll}
-            className="flex-1 min-h-0 w-full flex overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-hide relative"
+            className="w-full flex overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-hide relative shrink-0"
           >
             {/* TELA: ROTINAS ATIVAS */}
-            <div className="w-full h-full shrink-0 snap-start px-4 overflow-y-auto pb-10 scrollbar-hide flex flex-col relative pt-4">
-              {activeVice ? (
-                <div className="mb-6 bg-emerald-950/30 border border-emerald-500/30 rounded-2xl p-4 flex flex-col gap-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
-                        <Wand2 size={18} className="text-emerald-500" />
+            <div className="w-full shrink-0 snap-start px-4 pb-2 flex flex-col relative pt-4">
+              {activeVicesList.length > 0 ? (
+                activeVicesList.map(activeVice => (
+                  <div key={activeVice.viceId} className="mb-6 bg-emerald-950/30 border border-emerald-500/30 rounded-2xl p-4 flex flex-col gap-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                          <Wand2 size={18} className="text-emerald-500" />
+                        </div>
+                        <div>
+                          <p className="text-emerald-400 text-xs font-bold tracking-widest uppercase">Libertesse Ativo</p>
+                          <h3 className="text-white text-sm font-extrabold tracking-widest uppercase">
+                            {VICES.find(v => v.id === activeVice.viceId)?.label || activeVice.viceId}
+                          </h3>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-emerald-400 text-xs font-bold tracking-widest uppercase">Libertesse Ativo</p>
-                        <h3 className="text-white text-sm font-extrabold tracking-widest uppercase">
-                          {VICES.find(v => v.id === activeVice.viceId)?.label || activeVice.viceId}
-                        </h3>
-                      </div>
+                      {getTimeActiveText(activeVice.viceId) && (
+                        <div className="text-right">
+                          <p className="text-slate-400 text-[0.6rem] font-bold tracking-widest uppercase">Ativo há</p>
+                          <p className="text-white text-xs font-extrabold">{getTimeActiveText(activeVice.viceId)}</p>
+                        </div>
+                      )}
                     </div>
-                    {timeActiveText && (
-                      <div className="text-right">
-                        <p className="text-slate-400 text-[0.6rem] font-bold tracking-widest uppercase">Ativo há</p>
-                        <p className="text-white text-xs font-extrabold">{timeActiveText}</p>
-                      </div>
-                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setModalInitialStep('history');
+                          setSelectedViceId(activeVice.viceId);
+                        }}
+                        className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-[0.6rem] tracking-widest"
+                      >
+                        <History size={14} />
+                        HISTÓRICO
+                      </button>
+                      <button
+                        onClick={() => {
+                          setModalInitialStep('options');
+                          setSelectedViceId(activeVice.viceId);
+                        }}
+                        className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-[0.6rem] tracking-widest"
+                      >
+                        <Edit size={14} />
+                        EDITAR
+                      </button>
+                      <button
+                        onClick={() => {
+                          setModalInitialStep('confirm_end');
+                          setSelectedViceId(activeVice.viceId);
+                        }}
+                        className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold py-3 rounded-xl border border-red-500/20 transition-colors flex items-center justify-center gap-2 text-[0.6rem] tracking-widest"
+                      >
+                        <X size={14} />
+                        ENCERRAR
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => {
-                        setModalInitialStep('history');
-                        setSelectedViceId(activeVice.viceId);
-                      }}
-                      className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-[0.6rem] tracking-widest"
-                    >
-                      <History size={14} />
-                      HISTÓRICO
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setModalInitialStep('options');
-                        setSelectedViceId(activeVice.viceId);
-                      }}
-                      className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-[0.6rem] tracking-widest"
-                    >
-                      <Edit size={14} />
-                      EDITAR
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setModalInitialStep('confirm_end');
-                        setSelectedViceId(activeVice.viceId);
-                      }}
-                      className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold py-3 rounded-xl border border-red-500/20 transition-colors flex items-center justify-center gap-2 text-[0.6rem] tracking-widest"
-                    >
-                      <X size={14} />
-                      ENCERRAR
-                    </button>
-                  </div>
-                </div>
+                ))
               ) : (
                 <div className="flex-1 flex items-center justify-center opacity-50">
                   <span className="text-slate-400 font-bold text-sm">Nenhuma rotina ativa no momento.</span>
@@ -417,14 +395,14 @@ export default function DashboardPage() {
             </div>
 
             {/* TELA: ADOTE UMA ROTINA (Com Filtro e Grade de Ecommerce) */}
-            <div className="w-full h-full shrink-0 snap-start px-4 overflow-y-auto pb-10 scrollbar-hide relative">
+            <div className="w-full shrink-0 snap-start px-4 pb-2 relative">
               {/* FILTER AREA (E-Commerce Style) */}
               <div className="w-full mb-6 flex gap-2">
                 <div className="flex-1 bg-white/5 border border-white/10 rounded-xl h-12 flex items-center px-4 gap-3 focus-within:border-white/30 transition-colors">
                   <Search size={18} className="text-slate-400" />
-                  <input 
-                    type="text" 
-                    placeholder="Buscar no catálogo..." 
+                  <input
+                    type="text"
+                    placeholder="Buscar no catálogo..."
                     className="bg-transparent border-none outline-none text-sm w-full text-white placeholder-slate-500 font-medium"
                   />
                 </div>
@@ -443,15 +421,15 @@ export default function DashboardPage() {
                     {/* Product Banner */}
                     <div className="h-24 w-full relative bg-[#1a1d1a]">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img 
-                        src={getAssetUrl(routine.image)} 
+                      <img
+                        src={getAssetUrl(routine.image)}
                         alt={routine.title}
                         className="w-full h-full object-cover opacity-60"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#0f1115] to-transparent" />
-                      
+
                       {/* Pillar Badge */}
-                      <div 
+                      <div
                         className="absolute top-3 right-3 px-2.5 py-1 rounded-md text-[0.6rem] font-bold tracking-widest backdrop-blur-md"
                         style={{ backgroundColor: `${routine.sourcePillarColor}20`, color: routine.sourcePillarColor, border: `1px solid ${routine.sourcePillarColor}40` }}
                       >
@@ -463,7 +441,7 @@ export default function DashboardPage() {
                     <div className="flex-1 p-4 pt-1 flex flex-col">
                       <h4 className="text-white text-base font-extrabold mb-1.5 leading-tight">{routine.title}</h4>
                       <p className="text-slate-400 text-xs mb-4 leading-snug line-clamp-2">{routine.desc}</p>
-                      
+
                       {/* Impacts Footer */}
                       <div className="flex justify-between items-end mt-auto pt-2 border-t border-white/5">
                         <div className="flex flex-wrap gap-2">
@@ -490,13 +468,13 @@ export default function DashboardPage() {
             </div>
 
             {/* TELA: FAVORITAS */}
-            <div className="w-full h-full shrink-0 snap-start px-4 overflow-y-auto pb-10 scrollbar-hide flex flex-col items-center justify-center opacity-50 relative">
-               <span className="text-slate-400 font-bold text-sm">Nenhuma favorita ainda.</span>
+            <div className="w-full shrink-0 snap-start px-4 pb-2 relative flex flex-col items-center justify-center opacity-50">
+              <span className="text-slate-400 font-bold text-sm">Nenhuma favorita ainda.</span>
             </div>
 
             {/* TELA: RANKING */}
-            <div className="w-full h-full shrink-0 snap-start px-4 overflow-y-auto pb-10 scrollbar-hide flex flex-col items-center justify-center opacity-50 relative">
-               <span className="text-slate-400 font-bold text-sm">Ranking em breve.</span>
+            <div className="w-full shrink-0 snap-start px-4 pb-2 relative flex flex-col items-center justify-center opacity-50">
+              <span className="text-slate-400 font-bold text-sm">Ranking em breve.</span>
             </div>
           </div>
         </div>
@@ -525,7 +503,7 @@ export default function DashboardPage() {
             return (
               <div className="w-full max-w-sm flex flex-col gap-8">
                 {/* Cabeçalho do Método */}
-                <motion.div 
+                <motion.div
                   key={methodDef.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -556,7 +534,7 @@ export default function DashboardPage() {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={getAssetUrl(item.image)} alt={item.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-                      
+
                       <div className="absolute inset-0 p-3 flex flex-col justify-end">
                         {('desc' in item && typeof item.desc === 'string') ? (
                           <span className={`text-[0.6rem] font-black text-${methodDef.color} uppercase tracking-wider mb-[2px] opacity-90 drop-shadow-md`}>
@@ -569,7 +547,7 @@ export default function DashboardPage() {
                       </div>
                     </motion.div>
                   ))}
-                  
+
                   {/* Card Extra: Em breve */}
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -598,14 +576,14 @@ export default function DashboardPage() {
             className="fixed inset-0 z-50 bg-[#0a0c0a] flex flex-col pt-24"
           >
             <div className="absolute top-24 right-6 z-[60]">
-              <button 
+              <button
                 onClick={() => setActivePillar(null)}
                 className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-colors shadow-xl"
               >
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="flex-1 overflow-hidden">
               <PillarPage pillarId={activePillar} />
             </div>
@@ -613,7 +591,7 @@ export default function DashboardPage() {
         )}
       </AnimatePresence>
 
-      <ViceOptionsModal 
+      <ViceOptionsModal
         isOpen={!!selectedViceId}
         onClose={() => {
           setSelectedViceId(null);

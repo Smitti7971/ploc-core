@@ -5,14 +5,14 @@ import { motion } from 'framer-motion';
 import { Plus, Calendar as CalendarIcon, MoreVertical } from 'lucide-react';
 
 export function PlanejeScreen() {
-  const [calendars, setCalendars] = useState([
+  const [calendars] = useState([
     { id: '1', name: 'Trabalho', color: '#3b82f6' }, // blue-500
     { id: '2', name: 'Pessoal', color: '#10b981' }   // emerald-500
   ]);
 
   return (
-    <div className="flex-1 min-h-0 w-full px-4 overflow-y-auto pb-24 scrollbar-hide">
-      {/* Header local (além do que o dashboard já tem) */}
+    <div className="w-full px-4 pb-6">
+      {/* Header local */}
       <div className="mb-6 mt-2 flex items-center justify-between">
         <div>
           <h2 className="text-xl font-black text-white mb-2 tracking-widest uppercase">Planeje</h2>
@@ -40,8 +40,7 @@ export function PlanejeScreen() {
             >
               <CalendarIcon size={24} color={cal.color} />
             </div>
-            
-            <div className="flex-1">
+                        <div className="flex-1">
               <h3 className="text-white text-sm font-extrabold tracking-widest mb-1">
                 {cal.name.toUpperCase()}
               </h3>

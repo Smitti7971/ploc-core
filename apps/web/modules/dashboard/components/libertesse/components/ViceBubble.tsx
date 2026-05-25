@@ -29,15 +29,18 @@ const VICE_COLORS: Record<string, string> = {
 };
 
 interface ViceBubbleProps {
+  viceId: string;
+  index?: number;
+  total?: number;
   canvasScale?: number;
 }
 
-export function ViceBubble({ canvasScale = 1 }: ViceBubbleProps) {
-  const { activeVice, resetTimer, setActiveVice, startConsumption, endConsumption, addFastingTime, setDefaultConsumptionSeconds } = useViceStore();
+export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: ViceBubbleProps) {
+  const { activeVices, removeActiveVice, startConsumption, addFastingTime, setDefaultConsumptionSeconds } = useViceStore();
+  const activeVice = activeVices[viceId];
   const { speak } = usePlocSpeech();
 
   const [showMotivatorModal, setShowMotivatorModal] = useState(false);
-  const [motivatorInput, setMotivatorInput] = useState('');
   const [showResistInput, setShowResistInput] = useState(false);
   const [resistMinutes, setResistMinutes] = useState('10');
   const [showConfirmEnd, setShowConfirmEnd] = useState(false);
@@ -91,8 +94,8 @@ export function ViceBubble({ canvasScale = 1 }: ViceBubbleProps) {
       const phrases = [
         "Você tem certeza disso?",
         "Não ceda agora, você consegue!",
-        "Por favor, nào encha minha bolha de fumaça!",
-        "Eu to torcendo por você, só mais um pouco!"
+        "Por favor, não encha minha bolha de fumaça!",
+        "Eu tô torcendo por você, só mais um pouco!"
       ];
       const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
 
@@ -108,16 +111,15 @@ export function ViceBubble({ canvasScale = 1 }: ViceBubbleProps) {
   };
 
   const handleRegistrar = () => {
-    startConsumption(motivatorInput);
+    startConsumption(viceId, "");
 
     setShowMotivatorModal(false);
-    setMotivatorInput('');
   };
 
   const handleResistMore = (minsOverride?: number) => {
     const mins = minsOverride !== undefined ? minsOverride : parseInt(resistMinutes, 10);
     if (!isNaN(mins) && mins > 0) {
-      addFastingTime(mins * 60);
+      addFastingTime(viceId, mins * 60);
       setShowMotivatorModal(false);
       setShowResistInput(false);
     }
@@ -130,17 +132,39 @@ export function ViceBubble({ canvasScale = 1 }: ViceBubbleProps) {
     return null;
   }
 
+  // Chaotic movement logic bounded by radius (PLOC protective bubble is 500px diameter, 250px radius)
+  // We use max radius 150px to prevent the 90px bubbles from going out of bounds
+  const radius = 150;
+  const hash1 = index * 17 + 7;
+  const hash2 = index * 31 + 13;
+  const x1 = Math.cos(hash1) * radius;
+  const y1 = Math.sin(hash1) * radius;
+  const x2 = Math.cos(hash2) * radius;
+  const y2 = Math.sin(hash2) * radius;
+
+  // Base starting position to avoid overlap initially
+  const startAngle = (index / Math.max(total, 1)) * Math.PI * 2;
+  const startX = Math.cos(startAngle) * (radius * 0.6);
+  const startY = Math.sin(startAngle) * (radius * 0.6);
+
   return (
     <>
       <motion.div
-        initial={{ opacity: 0, y: 0, scale: 0, x: '20%' }}
-        animate={{ opacity: 1, y: -130, scale: opticalScale, x: '20%' }}
-        exit={{ opacity: 0, scale: 0, x: '20%' }}
+        initial={{ opacity: 0, y: 0, scale: 0, x: 0 }}
+        animate={{
+          opacity: 1,
+          scale: opticalScale,
+          x: [startX, x1, x2, -x1, startX],
+          y: [startY, y1, y2, -y2, startY]
+        }}
+        exit={{ opacity: 0, scale: 0, x: 0 }}
         transition={{
           scale: { type: 'spring', stiffness: 300, damping: 20 },
-          opacity: { duration: 0.3 }
+          opacity: { duration: 0.3 },
+          x: { duration: 25 + (index % 3) * 5, repeat: Infinity, ease: "linear" },
+          y: { duration: 30 + (index % 4) * 4, repeat: Infinity, ease: "linear" },
         }}
-        className="absolute left-[20px] z-[300] pointer-events-auto flex flex-col items-center justify-center"
+        className="absolute z-[-1] pointer-events-auto flex flex-col items-center justify-center"
       >
         <motion.div
           initial={{ borderRadius: "50% 50% 48% 48% / 48% 48% 52% 52%" }}
@@ -164,7 +188,7 @@ export function ViceBubble({ canvasScale = 1 }: ViceBubbleProps) {
             borderRadius: { duration: 3.5, repeat: Infinity, ease: "easeInOut" }
           }}
           onClick={handleBubbleClick}
-          className="w-[90px] h-[90px] flex flex-col items-center justify-center cursor-pointer relative group"
+          className="w-[60px] h-[60px] flex flex-col items-center justify-center cursor-pointer relative group"
           style={{
             background: activeVice.mode === 'diminua' ? 'transparent' : `radial-gradient(circle at 30% 30%, ${color}60, ${color}10)`,
             border: `1px solid ${activeVice.mode === 'diminua' ? (!isCountUp ? '#ef4444' : '#10b981') : color}`,
@@ -174,13 +198,13 @@ export function ViceBubble({ canvasScale = 1 }: ViceBubbleProps) {
         >
           {!isPerformanceMode && (
             <div
-              className={`w-9 h-9 rounded-full flex items-center justify-center border mb-0.5 bg-transparent ${activeVice.mode === 'diminua'
+              className={`w-6 h-6 rounded-full flex items-center justify-center border mb-0.5 bg-transparent ${activeVice.mode === 'diminua'
                 ? (!isCountUp ? 'border-red-500/60 shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'border-emerald-500/60 shadow-[0_0_8px_rgba(16,185,129,0.4)]')
                 : 'border-white/20'
                 }`}
             >
               <Icon
-                size={18}
+                size={14}
                 color={activeVice.mode === 'diminua' ? (!isCountUp ? '#ef4444' : '#10b981') : '#ffffff'}
                 style={{ filter: `drop-shadow(0 0 5px ${activeVice.mode === 'diminua' ? (!isCountUp ? '#ef4444' : '#10b981') : color})` }}
               />
@@ -188,28 +212,26 @@ export function ViceBubble({ canvasScale = 1 }: ViceBubbleProps) {
           )}
 
           {activeVice.mode === 'diminua' && (
-            <div className="flex flex-col items-center mt-1">
+            <div className="flex flex-col items-center mt-[1px]">
               {!isPerformanceMode && (
-                <span className="text-[0.45rem] font-bold uppercase tracking-widest leading-none mt-1 shadow-sm text-white/90">
-                  {!isCountUp ? 'RESISTA' : 'META ATINGIDA'}
+                <span className="text-[0.35rem] font-bold uppercase tracking-widest leading-none mt-0.5 shadow-sm text-white/90">
+                  {!isCountUp ? 'RESISTA' : 'ALCANÇADA'}
                 </span>
               )}
-              <span className={`font-mono font-black tracking-wider shadow-sm leading-none ${isPerformanceMode ? 'text-xs' : 'text-[0.6rem] mt-1'} ${!isCountUp ? 'text-red-500' : 'text-emerald-500'}`}>
+              <span className={`font-mono font-black tracking-wider shadow-sm leading-none ${isPerformanceMode ? 'text-[0.5rem]' : 'text-[0.5rem] mt-0.5'} ${!isCountUp ? 'text-red-500' : 'text-emerald-500'}`}>
                 {formatTime(displayedSeconds)}
               </span>
             </div>
           )}
 
           {activeVice.mode === 'acompanhe' && (
-            <span className={`font-bold uppercase tracking-widest leading-none shadow-sm ${isPerformanceMode ? 'text-[0.6rem] text-white' : 'text-[0.55rem] text-white/90 mt-1.5'}`}>
+            <span className={`font-bold uppercase tracking-widest leading-none shadow-sm ${isPerformanceMode ? 'text-[0.5rem] text-white' : 'text-[0.45rem] text-white/90 mt-1'}`}>
               Uso
             </span>
           )}
         </motion.div>
 
-        {/* Bolinhas de pensamento reposicionadas */}
-        <div className="absolute -bottom-3 left-[20%] w-2 h-2 rounded-full bg-[#0f1115] border border-white/20 pointer-events-none" />
-        <div className="absolute -bottom-6 left-[10%] w-1.5 h-1.5 rounded-full bg-[#0f1115] border border-white/20 pointer-events-none opacity-70" />
+
       </motion.div>
 
       {showMotivatorModal && typeof document !== 'undefined' && createPortal(
@@ -243,27 +265,8 @@ export function ViceBubble({ canvasScale = 1 }: ViceBubbleProps) {
                     : 'QUEBRA DE JEJUM')}
               </h3>
 
-              {activeVice.mode === 'diminua' && (
-                <div className="bg-white/5 rounded-xl p-3 flex items-center justify-between">
-                  <div>
-                    <span className="text-[0.6rem] uppercase tracking-widest text-slate-400 font-bold block mb-0.5">Tempo Médio de Uso</span>
-                    <span className="text-sm font-mono text-white/90 font-bold">
-                      {Math.floor((activeVice.defaultConsumptionSeconds || 300) / 60)} min {((activeVice.defaultConsumptionSeconds || 300) % 60).toString().padStart(2, '0')}s
-                    </span>
-                  </div>
-                  {(activeVice.defaultConsumptionSeconds || 300) !== 300 && (
-                    <button
-                      onClick={() => setDefaultConsumptionSeconds(300)}
-                      className="text-[0.6rem] text-sky-400 hover:text-sky-300 font-bold tracking-widest flex items-center gap-1 bg-sky-400/10 px-2 py-1 rounded-md"
-                    >
-                      <RotateCcw size={10} />
-                      5 MIN
-                    </button>
-                  )}
-                </div>
-              )}
 
-              {showResistInput ? (
+              {showResistInput && (
                 <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex flex-col gap-3">
                   <div className="flex items-center justify-between">
                     <label className="text-[0.7rem] font-bold text-red-400 uppercase tracking-widest">Resistir mais...</label>
@@ -297,17 +300,6 @@ export function ViceBubble({ canvasScale = 1 }: ViceBubbleProps) {
                     </button>
                   </div>
                 </div>
-              ) : (
-                <div>
-                  <label className="text-[0.7rem] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Motivador</label>
-                  <input
-                    type="text"
-                    value={motivatorInput}
-                    onChange={(e) => setMotivatorInput(e.target.value)}
-                    placeholder="Registre o que motivou o consumo!"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-white/30"
-                  />
-                </div>
               )}
 
               {!showResistInput && (
@@ -336,16 +328,7 @@ export function ViceBubble({ canvasScale = 1 }: ViceBubbleProps) {
                     </button>
                   )}
 
-                  <button
-                    onClick={() => {
-                      setShowHistoryModal(true);
-                      setShowMotivatorModal(false);
-                    }}
-                    className="w-full bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-[0.65rem] tracking-widest mt-1"
-                  >
-                    <History size={14} />
-                    VER HISTÓRICO
-                  </button>
+
                 </div>
               )}
 
@@ -365,7 +348,7 @@ export function ViceBubble({ canvasScale = 1 }: ViceBubbleProps) {
                     </button>
                     <button
                       onClick={() => {
-                        setActiveVice(null);
+                        removeActiveVice(activeVice.viceId);
                         setShowMotivatorModal(false);
                         setShowConfirmEnd(false);
                       }}

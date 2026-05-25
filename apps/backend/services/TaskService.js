@@ -13,7 +13,7 @@ class TaskService {
     async createNewTask(userId, taskData) {
         console.log(`[AUDITORIA] Criando tarefa para o Usuário ID: ${userId} (Tipo: ${typeof userId})`);
         
-        const { name, description, category, scheduledDate, scheduledTime, priority, status, tags } = taskData;
+        const { name, description, category, scheduledDate, scheduledTime, priority, status, tags, color, isDraggable } = taskData;
         
         const cleanName = name?.trim();
         if (!cleanName) {
@@ -40,7 +40,9 @@ class TaskService {
             tags,
             scheduledDate: parsedDate,
             scheduledTime,
-            userId: userId
+            userId: userId,
+            color,
+            isDraggable: isDraggable !== undefined ? isDraggable : true
         });
     }
 
@@ -52,7 +54,7 @@ class TaskService {
             throw new Error('Acesso negado ou tarefa não encontrada');
         }
 
-        const { name, description, category, scheduledDate, scheduledTime, completed, priority, status, tags } = updateData;
+        const { name, description, category, scheduledDate, scheduledTime, completed, priority, status, tags, color, isDraggable } = updateData;
         
         // Lógica de conclusão
         let completedAt = undefined;
@@ -68,7 +70,9 @@ class TaskService {
             tags,
             scheduledTime,
             completed,
-            completedAt
+            completedAt,
+            color,
+            isDraggable
         };
 
         if (scheduledDate !== undefined) {

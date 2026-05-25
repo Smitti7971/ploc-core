@@ -10,9 +10,10 @@ interface WeekColumnProps {
   isToday: boolean;
   tasks: CalendarTask[];
   onAddClick: () => void;
+  onTaskClick?: (task: CalendarTask) => void;
 }
 
-export function WeekColumn({ dateStr, dayName, dateNum, isToday, tasks, onAddClick }: WeekColumnProps) {
+export function WeekColumn({ dateStr, dayName, dateNum, isToday, tasks, onAddClick, onTaskClick }: WeekColumnProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: dateStr,
   });
@@ -35,7 +36,7 @@ export function WeekColumn({ dateStr, dayName, dateNum, isToday, tasks, onAddCli
       {/* Tasks List */}
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 min-h-[300px]">
         {tasks.map(task => (
-          <DraggableTaskCard key={task.id} task={task} />
+          <DraggableTaskCard key={task.id} task={task} onClick={() => onTaskClick?.(task)} />
         ))}
         
         <button 

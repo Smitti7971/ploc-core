@@ -60,20 +60,21 @@ interface ViceLogResponse {
 }
 
 interface ViceStore {
-  activeVice: ActiveVice | null;
+  activeVices: Record<string, ActiveVice>;
   logs: ViceLog[];
   
   fetchVices: () => Promise<void>;
   
-  setActiveVice: (vice: ActiveVice | null) => void;
-  resetTimer: () => void;
+  setActiveVice: (vice: ActiveVice) => void;
+  removeActiveVice: (viceId: string) => void;
+  resetTimer: (viceId: string) => void;
   
-  startConsumption: (motivator?: string) => void;
-  endConsumption: (actualSecondsUsed: number, motivator?: string) => void;
-  cancelConsumption: () => void;
-  addFastingTime: (additionalSeconds: number) => void;
-  setDefaultConsumptionSeconds: (seconds: number) => void;
-  setCostPerUse: (cost: number) => void;
+  startConsumption: (viceId: string, motivator?: string) => void;
+  endConsumption: (viceId: string, actualSecondsUsed: number, motivator?: string) => void;
+  cancelConsumption: (viceId: string) => void;
+  addFastingTime: (viceId: string, additionalSeconds: number) => void;
+  setDefaultConsumptionSeconds: (viceId: string, seconds: number) => void;
+  setCostPerUse: (viceId: string, cost: number) => void;
   
   addLog: (log: Omit<ViceLog, 'id' | 'timestamp'>) => void;
   clearLogs: (viceId: string) => void;
@@ -84,7 +85,8 @@ const syncViceToBackend = async (vice: ActiveVice | null) => {
     try {
       await apiService.post('/vices', vice);
     } catch (e) {
-      console.error(e);
+      console.error('Erro ao sincronizar vício:', e);
+      alert('Aviso: Falha ao sincronizar as configurações do vício com o banco de dados. Seus dados podem não estar salvos permanentemente.');
     }
   }
 };
@@ -93,40 +95,52 @@ const syncLogToBackend = async (log: ViceLog) => {
   try {
     await apiService.post('/vices/log', log);
   } catch (e) {
-    console.error(e);
+    console.error('Erro ao sincronizar log de vício:', e);
+    alert('Aviso: Falha ao salvar o histórico do vício no banco de dados. Os dados recentes podem ser perdidos.');
   }
 };
 
 export const useViceStore = create<ViceStore>()(
   persist(
     (set, get) => ({
-      activeVice: null,
+      activeVices: {},
       logs: [],
 
       fetchVices: async () => {
         try {
+          // Previne chamadas caso o usuário não esteja logado (evitando erros de console durante o redirecionamento)
+          if (typeof window !== 'undefined') {
+            const hasDirectToken = !!localStorage.getItem('ploc_token');
+            const hasStoreToken = !!localStorage.getItem('ploc-auth');
+            if (!hasDirectToken && !hasStoreToken) return;
+          }
+          
           const vices = await apiService.get<ViceResponse[]>('/vices');
           if (vices && vices.length > 0) {
-            const active = vices[0];
+            const newActiveVices: Record<string, ActiveVice> = {};
+            vices.forEach(v => {
+              newActiveVices[v.viceId] = {
+                viceId: v.viceId,
+                customName: v.customName,
+                mode: v.mode,
+                startTime: Number(v.startTime),
+                expectedFrequency: v.expectedFrequency,
+                timerLimitSeconds: v.timerLimitSeconds,
+                reductionTarget: v.reductionTarget,
+                isConsuming: v.isConsuming,
+                consumptionStartTime: v.consumptionStartTime ? Number(v.consumptionStartTime) : undefined,
+                defaultConsumptionSeconds: v.defaultConsumptionSeconds,
+                costPerUse: v.costPerUse,
+                currentMotivator: v.currentMotivator
+              };
+            });
+
             set({
-              activeVice: {
-                viceId: active.viceId,
-                customName: active.customName,
-                mode: active.mode,
-                startTime: Number(active.startTime),
-                expectedFrequency: active.expectedFrequency,
-                timerLimitSeconds: active.timerLimitSeconds,
-                reductionTarget: active.reductionTarget,
-                isConsuming: active.isConsuming,
-                consumptionStartTime: active.consumptionStartTime ? Number(active.consumptionStartTime) : undefined,
-                defaultConsumptionSeconds: active.defaultConsumptionSeconds,
-                costPerUse: active.costPerUse,
-                currentMotivator: active.currentMotivator
-              },
+              activeVices: newActiveVices,
               logs: vices.flatMap(v => 
                 (v.logs || []).map((l: ViceLogResponse) => ({
                   ...l,
-                  viceId: v.viceId, // Force string ID instead of UUID
+                  viceId: v.viceId,
                   timestamp: Number(l.timestamp)
                 }))
               )
@@ -139,24 +153,15 @@ export const useViceStore = create<ViceStore>()(
 
       setActiveVice: (vice) => {
         let createdLog: ViceLog | null = null;
-        let viceIdToDelete: string | null = null;
 
         set((state) => {
           const now = Date.now();
           const newLogs = [...state.logs];
+          const isNew = !state.activeVices[vice.viceId];
 
-          if (vice === null && state.activeVice) {
-            viceIdToDelete = state.activeVice.viceId;
+          if (isNew) {
             createdLog = {
-              id: Math.random().toString(36).substring(2, 9),
-              viceId: state.activeVice.viceId,
-              type: 'end',
-              timestamp: now
-            };
-            newLogs.unshift(createdLog);
-          } else if (vice !== null && (!state.activeVice || state.activeVice.viceId !== vice.viceId)) {
-            createdLog = {
-              id: Math.random().toString(36).substring(2, 9),
+              id: crypto.randomUUID(),
               viceId: vice.viceId,
               type: 'start',
               timestamp: now
@@ -164,101 +169,155 @@ export const useViceStore = create<ViceStore>()(
             newLogs.unshift(createdLog);
           }
 
-          return { activeVice: vice, logs: newLogs };
+          return { 
+            activeVices: { ...state.activeVices, [vice.viceId]: vice }, 
+            logs: newLogs 
+          };
         });
-        // To prevent race conditions, we can't use async in set(), but we can do the API calls here
+
         (async () => {
           await syncViceToBackend(vice);
-          if (viceIdToDelete) {
-            await apiService.delete(`/vices/${viceIdToDelete}`).catch(console.error);
-          }
           if (createdLog) await syncLogToBackend(createdLog);
         })();
       },
 
-      resetTimer: () => {
-        set((state) => ({
-          activeVice: state.activeVice 
-            ? { ...state.activeVice, startTime: Date.now(), isConsuming: false, consumptionStartTime: undefined } 
-            : null
-        }));
-        syncViceToBackend(get().activeVice);
+      removeActiveVice: (viceId) => {
+        let createdLog: ViceLog | null = null;
+
+        set((state) => {
+          const now = Date.now();
+          const newLogs = [...state.logs];
+          
+          if (state.activeVices[viceId]) {
+            createdLog = {
+              id: crypto.randomUUID(),
+              viceId,
+              type: 'end',
+              timestamp: now
+            };
+            newLogs.unshift(createdLog);
+          }
+
+          const newVices = { ...state.activeVices };
+          delete newVices[viceId];
+
+          return { activeVices: newVices, logs: newLogs };
+        });
+
+        (async () => {
+          await apiService.delete(`/vices/${viceId}`).catch(console.error);
+          if (createdLog) await syncLogToBackend(createdLog);
+        })();
+      },
+
+      resetTimer: (viceId) => {
+        set((state) => {
+          const vice = state.activeVices[viceId];
+          if (!vice) return state;
+
+          const updatedVice = { 
+            ...vice, 
+            startTime: Date.now(), 
+            isConsuming: false, 
+            consumptionStartTime: undefined 
+          };
+
+          return {
+            activeVices: { ...state.activeVices, [viceId]: updatedVice }
+          };
+        });
+        syncViceToBackend(get().activeVices[viceId]);
       },
       
-      startConsumption: (motivator) => {
-        set((state) => ({
-          activeVice: state.activeVice
-            ? { 
-                ...state.activeVice, 
-                isConsuming: true, 
-                consumptionStartTime: Date.now(),
-                defaultConsumptionSeconds: state.activeVice.defaultConsumptionSeconds || 300,
-                currentMotivator: motivator
-              }
-            : null
-        }));
-        syncViceToBackend(get().activeVice);
+      startConsumption: (viceId, motivator) => {
+        set((state) => {
+          const vice = state.activeVices[viceId];
+          if (!vice) return state;
+
+          const updatedVice = { 
+            ...vice, 
+            isConsuming: true, 
+            consumptionStartTime: Date.now(),
+            defaultConsumptionSeconds: vice.defaultConsumptionSeconds || 300,
+            currentMotivator: motivator
+          };
+
+          return {
+            activeVices: { ...state.activeVices, [viceId]: updatedVice }
+          };
+        });
+        syncViceToBackend(get().activeVices[viceId]);
       },
 
-      cancelConsumption: () => {
-        set((state) => ({
-          activeVice: state.activeVice
-            ? {
-                ...state.activeVice,
-                isConsuming: false,
-                consumptionStartTime: undefined,
-                currentMotivator: undefined
-              }
-            : null
-        }));
-        syncViceToBackend(get().activeVice);
+      cancelConsumption: (viceId) => {
+        set((state) => {
+          const vice = state.activeVices[viceId];
+          if (!vice) return state;
+
+          const updatedVice = {
+            ...vice,
+            isConsuming: false,
+            consumptionStartTime: undefined,
+            currentMotivator: undefined
+          };
+
+          return {
+            activeVices: { ...state.activeVices, [viceId]: updatedVice }
+          };
+        });
+        syncViceToBackend(get().activeVices[viceId]);
       },
 
-      endConsumption: (actualSecondsUsed, motivator) => {
+      endConsumption: (viceId, actualSecondsUsed, motivator) => {
         let createdLog: ViceLog | null = null;
         set((state) => {
-          if (!state.activeVice) return state;
+          const vice = state.activeVices[viceId];
+          if (!vice) return state;
 
           const now = Date.now();
-          const fastingSeconds = Math.floor((now - state.activeVice.startTime) / 1000) - actualSecondsUsed;
-          const finalMotivator = motivator || state.activeVice.currentMotivator;
+          const fastingSeconds = Math.floor((now - vice.startTime) / 1000) - actualSecondsUsed;
+          const finalMotivator = motivator || vice.currentMotivator;
 
           createdLog = {
-            id: Math.random().toString(36).substring(2, 9),
-            viceId: state.activeVice.viceId,
+            id: crypto.randomUUID(),
+            viceId: vice.viceId,
             type: 'consumption',
             timestamp: now,
             durationSeconds: actualSecondsUsed,
             fastingSeconds: fastingSeconds > 0 ? fastingSeconds : 0,
-            cost: state.activeVice.costPerUse,
+            cost: vice.costPerUse,
             motivator: finalMotivator?.trim() || undefined
           };
 
+          const updatedVice = {
+            ...vice,
+            isConsuming: false,
+            consumptionStartTime: undefined,
+            defaultConsumptionSeconds: actualSecondsUsed, 
+            startTime: now, 
+            currentMotivator: undefined
+          };
+
           return {
-            activeVice: {
-              ...state.activeVice,
-              isConsuming: false,
-              consumptionStartTime: undefined,
-              defaultConsumptionSeconds: actualSecondsUsed, 
-              startTime: now, 
-              currentMotivator: undefined
-            },
+            activeVices: { ...state.activeVices, [viceId]: updatedVice },
             logs: [createdLog, ...state.logs]
           };
         });
         (async () => {
-          await syncViceToBackend(get().activeVice);
+          await syncViceToBackend(get().activeVices[viceId]);
           if (createdLog) await syncLogToBackend(createdLog);
         })();
       },
 
-      addFastingTime: (additionalSeconds) => {
+      addFastingTime: (viceId, additionalSeconds) => {
         set((state) => {
-          if (!state.activeVice) return state;
-          const currentElapsed = Math.floor((Date.now() - state.activeVice.startTime) / 1000);
-          const currentLimit = state.activeVice.timerLimitSeconds || 0;
+          const vice = state.activeVices[viceId];
+          if (!vice) return state;
+
+          const currentElapsed = Math.floor((Date.now() - vice.startTime) / 1000);
+          const currentLimit = vice.timerLimitSeconds || 0;
           
-          let newStartTime = state.activeVice.startTime;
+          let newStartTime = vice.startTime;
           let newLimit = currentLimit;
 
           if (currentElapsed >= currentLimit) {
@@ -268,33 +327,47 @@ export const useViceStore = create<ViceStore>()(
             newLimit = currentLimit + additionalSeconds;
           }
 
+          const updatedVice = {
+            ...vice,
+            startTime: newStartTime,
+            timerLimitSeconds: newLimit
+          };
+
           return {
-            activeVice: {
-              ...state.activeVice,
-              startTime: newStartTime,
-              timerLimitSeconds: newLimit
+            activeVices: { ...state.activeVices, [viceId]: updatedVice }
+          };
+        });
+        syncViceToBackend(get().activeVices[viceId]);
+      },
+
+      setDefaultConsumptionSeconds: (viceId, seconds) => {
+        set((state) => {
+          const vice = state.activeVices[viceId];
+          if (!vice) return state;
+
+          return {
+            activeVices: { 
+              ...state.activeVices, 
+              [viceId]: { ...vice, defaultConsumptionSeconds: seconds } 
             }
           };
         });
-        syncViceToBackend(get().activeVice);
+        syncViceToBackend(get().activeVices[viceId]);
       },
 
-      setDefaultConsumptionSeconds: (seconds) => {
-        set((state) => ({
-          activeVice: state.activeVice
-            ? { ...state.activeVice, defaultConsumptionSeconds: seconds }
-            : null
-        }));
-        syncViceToBackend(get().activeVice);
-      },
+      setCostPerUse: (viceId, cost) => {
+        set((state) => {
+          const vice = state.activeVices[viceId];
+          if (!vice) return state;
 
-      setCostPerUse: (cost) => {
-        set((state) => ({
-          activeVice: state.activeVice
-            ? { ...state.activeVice, costPerUse: cost }
-            : null
-        }));
-        syncViceToBackend(get().activeVice);
+          return {
+            activeVices: { 
+              ...state.activeVices, 
+              [viceId]: { ...vice, costPerUse: cost } 
+            }
+          };
+        });
+        syncViceToBackend(get().activeVices[viceId]);
       },
 
       addLog: (log) => {
@@ -302,7 +375,7 @@ export const useViceStore = create<ViceStore>()(
         set((state) => {
           createdLog = {
             ...log,
-            id: Math.random().toString(36).substring(2, 9),
+            id: crypto.randomUUID(),
             timestamp: Date.now()
           };
           return {
@@ -316,7 +389,6 @@ export const useViceStore = create<ViceStore>()(
         set((state) => ({
           logs: state.logs.filter(l => l.viceId !== viceId)
         }));
-        // Note: not syncing log deletion yet to keep it simple, typically you wouldn't clear logs in DB this easily.
       }
     }),
     {

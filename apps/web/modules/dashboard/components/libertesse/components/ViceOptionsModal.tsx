@@ -19,8 +19,10 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
   const [hours, setHours] = useState('1');
   const [minutes, setMinutes] = useState('0');
   
-  const activeVice = useViceStore(state => state.activeVice);
+  const activeVices = useViceStore(state => state.activeVices);
+  const activeVice = viceId ? activeVices[viceId] : null;
   const setActiveVice = useViceStore(state => state.setActiveVice);
+  const removeActiveVice = useViceStore(state => state.removeActiveVice);
   const setStoreCostPerUse = useViceStore(state => state.setCostPerUse);
   const viceLogs = useViceStore(state => state.logs);
   
@@ -56,7 +58,7 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
   useEffect(() => {
     if (isOpen) {
       const timeoutId = setTimeout(() => {
-        setCustomViceName(activeVice?.viceId === 'personalizado' ? (activeVice.customName || '') : '');
+        setCustomViceName(viceId === 'personalizado' ? (activeVice?.customName || '') : '');
         
         if (viceId) {
           if (initialStep) {
@@ -311,7 +313,7 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
                                 if (e.key === 'Enter') {
                                   setIsEditingCost(false);
                                   const parsed = parseFloat(costPerUse.replace(',', '.'));
-                                  if (!isNaN(parsed)) setStoreCostPerUse(parsed / 20);
+                                  if (!isNaN(parsed) && viceId) setStoreCostPerUse(viceId, parsed / 20);
                                 }
                               }}
                               placeholder="R$ 0,00"
@@ -321,7 +323,7 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
                               onClick={() => {
                                 setIsEditingCost(false);
                                 const parsed = parseFloat(costPerUse.replace(',', '.'));
-                                if (!isNaN(parsed)) setStoreCostPerUse(parsed / 20);
+                                if (!isNaN(parsed) && viceId) setStoreCostPerUse(viceId, parsed / 20);
                               }}
                               className="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white font-bold px-4 py-2 rounded-xl transition-colors text-xs tracking-widest"
                             >
@@ -534,7 +536,7 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
                     </button>
                     <button 
                       onClick={() => {
-                        setActiveVice(null);
+                        if (viceId) removeActiveVice(viceId);
                         handleClose();
                       }}
                       className="flex-1 bg-red-500 text-white font-bold py-3 rounded-xl hover:bg-red-600 transition-colors text-xs tracking-widest shadow-[0_0_15px_rgba(239,68,68,0.5)]"

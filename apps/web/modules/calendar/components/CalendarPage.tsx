@@ -4,17 +4,18 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutGrid, Calendar as CalendarIcon, AlignJustify, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCalendarData } from '../hooks/useCalendarData';
-import { getWeekDays, getSurroundingDays, getLocalizedHeaderDate } from '../utils/dateUtils';
+import { getWeekDays, getSurroundingDays, getLocalizedHeaderDate, toISODate } from '../utils/dateUtils';
 import { DayView } from './views/DayView';
 import { WeekView } from './views/WeekView';
 import { MonthView } from './views/MonthView';
 import { TaskModal } from './views/TaskModal';
+import { TaskDetailModal } from './views/TaskDetailModal';
+import { CalendarTask } from '../store/calendarStore';
 
 type ViewMode = 'day' | 'week' | 'month';
 
 export function CalendarPage() {
   const { allEvents, getEventsByDate, moveTaskToDate } = useCalendarData();
-  
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   
   const [baseDate, setBaseDate] = useState<Date>(() => {
@@ -24,16 +25,50 @@ export function CalendarPage() {
   });
 
   const [selectedDate, setSelectedDate] = useState<Date>(baseDate);
-  const selectedDateStr = selectedDate.toISOString().split('T')[0];
+  const selectedDateStr = toISODate(selectedDate);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalDateStr, setModalDateStr] = useState(selectedDateStr);
+  const [editTask, setEditTask] = useState<CalendarTask | null>(null);
+
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<CalendarTask | null>(null);
 
   const [isCapsuleOpen, setIsCapsuleOpen] = useState(false);
 
   // Arrays de data baseados no view
   const weekDays = getWeekDays(baseDate);
-  const surroundingDays = getSurroundingDays(selectedDate, 3); // -3 a +3 dias
+  const [scrollRange, setScrollRange] = useState({ past: 4, future: 4 });
+  const scrollableDays = React.useMemo(() => getSurroundingDays(baseDate, scrollRange.past, scrollRange.future), [baseDate, scrollRange]);
+
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const isFirstMount = React.useRef(true);
+  const prevSelectedDateStr = React.useRef(selectedDateStr);
+
+  React.useEffect(() => {
+    if (viewMode === 'day' && scrollContainerRef.current) {
+      const index = scrollableDays.findIndex(d => d.dateStr === selectedDateStr);
+      if (index !== -1) {
+        const mondayIndex = index - (index % 7);
+        const containerWidth = scrollContainerRef.current.clientWidth;
+        const targetScrollLeft = (mondayIndex / 7) * containerWidth;
+
+        if (isFirstMount.current) {
+          scrollContainerRef.current.scrollLeft = targetScrollLeft;
+          isFirstMount.current = false;
+        } else if (prevSelectedDateStr.current !== selectedDateStr) {
+          const currentScrollLeft = scrollContainerRef.current.scrollLeft;
+          if (Math.abs(currentScrollLeft - targetScrollLeft) > containerWidth / 2) {
+            scrollContainerRef.current.scrollTo({
+              left: targetScrollLeft,
+              behavior: 'smooth'
+            });
+          }
+        }
+      }
+    }
+    prevSelectedDateStr.current = selectedDateStr;
+  }, [viewMode, selectedDateStr, scrollableDays]);
 
   const handlePrevDay = () => {
     const d = new Date(selectedDate);
@@ -76,7 +111,20 @@ export function CalendarPage() {
   };
 
   const handleOpenModal = (dateStr: string) => {
+    setEditTask(null);
     setModalDateStr(dateStr);
+    setIsModalOpen(true);
+  };
+
+  const handleTaskClick = (task: CalendarTask) => {
+    setSelectedTask(task);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleEditTask = (task: CalendarTask) => {
+    setIsDetailModalOpen(false);
+    setEditTask(task);
+    setModalDateStr(task.dateStr);
     setIsModalOpen(true);
   };
 
@@ -104,15 +152,31 @@ export function CalendarPage() {
           {/* Cabeçalho */}
           <div className="flex justify-between items-center mb-6 relative z-20">
             <div>
-              <p className="text-sky-400 text-sm font-bold tracking-widest uppercase mb-1">
-                {viewMode === 'day' && (selectedDate.toDateString() === new Date().toDateString() ? 'Hoje' : surroundingDays.find(d => d.dateStr === selectedDateStr)?.dayName)}
-                {viewMode === 'week' && 'Semana'}
-                {viewMode === 'month' && 'Mês'}
-              </p>
+              <div className="flex items-center gap-3 mb-1">
+                <p className="text-sky-400 text-sm font-bold tracking-widest uppercase">
+                  {viewMode === 'day' && (selectedDate.toDateString() === new Date().toDateString() ? 'Hoje' : scrollableDays.find(d => d.dateStr === selectedDateStr)?.dayName)}
+                  {viewMode === 'week' && 'Semana'}
+                  {viewMode === 'month' && 'Mês'}
+                </p>
+                {selectedDate.toDateString() !== new Date().toDateString() && (
+                  <button 
+                    onClick={() => {
+                      const today = new Date();
+                      today.setHours(0,0,0,0);
+                      setBaseDate(today);
+                      setSelectedDate(today);
+                      setScrollRange({ past: 30, future: 30 });
+                    }}
+                    className="text-[10px] uppercase font-bold tracking-widest bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 px-2 py-0.5 rounded-full border border-sky-500/30 transition-colors"
+                  >
+                    Voltar p/ Hoje
+                  </button>
+                )}
+              </div>
               <h1 className="text-3xl sm:text-4xl font-black tracking-tight capitalize leading-none flex gap-2">
                 <span className="text-white">{selectedDate.getDate()}</span>
                 <span className="text-sky-400">
-                  {selectedDate.toLocaleDateString(undefined, { month: 'long' })}
+                  {selectedDate.toLocaleDateString('pt-BR', { month: 'long' })}
                 </span>
                 <span className="text-sky-500/50">
                   {selectedDate.getFullYear()}
@@ -173,32 +237,66 @@ export function CalendarPage() {
 
           {/* Seletor Semanal / Carrossel de Dias */}
           {viewMode === 'day' && (
-            <div className="flex items-center justify-between mb-6 bg-white/5 rounded-2xl border border-white/5 p-1 relative z-10 w-full overflow-hidden">
-              <motion.div className="flex-1 flex justify-around items-center px-1" layout>
-                <AnimatePresence mode="popLayout">
-                  {surroundingDays.map((d) => {
-                    const isActive = d.dateStr === selectedDateStr;
-                    return (
-                      <motion.div 
-                        key={d.dateStr} 
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        transition={{ duration: 0.2 }}
-                        className="group flex flex-col items-center gap-1 cursor-pointer py-1 px-2 rounded-xl transition-colors hover:bg-white/5"
-                        onClick={() => setSelectedDate(d.dateObj)}
-                      >
-                        <span className={`text-[10px] uppercase font-bold transition-colors ${isActive ? 'text-sky-400' : 'text-white/30 group-hover:text-white/50'}`}>
-                          {d.dayName}
-                        </span>
-                        <span className={`text-sm font-bold transition-all ${isActive ? 'text-white bg-sky-500 w-6 h-6 rounded-full flex items-center justify-center shadow-lg shadow-sky-500/20' : 'text-white/80 w-6 h-6 flex items-center justify-center rounded-full group-hover:bg-white/10 group-hover:text-white'}`}>
-                          {d.dateNum}
-                        </span>
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
-              </motion.div>
+            <div 
+              ref={scrollContainerRef}
+              onScroll={(e) => {
+                const target = e.currentTarget;
+                if (target.scrollWidth - target.scrollLeft - target.clientWidth < 150) {
+                  setScrollRange(r => ({ ...r, future: r.future + 4 }));
+                }
+                if (target.scrollLeft < 150) {
+                  setScrollRange(r => ({ ...r, past: r.past + 4 }));
+                  // Compensar o scroll pra não pular. Calcula a largura exata de 4 semanas.
+                  setTimeout(() => {
+                    if (scrollContainerRef.current) {
+                      const itemWidth = scrollContainerRef.current.clientWidth / 7;
+                      scrollContainerRef.current.scrollLeft += 4 * 7 * itemWidth;
+                    }
+                  }, 0);
+                }
+              }}
+              className="mb-3 bg-white/5 rounded-xl border border-white/5 relative z-10 w-full overflow-x-auto scrollbar-hide grid grid-flow-col auto-cols-[calc(100%/7)] snap-x snap-mandatory"
+            >
+              {scrollableDays.map((d) => {
+                const isActive = d.dateStr === selectedDateStr;
+                const isRealToday = d.dateObj.toDateString() === new Date().toDateString();
+                const isSunday = d.dateObj.getDay() === 0;
+                const shortDay = d.dayName.replace('.', '').toUpperCase();
+
+                // Cor da Label (Dias da semana)
+                let textColor = 'text-white/40 font-medium';
+                if (isSunday) textColor = 'text-red-500 font-bold';
+                else if (isActive) textColor = 'text-sky-400 font-bold';
+                else if (isRealToday) textColor = 'text-white font-bold';
+
+                // Cor do Número do dia
+                let numColor = 'text-white/80 font-medium';
+                if (isActive) numColor = 'text-white font-bold';
+                else if (isRealToday) numColor = 'text-white font-bold';
+
+                // Estilo do container (Borda, Fundo e Stroke)
+                let containerStyle = 'border-transparent hover:bg-white/5';
+                if (isActive) {
+                  containerStyle = isSunday 
+                    ? 'day-active border-red-500 bg-white/5 ring-1 ring-red-500/50 rounded-lg'
+                    : 'day-active border-sky-500 bg-white/5 ring-1 ring-sky-500/50 rounded-lg';
+                }
+
+                return (
+                  <div 
+                    key={d.dateStr} 
+                    className={`group flex flex-col items-center justify-center gap-0.5 cursor-pointer py-2 transition-colors border-b-2 ${containerStyle} ${d.isMonday ? 'snap-start' : ''}`}
+                    onClick={() => setSelectedDate(d.dateObj)}
+                  >
+                    <span className={`text-[9px] uppercase transition-colors text-center leading-none mb-0.5 ${textColor}`}>
+                      {shortDay}
+                    </span>
+                    <span className={`text-[15px] transition-all leading-none mt-0.5 ${numColor}`}>
+                      {d.dateObj.getDate()}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -236,6 +334,7 @@ export function CalendarPage() {
                 dateStr={selectedDateStr}
                 tasks={getEventsByDate(selectedDateStr)} 
                 onOpenTaskModal={handleOpenModal}
+                onTaskClick={handleTaskClick}
                 onPrevDay={handlePrevDay}
                 onNextDay={handleNextDay}
               />
@@ -249,6 +348,7 @@ export function CalendarPage() {
                 allEvents={allEvents}
                 onMoveTask={moveTaskToDate}
                 onOpenTaskModal={handleOpenModal}
+                onTaskClick={handleTaskClick}
               />
             </div>
           )}
@@ -268,8 +368,15 @@ export function CalendarPage() {
 
       <TaskModal 
         isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        defaultDateStr={modalDateStr} 
+        onClose={() => { setIsModalOpen(false); setEditTask(null); }} 
+        defaultDateStr={modalDateStr}
+        editTask={editTask}
+      />
+      <TaskDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        task={selectedTask}
+        onEdit={handleEditTask}
       />
     </div>
   );
