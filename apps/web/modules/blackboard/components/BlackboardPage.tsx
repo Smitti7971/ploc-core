@@ -462,21 +462,12 @@ export default function BlackboardPage() {
                     animate={!activeConsumingVice?.isConsuming ? {
                       scaleX: [1, 1.03, 0.97, 1],
                       scaleY: [1, 0.97, 1.03, 1],
-                      borderRadius: [
-                        "50% 50% 48% 48% / 48% 48% 52% 52%",
-                        "46% 54% 44% 56% / 53% 47% 53% 47%",
-                        "54% 46% 56% 44% / 47% 53% 47% 53%",
-                        "50% 50% 48% 48% / 48% 48% 52% 52%"
-                      ]
                     } : {
                       scaleX: [1, 1, 1, 1],
                       scaleY: [1, 1, 1, 1],
-                      borderRadius: [
-                        "50%", "50%", "50%", "50%"
-                      ]
                     }}
                     transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-                    className="absolute w-[500px] h-[500px] border border-sky-400/20 bg-sky-400/5 flex items-center justify-center pointer-events-none z-0 overflow-hidden"
+                    className="absolute w-[500px] h-[500px] rounded-full border border-sky-400/20 bg-sky-400/5 flex items-center justify-center pointer-events-none z-0"
                     style={{
                       boxShadow: 'inset 0 0 40px rgba(56, 189, 248, 0.1), 0 0 20px rgba(56, 189, 248, 0.05)'
                     }}
