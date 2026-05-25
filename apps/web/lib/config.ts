@@ -32,9 +32,18 @@ export const config = {
 
 export const getAssetUrl = (url?: string | null) => {
   if (!url) return '';
-  if (url.includes('localhost:') && typeof window !== 'undefined') {
-    const backendRoot = config.api.baseUrl.replace(/\/api\/?$/, '');
-    return url.replace(/^https?:\/\/localhost:\d+/, backendRoot);
+  
+  const backendRoot = config.api.baseUrl.replace(/\/api\/?$/, '');
+
+  // Se já for uma URL completa
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    if (url.includes('localhost:') && typeof window !== 'undefined') {
+      return url.replace(/^https?:\/\/localhost:\d+/, backendRoot);
+    }
+    return url;
   }
-  return url;
+
+  // Se for caminho relativo (ex: /uploads/...)
+  const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+  return `${backendRoot}${cleanUrl}`;
 };

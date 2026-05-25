@@ -12,6 +12,7 @@ export function UserHeader() {
   const { user, isAuthenticated, logout } = useAuthStore();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   if (!isAuthenticated) return null;
 
@@ -50,8 +51,13 @@ export function UserHeader() {
           overflow: 'hidden',
           flexShrink: 0
         }}>
-          {user?.profilePhoto ? (
-            <img src={getAssetUrl(user.profilePhoto)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          {user?.profilePhoto && !imgError ? (
+            <img 
+              src={getAssetUrl(user.profilePhoto)} 
+              onError={() => setImgError(true)}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              alt="Profile"
+            />
           ) : (
             (user?.name || 'U').charAt(0).toUpperCase()
           )}

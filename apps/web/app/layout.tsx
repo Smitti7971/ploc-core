@@ -17,6 +17,7 @@ export const metadata: Metadata = {
 
 import { AuthCapsule } from '@/modules/auth/components/AuthCapsule';
 import { GlobalBackButton } from '@/components/layout/GlobalBackButton';
+import { FPSMeter } from '@/components/ui/FPSMeter';
 
 export default function RootLayout({
   children,
@@ -34,6 +35,7 @@ export default function RootLayout({
       <body>
         <GlobalBackButton />
         <AuthCapsule />
+        <FPSMeter />
         {children}
       </body>
     </html>

@@ -215,6 +215,33 @@ export default function DashboardPage() {
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
+      {/* HEADER PRINCIPAL */}
+      <div className="pt-12 px-6 pb-6 relative z-20">
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-3">
+              <motion.h1 
+                className="text-4xl font-black tracking-tight"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                Dashboard
+              </motion.h1>
+            </div>
+            <motion.p 
+              className="text-slate-400 font-medium"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+            >
+              Bom dia, {activePillar ? 'focado!' : 'o que vamos fazer hoje?'}
+            </motion.p>
+          </div>
+          {/* Espaço para o AuthCapsule (Profile/Settings) */}
+          <div className="w-12 h-12"></div>
+        </div>
+      </div>
+
       {/* DASHBOARD PILLARS ROW com Status */}
       <div className="w-full flex justify-between md:justify-center gap-1 md:gap-4 py-4 z-10 px-2 md:px-4">
         {Object.values(PILLARS_DATA).map((pillar) => {

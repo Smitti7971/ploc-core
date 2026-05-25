@@ -18,7 +18,8 @@ import {
   Target,
   Sparkles,
   Globe,
-  Smile
+  Smile,
+  Activity
 } from 'lucide-react'; // Ícones da UI
 
 // Componente da Página de Configurações do Usuário
@@ -272,6 +273,32 @@ export default function SettingsPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#64748b', fontSize: '0.7rem' }}>
               <ShieldCheck size={14} /> Dados protegidos por criptografia PLOC
             </div>
+
+            <button 
+              onClick={() => router.push('/lab')}
+              style={{
+                marginTop: '1rem', background: 'rgba(255,255,255,0.02)',
+                border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '12px', padding: '12px', color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+              }}
+            >
+              <Sparkles size={16} /> Acessar Laboratório (Testes de GPU)
+            </button>
+            
+            <button 
+              onClick={() => {
+                const current = localStorage.getItem('debug_fps') === 'true';
+                localStorage.setItem('debug_fps', current ? 'false' : 'true');
+                window.dispatchEvent(new Event('fps_toggled'));
+              }}
+              style={{
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '12px', padding: '12px', color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+              }}
+            >
+              <Activity size={16} /> Ligar/Desligar Medidor de FPS
+            </button>
           </div>
 
         </div>
