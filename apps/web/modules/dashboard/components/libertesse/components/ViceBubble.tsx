@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Flame, Wine, WineOff, Pill, Eye, EyeOff, Check, Cigarette, CigaretteOff, X, RotateCcw, History } from 'lucide-react';
@@ -47,6 +47,117 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [elapsed, setElapsed] = useState(0);
 
+  // Configuração física para o jogo de empurrar bolhas
+  const radius = 150;
+  const startAngle = (index / Math.max(total, 1)) * Math.PI * 2;
+  const startX = Math.cos(startAngle) * (radius * 0.6);
+  const startY = Math.sin(startAngle) * (radius * 0.6);
+
+  // Estados e refs de física
+  const [posX, setPosX] = useState(startX);
+  const [posY, setPosY] = useState(startY);
+
+  // Velocidade inicial calma em qualquer direção randômica
+  const vx = useRef((Math.random() - 0.5) * 1.2);
+  const vy = useRef((Math.random() - 0.5) * 1.2);
+
+  const currentPos = useRef({ x: startX, y: startY });
+  const plocPos = useRef({ x: 0, y: 0 });
+  const prevPlocPos = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    // 1. Escuta posição e ações de arrasto do Ploc
+    const unsubDragMove = blackboardEventBus.subscribe('PLOC_DRAG_MOVE', (data) => {
+      if (data) {
+        plocPos.current = { x: data.x, y: data.y };
+      }
+    });
+
+    const unsubDragEnd = blackboardEventBus.subscribe('PLOC_DRAG_END', (data) => {
+      if (data) {
+        plocPos.current = { x: data.x, y: data.y };
+      }
+    });
+
+    // 2. Loop de Simulação de Física (Futebol de Botão + Movimento Calmo Perpétuo)
+    const interval = setInterval(() => {
+      // Calcula a velocidade instantânea do Ploc (empurrão físico ativo)
+      const px = plocPos.current.x;
+      const py = plocPos.current.y;
+      const pvx = px - prevPlocPos.current.x;
+      const pvy = py - prevPlocPos.current.y;
+      prevPlocPos.current = { x: px, y: py };
+
+      // Aplica atrito extremamente leve para manter o deslizamento perpétuo e calmo
+      vx.current *= 0.992; // 0.8% de atrito (desliza de forma caldeada e limpa por muito tempo)
+      vy.current *= 0.992;
+
+      // Mantém um fluxo calmo perpétuo para qualquer direção (sem parar totalmente)
+      const minSpeed = 0.85; // Aceleração calma e perfeitamente visível
+      const maxSpeed = 5.0;  // Velocidade limite confortável
+      const currentSpeed = Math.sqrt(vx.current * vx.current + vy.current * vy.current);
+      if (currentSpeed < minSpeed) {
+        const angle = currentSpeed > 0.05 ? Math.atan2(vy.current, vx.current) : Math.random() * Math.PI * 2;
+        vx.current = Math.cos(angle) * minSpeed;
+        vy.current = Math.sin(angle) * minSpeed;
+      } else if (currentSpeed > maxSpeed) {
+        vx.current = (vx.current / currentSpeed) * maxSpeed;
+        vy.current = (vy.current / currentSpeed) * maxSpeed;
+      }
+
+      let nextX = currentPos.current.x + vx.current;
+      let nextY = currentPos.current.y + vy.current;
+
+      // 3. Colisão Física e Ricochete elástico contra o Mascote Ploc (Futebol de Botão)
+      const dx = nextX - px;
+      const dy = nextY - py;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const R_col = 82; // Raio combinado de colisão (Ploc ~52px + Bolha ~30px)
+
+      if (dist < R_col && dist > 0) {
+        const overlap = R_col - dist;
+        const nx = dx / dist;
+        const ny = dy / dist;
+
+        // Empurra a bolha para fora do Ploc
+        nextX += nx * overlap;
+        nextY += ny * overlap;
+
+        // Ricochete elástico clássico: reflete a velocidade em relação à normal e injeta impulso do Ploc
+        const dot = vx.current * nx + vy.current * ny;
+        vx.current = (vx.current - 2 * dot * nx) * 0.8 + pvx * 0.55;
+        vy.current = (vy.current - 2 * dot * ny) * 0.8 + pvy * 0.55;
+      }
+
+      // 4. Quique elástico na Parede Circular externa do Sonar de 500px (raio 160px)
+      const maxRadius = 160;
+      const distFromCenter = Math.sqrt(nextX * nextX + nextY * nextY);
+      if (distFromCenter > maxRadius) {
+        const ratio = maxRadius / distFromCenter;
+        nextX = nextX * ratio;
+        nextY = nextY * ratio;
+
+        // Vetor normal apontando para o centro
+        const nx = -nextX / distFromCenter;
+        const ny = -nextY / distFromCenter;
+        
+        // Reflete perfeitamente a velocidade mantendo 88% de energia elástica
+        const dot = vx.current * nx + vy.current * ny;
+        vx.current = (vx.current - 2 * dot * nx) * 0.88;
+        vy.current = (vy.current - 2 * dot * ny) * 0.88;
+      }
+
+      currentPos.current = { x: nextX, y: nextY };
+      setPosX(nextX);
+      setPosY(nextY);
+    }, 30);
+
+    return () => {
+      unsubDragMove();
+      unsubDragEnd();
+      clearInterval(interval);
+    };
+  }, [index]);
   useEffect(() => {
     if (activeVice?.mode === 'diminua' && activeVice.timerLimitSeconds) {
       const updateTimer = () => {
@@ -132,20 +243,6 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
     return null;
   }
 
-  // Chaotic movement logic bounded by radius (PLOC protective bubble is 500px diameter, 250px radius)
-  // We use max radius 150px to prevent the 90px bubbles from going out of bounds
-  const radius = 150;
-  const hash1 = index * 17 + 7;
-  const hash2 = index * 31 + 13;
-  const x1 = Math.cos(hash1) * radius;
-  const y1 = Math.sin(hash1) * radius;
-  const x2 = Math.cos(hash2) * radius;
-  const y2 = Math.sin(hash2) * radius;
-
-  // Base starting position to avoid overlap initially
-  const startAngle = (index / Math.max(total, 1)) * Math.PI * 2;
-  const startX = Math.cos(startAngle) * (radius * 0.6);
-  const startY = Math.sin(startAngle) * (radius * 0.6);
 
   return (
     <>
@@ -154,15 +251,15 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
         animate={{
           opacity: 1,
           scale: opticalScale,
-          x: [startX, x1, x2, -x1, startX],
-          y: [startY, y1, y2, -y2, startY]
+          x: posX,
+          y: posY
         }}
         exit={{ opacity: 0, scale: 0, x: 0 }}
         transition={{
           scale: { type: 'spring', stiffness: 300, damping: 20 },
           opacity: { duration: 0.3 },
-          x: { duration: 25 + (index % 3) * 5, repeat: Infinity, ease: "linear" },
-          y: { duration: 30 + (index % 4) * 4, repeat: Infinity, ease: "linear" },
+          x: { type: 'tween', ease: 'linear', duration: 0.03 }, // Transição linear ultra-fluida alinhada com o frame físico de 30ms!
+          y: { type: 'tween', ease: 'linear', duration: 0.03 }
         }}
         className="absolute z-[-1] pointer-events-auto flex flex-col items-center justify-center"
       >

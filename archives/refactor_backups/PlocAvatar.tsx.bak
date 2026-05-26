@@ -23,7 +23,7 @@
  */
 
 import { useEffect, useState, useRef } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { blackboardEventBus } from '@/modules/blackboard/events/eventBus';
@@ -58,7 +58,8 @@ const containerVariants = {
     transition: { duration: 0.2 }
   }),
   tap: (isSleeping: boolean) => ({
-    scale: isSleeping ? 1.0 : 0.98,
+    scaleX: isSleeping ? 1.0 : 0.95,
+    scaleY: isSleeping ? 1.0 : 1.05,
     transition: { duration: 0.1 }
   })
 };
@@ -81,21 +82,6 @@ export default function PlocAvatar({
 
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-
-  // Drag Direction target instead of absolute position for 2D platformer look!
-  const facingTargetX = useMotionValue(0);
-  const smoothFacingX = useSpring(facingTargetX, { stiffness: 350, damping: 25 });
-
-  // Parallax transforms for 2D turning effect
-  const faceX = useTransform(smoothFacingX, [-80, 80], [-18, 18], { clamp: true });
-  
-  const hatHairX = useTransform(smoothFacingX, [-80, 80], [-10, 10], { clamp: true });
-  
-  const clothesX = useTransform(smoothFacingX, [-80, 80], [-8, 8], { clamp: true });
-  
-  const bubblesX = useTransform(smoothFacingX, [-80, 80], [-12, 12], { clamp: true });
-  
-  const shineX = useTransform(smoothFacingX, [-80, 80], [8, -8], { clamp: true });
 
   // Observa e carrega a customização ativa do Ploc do localStorage (ou prop)
   const [localAppearance, setLocalAppearance] = useState<PlocAppearance>(DEFAULT_PLOC_APPEARANCE);
@@ -378,13 +364,19 @@ export default function PlocAvatar({
   const shouldShake = plocState.angerLevel >= 4 || plocState.isHurt || plocState.isHit;
 
   // Dynamic breathing/wobble keyframes based on states for gelatinous effect
-  const breatheScaleX = plocState.isHurt
-    ? [1.08, 1.00, 1.08]
-    : [1.07, 1.03, 1.07];
+  const breatheScaleX = isDragging
+    ? [1, 1, 1]
+    : (plocState.isHurt
+      ? [1.08, 1.00, 1.08]
+      : [1.07, 1.03, 1.07]
+    );
 
-  const breatheScaleY = plocState.isHurt
-    ? [0.92, 1.00, 0.92]
-    : [0.93, 0.97, 0.93];
+  const breatheScaleY = isDragging
+    ? [1, 1, 1]
+    : (plocState.isHurt
+      ? [0.92, 1.00, 0.92]
+      : [0.93, 0.97, 0.93]
+    );
 
   const breatheDuration = plocState.isHurt ? 1.5 : 3.5;
 
@@ -392,9 +384,9 @@ export default function PlocAvatar({
     ? [0, -3, 3, -3, 3, 0]
     : 0;
 
-  // EscalaX e EscalaY dinâmicas reativas a transições de sono e hover
-  const animateScaleX = plocState.isHurt ? [1, 0.9, 1.05, 0.95, 1] : (isSleeping ? [0.95, 0.95, 0.95] : breatheScaleX);
-  const animateScaleY = plocState.isHurt ? [1, 1.1, 0.95, 1.05, 1] : (isSleeping ? [0.95, 0.95, 0.95] : breatheScaleY);
+  // EscalaX e EscalaY dinâmicas reativas a transições de sono
+  const animateScaleX = plocState.isHurt ? [1, 0.9, 1.05, 0.95, 1] : (isHovered ? 1.00 : (isSleeping ? 0.95 : breatheScaleX));
+  const animateScaleY = breatheScaleY;
 
   // Escala dinâmica reativa a transições (squash & stretch) e respiração/dor
   let animateScale: number | number[] = plocState.isHurt ? 1.08 : (isHovered ? 1.05 : (isSleeping ? 0.95 : 1));
@@ -412,19 +404,22 @@ export default function PlocAvatar({
     animateRotate = [0, 8, -6, 3, -1, 0];
   }
 
-  const amoebaBorderRadius = isSleeping
-    ? [
-      "52% 48% 54% 46% / 44% 42% 58% 56%",
-      "48% 52% 46% 54% / 42% 44% 56% 58%",
-      "52% 48% 54% 46% / 44% 42% 58% 56%",
-      "52% 48% 54% 46% / 44% 42% 58% 56%"
-    ]
-    : [
-      "50% 50% 48% 48% / 48% 48% 52% 52%",
-      "46% 54% 44% 56% / 53% 47% 53% 47%",
-      "54% 46% 56% 44% / 47% 53% 47% 53%",
-      "50% 50% 48% 48% / 48% 48% 52% 52%"
-    ];
+  const amoebaBorderRadius = isDragging
+    ? "50%"
+    : (isSleeping
+      ? [
+        "52% 48% 54% 46% / 44% 42% 58% 56%",
+        "48% 52% 46% 54% / 42% 44% 56% 58%",
+        "52% 48% 54% 46% / 44% 42% 58% 56%",
+        "52% 48% 54% 46% / 44% 42% 58% 56%"
+      ]
+      : [
+        "50% 50% 48% 48% / 48% 48% 52% 52%",
+        "46% 54% 44% 56% / 53% 47% 53% 47%",
+        "54% 46% 56% 44% / 47% 53% 47% 53%",
+        "50% 50% 48% 48% / 48% 48% 52% 52%"
+      ]
+    );
 
   // Bloco de Renderização Principal do Avatar do Ploc
   return (
@@ -446,19 +441,12 @@ export default function PlocAvatar({
             right: window.innerWidth / 2 - ((pathname as string) === '/dashboard' ? 60 : 90),
             top: -window.innerHeight / 2 + ((pathname as string) === '/dashboard' ? 60 : 90),
             bottom: window.innerHeight / 2 - ((pathname as string) === '/dashboard' ? 60 : 90),
-          } : (
-            (pathname === '/' && isAuthenticated) ? {
-              left: -(250 - (SIZE / 2)),
-              right: (250 - (SIZE / 2)),
-              top: -(250 - (SIZE / 2)),
-              bottom: (250 - (SIZE / 2)),
-            } : {
-              left: -window.innerWidth + 100,
-              right: 30,
-              top: -window.innerHeight + 150,
-              bottom: 30,
-            }
-          )
+          } : {
+            left: -window.innerWidth + 100,
+            right: 30,
+            top: -window.innerHeight + 150,
+            bottom: 30,
+          }
         ) : false}
         dragElastic={0.2}
         dragTransition={{ bounceStiffness: 600, bounceDamping: 20 }}
@@ -466,36 +454,9 @@ export default function PlocAvatar({
           setIsDragging(true);
           setIsTapped(false);
           hasDraggedRef.current = true; // Marca que está sendo arrastado!
-          if (pathname === '/' && isAuthenticated) {
-            blackboardEventBus.emit('PLOC_DRAG_MOVE', { x: x.get(), y: y.get() });
-          }
         }}
         onDrag={(e, info) => {
           if (isSleeping) return;
-
-          // Atualiza a direção que ele olha baseado no movimento (delta) como num jogo top-down!
-          if (info.delta.x > 0.5) {
-            facingTargetX.set(80);
-          } else if (info.delta.x < -0.5) {
-            facingTargetX.set(-80);
-          }
-
-          // Limitador circular perfeito para o Blackboard (limita o arraste a uma esfera de raio 250px)
-          if (pathname === '/' && isAuthenticated) {
-            const maxRadius = 250 - (SIZE / 2);
-            const currentX = x.get();
-            const currentY = y.get();
-            const distance = Math.sqrt(currentX * currentX + currentY * currentY);
-            if (distance > maxRadius) {
-              const ratio = maxRadius / distance;
-              x.set(currentX * ratio);
-              y.set(currentY * ratio);
-            }
-            
-            // Emitir posição em tempo real para as bolhas empurrarem
-            blackboardEventBus.emit('PLOC_DRAG_MOVE', { x: x.get(), y: y.get() });
-          }
-
           // Detecção de card sob o Ploc
           const el = document.elementFromPoint(info.point.x, info.point.y);
           const card = el?.closest('[data-routine-id]');
@@ -516,8 +477,6 @@ export default function PlocAvatar({
           }
         }}
         onDragEnd={(e, info) => {
-          facingTargetX.set(0); // Volta a olhar para frente quando solta
-
           if (isSleeping) {
             setIsDragging(false);
             setIsTapped(false);
@@ -534,11 +493,6 @@ export default function PlocAvatar({
           if (Math.abs(info.velocity.x) > threshold || Math.abs(info.velocity.y) > threshold) {
             setTimeout(() => { triggerHurt(); }, 150);
           }
-          
-          if (pathname === '/' && isAuthenticated) {
-            blackboardEventBus.emit('PLOC_DRAG_END', { x: x.get(), y: y.get() });
-          }
-
           // Limpa o estado de arrasto logo após um pequeno delay para evitar que o clique convencional dispare!
           setTimeout(() => {
             hasDraggedRef.current = false;
@@ -662,24 +616,17 @@ export default function PlocAvatar({
                 : { duration: 0.6, ease: "easeInOut" },
             borderRadius: { duration: 4, repeat: Infinity, ease: "easeInOut" }
           }}
-          className="w-full h-full relative"
-          style={{ zIndex: 10 }}
+          className="w-full h-full relative border-[1.5px] border-white/20"
+          style={{
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            background: `radial-gradient(circle at 30% 30%, rgba(${stateR}, ${stateG}, ${stateB}, ${stateAlpha}) 0%, rgba(${stateR}, ${stateG}, ${stateB}, ${stateAlpha * 0.57}) 60%, rgba(${stateR}, ${stateG}, ${stateB}, ${stateAlpha * 0.23}) 100%)`,
+            boxShadow: shouldShake
+              ? `0 0 25px rgba(${stateR}, ${stateG}, ${stateB}, 0.5), inset 0 4px 12px rgba(255, 255, 255, 0.45), inset 0 -8px 24px rgba(0, 0, 0, 0.2), inset 0 0 12px rgba(255, 255, 255, 0.18)`
+              : `0 15px 45px rgba(${stateR}, ${stateG}, ${stateB}, 0.15), inset 0 4px 12px rgba(255, 255, 255, 0.45), inset 0 -8px 24px rgba(0, 0, 0, 0.2), inset 0 0 12px rgba(255, 255, 255, 0.18)`,
+            transition: 'background 0.4s ease, box-shadow 0.4s ease'
+          }}
         >
-          {/* Corpo (Fundo de Vidro) separado para permitir Z-Index das costas */}
-          <div 
-            className="absolute inset-0 border-[1.5px] border-white/20"
-            style={{
-              borderRadius: 'inherit',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              background: `radial-gradient(circle at 30% 30%, rgba(${stateR}, ${stateG}, ${stateB}, ${stateAlpha}) 0%, rgba(${stateR}, ${stateG}, ${stateB}, ${stateAlpha * 0.57}) 60%, rgba(${stateR}, ${stateG}, ${stateB}, ${stateAlpha * 0.23}) 100%)`,
-              boxShadow: shouldShake
-                ? `0 0 25px rgba(${stateR}, ${stateG}, ${stateB}, 0.5), inset 0 4px 12px rgba(255, 255, 255, 0.45), inset 0 -8px 24px rgba(0, 0, 0, 0.2), inset 0 0 12px rgba(255, 255, 255, 0.18)`
-                : `0 15px 45px rgba(${stateR}, ${stateG}, ${stateB}, 0.15), inset 0 4px 12px rgba(255, 255, 255, 0.45), inset 0 -8px 24px rgba(0, 0, 0, 0.2), inset 0 0 12px rgba(255, 255, 255, 0.18)`,
-              transition: 'background 0.4s ease, box-shadow 0.4s ease',
-              zIndex: 10
-            }}
-          />
           {/* Indicadores Flutuantes Dinâmicos (+1 / -1) */}
           <PlocFloatingIndicators gameMode={gameMode} onboardingStage={onboardingStage} />
 
@@ -693,18 +640,14 @@ export default function PlocAvatar({
           {/* Cabelo (Sticks out above head) */}
           {appearance.hair !== 'none' && (
             <div className="absolute top-[-22%] left-1/2 -translate-x-1/2 w-full h-[40%] z-20 pointer-events-none flex items-end justify-center">
-              <motion.div style={{ x: hatHairX }} className="w-full h-full flex items-end justify-center">
-                <PlocHair hair={appearance.hair} />
-              </motion.div>
+              <PlocHair hair={appearance.hair} />
             </div>
           )}
 
           {/* Chapéu (Sticks out above head/hair) */}
           {appearance.hat !== 'none' && (
             <div className="absolute top-[-38%] left-1/2 -translate-x-1/2 w-full h-[45%] z-30 pointer-events-none flex items-end justify-center">
-              <motion.div style={{ x: hatHairX }} className="w-full h-full flex items-end justify-center">
-                <PlocHat hat={appearance.hat} />
-              </motion.div>
+              <PlocHat hat={appearance.hat} />
             </div>
           )}
 
@@ -714,43 +657,29 @@ export default function PlocAvatar({
 
 
           {/* 1. Máscara Circular para elementos internos que precisam de recorte (Brilhos, Roupas, Bolhas internas) */}
-          <div
+          <motion.div
+            animate={{ borderRadius: amoebaBorderRadius }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
             className="absolute inset-0 overflow-hidden pointer-events-none z-10"
-            style={{ 
-              borderRadius: 'inherit',
-              WebkitMaskImage: '-webkit-radial-gradient(white, black)',
-              maskImage: 'radial-gradient(white, black)',
-              transform: 'translateZ(0)'
-            }}
           >
-            {/* Fundo do vidro (precisa da margem negativa para não criar listras nas bordas) */}
-            <motion.div style={{ x: shineX }} className="absolute -inset-4 pointer-events-none z-[2]">
-              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/35 pointer-events-none" />
-            </motion.div>
+            {/* Brilhos 3D Especulares para Efeito de Vidro e Formism */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/35 pointer-events-none z-[1]" />
+            <div className="absolute top-[8%] left-[12%] w-[22%] h-[12%] bg-white/70 rounded-full blur-[0.5px] transform -rotate-12 pointer-events-none z-[2]" />
+            <div className="absolute bottom-[6%] right-[16%] w-[15%] h-[8%] bg-white/25 rounded-full blur-[1.5px] transform rotate-45 pointer-events-none z-[2]" />
 
-            {/* Brilhos 3D Especulares (Testa e reflexo inferior) ancorados perfeitamente no corpo */}
-            <motion.div style={{ x: shineX }} className="absolute inset-0 pointer-events-none z-[2]">
-              <div className="absolute top-[8%] left-[12%] w-[22%] h-[12%] bg-white/70 rounded-full blur-[0.5px] transform -rotate-12 pointer-events-none" />
-              <div className="absolute bottom-[6%] right-[16%] w-[15%] h-[8%] bg-white/25 rounded-full blur-[1.5px] transform rotate-45 pointer-events-none" />
-            </motion.div>
-
-            {/* Bolhas 3D Internas (Parallax inside gelatinous shell) */}
-            <motion.div style={{ x: bubblesX }} className="absolute inset-0 pointer-events-none z-[3]">
-              <PlocBubbles />
-            </motion.div>
+            {/* Bolhas 3D Internas */}
+            <PlocBubbles />
 
             {/* Roupas do Ploc (Inside gelatin body so it stretches & rotates together) */}
             {appearance.clothes !== 'none' && (
               <div className="absolute bottom-0 left-0 right-0 h-[40%] z-10 pointer-events-none flex items-center justify-center">
-                <motion.div style={{ x: clothesX }} className="w-full h-full flex items-center justify-center">
-                  <PlocClothes clothes={appearance.clothes} />
-                </motion.div>
+                <PlocClothes clothes={appearance.clothes} />
               </div>
             )}
-          </div>
+          </motion.div>
 
           {/* 2. Elementos Faciais (Olhos, Expressões, Acessórios) — Não recortados para evitar cortes de chapéus/cílios */}
-          <motion.div style={{ x: faceX }} className="absolute inset-0 pointer-events-none z-20">
+          <div className="absolute inset-0 pointer-events-none z-20">
             <PlocFace
               isSleeping={isSleeping}
               isPissed={isPissed}
@@ -763,7 +692,7 @@ export default function PlocAvatar({
               isPositiveHit={plocState.isPositiveHit}
               isDizzy={emotion === 'dizzy' || plocState.mode === 'dizzy'}
             />
-          </motion.div>
+          </div>
 
           {/* Membros Stick (Perninhas e Braços) */}
           <PlocLimbs
@@ -771,7 +700,6 @@ export default function PlocAvatar({
             limbShadow={limbShadow}
             appearance={appearance}
             size={SIZE}
-            dragX={smoothFacingX}
           />
 
           {/* Barra de Humor - Novo Sistema */}
@@ -807,6 +735,7 @@ export default function PlocAvatar({
           onboardingStage,
           phase1PopCount,
           showPriorityConfirmButtons,
+          onboardingStage,
           handleRegisterChoice,
           handleContinuePlaying,
           handleStartPhase2,

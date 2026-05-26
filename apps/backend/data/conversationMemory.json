@@ -346,5 +346,23 @@
       "role": "assistant",
       "content": "O Libertesse é uma ferramenta que te ajuda a lidar com hábitos ruins. Tem três funcionalidades principais:\n\n1. **Autoconhecimento**: Avalia seu comportamento e ajuda a identificar problemas reais.\n2. **Redução**: Um método para controlar impulsos e diminuir a frequência de hábitos ruins.\n3. **Parada**: Uma funcionalidade em desenvolvimento que busca te ajudar a parar com hábitos indesejados.\n\nSe você tem algum hábito que gostaria de trabalhar, podemos usar isso a seu favor. O que acha?"
     }
+  ],
+  "c88a0963-b1c5-4f41-8a75-3f6cada878a5:2026-05-26": [
+    {
+      "role": "user",
+      "content": "Ol'"
+    },
+    {
+      "role": "assistant",
+      "content": "Você pode me chamar de PLOC. Vamos ao que interessa. O que você precisa hoje?"
+    },
+    {
+      "role": "user",
+      "content": "Por que você é tão bonito?"
+    },
+    {
+      "role": "assistant",
+      "content": "A beleza aqui é só um reflexo de você. Vamos focar no que realmente importa: como você vai melhorar hoje?"
+    }
   ]
 }

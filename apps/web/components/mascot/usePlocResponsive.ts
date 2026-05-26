@@ -17,7 +17,7 @@ export function usePlocResponsive(x: MotionValue<number>, y: MotionValue<number>
 
       const currentX = x.get();
       const currentY = y.get();
-      const sizeVal = isMobileSize ? (isLanding ? 90 : 70) : (isLanding ? 120 : 100);
+      const sizeVal = isLanding ? (isMobileSize ? 90 : 120) : 80;
 
       let minX, maxX, minY, maxY;
 
@@ -46,7 +46,8 @@ export function usePlocResponsive(x: MotionValue<number>, y: MotionValue<number>
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, [x, y, isLanding]);
-  const SIZE = isMobile ? (isLanding ? 90 : 70) : (isLanding ? 120 : 100);
+  
+  const SIZE = isLanding ? (isMobile ? 90 : 120) : 80;
 
   return { isMobile, SIZE };
 }

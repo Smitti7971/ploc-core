@@ -457,44 +457,26 @@ export default function BlackboardPage() {
                     x: { duration: 0.4 }
                   }}
                 >
-                  {/* A BOLHA DO PLOC (SONAR DE 500px) */}
+                  {/* A BOLHA DO PLOC (SONAR DE 500px) - Otimizada para Celular */}
                   <motion.div
                     animate={!activeConsumingVice?.isConsuming ? {
-                      scaleX: [1, 1.03, 0.97, 1],
-                      scaleY: [1, 0.97, 1.03, 1],
+                      scale: [1, 1.02, 0.98, 1],
                     } : {
-                      scaleX: [1, 1, 1, 1],
-                      scaleY: [1, 1, 1, 1],
+                      scale: 1,
                     }}
-                    transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-                    className="absolute w-[500px] h-[500px] rounded-full border border-sky-400/20 bg-sky-400/5 flex items-center justify-center pointer-events-none z-0"
+                    transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+                    className="absolute w-[500px] h-[500px] rounded-full border border-sky-400/15 bg-sky-400/2 flex items-center justify-center pointer-events-none z-0"
                     style={{
-                      boxShadow: 'inset 0 0 40px rgba(56, 189, 248, 0.1), 0 0 20px rgba(56, 189, 248, 0.05)'
+                      boxShadow: 'inset 0 0 50px rgba(56, 189, 248, 0.08), 0 0 30px rgba(56, 189, 248, 0.03)'
                     }}
-                  >
-                    {/* EFEITO SONAR NORMAL */}
-                    {!activeConsumingVice?.isConsuming && (
-                      <>
-                        <motion.div
-                          animate={{ scale: [1, 1.05, 1], opacity: [0.3, 0.6, 0.3] }}
-                          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                          className="w-full h-full rounded-full border border-sky-400/30"
-                        />
-                        <motion.div
-                          animate={{ scale: [0.8, 1.1, 0.8], opacity: [0.1, 0.3, 0.1] }}
-                          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-                          className="absolute w-3/4 h-3/4 rounded-full border border-sky-400/20"
-                        />
-                      </>
-                    )}
-                  </motion.div>
+                  />
 
                   {/* FUMAÇA DE FUNDO removida para otimização de performance */}
 
                   {/* PLOC AVATAR */}
                   <div className="pointer-events-auto z-10">
                     <PlocAvatarClient
-                      draggable={false}
+                      draggable={true}
                       emotion={activeConsumingVice?.isConsuming ? 'dizzy' : (plocState.emotion === 'calm' ? (plocReaction === 'idle' ? 'calm' : plocReaction as 'calm' | 'happy' | 'stressed' | 'pissed' | 'sleeping' | 'dizzy') : plocState.emotion as 'calm' | 'happy' | 'stressed' | 'pissed' | 'sleeping' | 'dizzy')}
                     />
                   </div>
