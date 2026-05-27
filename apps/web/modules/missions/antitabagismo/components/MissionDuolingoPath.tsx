@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Trophy, Check, Lock, Play, Sparkles, Star, 
-  Activity, Shield, Heart, Zap, Award, X 
+import {
+  Trophy, Check, Lock, Play, Sparkles, Star,
+  Activity, Shield, Heart, Zap, Award, X
 } from 'lucide-react';
 import { useViceStore } from '@/modules/dashboard/components/libertesse/store/viceStore';
 import { attributeEngine } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
@@ -151,7 +151,7 @@ export function MissionDuolingoPath() {
   const handleCompleteChallenge = (stage: MissionStage) => {
     const stats = stage.rewardStats;
     if (stats.body) {
-      attributeEngine.applySleepPenalty(); 
+      attributeEngine.applySleepPenalty();
       const engine = attributeEngine as any;
       if (engine.updateAttribute) {
         if (stats.body) engine.updateAttribute('corpo', stats.body);
@@ -160,7 +160,7 @@ export function MissionDuolingoPath() {
         attributeEngine.applySleepPenalty();
       }
     }
-    
+
     if (stats.xp && (attributeEngine as any).updateScore) {
       (attributeEngine as any).updateScore(stats.xp);
     }
@@ -179,7 +179,7 @@ export function MissionDuolingoPath() {
   const handleTileClick = (e: React.MouseEvent, stageId: number) => {
     e.stopPropagation();
     if (stageId === 10) return;
-    
+
     const stage = STAGES.find(s => s.id === stageId);
     if (stage) {
       setSelectedStage(stage);
@@ -192,67 +192,67 @@ export function MissionDuolingoPath() {
 
   return (
     <div className="w-full h-full relative overflow-y-auto overflow-x-hidden flex flex-col items-center bg-gradient-to-b from-[#080711] via-[#100720] to-[#041215] custom-scrollbar pt-28 pb-16">
-      
+
       {/* Grid de Partículas / Poeira Cósmica no Fundo */}
-      <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.02)_1.5px,transparent_1.5px)] bg-[size:3rem_3rem] pointer-events-none" />
-      
+      {/* <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.02)_1.5px,transparent_1.5px)] bg-[size:3rem_3rem] pointer-events-none" /> */}
+
       {/* Nebulosas Suaves de Fundo (Coloridas) */}
-      <div className="absolute top-[15%] left-[20%] w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[130px] pointer-events-none" />
-      <div className="absolute bottom-[25%] right-[20%] w-[500px] h-[500px] rounded-full bg-emerald-500/5 blur-[140px] pointer-events-none" />
+      {/* <div className="absolute top-[15%] left-[20%] w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[130px] pointer-events-none" /> */}
+      {/* <div className="absolute bottom-[25%] right-[20%] w-[500px] h-[500px] rounded-full bg-emerald-500/5 blur-[140px] pointer-events-none" /> */}
       <div className="absolute top-[50%] right-[10%] w-[400px] h-[400px] rounded-full bg-purple-500/10 blur-[120px] pointer-events-none" />
 
       {/* Prancha de Jogo com Caminho Físico Paved (Estrada) */}
       <div className="w-full max-w-[450px] h-[1600px] shrink-0 relative select-none">
-        
+
         {/* Conexão SVG representando a Estrada / Trilha Real */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
           <defs>
             {/* Gradiente da Trilha */}
-            <linearGradient id="road-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+            {/* <linearGradient id="road-grad" x1="0%" y1="0%" x2="0%" y2="100%">
               <stop offset="0%" stopColor="#10b981" />
               <stop offset="45%" stopColor="#eab308" />
               <stop offset="90%" stopColor="#ef4444" />
               <stop offset="100%" stopColor="#d97706" />
-            </linearGradient>
-            
+            </linearGradient> */}
+
             {/* Filtro Neon */}
-            <filter id="neon-glow-vert-heavy" x="-30%" y="-30%" width="160%" height="160%">
+            {/* <filter id="neon-glow-vert-heavy" x="-30%" y="-30%" width="160%" height="160%">
               <feGaussianBlur stdDeviation="6" result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
-            </filter>
+            </filter> */}
           </defs>
 
           {/* 1. Base da Estrada (The Paved Track) - Cria a sensação física de caminho/estrada */}
-          <path 
-            d="M 50 7 L 76 16 L 50 25 L 24 34 L 50 43 L 76 52 L 50 61 L 24 70 L 50 79 L 76 88 L 50 96" 
-            fill="none" 
-            stroke="rgba(255, 255, 255, 0.05)" 
-            strokeWidth="32" 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
+          <path
+          // d="M 50 7 L 76 16 L 50 25 L 24 34 L 50 43 L 76 52 L 50 61 L 24 70 L 50 79 L 76 88 L 50 96"
+          // fill="none"
+          // stroke="rgba(255, 255, 255, 0.05)"
+          // strokeWidth="32"
+          // strokeLinecap="round"
+          // strokeLinejoin="round"
           />
-          
+
           {/* Bordas Pontilhadas da Estrada */}
-          <path 
-            d="M 50 7 L 76 16 L 50 25 L 24 34 L 50 43 L 76 52 L 50 61 L 24 70 L 50 79 L 76 88 L 50 96" 
-            fill="none" 
-            stroke="rgba(255,255,255,0.08)" 
-            strokeWidth="34" 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            style={{ strokeDasharray: '4 12' }}
+          <path
+          // d="M 50 7 L 76 16 L 50 25 L 24 34 L 50 43 L 76 52 L 50 61 L 24 70 L 50 79 L 76 88 L 50 96"
+          // fill="none"
+          // stroke="rgba(255,255,255,0.08)"
+          // strokeWidth="34"
+          // strokeLinecap="round"
+          // strokeLinejoin="round"
+          // style={{ strokeDasharray: '4 12' }}
           />
 
           {/* 2. O núcleo de progresso luminoso central */}
-          <path 
-            d="M 50 7 L 76 16 L 50 25 L 24 34 L 50 43 L 76 52 L 50 61 L 24 70 L 50 79 L 76 88 L 50 96" 
-            fill="none" 
-            stroke="url(#road-grad)" 
-            strokeWidth="4" 
-            strokeLinecap="round" 
+          <path
+            d="M 50 7 L 76 16 L 50 25 L 24 34 L 50 43 L 76 52 L 50 61 L 24 70 L 50 79 L 76 88 L 50 96"
+            fill="none"
+            stroke="url(#road-grad)"
+            strokeWidth="4"
+            strokeLinecap="round"
             strokeLinejoin="round"
             filter="url(#neon-glow-vert-heavy)"
             style={{ strokeDasharray: '12 6', animation: 'flowDots 25s linear infinite' }}
@@ -268,7 +268,7 @@ export function MissionDuolingoPath() {
         `}</style>
 
         {/* O MASCOTE PLOC MARCANDO A POSIÇÃO ATUAL */}
-        <div 
+        <div
           style={{
             position: 'absolute',
             left: `${activeNode.x}%`,
@@ -281,10 +281,10 @@ export function MissionDuolingoPath() {
         >
           {/* Sombra de pé gelatinosa brilhante abaixo do Ploc 100% CENTRALIZADA */}
           <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-16 h-4 bg-yellow-400/30 blur-md rounded-full scale-y-50 animate-pulse" />
-          
-          <PlocAvatarClient 
-            draggable={false} 
-            emotion={currentLevel >= 10 ? 'happy' : celebrateEffect ? 'happy' : 'calm'} 
+
+          <PlocAvatarClient
+            draggable={false}
+            emotion={currentLevel >= 10 ? 'happy' : celebrateEffect ? 'happy' : 'calm'}
           />
         </div>
 
@@ -359,7 +359,7 @@ export function MissionDuolingoPath() {
               >
                 {/* 1. BRILHO ESPECULAR (Brilho 3D de bolha de vidro) */}
                 <div className="absolute top-1 left-2.5 w-4 h-2 bg-gradient-to-b from-white/35 to-transparent rounded-full transform -rotate-12 pointer-events-none" />
-                
+
                 {/* 2. Sombra e profundidade interna secundária */}
                 <div className="absolute bottom-1 right-2 w-3 h-1.5 bg-black/25 rounded-full blur-[1px] pointer-events-none" />
 
@@ -375,9 +375,9 @@ export function MissionDuolingoPath() {
 
                 {/* Conteúdo interno */}
                 {node.isTrophy ? (
-                  <Trophy 
-                    size={32} 
-                    className={currentLevel >= 10 ? 'text-yellow-300 animate-bounce drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]' : 'text-white/10'} 
+                  <Trophy
+                    size={32}
+                    className={currentLevel >= 10 ? 'text-yellow-300 animate-bounce drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]' : 'text-white/10'}
                   />
                 ) : isCompleted ? (
                   <Check size={20} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] font-black" />
@@ -387,13 +387,12 @@ export function MissionDuolingoPath() {
                   <Lock size={15} className="text-white/20" />
                 )}
               </motion.button>
-              
+
               {/* Texto do Estágio posicionado ABSOLUTAMENTE abaixo da bolha, com alinhamento perfeito de centro */}
               <div className="absolute top-[100%] left-1/2 transform -translate-x-1/2 whitespace-nowrap mt-2 z-10 pointer-events-none">
-                <span 
-                  className={`text-[8.5px] font-black tracking-widest uppercase ${
-                    isActive ? 'text-yellow-400 font-black drop-shadow-[0_0_5px_rgba(234,179,8,0.2)]' : isCompleted ? 'text-emerald-400 font-bold' : 'text-white/15'
-                  }`}
+                <span
+                  className={`text-[8.5px] font-black tracking-widest uppercase ${isActive ? 'text-yellow-400 font-black drop-shadow-[0_0_5px_rgba(234,179,8,0.2)]' : isCompleted ? 'text-emerald-400 font-bold' : 'text-white/15'
+                    }`}
                 >
                   {node.isTrophy ? "VITÓRIA" : `ETAPA ${node.id + 1}`}
                 </span>
@@ -448,7 +447,7 @@ export function MissionDuolingoPath() {
                 </motion.div>
               )}
 
-              <button 
+              <button
                 onClick={() => setIsModalOpen(false)}
                 className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
               >

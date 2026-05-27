@@ -654,24 +654,23 @@ export default function BlackboardPage() {
           }}
           className="bg-purple-600/80 hover:bg-purple-500 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-[10px] font-bold shadow-[0_0_15px_rgba(168,85,247,0.3)] border border-purple-400/30 flex items-center gap-1 transition-all"
         >
-          <span>🍎 Spawn Drops</span>
+          <span>+</span>
         </button>
         <button
           onClick={() => {
             const store = usePlocStateStore.getState();
             usePlocStateStore.setState({
-              hunger: Math.max(0, store.hunger - 30),
-              thirst: Math.max(0, store.thirst - 30),
-              fatigue: Math.max(0, store.fatigue - 30),
+              hunger: Math.max(0, store.hunger - 10),
+              thirst: Math.max(0, store.thirst - 10),
+              fatigue: Math.max(0, store.fatigue - 10),
             });
           }}
           className="bg-rose-600/85 hover:bg-rose-500 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-[10px] font-bold shadow-[0_0_15px_rgba(244,63,94,0.3)] border border-rose-400/30 flex items-center gap-1 transition-all"
         >
-          <span>⚡ Drenar Status (-30%)</span>
+          <span>-10%</span>
         </button>
       </div>
 
-      {/* Modal/Dropdown do Minimapa (posicionado abaixo da AuthCapsule) */}
       {/* Modal/Dropdown do Minimapa (posicionado abaixo dos botões de controle de tela se fosse no menu antigo, mas agora no canto direito para não poluir) */}
       <div className="fixed top-[80px] left-[25px] flex flex-col items-start gap-3 z-[100001] pointer-events-none">
         <AnimatePresence>

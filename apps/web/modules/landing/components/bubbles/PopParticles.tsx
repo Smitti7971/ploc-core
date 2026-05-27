@@ -2,8 +2,12 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Particle } from './types';
-
+export interface Particle {
+  id: string | number;
+  x: number;
+  y: number;
+  size: number;
+}
 interface PopParticlesProps {
   particles: Particle[];
   particleColor: string;

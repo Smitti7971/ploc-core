@@ -17,11 +17,11 @@ export function MissionAntitabagismoModal({ isOpen, onClose }: MissionAntitabagi
   if (!isOpen) return null;
 
   return (
-    <div 
-      className="fixed inset-0 z-[200000] w-screen h-screen bg-[#050608] flex flex-col overflow-hidden select-none"
+    <div
+      className="fixed inset-0 z-[200000] w-screen h-screen bg-zinc-950 flex flex-col overflow-hidden select-none"
       onClick={(e) => e.stopPropagation()}
     >
-      
+
       {/* Header Flutuante Premium estilo Glassmorphism */}
       <div className="w-full absolute top-0 left-0 right-0 z-40 bg-zinc-950/65 backdrop-blur-md border-b border-white/5 px-6 py-4 flex items-center justify-between shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
         <div className="flex items-center gap-3">
@@ -30,16 +30,16 @@ export function MissionAntitabagismoModal({ isOpen, onClose }: MissionAntitabagi
           </div>
           <div>
             <h2 className="text-white text-sm md:text-base font-black tracking-widest uppercase flex items-center gap-2">
-              MISSÃO ANTITABAGISMO 
+              Missão Antitabagismo
               <span className="text-[10px] bg-yellow-400/15 border border-yellow-400/30 px-2 py-0.5 rounded-full text-yellow-400 font-extrabold uppercase">
                 Tabuleiro
               </span>
             </h2>
-            
+
             {/* Barra de Progresso sutil */}
             <div className="flex items-center gap-3 mt-1">
               <div className="w-24 md:w-36 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-gradient-to-r from-emerald-500 to-yellow-500 transition-all duration-500"
                   style={{ width: `${progressPercent}%` }}
                 />
@@ -52,8 +52,8 @@ export function MissionAntitabagismoModal({ isOpen, onClose }: MissionAntitabagi
         </div>
 
         {/* Botão de Fechar */}
-        <button 
-          onClick={onClose} 
+        <button
+          onClick={onClose}
           className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors shadow-lg"
           title="Fechar Tabuleiro"
         >
