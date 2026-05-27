@@ -112,7 +112,7 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setProfile(prev => ({ ...prev, [field]: value }));
+    setProfile((prev: any) => ({ ...prev, [field]: value }));
   };
 
   const inputStyle = {
