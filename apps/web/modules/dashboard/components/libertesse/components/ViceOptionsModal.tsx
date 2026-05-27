@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Activity, TrendingDown, Ban, Edit, History, XCircle } from 'lucide-react';
 import { useViceStore, ViceMode } from '../store/viceStore';
+import { MissionAntitabagismoModal } from '@/modules/missions';
 
 interface ViceOptionsModalProps {
   isOpen: boolean;
@@ -31,6 +32,20 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
   const [isEditingCost, setIsEditingCost] = useState(false);
   const [isShowingCostDetails, setIsShowingCostDetails] = useState(false);
   const [now, setNow] = useState<number | null>(null);
+  const [showAntitabagismo, setShowAntitabagismo] = useState(false);
+
+  const handleStartMission = () => {
+    if (!viceId) return;
+    setActiveVice({
+      viceId: viceId!,
+      customName: viceId === 'personalizado' ? customViceName : undefined,
+      mode: 'missao-antitabagismo',
+      startTime: new Date().getTime(),
+      isMission: true,
+      antitabagismoLevel: 0
+    });
+    setShowAntitabagismo(true);
+  };
 
   useEffect(() => {
     const initialTimeout = setTimeout(() => setNow(Date.now()), 0);
@@ -121,7 +136,6 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-4 pb-24 bg-black/60 backdrop-blur-sm"
-          onClick={handleClose}
         >
           <motion.div
             initial={{ y: '100%', scale: 0.95 }}
@@ -184,10 +198,15 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
                   />
                   <OptionCard 
                     title="PARE"
-                    desc="Interrompa completamente o vício (Em breve)."
+                    desc={viceId === 'tabagismo' ? "Inicie a Missão Antitabagismo e pare de fumar passo a passo!" : "Interrompa completamente o vício (Em breve)."}
                     icon={Ban}
                     color="#ef4444"
-                    onClick={() => {}}
+                    disabled={viceId !== 'tabagismo'}
+                    onClick={() => {
+                      if (viceId === 'tabagismo') {
+                        handleStartMission();
+                      }
+                    }}
                   />
                   {viceLogs.some(l => l.viceId === viceId) && (
                     <OptionCard 
@@ -203,7 +222,18 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
 
               {step === 'active_options' && (
                 <div className="flex flex-col gap-3">
-                  {timeActiveText && (
+                  {activeVice?.mode === 'missao-antitabagismo' ? (
+                    <div className="bg-yellow-950/30 border border-yellow-500/30 rounded-xl p-3 mb-2 flex items-center justify-between shadow-[0_0_15px_rgba(234,179,8,0.05)]">
+                      <div className="flex items-center gap-2">
+                        <Activity size={16} className="text-yellow-400 animate-pulse" />
+                        <span className="text-yellow-400 text-xs font-black tracking-widest uppercase">MISSÃO ATIVA</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-slate-400 text-[0.6rem] font-bold tracking-widest uppercase block mb-0.5">Progresso</span>
+                        <span className="text-yellow-400 text-xs font-extrabold">Estágio {Math.min(10, (activeVice?.antitabagismoLevel ?? 0) + 1)}/10</span>
+                      </div>
+                    </div>
+                  ) : timeActiveText ? (
                     <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-3 mb-2 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Activity size={16} className="text-emerald-500" />
@@ -214,6 +244,15 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
                         <span className="text-white text-xs font-extrabold">{timeActiveText}</span>
                       </div>
                     </div>
+                  ) : null}
+                  {activeVice?.mode === 'missao-antitabagismo' && (
+                    <OptionCard 
+                      title="VER TABULEIRO DA MISSÃO"
+                      desc="Continue a sua trilha de conquistas no estilo Duolingo."
+                      icon={Activity}
+                      color="#f59e0b"
+                      onClick={() => setShowAntitabagismo(true)}
+                    />
                   )}
                   <OptionCard 
                     title="CONSULTAR HISTÓRICO"
@@ -549,6 +588,14 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
 
             </div>
           </motion.div>
+
+          <MissionAntitabagismoModal 
+            isOpen={showAntitabagismo} 
+            onClose={() => {
+              setShowAntitabagismo(false);
+              handleClose();
+            }} 
+          />
         </motion.div>
       )}
     </AnimatePresence>,

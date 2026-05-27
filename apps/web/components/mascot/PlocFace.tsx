@@ -22,8 +22,6 @@ interface PlocFaceProps {
     eyes?: 'bored' | 'cute' | 'anime' | 'nerd' | 'sparkle' | 'spiral';
     mouth?: 'none' | 'smile' | 'straight' | 'masculine' | 'feminine' | 'shock' | 'sad' | 'wavy' | 'rage';
   };
-  angerLevel?: number;
-  angerPercentage?: number;
   isHit?: boolean;
   isPositiveHit?: boolean;
   isDizzy?: boolean;
@@ -36,8 +34,6 @@ export function PlocFace({
   isHurt,
   isSpeaking = false,
   appearance = { eyes: 'bored', mouth: 'straight' },
-  angerLevel = 0,
-  angerPercentage = 0,
   isHit = false,
   isPositiveHit = false,
   isDizzy = false,
@@ -103,35 +99,16 @@ export function PlocFace({
   } else if (isPositiveHit) {
     activeMouth = 'smile';
   } else {
-    // Reage deterministícamente ao nível de raiva
-    switch (angerLevel) {
-      case 1:
-        activeMouth = 'straight';
-        break;
-      case 2:
-        activeMouth = 'sad';
-        break;
-      case 3:
-        activeMouth = 'wavy';
-        break;
-      case 4:
-        activeMouth = 'shock';
-        break;
-      case 5:
-        activeMouth = 'rage';
-        break;
-      default:
-        if (angerPercentage > 0) {
-          activeMouth = 'straight';
-        } else {
-          activeMouth = appearance.mouth || 'straight';
-        }
-        break;
+    if (isPissed) {
+      activeMouth = 'rage';
+    } else {
+      activeMouth = appearance.mouth || 'straight';
     }
   }
 
   // Override dinâmico para animação de fala (Speaking Mouth State)
-  const isAngryOrHurtState = angerLevel >= 1 || isPissed || isHurt || isHit || (angerLevel === 0 && angerPercentage > 0);
+  const isAngryOrHurtState = isPissed || isHurt || isHit;
+  const pupilBaseY = isAngryOrHurtState ? 2 : (activeEyes === 'sleeping' ? 0 : -2);
 
   if (isSpeaking && activeMouth !== 'none') {
     if (isAngryOrHurtState) {
@@ -149,74 +126,27 @@ export function PlocFace({
   if (isHurt) {
     pupilScaleX = 0.5;
     pupilScaleY = 0.5;
+  } else if (isPissed) {
+    pupilScaleX = 0.4;
+    pupilScaleY = 0.4;
   } else {
-    switch (angerLevel) {
-      case 1:
-        pupilScaleX = 0.9;
-        pupilScaleY = 0.9;
-        break;
-      case 2:
-        pupilScaleX = 0.8;
-        pupilScaleY = 0.8;
-        break;
-      case 3:
-        pupilScaleX = 0.7;
-        pupilScaleY = 0.7;
-        break;
-      case 4:
-        pupilScaleX = 0.55;
-        pupilScaleY = 0.55;
-        break;
-      case 5:
-        pupilScaleX = 0.4;
-        pupilScaleY = 0.4; // pupilas minúsculas de loucura
-        break;
-      default:
-        pupilScaleX = 1.0;
-        pupilScaleY = 1.0;
-        break;
-    }
+    pupilScaleX = 1.0;
+    pupilScaleY = 1.0;
   }
 
-  // Cálculo reativo das sobrancelhas com base em angerLevel e isHurt
+  // Cálculo reativo das sobrancelhas com base em isPissed e isHurt
   let eyebrowY = 0;
   let eyebrowRotate = 0;
 
   if (isHurt) {
     eyebrowY = 6;
     eyebrowRotate = -4; // Expressão de dor / preocupação
+  } else if (isPissed) {
+    eyebrowY = 9.5;
+    eyebrowRotate = 35; // Extremo furioso
   } else {
-    switch (angerLevel) {
-      case 1:
-        eyebrowY = 1.5;
-        eyebrowRotate = 6;
-        break;
-      case 2:
-        eyebrowY = 3.5;
-        eyebrowRotate = 14;
-        break;
-      case 3:
-        eyebrowY = 5.5;
-        eyebrowRotate = 22;
-        break;
-      case 4:
-        eyebrowY = 7.5;
-        eyebrowRotate = 28;
-        break;
-      case 5:
-        eyebrowY = 9.5;
-        eyebrowRotate = 35; // Extremo furioso
-        break;
-      default:
-        if (isPissed) {
-          eyebrowY = 4;
-          eyebrowRotate = 8;
-        } else {
-          eyebrowY = 0;
-          eyebrowRotate = 0;
-        }
-        break;
-    }
+    eyebrowY = 0;
+    eyebrowRotate = 0;
   }
 
   // -------------------------------------------------------------
@@ -234,7 +164,7 @@ export function PlocFace({
               fill={pupilColor}
               animate={{
                 scale: pupilScaleX,
-                y: isHurt ? 4 : (angerLevel === 5 ? 6 : 0),
+                y: isHurt ? 4 : (isPissed ? 6 : 0),
               }}
               transition={{ type: 'spring', stiffness: 220, damping: 16 }}
             />
@@ -244,7 +174,7 @@ export function PlocFace({
               r="5"
               fill="#ffffff"
               animate={{
-                y: isHurt ? 4 : (angerLevel === 5 ? 6 : 0),
+                y: isHurt ? 4 : (isPissed ? 6 : 0),
               }}
             />
             <motion.circle
@@ -253,7 +183,7 @@ export function PlocFace({
               r="2.5"
               fill="#ffffff"
               animate={{
-                y: isHurt ? 4 : (angerLevel === 5 ? 6 : 0),
+                y: isHurt ? 4 : (isPissed ? 6 : 0),
               }}
             />
           </g>
@@ -270,7 +200,7 @@ export function PlocFace({
               animate={{
                 scaleY: pupilScaleY,
                 scaleX: pupilScaleX,
-                y: isHurt ? 4 : (angerLevel === 5 ? 6 : 0),
+                y: isHurt ? 4 : (isPissed ? 6 : 0),
               }}
               transition={{ type: 'spring', stiffness: 220, damping: 16 }}
             />
@@ -280,7 +210,7 @@ export function PlocFace({
               fill="#ffffff"
               animate={{
                 scale: [1, 1.15, 1],
-                y: isHurt ? 4 : (angerLevel === 5 ? 6 : 0),
+                y: isHurt ? 4 : (isPissed ? 6 : 0),
               }}
               transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
             />
@@ -298,7 +228,7 @@ export function PlocFace({
               animate={{
                 scale: pupilScaleX,
                 rotate: [0, 8, 0],
-                y: isHurt ? 4 : (angerLevel === 5 ? 6 : 0),
+                y: isHurt ? 4 : (isPissed ? 6 : 0),
               }}
               transition={{
                 scale: { type: 'spring', stiffness: 220, damping: 16 },
@@ -344,7 +274,7 @@ export function PlocFace({
             animate={{
               scaleY: pupilScaleY,
               scaleX: pupilScaleX,
-              y: isHurt ? 4 : (angerLevel === 5 ? 6 : 0),
+              y: isHurt ? 4 : (isPissed ? 6 : 0),
             }}
             transition={{ type: 'spring', stiffness: 220, damping: 16 }}
           />
@@ -377,7 +307,8 @@ export function PlocFace({
         return (
           <svg width="100%" height="100%" viewBox="0 0 80 60" fill="none" className="overflow-visible">
             <motion.path
-              d="M 22 36 Q 40 18 58 36"
+              d="M 22 36 Q 40 18 58 36 Q 40 18 22 36 Z"
+              initial={{ d: "M 22 36 Q 40 18 58 36 Q 40 18 22 36 Z" }}
               stroke={lashColor}
               strokeWidth="7"
               strokeLinecap="round"
@@ -393,6 +324,7 @@ export function PlocFace({
                 }
                 : {
                   y: [0, 1.5, 0],
+                  d: "M 22 36 Q 40 18 58 36 Q 40 18 22 36 Z",
                 }
               }
               transition={isSpeaking ? { duration: 0.45, repeat: Infinity } : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
@@ -669,7 +601,8 @@ export function PlocFace({
         return (
           <svg width="100%" height="100%" viewBox="0 0 80 60" fill="none">
             <motion.path
-              d="M 30 30 L 50 30"
+              d="M 28 30 C 28 30, 40 30, 52 30 L 52 30 C 52 30, 40 30, 28 30 Z"
+              initial={{ d: "M 28 30 C 28 30, 40 30, 52 30 L 52 30 C 52 30, 40 30, 28 30 Z" }}
               fill={isSpeaking ? "#3b0712" : "none"}
               stroke={lashColor}
               strokeWidth="6"
@@ -683,7 +616,7 @@ export function PlocFace({
                     "M 28 30 C 28 30, 40 30, 52 30 L 52 30 C 52 30, 40 30, 28 30 Z"
                   ]
                 }
-                : {}
+                : { d: "M 28 30 C 28 30, 40 30, 52 30 L 52 30 C 52 30, 40 30, 28 30 Z" }
               }
               transition={isSpeaking ? { duration: 0.4, repeat: Infinity } : {}}
             />

@@ -180,8 +180,7 @@ export default function DashboardPage() {
   // Calcula cor do status baseada no valor
   const getStatusColor = (val: number, baseColor: string) => {
     if (val >= 70) return '#22c55e'; // Verde (Excelente)
-    if (val >= 40) return baseColor; // Cor do Pilar (Estável)
-    return '#ef4444'; // Vermelho (Crítico)
+    return baseColor; // Cor do Pilar (Estável)
   };
 
   const [now, setNow] = useState<number | null>(null);
@@ -215,32 +214,7 @@ export default function DashboardPage() {
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
-      {/* HEADER PRINCIPAL */}
-      <div className="pt-12 px-6 pb-6 relative z-20">
-        <div className="flex items-start justify-between">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-3">
-              <motion.h1 
-                className="text-4xl font-black tracking-tight"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                Dashboard
-              </motion.h1>
-            </div>
-            <motion.p 
-              className="text-slate-400 font-medium"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
-            >
-              Bom dia, {activePillar ? 'focado!' : 'o que vamos fazer hoje?'}
-            </motion.p>
-          </div>
-          {/* Espaço para o AuthCapsule (Profile/Settings) */}
-          <div className="w-12 h-12"></div>
-        </div>
-      </div>
+      {/* O Header "Dashboard" foi removido a pedido do usuário para ir direto aos pilares */}
 
       {/* DASHBOARD PILLARS ROW com Status */}
       <div className="w-full flex justify-between md:justify-center gap-1 md:gap-4 py-4 z-10 px-2 md:px-4">
@@ -359,61 +333,79 @@ export default function DashboardPage() {
             {/* TELA: ROTINAS ATIVAS */}
             <div className="w-full shrink-0 snap-start px-4 pb-2 flex flex-col relative pt-4">
               {activeVicesList.length > 0 ? (
-                activeVicesList.map(activeVice => (
-                  <div key={activeVice.viceId} className="mb-6 bg-emerald-950/30 border border-emerald-500/30 rounded-2xl p-4 flex flex-col gap-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
-                          <Wand2 size={18} className="text-emerald-500" />
+                activeVicesList.map(activeVice => {
+                  const isMission = activeVice.mode === 'missao-antitabagismo';
+                  return (
+                    <div key={activeVice.viceId} className={`mb-6 border rounded-2xl p-4 flex flex-col gap-3 ${
+                      isMission 
+                        ? 'bg-yellow-950/30 border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.05)]' 
+                        : 'bg-emerald-950/30 border-emerald-500/30'
+                    }`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                            isMission ? 'bg-yellow-500/20' : 'bg-emerald-500/20'
+                          }`}>
+                            <Wand2 size={18} className={isMission ? 'text-yellow-400' : 'text-emerald-500'} />
+                          </div>
+                          <div>
+                            <p className={`text-xs font-bold tracking-widest uppercase ${
+                              isMission ? 'text-yellow-400' : 'text-emerald-400'
+                            }`}>
+                              {isMission ? 'MISSÃO' : 'Libertesse Ativo'}
+                            </p>
+                            <h3 className="text-white text-sm font-extrabold tracking-widest uppercase">
+                              {VICES.find(v => v.id === activeVice.viceId)?.label || activeVice.viceId}
+                            </h3>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-emerald-400 text-xs font-bold tracking-widest uppercase">Libertesse Ativo</p>
-                          <h3 className="text-white text-sm font-extrabold tracking-widest uppercase">
-                            {VICES.find(v => v.id === activeVice.viceId)?.label || activeVice.viceId}
-                          </h3>
-                        </div>
+                        {isMission ? (
+                          <div className="text-right">
+                            <p className="text-slate-400 text-[0.6rem] font-bold tracking-widest uppercase">Progresso</p>
+                            <p className="text-yellow-400 text-xs font-extrabold">Estágio {Math.min(10, (activeVice.antitabagismoLevel ?? 0) + 1)}/10</p>
+                          </div>
+                        ) : getTimeActiveText(activeVice.viceId) && (
+                          <div className="text-right">
+                            <p className="text-slate-400 text-[0.6rem] font-bold tracking-widest uppercase">Ativo há</p>
+                            <p className="text-white text-xs font-extrabold">{getTimeActiveText(activeVice.viceId)}</p>
+                          </div>
+                        )}
                       </div>
-                      {getTimeActiveText(activeVice.viceId) && (
-                        <div className="text-right">
-                          <p className="text-slate-400 text-[0.6rem] font-bold tracking-widest uppercase">Ativo há</p>
-                          <p className="text-white text-xs font-extrabold">{getTimeActiveText(activeVice.viceId)}</p>
-                        </div>
-                      )}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setModalInitialStep('history');
+                            setSelectedViceId(activeVice.viceId);
+                          }}
+                          className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-[0.6rem] tracking-widest"
+                        >
+                          <History size={14} />
+                          HISTÓRICO
+                        </button>
+                        <button
+                          onClick={() => {
+                            setModalInitialStep('options');
+                            setSelectedViceId(activeVice.viceId);
+                          }}
+                          className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-[0.6rem] tracking-widest"
+                        >
+                          <Edit size={14} />
+                          EDITAR
+                        </button>
+                        <button
+                          onClick={() => {
+                            setModalInitialStep('confirm_end');
+                            setSelectedViceId(activeVice.viceId);
+                          }}
+                          className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold py-3 rounded-xl border border-red-500/20 transition-colors flex items-center justify-center gap-2 text-[0.6rem] tracking-widest"
+                        >
+                          <X size={14} />
+                          ENCERRAR
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setModalInitialStep('history');
-                          setSelectedViceId(activeVice.viceId);
-                        }}
-                        className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-[0.6rem] tracking-widest"
-                      >
-                        <History size={14} />
-                        HISTÓRICO
-                      </button>
-                      <button
-                        onClick={() => {
-                          setModalInitialStep('options');
-                          setSelectedViceId(activeVice.viceId);
-                        }}
-                        className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-[0.6rem] tracking-widest"
-                      >
-                        <Edit size={14} />
-                        EDITAR
-                      </button>
-                      <button
-                        onClick={() => {
-                          setModalInitialStep('confirm_end');
-                          setSelectedViceId(activeVice.viceId);
-                        }}
-                        className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold py-3 rounded-xl border border-red-500/20 transition-colors flex items-center justify-center gap-2 text-[0.6rem] tracking-widest"
-                      >
-                        <X size={14} />
-                        ENCERRAR
-                      </button>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="flex-1 flex items-center justify-center opacity-50">
                   <span className="text-slate-400 font-bold text-sm">Nenhuma rotina ativa no momento.</span>

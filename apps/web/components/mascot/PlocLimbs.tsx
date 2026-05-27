@@ -41,23 +41,22 @@ export function PlocLimbs({ limbColor, limbShadow, appearance, size = 120, dragX
   const leftLegX = useTransform(activeDragX, [-80, 0, 80], [12, 0, 2], { clamp: true });
   const rightLegX = useTransform(activeDragX, [-80, 0, 80], [-2, 0, -12], { clamp: true });
 
+  // Darkness overlay for hardware-accelerated 3D shading
+  const leftDarkness = useTransform(activeDragX, [-80, 0, 80], [0.45, 0, 0], { clamp: true });
+  const rightDarkness = useTransform(activeDragX, [-80, 0, 80], [0, 0, 0.45], { clamp: true });
+
   // Left side transforms (Screen Left limbs)
-  const leftBrightness = useTransform(activeDragX, [-80, 0, 80], [0.55, 1.0, 1.0], { clamp: true });
   const leftZIndex = useTransform(activeDragX, [-80, 0, 80], [0, 25, 25], { clamp: true });
-  const leftFilter = useTransform(leftBrightness, (b: number) => `brightness(${b})`);
   const leftZIndexRounded = useTransform(leftZIndex, (z: number) => Math.round(z));
 
   // Right side transforms (Screen Right limbs)
-  const rightBrightness = useTransform(activeDragX, [-80, 0, 80], [1.0, 1.0, 0.55], { clamp: true });
   const rightZIndex = useTransform(activeDragX, [-80, 0, 80], [25, 25, 0], { clamp: true });
-  const rightFilter = useTransform(rightBrightness, (b: number) => `brightness(${b})`);
   const rightZIndexRounded = useTransform(rightZIndex, (z: number) => Math.round(z));
 
   return (
     <div className="absolute inset-0 pointer-events-none">
       {/* Braços Stick (Esquerda/Direita) */}
       {[-1, 1].map((side) => {
-        const filterVal = side === -1 ? leftFilter : rightFilter;
         const zIndexVal = side === -1 ? leftZIndexRounded : rightZIndexRounded;
         const armXVal = side === -1 ? leftArmX : rightArmX;
 
@@ -75,7 +74,6 @@ export function PlocLimbs({ limbColor, limbShadow, appearance, size = 120, dragX
               height: `${6 * scale}px`,
               borderRadius: `${3 * scale}px`,
               x: armXVal,
-              filter: filterVal as any,
               zIndex: zIndexVal as any,
             }}
           >
@@ -90,7 +88,20 @@ export function PlocLimbs({ limbColor, limbShadow, appearance, size = 120, dragX
                 height: `${10 * scale}px`,
                 left: side === -1 ? `${-8 * scale}px` : undefined,
                 right: side === 1 ? `${-8 * scale}px` : undefined,
+                overflow: 'hidden'
               }}
+            >
+              <motion.div className="absolute inset-0 bg-black pointer-events-none" style={{ opacity: side === -1 ? leftDarkness : rightDarkness }} />
+            </div>
+
+            {/* Sombra de Profundidade no Braço */}
+            <motion.div 
+              className="absolute inset-0 pointer-events-none" 
+              style={{ 
+                backgroundColor: 'black', 
+                opacity: side === -1 ? leftDarkness : rightDarkness,
+                borderRadius: `${3 * scale}px`,
+              }} 
             />
           </motion.div>
         );
@@ -98,7 +109,6 @@ export function PlocLimbs({ limbColor, limbShadow, appearance, size = 120, dragX
 
       {/* Perninhas Stick Flutuantes (Esquerda/Direita) */}
       {[-1, 1].map((side) => {
-        const filterVal = side === -1 ? leftFilter : rightFilter;
         const zIndexVal = side === -1 ? leftZIndexRounded : rightZIndexRounded;
         const legXVal = side === -1 ? leftLegX : rightLegX;
 
@@ -123,14 +133,13 @@ export function PlocLimbs({ limbColor, limbShadow, appearance, size = 120, dragX
               height: `${16 * scale}px`,
               borderRadius: `${4 * scale}px`,
               x: legXVal,
-              filter: filterVal as any,
               zIndex: zIndexVal as any,
             }}
           >
             {/* Sapatos */}
             {appearance && appearance.shoes !== 'none' && (
               <div
-                className="absolute left-1/2 -translate-x-1/2 z-10 flex items-center justify-center"
+                className="absolute left-1/2 -translate-x-1/2 z-10 flex items-center justify-center overflow-hidden"
                 style={{
                   background: appearance.shoes === 'sneakers' ? '#f43f5e' : (appearance.shoes === 'boots' ? '#b45309' : '#f472b6'),
                   borderBottom: appearance.shoes === 'sneakers' ? `${2 * scale}px solid #ffffff` : 'none',
@@ -140,8 +149,19 @@ export function PlocLimbs({ limbColor, limbShadow, appearance, size = 120, dragX
                   bottom: `${-6 * scale}px`,
                   borderRadius: `${3 * scale}px`,
                 }}
-              />
+              >
+                <motion.div className="absolute inset-0 bg-black pointer-events-none" style={{ opacity: side === -1 ? leftDarkness : rightDarkness }} />
+              </div>
             )}
+            {/* Sombra de Profundidade na Perna */}
+            <motion.div 
+              className="absolute inset-0 pointer-events-none" 
+              style={{ 
+                backgroundColor: 'black', 
+                opacity: side === -1 ? leftDarkness : rightDarkness,
+                borderRadius: `${4 * scale}px`,
+              }} 
+            />
           </motion.div>
         );
       })}

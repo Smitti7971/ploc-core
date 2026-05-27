@@ -15,22 +15,10 @@ export type PlocMode = 'sleeping' | 'active' | 'stressing' | 'pissed' | 'dizzy';
 
 export interface PlocState {
   mode: PlocMode;
-  angerLevel: number;
-  /** @deprecated use angerPercentage */
-  angerClicks: number;
-  /** Percentual atual de raiva (0-100) dentro do nivel corrente */
-  angerPercentage: number;
-  /** Cronometro obrigatorio regressivo do nivel atual (em segundos) */
-  levelLockTimer: number;
-  /** Cliques de desbloqueio ja feitos durante o lockTimer (precisa de 5 para liberar barra) */
-  levelUnlockClicks: number;
-  /** Cliques iniciais ignorados no Lvl 0 (precisa de 5 antes de ativar a barra) */
-  preLevelClickCount: number;
   isHurt: boolean;
   isHit?: boolean;
   isPositiveHit?: boolean;
-  /** @deprecated use levelLockTimer */
-  angerTimer?: number;
+  levelLockTimer?: NodeJS.Timeout | null;
 }
 
 export type PlocEyeType = 'bored' | 'cute' | 'anime' | 'nerd' | 'sparkle' | 'spiral';

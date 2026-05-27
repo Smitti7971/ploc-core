@@ -3,6 +3,7 @@
  * @description Efeito visual de partículas "Zzz" que sobem enquanto o mascote está dormindo.
  */
 
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export interface SleepParticle {
@@ -14,11 +15,39 @@ export interface SleepParticle {
 
 interface PlocSleepParticlesProps {
   isSleeping: boolean;
-  particles: SleepParticle[];
 }
 
-export function PlocSleepParticles({ isSleeping, particles }: PlocSleepParticlesProps) {
-  if (!isSleeping) return null;
+export function PlocSleepParticles({ isSleeping }: PlocSleepParticlesProps) {
+  const [particles, setParticles] = useState<SleepParticle[]>([]);
+
+  useEffect(() => {
+    if (!isSleeping) {
+      setParticles([]);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const id = Math.random().toString();
+      const texts = ['z', 'Z'];
+      setParticles(prev => [
+        ...prev,
+        {
+          id,
+          x: 45 + Math.random() * 25,
+          scale: 0.8 + Math.random() * 0.8,
+          text: texts[Math.floor(Math.random() * texts.length)]
+        }
+      ]);
+
+      setTimeout(() => {
+        setParticles(prev => prev.filter(z => z.id !== id));
+      }, 3000);
+    }, 1200);
+
+    return () => clearInterval(interval);
+  }, [isSleeping]);
+
+  if (!isSleeping && particles.length === 0) return null;
 
   return (
     <div className="absolute inset-0 pointer-events-none z-[1000] overflow-visible">

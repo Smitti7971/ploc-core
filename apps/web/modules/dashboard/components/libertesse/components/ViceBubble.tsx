@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue } from 'framer-motion';
 import { Flame, Wine, WineOff, Pill, Eye, EyeOff, Check, Cigarette, CigaretteOff, X, RotateCcw, History } from 'lucide-react';
 import { useViceStore } from '../store/viceStore';
 import { ViceOptionsModal } from './ViceOptionsModal';
@@ -53,13 +53,13 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
   const startX = Math.cos(startAngle) * (radius * 0.6);
   const startY = Math.sin(startAngle) * (radius * 0.6);
 
-  // Estados e refs de física
-  const [posX, setPosX] = useState(startX);
-  const [posY, setPosY] = useState(startY);
+  // Estados e refs de física via Framer Motion
+  const posX = useMotionValue(startX);
+  const posY = useMotionValue(startY);
 
   // Velocidade inicial calma em qualquer direção randômica
-  const vx = useRef((Math.random() - 0.5) * 1.2);
-  const vy = useRef((Math.random() - 0.5) * 1.2);
+  const vx = useRef<number>((Math.random() - 0.5) * 1.2);
+  const vy = useRef<number>((Math.random() - 0.5) * 1.2);
 
   const currentPos = useRef({ x: startX, y: startY });
   const plocPos = useRef({ x: 0, y: 0 });
@@ -79,8 +79,10 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
       }
     });
 
-    // 2. Loop de Simulação de Física (Futebol de Botão + Movimento Calmo Perpétuo)
-    const interval = setInterval(() => {
+    let animationFrameId: number;
+
+    // 2. Loop de Simulação de Física usando requestAnimationFrame (60fps sincronizado com o monitor)
+    const updatePhysics = () => {
       // Calcula a velocidade instantânea do Ploc (empurrão físico ativo)
       const px = plocPos.current.x;
       const py = plocPos.current.y;
@@ -88,13 +90,13 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
       const pvy = py - prevPlocPos.current.y;
       prevPlocPos.current = { x: px, y: py };
 
-      // Aplica atrito extremamente leve para manter o deslizamento perpétuo e calmo
-      vx.current *= 0.992; // 0.8% de atrito (desliza de forma caldeada e limpa por muito tempo)
-      vy.current *= 0.992;
+      // Aplica atrito leve adaptado para ~60fps
+      vx.current *= 0.996; 
+      vy.current *= 0.996;
 
-      // Mantém um fluxo calmo perpétuo para qualquer direção (sem parar totalmente)
-      const minSpeed = 0.85; // Aceleração calma e perfeitamente visível
-      const maxSpeed = 5.0;  // Velocidade limite confortável
+      // Mantém um fluxo calmo perpétuo para qualquer direção
+      const minSpeed = 0.45; // Metade do antigo (pois roda 2x mais rápido)
+      const maxSpeed = 2.5;  // Metade do antigo
       const currentSpeed = Math.sqrt(vx.current * vx.current + vy.current * vy.current);
       if (currentSpeed < minSpeed) {
         const angle = currentSpeed > 0.05 ? Math.atan2(vy.current, vx.current) : Math.random() * Math.PI * 2;
@@ -123,7 +125,7 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
         nextX += nx * overlap;
         nextY += ny * overlap;
 
-        // Ricochete elástico clássico: reflete a velocidade em relação à normal e injeta impulso do Ploc
+        // Ricochete elástico
         const dot = vx.current * nx + vy.current * ny;
         vx.current = (vx.current - 2 * dot * nx) * 0.8 + pvx * 0.55;
         vy.current = (vy.current - 2 * dot * ny) * 0.8 + pvy * 0.55;
@@ -137,25 +139,27 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
         nextX = nextX * ratio;
         nextY = nextY * ratio;
 
-        // Vetor normal apontando para o centro
         const nx = -nextX / distFromCenter;
         const ny = -nextY / distFromCenter;
         
-        // Reflete perfeitamente a velocidade mantendo 88% de energia elástica
         const dot = vx.current * nx + vy.current * ny;
         vx.current = (vx.current - 2 * dot * nx) * 0.88;
         vy.current = (vy.current - 2 * dot * ny) * 0.88;
       }
 
       currentPos.current = { x: nextX, y: nextY };
-      setPosX(nextX);
-      setPosY(nextY);
-    }, 30);
+      posX.set(nextX);
+      posY.set(nextY);
+
+      animationFrameId = requestAnimationFrame(updatePhysics);
+    };
+
+    updatePhysics();
 
     return () => {
       unsubDragMove();
       unsubDragEnd();
-      clearInterval(interval);
+      cancelAnimationFrame(animationFrameId);
     };
   }, [index]);
   useEffect(() => {
@@ -247,50 +251,29 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
   return (
     <>
       <motion.div
-        initial={{ opacity: 0, y: 0, scale: 0, x: 0 }}
+        initial={{ opacity: 0, scale: 0 }}
         animate={{
           opacity: 1,
           scale: opticalScale,
-          x: posX,
-          y: posY
         }}
-        exit={{ opacity: 0, scale: 0, x: 0 }}
+        exit={{ opacity: 0, scale: 0 }}
         transition={{
           scale: { type: 'spring', stiffness: 300, damping: 20 },
-          opacity: { duration: 0.3 },
-          x: { type: 'tween', ease: 'linear', duration: 0.03 }, // Transição linear ultra-fluida alinhada com o frame físico de 30ms!
-          y: { type: 'tween', ease: 'linear', duration: 0.03 }
+          opacity: { duration: 0.3 }
+        }}
+        style={{
+          x: posX,
+          y: posY,
         }}
         className="absolute z-[-1] pointer-events-auto flex flex-col items-center justify-center"
       >
-        <motion.div
-          initial={{ borderRadius: "50% 50% 48% 48% / 48% 48% 52% 52%" }}
-          animate={{
-            y: [0, -12, 0],
-            x: [0, 8, 0, -8, 0],
-            scaleX: [1, 1.03, 0.97, 1],
-            scaleY: [1, 0.97, 1.03, 1],
-            borderRadius: [
-              "50% 50% 48% 48% / 48% 48% 52% 52%",
-              "46% 54% 44% 56% / 53% 47% 53% 47%",
-              "54% 46% 56% 44% / 47% 53% 47% 53%",
-              "50% 50% 48% 48% / 48% 48% 52% 52%"
-            ]
-          }}
-          transition={{
-            y: { duration: 3.5, repeat: Infinity, ease: "easeInOut" },
-            x: { duration: 5.5, repeat: Infinity, ease: "easeInOut" },
-            scaleX: { duration: 3.5, repeat: Infinity, ease: "easeInOut" },
-            scaleY: { duration: 3.5, repeat: Infinity, ease: "easeInOut" },
-            borderRadius: { duration: 3.5, repeat: Infinity, ease: "easeInOut" }
-          }}
+        <div
           onClick={handleBubbleClick}
-          className="w-[60px] h-[60px] flex flex-col items-center justify-center cursor-pointer relative group"
+          className="w-[60px] h-[60px] flex flex-col items-center justify-center cursor-pointer relative group rounded-full backdrop-blur-sm"
           style={{
-            background: activeVice.mode === 'diminua' ? 'transparent' : `radial-gradient(circle at 30% 30%, ${color}60, ${color}10)`,
-            border: `1px solid ${activeVice.mode === 'diminua' ? (!isCountUp ? '#ef4444' : '#10b981') : color}`,
-            boxShadow: `0 0 30px ${activeVice.mode === 'diminua' ? (!isCountUp ? '#ef4444' : '#10b981') : color}40, inset 0 0 20px ${activeVice.mode === 'diminua' ? (!isCountUp ? '#ef4444' : '#10b981') : color}20`,
-            backdropFilter: 'blur(12px)',
+            backgroundColor: activeVice.mode === 'diminua' ? 'rgba(20,25,30,0.85)' : `${color}30`,
+            border: `1px solid ${activeVice.mode === 'diminua' ? (!isCountUp ? '#ef4444' : '#10b981') : `${color}60`}`,
+            boxShadow: `inset 0 0 10px ${color}20` // Lightweight inner shadow instead of gradient
           }}
         >
           {!isPerformanceMode && (
@@ -303,7 +286,6 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
               <Icon
                 size={14}
                 color={activeVice.mode === 'diminua' ? (!isCountUp ? '#ef4444' : '#10b981') : '#ffffff'}
-                style={{ filter: `drop-shadow(0 0 5px ${activeVice.mode === 'diminua' ? (!isCountUp ? '#ef4444' : '#10b981') : color})` }}
               />
             </div>
           )}
@@ -326,7 +308,7 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
               Uso
             </span>
           )}
-        </motion.div>
+        </div>
 
 
       </motion.div>

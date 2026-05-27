@@ -37,6 +37,7 @@ export const AuthCapsule: React.FC = () => {
 
   return (
     <div className="absolute top-[25px] right-[25px] z-[9999] flex items-center gap-3 pointer-events-auto">
+      <div id="blackboard-portal-target" className="flex items-center gap-3" />
       {isAuthenticated ? (
         <UserHeader />
       ) : (

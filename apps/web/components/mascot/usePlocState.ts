@@ -190,25 +190,25 @@ const playCuteVocalSound = (type: 'annoyed' | 'hurt' | 'sigh' | 'success') => {
 export function usePlocState({ emotion, speak, isSpeaking }: UsePlocStateOptions = {}) {
   const [isMounted, setIsMounted] = useState(false);
   const isSpeakingRef = useRef(isSpeaking);
+  const emotionRef = useRef(emotion);
 
   useEffect(() => {
     isSpeakingRef.current = isSpeaking;
   }, [isSpeaking]);
 
+  useEffect(() => {
+    emotionRef.current = emotion;
+  }, [emotion]);
+
+
   // Refs para rastrear a transição de estados e evitar duplicações
-  const prevLevelRef = useRef<number>(0);
-  const prevModeRef = useRef<string>('sleeping');
+  // Refs para rastrear a transição de estados e evitar duplicações
+  const prevModeRef = useRef<string>('active');
   const lastTriggeredTransitionRef = useRef<string>('');
 
   // Estado persistido do humor
   const [plocState, setPlocState] = useState<PlocState>({
-    mode: 'sleeping',
-    angerLevel: 0,
-    angerClicks: 0,
-    angerPercentage: 0,
-    levelLockTimer: 0,
-    levelUnlockClicks: 0,
-    preLevelClickCount: 0,
+    mode: 'active',
     isHurt: false,
   });
 
@@ -234,77 +234,24 @@ export function usePlocState({ emotion, speak, isSpeaking }: UsePlocStateOptions
     setIsMounted(true);
   }, []);
 
-  // 1. Sincroniza persistência do nível de raiva e porcentagem
-  useEffect(() => {
-    if (!isMounted) return;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('ploc_anger_level', plocState.angerLevel.toString());
-      localStorage.setItem('ploc_anger_pct', plocState.angerPercentage.toString());
-    }
-  }, [plocState.angerLevel, plocState.angerPercentage, isMounted]);
+  // (Removido: Sincroniza persistência do nível de raiva e porcentagem)
 
   // 2. Hook de transição de estado unificado para efeitos sonoros/fala exatamente UMA vez
   useEffect(() => {
     if (!isMounted) {
-      prevLevelRef.current = plocState.angerLevel;
       prevModeRef.current = plocState.mode;
       return;
     }
-
-    const prevLevel = prevLevelRef.current;
-    const currentLevel = plocState.angerLevel;
-    prevLevelRef.current = currentLevel;
 
     const prevMode = prevModeRef.current;
     const currentMode = plocState.mode;
     prevModeRef.current = currentMode;
 
-    // Se houve transição real de nível de raiva
-    if (currentLevel !== prevLevel) {
-      const transitionKey = `${prevLevel}->${currentLevel}`;
-      if (lastTriggeredTransitionRef.current === transitionKey) {
-        return;
-      }
-      lastTriggeredTransitionRef.current = transitionKey;
-
-      // 1. Se acalmou (de > 0 para 0)
-      if (currentLevel === 0 && prevLevel > 0) {
-        if (typeof window !== 'undefined') {
-          sessionStorage.removeItem('ploc_anger_denied_level');
-        }
-
-        if (currentMode !== 'sleeping' && speak) {
-          const calmPhrases = [
-            'Me acalmei, não me irrite novamente... ',
-            'Você gosta de me irritar né ?',
-            'Não faça mais isso!',
-            'Hmm...'
-          ];
-          const chosenPhrase = calmPhrases[Math.floor(Math.random() * calmPhrases.length)];
-          speak(chosenPhrase, 4000);
-        }
-      }
-
-      // 2. Subiu de nível (ficou irritado)
-      if (currentLevel > prevLevel) {
-        playCuteVocalSound('annoyed');
-        if (speak) {
-          if (currentLevel === 1) {
-            speak('Não tem nada pra fazer não é!? ', 4000);
-          } else if (currentLevel === 2) {
-            speak('Gosta de me irritar né!? ', 4000);
-          } else if (currentLevel === 3) {
-            speak('Que implicancia é essa velho!? ', 4000);
-          } else if (currentLevel === 4) {
-            speak('Sua sorte é que eu sou só uma bolha!! ', 4000);
-          } else if (currentLevel === 5) {
-            speak('Cara... vou pedir demissão de você!! ', 5000);
-            triggerAchievementUnlock('tornado_vermelho');
-          }
-        }
-      }
+    // 1. Transições de Modo e Estado Emocional Geral (Sleeping -> Active / Dizzy)
+    if (prevMode === 'sleeping' && currentMode !== 'sleeping') {
+      if (speak) speak('Bom dia! O que temos para hoje?', 3000);
     }
-  }, [plocState.angerLevel, plocState.mode, isMounted, speak]);
+  }, [plocState.mode, isMounted, speak]);
 
   // Gatilho de dor (quando arremessado rápido) - equivale a 5 cliques de raiva
   const triggerHurt = () => {
@@ -321,15 +268,6 @@ export function usePlocState({ emotion, speak, isSpeaking }: UsePlocStateOptions
     setTimeout(() => {
       setPlocState(prev => ({ ...prev, isHurt: false }));
     }, 1500);
-
-    // Arremessar = 5 cliques de raiva no novo sistema
-    // Usamos um pequeno delay para nao conflitar com o setState de isHurt
-    setTimeout(() => {
-      lastClickTimeRef.current = Date.now();
-      for (let i = 0; i < 5; i++) {
-        handleAngerIncrement(1);
-      }
-    }, 50);
   };
 
   // Gatilho de incomodado/irritado por bolha que colidiu
@@ -448,340 +386,6 @@ export function usePlocState({ emotion, speak, isSpeaking }: UsePlocStateOptions
     return () => unsubscribe();
   }, [speak]);
 
-  // Configuracao dos Niveis de Irritacao - novo sistema por percentual
-  // label: nome exibido na UI
-  // lockDuration: segundos obrigatorios ao entrar no nivel (0 = sem lock)
-  // unlockClicksNeeded: quantos cliques para liberar o contador durante o lock
-  // percentPerClick: quanto cada clique adiciona ao percentual (0-100)
-  // decayRate: decaimento por tick de 100ms quando nivel=0 e usuario parou de clicar (3s timeout)
-  const ANGER_LEVELS = [
-    { label: 'NEUTRO', lockDuration: 0, unlockClicksNeeded: 5, percentPerClick: 10, ignoredClicks: 5 },  // Level 0
-    { label: 'CHATEADO', lockDuration: 30, unlockClicksNeeded: 5, percentPerClick: 9, ignoredClicks: 0 },  // Level 1 - unico com 5 cliques de desbloqueio
-    { label: 'FRUSTRADO', lockDuration: 45, unlockClicksNeeded: 0, percentPerClick: 8, ignoredClicks: 0 },  // Level 2 - apenas timer
-    { label: 'IRRITADO', lockDuration: 60, unlockClicksNeeded: 0, percentPerClick: 7, ignoredClicks: 0 },  // Level 3 - apenas timer
-    { label: 'DESCONTROLADO', lockDuration: 75, unlockClicksNeeded: 0, percentPerClick: 6, ignoredClicks: 0 },  // Level 4 - apenas timer
-    { label: 'FURIOSO', lockDuration: 90, unlockClicksNeeded: 0, percentPerClick: 0, ignoredClicks: 0 },  // Level 5 - imune
-  ];
-
-  const lastClickTimeRef = useRef<number>(Date.now());
-  const tickCounterRef = useRef<number>(0);
-
-
-
-
-  // Registrar escuta do EventBus para o incremento de raiva (mantido para compatibilidade)
-  useEffect(() => {
-    const unsubAnger = blackboardEventBus.subscribe('PLOC_ANGER_INCREASE', (data) => {
-      if (data && typeof data.amount === 'number') {
-        // Converte amount (cliques antigos) para equivalente em % do novo sistema
-        handleAngerIncrement(data.amount);
-      }
-    });
-    return () => unsubAnger();
-  }, [plocState.angerLevel]);
-
-  // Loop principal de tempo: Ticks de 100ms para decaimento e timer de niveis
-  useEffect(() => {
-    if (!isMounted) return;
-
-    const interval = setInterval(() => {
-      if (isSpeakingRef.current) {
-        return;
-      }
-      tickCounterRef.current += 1;
-      const isOneSecond = tickCounterRef.current % 10 === 0;
-
-      setPlocState(prev => {
-        const isSleeping = prev.mode === 'sleeping';
-
-        let nextLevel = prev.angerLevel;
-        let nextPct = prev.angerPercentage;
-        let nextLockTimer = prev.levelLockTimer;
-        let nextUnlockClicks = prev.levelUnlockClicks;
-        let nextPreCount = prev.preLevelClickCount;
-        let nextMode = prev.mode;
-
-        // 1. Countdown do lock timer do estado ativo (qualquer nível > 0)
-        if (nextLevel > 0 && nextLockTimer > 0 && isOneSecond) {
-          const decreaseAmount = isSleeping ? 2 : 1;
-          nextLockTimer = Math.max(0, nextLockTimer - decreaseAmount);
-        }
-
-        // 2. Se o timer do estado expirar (chegar a 0), ele volta para o modo neutro (Lvl 0)
-        if (nextLevel > 0 && nextLockTimer <= 0) {
-          return {
-            ...prev,
-            angerLevel: 0,
-            angerClicks: 0,
-            angerPercentage: 0,
-            levelLockTimer: 0,
-            levelUnlockClicks: 0,
-            preLevelClickCount: 0,
-            mode: isSleeping ? 'sleeping' : 'active',
-          };
-        }
-
-        // 3. Decaimento geral da barra de porcentagem de cliques para todos os níveis < 5
-        if (nextLevel < 5 && nextPct > 0) {
-          const timeSinceLastClick = Date.now() - lastClickTimeRef.current;
-          if (timeSinceLastClick > 3000) {
-            // Decai 2% a cada 100ms (~20% por segundo) no normal, ou 4% (2x mais rápido) no sono
-            const decayAmount = isSleeping ? 4 : 2;
-            nextPct = Math.max(0, nextPct - decayAmount);
-
-            // Se a barra de porcentagem voltar a 0 no nível 0, redefinimos o contador de cliques de ativação
-            if (nextLevel === 0 && nextPct === 0) {
-              nextPreCount = 0;
-            }
-          }
-        }
-
-        // Modo baseado no nivel
-        if (!isSleeping) {
-          if (nextLevel === 5) {
-            nextMode = 'pissed';
-          } else if (nextLevel >= 3) {
-            nextMode = 'stressing';
-          } else {
-            nextMode = 'active';
-          }
-        }
-
-        return {
-          ...prev,
-          angerLevel: nextLevel,
-          angerPercentage: parseFloat(nextPct.toFixed(2)),
-          levelLockTimer: nextLockTimer,
-          levelUnlockClicks: nextUnlockClicks,
-          preLevelClickCount: nextPreCount,
-          mode: nextMode,
-        };
-      });
-    }, 100);
-
-    return () => {
-      clearInterval(interval);
-      if (warningTimeoutRef.current) {
-        clearTimeout(warningTimeoutRef.current);
-      }
-    };
-  }, [isMounted]);
-
-  // Le localStorage e inicializa humor/modo sono na montagem
-  useEffect(() => {
-    const savedLevel = parseInt(localStorage.getItem('ploc_anger_level') || '0');
-    const savedPct = parseFloat(localStorage.getItem('ploc_anger_pct') || '0');
-
-    const now = new Date();
-    const hour = now.getHours();
-
-    const sleepStart = parseInt(localStorage.getItem('ploc_sleep_start') || '0');
-    const sleepEnd = parseInt(localStorage.getItem('ploc_sleep_end') || '6');
-
-    let isSleepTime = false;
-    if (sleepStart < sleepEnd) {
-      isSleepTime = hour >= sleepStart && hour < sleepEnd;
-    } else {
-      isSleepTime = hour >= sleepStart || hour < sleepEnd;
-    }
-
-    const cfg = ANGER_LEVELS[Math.min(savedLevel, 5)];
-
-    setPlocState({
-      mode: isSleepTime ? 'sleeping' : savedLevel === 5 ? 'pissed' : savedLevel >= 3 ? 'stressing' : 'active',
-      angerLevel: savedLevel,
-      angerClicks: 0,
-      angerPercentage: savedPct,
-      levelLockTimer: savedLevel >= 1 && savedLevel <= 5 ? cfg.lockDuration : 0,
-      levelUnlockClicks: 0,
-      preLevelClickCount: 0,
-      isHurt: false,
-    });
-
-    // Se estiver no horário de sono e entrar no app pela primeira vez na sessão
-    if (isSleepTime && typeof window !== 'undefined' && !sessionStorage.getItem('ploc_sleep_warned')) {
-      sessionStorage.setItem('ploc_sleep_warned', 'true');
-
-      setTimeout(() => {
-        attributeEngine.applySleepPenalty();
-
-        blackboardEventBus.emit(BLACKBOARD_EVENTS.PLOC_REACTION, {
-          type: 'STRESS',
-          message: 'Cara! Você deveria estar dormindo agora! Perdeu pontos de Foco e Corpo por ficar acordado! Vá descansar!'
-        });
-      }, 1500);
-    }
-  }, []);
-
-  // Sincroniza emoção externa opcional com o modo do Ploc
-  useEffect(() => {
-    if (emotion) {
-      const modeMap: Record<string, PlocMode> = {
-        calm: 'active',
-        happy: 'active',
-        stressed: 'stressing',
-        pissed: 'pissed',
-        sleeping: 'sleeping',
-        dizzy: 'stressing'
-      };
-      setPlocState(prev => ({ ...prev, mode: modeMap[emotion] || 'active' }));
-    }
-  }, [emotion]);
-
-  // Função auxiliar interna para incrementar raiva pelo novo sistema (percentual)
-  const handleAngerIncrement = (clickEquivalent: number) => {
-    setPlocState(prev => {
-      if (prev.mode === 'sleeping') return prev;
-      if (prev.angerLevel === 5) return prev;
-
-      const cfg = ANGER_LEVELS[prev.angerLevel];
-      const addedPct = clickEquivalent * cfg.percentPerClick;
-      const newPct = Math.min(100, prev.angerPercentage + addedPct);
-
-      if (newPct >= 100) {
-        // Sobe de nível
-        const nextLevel = Math.min(prev.angerLevel + 1, 5);
-        const nextCfg = ANGER_LEVELS[nextLevel];
-        const isLvl5 = nextLevel === 5;
-
-        return {
-          ...prev,
-          angerLevel: nextLevel,
-          angerPercentage: 0,
-          levelLockTimer: nextCfg.lockDuration,
-          levelUnlockClicks: 0,
-          mode: isLvl5 ? 'pissed' : nextLevel >= 3 ? 'stressing' : 'active',
-        };
-      }
-
-      return { ...prev, angerPercentage: parseFloat(newPct.toFixed(2)) };
-    });
-  };
-
-  // Handler de clique/taps no corpo do Ploc - NOVO SISTEMA
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    // Se clicar dormindo, ignora
-    if (plocState.mode === 'sleeping') {
-      return;
-    }
-
-    // Toggle simulacao se houver foco
-    if (focusedRoutine) {
-      setShowSimulation(!showSimulation);
-    }
-
-    // Nivel 5 - FURIOSO - imune a cliques e silencioso
-    if (plocState.angerLevel === 5) {
-      return;
-    }
-
-    lastClickTimeRef.current = Date.now();
-
-    // Calcula se este clique vai fazer subir de nível ou ativar o aviso do nível 0
-    let willLevelUp = false;
-    let isWarningClick = false;
-    if (plocState.angerLevel < 5) {
-      const cfg = ANGER_LEVELS[plocState.angerLevel];
-      if (plocState.angerLevel === 0) {
-        const nextPreCount = plocState.preLevelClickCount + 1;
-        if (nextPreCount > cfg.ignoredClicks) {
-          const nextPct = Math.min(100, plocState.angerPercentage + cfg.percentPerClick);
-          if (nextPct >= 100) {
-            willLevelUp = true;
-          }
-          if (plocState.preLevelClickCount === cfg.ignoredClicks) {
-            isWarningClick = true;
-          }
-        }
-      } else {
-        const nextPct = Math.min(100, plocState.angerPercentage + cfg.percentPerClick);
-        if (nextPct >= 100) {
-          willLevelUp = true;
-        }
-      }
-    }
-
-    if (isWarningClick && speak) {
-      speak('Ei! Para que, fazê isso??', 3500);
-    }
-
-    // Tocar som de suspiro/clique se o clique for válido e NÃO for causar uma transição de nível
-    if (plocState.angerLevel < 5 && !willLevelUp) {
-      if (isWarningClick) {
-        playCuteVocalSound('annoyed');
-      } else if (plocState.angerLevel > 0 || plocState.preLevelClickCount >= 5) {
-        playCuteVocalSound('sigh');
-      }
-    }
-
-    setPlocState(prev => {
-      const cfg = ANGER_LEVELS[prev.angerLevel];
-
-      // === NIVEL 0: Logica especial ===
-      if (prev.angerLevel === 0) {
-        const newPreCount = prev.preLevelClickCount + 1;
-
-        // Primeiros 5 cliques: silencio total, sem raiva
-        if (newPreCount <= cfg.ignoredClicks) {
-          return { ...prev, preLevelClickCount: newPreCount };
-        }
-
-        // A partir do 6o clique: adiciona 10% por clique
-        const newPct = Math.min(100, prev.angerPercentage + cfg.percentPerClick);
-
-        if (newPct >= 100) {
-          // Entra no Nivel 1 - CHATEADO
-          const nextCfg = ANGER_LEVELS[1];
-          return {
-            ...prev,
-            angerLevel: 1,
-            angerPercentage: 0,
-            levelLockTimer: nextCfg.lockDuration,
-            levelUnlockClicks: 0,
-            preLevelClickCount: newPreCount,
-            mode: 'active',
-          };
-        }
-
-        return {
-          ...prev,
-          angerPercentage: parseFloat(newPct.toFixed(2)),
-          preLevelClickCount: newPreCount,
-        };
-      }
-
-      // === NIVEIS 1-4: Cada clique adiciona % diretamente (sem qualquer bloqueio de timer) ===
-      const newPct = Math.min(100, prev.angerPercentage + cfg.percentPerClick);
-
-      if (newPct >= 100) {
-        const nextLevel = Math.min(prev.angerLevel + 1, 5);
-        const nextCfg = ANGER_LEVELS[nextLevel];
-        const isLvl5 = nextLevel === 5;
-
-        return {
-          ...prev,
-          angerLevel: nextLevel,
-          angerPercentage: 0,
-          levelLockTimer: nextCfg.lockDuration,
-          levelUnlockClicks: 0,
-          mode: isLvl5 ? 'pissed' : nextLevel >= 3 ? 'stressing' : 'active',
-        };
-      }
-
-      return {
-        ...prev,
-        angerPercentage: parseFloat(newPct.toFixed(2)),
-      };
-    });
-  };
-
-  // Incremento de raiva mantido para compatibilidade com EventBus
-  const increaseAnger = (amount: number) => {
-    handleAngerIncrement(amount);
-  };
-
   const isSleeping = plocState.mode === 'sleeping';
   const isPissed = plocState.mode === 'pissed';
   const isStressing = plocState.mode === 'stressing';
@@ -803,13 +407,9 @@ export function usePlocState({ emotion, speak, isSpeaking }: UsePlocStateOptions
     isDragging,
     setIsDragging,
     containerRef,
-    triggerHurt,
-    handleClick,
-    increaseAnger,
     isSleeping,
     isPissed,
     isStressing,
-    ANGER_LEVELS,
   };
 }
 

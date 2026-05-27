@@ -32,19 +32,16 @@ class AttributeEngine {
   }
 
   private init() {
-    // Tenta carregar do localStorage
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('ploc_attributes');
-      if (saved) {
-        try {
-          const data = JSON.parse(saved);
-          this.attributes = data.attributes || this.attributes;
-          this.score = data.score || 0;
-        } catch (e) {
-          console.error('Erro ao carregar atributos:', e);
-        }
-      }
-    }
+    // Força zerar todos os pontos a pedido do usuário
+    this.attributes = {
+      corpo: 0,
+      mente: 0,
+      vida: 0,
+      liberdade: 0,
+      proposito: 0
+    };
+    this.score = 0;
+    this.save();
   }
 
   public setDemoMode(active: boolean) {
@@ -171,6 +168,33 @@ class AttributeEngine {
     if (!stats) return;
     if (this.isDemoMode) return;
 
+    const oldAttributes = { ...this.attributes };
+    const oldScore = this.score;
+
+    const newAttributes = {
+      corpo: stats.body || 0,
+      mente: stats.mind || 0,
+      vida: stats.life || 0,
+      liberdade: stats.freedom || 0,
+      proposito: stats.purpose || 0
+    };
+    
+    const newScore = stats.xp ?? 0;
+
+    // Verifica se houve alguma mudança real
+    const hasAttributeChanges = 
+      oldAttributes.corpo !== newAttributes.corpo ||
+      oldAttributes.mente !== newAttributes.mente ||
+      oldAttributes.vida !== newAttributes.vida ||
+      oldAttributes.liberdade !== newAttributes.liberdade ||
+      oldAttributes.proposito !== newAttributes.proposito;
+
+    const hasScoreChanges = oldScore !== newScore;
+
+    if (!hasAttributeChanges && !hasScoreChanges) {
+      return; // Evita re-renders massivos se os dados forem iguais
+    }
+
     console.log('🧬 [AttributeEngine] SINCRONIZANDO COM BANCO:', stats);
 
     // Limpa o lixo do localStorage antes de aplicar os novos
@@ -178,24 +202,19 @@ class AttributeEngine {
       localStorage.removeItem('ploc_attributes');
     }
 
-    this.attributes = {
-      corpo: stats.body || 10,
-      mente: stats.mind || 10,
-      vida: stats.life || 10,
-      liberdade: stats.freedom || 10,
-      proposito: stats.purpose || 10
-    };
+    this.attributes = newAttributes;
+    this.score = newScore;
 
-    this.score = stats.xp ?? 0;
-
-    // Notifica o sistema (AttributeMonitor) para atualizar IMEDIATAMENTE
+    // Notifica o sistema APENAS para os pilares que mudaram
     const pillars: Array<keyof UserAttributes> = ['corpo', 'mente', 'vida', 'liberdade', 'proposito'];
     pillars.forEach((pillar) => {
-      blackboardEventBus.emit(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, {
-        pillar,
-        value: this.attributes[pillar],
-        diff: 0
-      });
+      if (oldAttributes[pillar] !== this.attributes[pillar]) {
+        blackboardEventBus.emit(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, {
+          pillar,
+          value: this.attributes[pillar],
+          diff: this.attributes[pillar] - oldAttributes[pillar]
+        });
+      }
     });
 
     this.save();

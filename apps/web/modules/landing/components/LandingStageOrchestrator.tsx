@@ -1,81 +1,24 @@
 'use client';
 
-/**
- * ============================================================================
- * Orquestrador da Landing Page - LandingStageOrchestrator.tsx
- * ============================================================================
- * Descrição: Componente central da landing page. Orquestra a exibição do mascote,
- * as bolhas flutuantes (conceitos) e controles laterais.
- * ============================================================================
- */import React from 'react';
-import { useLandingStageState } from '../hooks';
-import { FloatingBubblesStage } from './bubbles';
-import {
-  ChallengePhrasesHeader,
-  PillarTooltipDetail,
-  PillarsControlGroup,
-  RewardGiftBox
-} from './engines';
-import { MascotCenter, LandingPlocChat } from './mascot';
-// Componente que coordena todas as animações e partes da Landing Page
+import React, { useState, useEffect } from 'react';
+import { MascotCenter } from './mascot';
+
+// Componente central da Landing Page. Apenas renderiza o Mascote (e o chat se for necessário no futuro)
 export default function LandingStageOrchestrator() {
-  const {
-    isMounted,
-    phraseIndex,
-    density,
-    isFirstPageLoad,
-    attributes,
-    activeTooltip,
-    gameMode,
-    rewardBoxVisible,
-    isLandingChatOpen,
-    isWhirlwind,
-    activeConcepts,
-    onboardingStage,
-    toggleTooltip,
-    changeDensity
-  } = useLandingStageState();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   if (!isMounted) return null;
 
   return (
     <div
-      className="absolute inset-0 pointer-events-none w-full h-full overflow-hidden"
+      className="absolute inset-0 pointer-events-none w-full h-full overflow-hidden flex flex-col items-center justify-center"
     >
-      {/* ── 0. O Mascote Ploc Centralizado (Participa da hierarquia global de z-index) ── */}
+      {/* ── O Mascote Ploc Centralizado ── */}
       <MascotCenter />
-
-      {/* ── 1. Letreiro Central e Elementos Flutuantes Centrais ── */}
-      <div
-        className="absolute left-0 right-0 w-full text-center pointer-events-none flex flex-col items-center justify-center top-[calc(50%+75px)] z-15"
-      >
-        <ChallengePhrasesHeader phraseIndex={phraseIndex} />
-        <LandingPlocChat isOpen={isLandingChatOpen} />
-        <PillarTooltipDetail activeTooltip={activeTooltip} attributes={attributes} />
-      </div>
-
-      {/* ── 2. Bolhas Flutuantes (Motor de Colisão & Render) na mesma hierarquia de z-index ── */}
-      <FloatingBubblesStage
-        activeConcepts={activeConcepts}
-        isFirstPageLoad={isFirstPageLoad}
-        gameMode={gameMode}
-        isWhirlwind={isWhirlwind}
-        density={density}
-      />
-
-      {/* ── 3. Controle Lateral de Pilares e Densidade ── */}
-      <PillarsControlGroup
-        gameMode={gameMode}
-        density={density}
-        activeTooltip={activeTooltip}
-        attributes={attributes}
-        onToggleTooltip={toggleTooltip}
-        onChangeDensity={changeDensity}
-        onboardingStage={onboardingStage}
-      />
-
-      {/* ── 4. Recompensa ── */}
-      <RewardGiftBox visible={rewardBoxVisible} />
     </div>
   );
 }

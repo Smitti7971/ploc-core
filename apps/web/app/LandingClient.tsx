@@ -4,14 +4,13 @@
 import React, { useState, useEffect } from 'react'; // Importa hooks do React
 
 // Bloco de imports de componentes do sistema
-import { AuthCapsule } from '@/modules/auth/components/AuthCapsule'; // Importa cápsula de autenticação
+import { AuthCapsule } from '@/modules/auth/components/AuthCapsule';
 import {
   LandingStageOrchestrator,
-  ExitGameButton,
   AmbientGlowBackground,
   Vignette,
-  SodaWave
-} from '@/modules/landing'; // Importa componentes da landing page
+  OptimizedBubblesBackground
+} from '@/modules/landing';
 
 // Componente principal da página de Landing (não autenticado)
 export default function LandingClient() {
@@ -31,11 +30,8 @@ export default function LandingClient() {
     <main className="h-full w-full max-w-full bg-[var(--ploc-background)] flex flex-col items-center justify-center fixed inset-0 overflow-hidden">
       {/* Contêiner principal que ocupa toda a tela, com fundo escuro e centralização */}
 
-      {/* Renderiza as ondas animadas no fundo da tela */}
-      <SodaWave /> {/* Componente visual de efervescência */}
-
-      {/* Renderiza o botão no canto para sair da experiência do jogo de onboarding */}
-      <ExitGameButton /> {/* Botão de saída */}
+      {/* Renderiza as bolhas otimizadas sem comprometer o FPS */}
+      <OptimizedBubblesBackground />
 
       {/* Removido: cápsula de autenticação/login, agora é global no layout */}
 

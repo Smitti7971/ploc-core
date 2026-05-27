@@ -42,15 +42,17 @@ import { PlocLimbs } from './PlocLimbs';
 import { PlocSimulationCard } from './PlocSimulationCard';
 import { PlocAchievementToast } from './PlocAchievementToast';
 import { PlocActionMenu } from './PlocActionMenu';
-import { PlocHumorBar } from './PlocHumorBar';
 import { PlocChatOverlay } from './PlocChatOverlay';
 import { PlocSleepParticles } from './PlocSleepParticles';
 import { PlocShockwaveRings } from './PlocShockwaveRings';
 import { PlocAura, PlocHair, PlocHat, PlocClothes } from './PlocCosmetics';
 import { PlocFloatingIndicators } from './PlocFloatingIndicators';
+import { InventoryModal } from './InventoryModal';
 
 import { PILLARS_DATA } from '@/modules/routines/data/routinesData';
 import { attributeEngine } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
+import { usePlocParallax } from './usePlocParallax';
+import { usePlocDragSystem } from './usePlocDragSystem';
 
 const containerVariants = {
   hover: (isSleeping: boolean) => ({
@@ -75,27 +77,14 @@ export default function PlocAvatar({
   const isLanding = pathname === '/' && !isAuthenticated;
   const isHidden = pathname === '/settings';
 
-  const hasDraggedRef = useRef(false); // Ref para evitar clique convencional ao soltar drag!
 
   const { speak, isSpeaking, isTTSLoading, isSpeakingMouth } = usePlocSpeech();
 
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  // Drag Direction target instead of absolute position for 2D platformer look!
-  const facingTargetX = useMotionValue(0);
-  const smoothFacingX = useSpring(facingTargetX, { stiffness: 350, damping: 25 });
-
   // Parallax transforms for 2D turning effect
-  const faceX = useTransform(smoothFacingX, [-80, 80], [-18, 18], { clamp: true });
-  
-  const hatHairX = useTransform(smoothFacingX, [-80, 80], [-10, 10], { clamp: true });
-  
-  const clothesX = useTransform(smoothFacingX, [-80, 80], [-8, 8], { clamp: true });
-  
-  const bubblesX = useTransform(smoothFacingX, [-80, 80], [-12, 12], { clamp: true });
-  
-  const shineX = useTransform(smoothFacingX, [-80, 80], [8, -8], { clamp: true });
+  const { facingTargetX, smoothFacingX, faceX, hatHairX, clothesX, bubblesX, shineX } = usePlocParallax();
 
   // Observa e carrega a customização ativa do Ploc do localStorage (ou prop)
   const [localAppearance, setLocalAppearance] = useState<PlocAppearance>(DEFAULT_PLOC_APPEARANCE);
@@ -122,7 +111,7 @@ export default function PlocAvatar({
 
   const appearance = propAppearance || localAppearance;
 
-  const { isMobile, SIZE } = usePlocResponsive(x, y, isLanding);
+  const { SIZE, bounds } = usePlocResponsive(x, y, isLanding);
 
   useEffect(() => {
     x.set(0);
@@ -145,52 +134,22 @@ export default function PlocAvatar({
     isDragging,
     setIsDragging,
     containerRef,
-    triggerHurt,
-    handleClick,
     isSleeping,
     isPissed,
-    ANGER_LEVELS,
   } = usePlocState({ emotion, speak, isSpeaking });
 
-  // Estados e detecção de transição de níveis de irritação (squash & stretch / shockwave HSL-reativo)
+  const { hasDraggedRef, onDragStart, onDrag, onDragEnd } = usePlocDragSystem({
+    x, y, facingTargetX, SIZE, pathname, isAuthenticated, isSleeping,
+    setIsDragging, setIsTapped, setIsHovered, triggerHurt: () => {},
+    setFocusedRoutine, setFocusedPillar, setShowSimulation, focusedRoutine
+  });
+
+  // A transição de níveis de irritação (squash & stretch) é gerenciada internamente no PlocShockwaveRings
+  // que nos repassa via callback.
   const [transitionEffect, setTransitionEffect] = useState<'up' | 'down' | null>(null);
-  const [shockwaves, setShockwaves] = useState<{ id: string; type: 'up' | 'down'; color: string }[]>([]);
-  const prevAngerLevelRef = useRef(plocState.angerLevel);
-
-
-
-  useEffect(() => {
-    const prev = prevAngerLevelRef.current;
-    const current = plocState.angerLevel;
-    if (prev !== current) {
-      const type = current > prev ? 'up' : 'down';
-
-      // Cor de onda de choque HSL-reativa combinada com o nível alvo
-      let waveColor = 'rgba(14, 165, 233, 0.7)'; // Classic blue
-      if (type === 'up') {
-        waveColor = current === 5 ? 'rgba(239, 68, 68, 0.8)' : 'rgba(249, 115, 22, 0.7)';
-      } else {
-        waveColor = current === 0 ? 'rgba(45, 212, 191, 0.8)' : 'rgba(14, 165, 233, 0.75)';
-      }
-
-      const id = Math.random().toString();
-      setShockwaves(prevWaves => [...prevWaves, { id, type, color: waveColor }]);
-
-      setTimeout(() => {
-        setShockwaves(prevWaves => prevWaves.filter(w => w.id !== id));
-      }, 900);
-
-      setTransitionEffect(type);
-      prevAngerLevelRef.current = current;
-
-      const t = setTimeout(() => {
-        setTransitionEffect(null);
-      }, 800);
-      return () => clearTimeout(t);
-    }
-  }, [plocState.angerLevel]);
 
   const [areActionsVisible, setAreActionsVisible] = useState(false);
+  const [isBagOpen, setIsBagOpen] = useState(false);
   const [achievementToast, setAchievementToast] = useState<{ title: string; message: string } | null>(null);
 
   const actionsOverlayRef = useRef<HTMLDivElement>(null);
@@ -214,36 +173,6 @@ export default function PlocAvatar({
     };
   }, [areActionsVisible]);
 
-  // Partículas de sono flutuantes (Zzz...)
-  const [sleepingZs, setSleepingZs] = useState<{ id: string; x: number; scale: number; text: string }[]>([]);
-
-  useEffect(() => {
-    if (!isSleeping) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSleepingZs([]);
-      return;
-    }
-
-    const interval = setInterval(() => {
-      const id = Math.random().toString();
-      const texts = ['z', 'Z'];
-      setSleepingZs(prev => [
-        ...prev,
-        {
-          id,
-          x: 45 + Math.random() * 25, // Do meio para a direita perto da cabeça do Ploc
-          scale: 0.8 + Math.random() * 0.8,
-          text: texts[Math.floor(Math.random() * texts.length)]
-        }
-      ]);
-
-      setTimeout(() => {
-        setSleepingZs(prev => prev.filter(z => z.id !== id));
-      }, 3000);
-    }, 1200);
-
-    return () => clearInterval(interval);
-  }, [isSleeping]);
 
   // Escuta conquistas destravadas globalmente em tempo real
   useEffect(() => {
@@ -366,7 +295,6 @@ export default function PlocAvatar({
   const { limbColor, limbShadow, stateR, stateG, stateB, stateAlpha } = usePlocColorState({
     appearance,
     isSleeping,
-    angerLevel: plocState.angerLevel,
     isHurt: plocState.isHurt,
     isHit: plocState.isHit ?? false,
     isPositiveHit: plocState.isPositiveHit ?? false,
@@ -375,7 +303,7 @@ export default function PlocAvatar({
   if (isHidden) return null;
   if (!isMounted) return null;
 
-  const shouldShake = plocState.angerLevel >= 4 || plocState.isHurt || plocState.isHit;
+  const shouldShake = plocState.isHurt || plocState.isHit;
 
   // Dynamic breathing/wobble keyframes based on states for gelatinous effect
   const breatheScaleX = plocState.isHurt
@@ -412,25 +340,16 @@ export default function PlocAvatar({
     animateRotate = [0, 8, -6, 3, -1, 0];
   }
 
-  const amoebaBorderRadius = isSleeping
-    ? [
-      "52% 48% 54% 46% / 44% 42% 58% 56%",
-      "48% 52% 46% 54% / 42% 44% 56% 58%",
-      "52% 48% 54% 46% / 44% 42% 58% 56%",
-      "52% 48% 54% 46% / 44% 42% 58% 56%"
-    ]
-    : [
-      "50% 50% 48% 48% / 48% 48% 52% 52%",
-      "46% 54% 44% 56% / 53% 47% 53% 47%",
-      "54% 46% 56% 44% / 47% 53% 47% 53%",
-      "50% 50% 48% 48% / 48% 48% 52% 52%"
-    ];
+  const amoebaBorderRadius = "50%";
 
   // Bloco de Renderização Principal do Avatar do Ploc
   return (
     <>
       {/* Floating Achievement Toast */}
       <PlocAchievementToast toast={achievementToast} />
+      
+      {/* Inventory Bag Modal */}
+      <InventoryModal isOpen={isBagOpen} onClose={() => setIsBagOpen(false)} />
 
       <motion.div
         ref={containerRef}
@@ -462,88 +381,9 @@ export default function PlocAvatar({
         ) : false}
         dragElastic={0.2}
         dragTransition={{ bounceStiffness: 600, bounceDamping: 20 }}
-        onDragStart={() => {
-          setIsDragging(true);
-          setIsTapped(false);
-          hasDraggedRef.current = true; // Marca que está sendo arrastado!
-          if (pathname === '/' && isAuthenticated) {
-            blackboardEventBus.emit('PLOC_DRAG_MOVE', { x: x.get(), y: y.get() });
-          }
-        }}
-        onDrag={(e, info) => {
-          if (isSleeping) return;
-
-          // Atualiza a direção que ele olha baseado no movimento (delta) como num jogo top-down!
-          if (info.delta.x > 0.5) {
-            facingTargetX.set(80);
-          } else if (info.delta.x < -0.5) {
-            facingTargetX.set(-80);
-          }
-
-          // Limitador circular perfeito para o Blackboard (limita o arraste a uma esfera de raio 250px)
-          if (pathname === '/' && isAuthenticated) {
-            const maxRadius = 250 - (SIZE / 2);
-            const currentX = x.get();
-            const currentY = y.get();
-            const distance = Math.sqrt(currentX * currentX + currentY * currentY);
-            if (distance > maxRadius) {
-              const ratio = maxRadius / distance;
-              x.set(currentX * ratio);
-              y.set(currentY * ratio);
-            }
-            
-            // Emitir posição em tempo real para as bolhas empurrarem
-            blackboardEventBus.emit('PLOC_DRAG_MOVE', { x: x.get(), y: y.get() });
-          }
-
-          // Detecção de card sob o Ploc
-          const el = document.elementFromPoint(info.point.x, info.point.y);
-          const card = el?.closest('[data-routine-id]');
-          if (card) {
-            const rId = card.getAttribute('data-routine-id');
-            const pId = card.getAttribute('data-pillar-id');
-            if (rId && pId && PILLARS_DATA[pId]) {
-              const routine = PILLARS_DATA[pId].options.find(o => o.id === rId);
-              if (routine && routine.id !== focusedRoutine?.id) {
-                setFocusedRoutine(routine);
-                setFocusedPillar(pId);
-              }
-            }
-          } else if (focusedRoutine) {
-            setFocusedRoutine(null);
-            setFocusedPillar(null);
-            setShowSimulation(false);
-          }
-        }}
-        onDragEnd={(e, info) => {
-          facingTargetX.set(0); // Volta a olhar para frente quando solta
-
-          if (isSleeping) {
-            setIsDragging(false);
-            setIsTapped(false);
-            setIsHovered(false);
-            setTimeout(() => {
-              hasDraggedRef.current = false;
-            }, 150);
-            return;
-          }
-          setIsDragging(false);
-          setIsTapped(false);
-          setIsHovered(false);
-          const threshold = 600;
-          if (Math.abs(info.velocity.x) > threshold || Math.abs(info.velocity.y) > threshold) {
-            setTimeout(() => { triggerHurt(); }, 150);
-          }
-          
-          if (pathname === '/' && isAuthenticated) {
-            blackboardEventBus.emit('PLOC_DRAG_END', { x: x.get(), y: y.get() });
-          }
-
-          // Limpa o estado de arrasto logo após um pequeno delay para evitar que o clique convencional dispare!
-          setTimeout(() => {
-            hasDraggedRef.current = false;
-          }, 150);
-        }}
+        onDragStart={onDragStart}
+        onDrag={onDrag}
+        onDragEnd={onDragEnd}
         onMouseEnter={() => !isSleeping && setIsHovered(true)}
         onMouseLeave={() => !isSleeping && setIsHovered(false)}
         initial={{
@@ -583,8 +423,6 @@ export default function PlocAvatar({
             }));
             return;
           }
-
-          handleClick(e);
 
           // Alterna a visibilidade das ações acima da cabeça
           const nextActionsVisible = !areActionsVisible;
@@ -631,10 +469,14 @@ export default function PlocAvatar({
             setPlocState(prev => ({ ...prev, mode: 'sleeping' }));
             setAreActionsVisible(false);
           }}
+          onToggleBag={() => {
+            setIsBagOpen(!isBagOpen);
+            setAreActionsVisible(false);
+          }}
         />
 
         {/* Shockwave Rings (Onda de choque HSL-reativa de transição) */}
-        <PlocShockwaveRings shockwaves={shockwaves} />
+        <PlocShockwaveRings setTransitionEffect={setTransitionEffect} />
 
         {/* Camada Interna para Flutuar e Respirar (Separada do Drag) */}
         <motion.div
@@ -659,8 +501,7 @@ export default function PlocAvatar({
               ? { duration: 0.8, ease: "easeOut" }
               : plocState.isHurt
                 ? { type: "spring", stiffness: 240, damping: 9 }
-                : { duration: 0.6, ease: "easeInOut" },
-            borderRadius: { duration: 4, repeat: Infinity, ease: "easeInOut" }
+                : { duration: 0.6, ease: "easeInOut" }
           }}
           className="w-full h-full relative"
           style={{ zIndex: 10 }}
@@ -670,12 +511,10 @@ export default function PlocAvatar({
             className="absolute inset-0 border-[1.5px] border-white/20"
             style={{
               borderRadius: 'inherit',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
               background: `radial-gradient(circle at 30% 30%, rgba(${stateR}, ${stateG}, ${stateB}, ${stateAlpha}) 0%, rgba(${stateR}, ${stateG}, ${stateB}, ${stateAlpha * 0.57}) 60%, rgba(${stateR}, ${stateG}, ${stateB}, ${stateAlpha * 0.23}) 100%)`,
               boxShadow: shouldShake
-                ? `0 0 25px rgba(${stateR}, ${stateG}, ${stateB}, 0.5), inset 0 4px 12px rgba(255, 255, 255, 0.45), inset 0 -8px 24px rgba(0, 0, 0, 0.2), inset 0 0 12px rgba(255, 255, 255, 0.18)`
-                : `0 15px 45px rgba(${stateR}, ${stateG}, ${stateB}, 0.15), inset 0 4px 12px rgba(255, 255, 255, 0.45), inset 0 -8px 24px rgba(0, 0, 0, 0.2), inset 0 0 12px rgba(255, 255, 255, 0.18)`,
+                ? `0 0 25px rgba(${stateR}, ${stateG}, ${stateB}, 0.5), inset 0 0 16px rgba(255, 255, 255, 0.4)`
+                : `0 15px 35px rgba(${stateR}, ${stateG}, ${stateB}, 0.15), inset 0 0 16px rgba(255, 255, 255, 0.4)`,
               transition: 'background 0.4s ease, box-shadow 0.4s ease',
               zIndex: 10
             }}
@@ -684,9 +523,9 @@ export default function PlocAvatar({
           <PlocFloatingIndicators gameMode={gameMode} onboardingStage={onboardingStage} />
 
           {/* Aura Traseira */}
-          {(appearance.aura !== 'none' || plocState.angerLevel >= 4) && (
+          {(appearance.aura !== 'none') && (
             <div className="absolute inset-0 pointer-events-none z-0 flex items-center justify-center">
-              <PlocAura aura={plocState.angerLevel >= 4 ? 'rage' : appearance.aura} />
+              <PlocAura aura={appearance.aura} />
             </div>
           )}
 
@@ -709,7 +548,7 @@ export default function PlocAvatar({
           )}
 
           {/* Partículas de Sono (Zzz...) */}
-          <PlocSleepParticles isSleeping={isSleeping} particles={sleepingZs} />
+          <PlocSleepParticles isSleeping={isSleeping} />
 
 
 
@@ -717,9 +556,7 @@ export default function PlocAvatar({
           <div
             className="absolute inset-0 overflow-hidden pointer-events-none z-10"
             style={{ 
-              borderRadius: 'inherit',
-              WebkitMaskImage: '-webkit-radial-gradient(white, black)',
-              maskImage: 'radial-gradient(white, black)',
+              borderRadius: '50%',
               transform: 'translateZ(0)'
             }}
           >
@@ -757,8 +594,6 @@ export default function PlocAvatar({
               isHurt={plocState.isHurt}
               isSpeaking={isSpeakingMouth}
               appearance={appearance}
-              angerLevel={plocState.angerLevel}
-              angerPercentage={plocState.angerPercentage}
               isHit={plocState.isHit}
               isPositiveHit={plocState.isPositiveHit}
               isDizzy={emotion === 'dizzy' || plocState.mode === 'dizzy'}
@@ -773,18 +608,6 @@ export default function PlocAvatar({
             size={SIZE}
             dragX={smoothFacingX}
           />
-
-          {/* Barra de Humor - Novo Sistema */}
-          <PlocHumorBar
-            isSleeping={isSleeping}
-            angerLevel={plocState.angerLevel}
-            angerPercentage={plocState.angerPercentage}
-            isPositiveHit={plocState.isPositiveHit ?? false}
-            levelLockTimer={plocState.levelLockTimer}
-            ANGER_LEVELS={ANGER_LEVELS}
-          />
-
-
         </motion.div>
       </motion.div>
 

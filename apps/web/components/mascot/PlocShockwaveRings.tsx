@@ -3,6 +3,7 @@
  * @description Efeito visual de ondas de choque (anéis) emitidos pelo mascote em certas interações.
  */
 
+import { useEffect, useState, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export interface Shockwave {
@@ -12,10 +13,26 @@ export interface Shockwave {
 }
 
 interface PlocShockwaveRingsProps {
-  shockwaves: Shockwave[];
+  setTransitionEffect: (effect: 'up' | 'down' | null) => void;
 }
 
-export function PlocShockwaveRings({ shockwaves }: PlocShockwaveRingsProps) {
+export function PlocShockwaveRings({ setTransitionEffect }: PlocShockwaveRingsProps) {
+  const [shockwaves, setShockwaves] = useState<Shockwave[]>([]);
+
+  const triggerShockwave = (type: 'up' | 'down', color: string) => {
+    const id = Math.random().toString();
+    setShockwaves(prevWaves => [...prevWaves, { id, type, color }]);
+
+    setTimeout(() => {
+      setShockwaves(prevWaves => prevWaves.filter(w => w.id !== id));
+    }, 900);
+
+    setTransitionEffect(type);
+    setTimeout(() => {
+      setTransitionEffect(null);
+    }, 800);
+  };
+
   return (
     <AnimatePresence>
       {shockwaves.map(wave => (

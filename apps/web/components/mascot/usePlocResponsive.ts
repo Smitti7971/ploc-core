@@ -9,6 +9,7 @@ import { MotionValue } from 'framer-motion';
 
 export function usePlocResponsive(x: MotionValue<number>, y: MotionValue<number>, isLanding: boolean) {
   const [isMobile, setIsMobile] = useState(false);
+  const [bounds, setBounds] = useState({ left: -2000, right: 30, top: -2000, bottom: 30 }); // Valores seguros iniciais
 
   useEffect(() => {
     const checkMobile = () => {
@@ -34,6 +35,8 @@ export function usePlocResponsive(x: MotionValue<number>, y: MotionValue<number>
         minY = -window.innerHeight + 150;
         maxY = 30;
       }
+      
+      setBounds({ left: minX, right: maxX, top: minY, bottom: maxY });
 
       const clampedX = Math.max(minX, Math.min(maxX, currentX));
       const clampedY = Math.max(minY, Math.min(maxY, currentY));
@@ -49,5 +52,5 @@ export function usePlocResponsive(x: MotionValue<number>, y: MotionValue<number>
   
   const SIZE = isLanding ? (isMobile ? 90 : 120) : 80;
 
-  return { isMobile, SIZE };
+  return { isMobile, SIZE, bounds };
 }

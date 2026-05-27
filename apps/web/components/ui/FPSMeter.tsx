@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { Activity } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export function FPSMeter() {
   const [fps, setFps] = useState(60);
   const [visible, setVisible] = useState(false);
+  const [isFaded, setIsFaded] = useState(false);
 
   useEffect(() => {
     const isEnabled = localStorage.getItem('debug_fps') === 'true';
@@ -61,7 +63,14 @@ export function FPSMeter() {
   }
 
   return (
-    <div className="fixed top-12 left-12 z-[99999] pointer-events-none">
+    <motion.div
+      drag
+      dragMomentum={false}
+      onClick={() => setIsFaded(!isFaded)}
+      animate={{ opacity: isFaded ? 0.2 : 1 }}
+      whileTap={{ scale: 0.95 }}
+      className="fixed bottom-[12%] left-[50%] translate-x-[-50%] translate-y-[-50%] z-[999999] cursor-grab active:cursor-grabbing pointer-events-auto"
+    >
       <div className="flex flex-col items-center justify-center bg-[#020617]/90 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg px-3 py-1 min-w-[60px]">
         <div className="flex items-center gap-1">
           <Activity size={10} className={color} />
@@ -70,6 +79,6 @@ export function FPSMeter() {
         <span className={`font-black text-base ${color} leading-none mt-0.5`}>{fps}</span>
         <span className={`text-[8px] font-bold ${color} mt-0.5`}>{status}</span>
       </div>
-    </div>
+    </motion.div>
   );
 }

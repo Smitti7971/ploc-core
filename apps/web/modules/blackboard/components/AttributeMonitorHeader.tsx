@@ -30,7 +30,7 @@ export function AttributeMonitorHeader({ activeTab, setActiveTab, onManualSync }
         border: '1px solid rgba(255,255,255,0.1)',
         pointerEvents: 'all'
       }}>
-        <button 
+        <button
           onClick={() => setActiveTab('pillars')}
           style={{
             padding: '8px 20px',
@@ -46,7 +46,7 @@ export function AttributeMonitorHeader({ activeTab, setActiveTab, onManualSync }
         >
           ATRIBUTOS
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('history')}
           style={{
             padding: '8px 20px',

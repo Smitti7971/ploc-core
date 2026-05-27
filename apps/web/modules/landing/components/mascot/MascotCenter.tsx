@@ -13,11 +13,10 @@ import { motion } from 'framer-motion';
 import PlocAvatar from '@/components/mascot/PlocAvatar';
 import { blackboardEventBus } from '@/modules/blackboard/events/eventBus';
 import { TitleBubble } from '../bubbles';
-import { PlocOnboardingControls } from './PlocOnboardingControls';
+import ChallengePhrasesHeader from '../engines/ChallengePhrasesHeader';
 
 // Renderiza o grupo central com o Ploc, animação de entrada e as bolhas de título
 export function MascotCenter() {
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const [isEntering, setIsEntering] = useState(true);
   const [entryFinished, setEntryFinished] = useState(false);
   const [poppedLetters, setPoppedLetters] = useState<number[]>([]);
@@ -56,10 +55,6 @@ export function MascotCenter() {
   }, [poppedLetters]);
 
   useEffect(() => {
-    const unsub = blackboardEventBus.subscribe('OPEN_LANDING_CHAT', (open: boolean) => {
-      setIsChatOpen(open);
-    });
-
     const shuffled = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
 
     // Cinematic Timing Sequence:
@@ -80,7 +75,6 @@ export function MascotCenter() {
     popTimeoutsRef.current = popTimeouts;
 
     return () => {
-      unsub();
       clearTimeout(wakeTimeout);
       popTimeoutsRef.current.forEach(clearTimeout);
     };
@@ -90,9 +84,9 @@ export function MascotCenter() {
 
   return (
     <>
-      {/* 1. Contêiner do mascote centralizado na tela */}
+      {/* 1. Contêiner do mascote centralizado na tela usando margens ao invés de transform (evita bugs no Drag do Framer Motion) */}
       <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center w-[350px] h-[350px] pointer-events-none z-20"
+        className="absolute top-1/2 left-1/2 mt-[-175px] ml-[-175px] flex flex-col items-center justify-center w-[350px] h-[350px] pointer-events-none z-20"
       >
 
         {/* As Bolhas com o Nome "P-L-O-C" flutuando acima da cabeça (Sway & overlap) - Static position */}
@@ -132,11 +126,15 @@ export function MascotCenter() {
             y: { duration: 7.5, ease: [0.76, 0, 0.24, 1] }
           }}
         >
-          <PlocAvatar 
-            emotion={isEntering ? 'sleeping' : 'calm'} 
-            renderCustomControls={(chatProps) => <PlocOnboardingControls {...chatProps} />}
+          <PlocAvatar
+            emotion={isEntering ? 'sleeping' : 'calm'}
           />
         </motion.div>
+      </div>
+
+      {/* Letreiro Central Rotativo (Chamaris) */}
+      <div className="absolute top-[calc(50%+50px)] left-0 right-0 w-full px-6 flex flex-col items-center justify-center z-15 pointer-events-none">
+        <ChallengePhrasesHeader />
       </div>
     </>
   );

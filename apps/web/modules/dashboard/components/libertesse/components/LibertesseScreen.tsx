@@ -56,7 +56,9 @@ export function LibertesseScreen() {
       <div className="flex flex-col gap-4">
         {VICES.map((vice) => {
           const Icon = vice.icon;
-          const isActive = !!activeVices[vice.id];
+          const activeVice = activeVices[vice.id];
+          const isActive = !!activeVice;
+          const isMission = activeVice?.mode === 'missao-antitabagismo';
 
           return (
             <motion.div
@@ -78,14 +80,28 @@ export function LibertesseScreen() {
               </div>
               
               <div className="flex-1">
-                <h3 className="text-white text-sm font-extrabold tracking-widest mb-1">
+                <h3 className="text-white text-sm font-extrabold tracking-widest mb-1 flex items-center gap-1.5 flex-wrap">
                   {vice.label}
-                  {isActive && <span className="ml-2 text-[0.6rem] bg-white/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">ATIVO</span>}
+                  {isActive && (
+                    <span className={`text-[0.6rem] px-2 py-0.5 rounded-full border font-black uppercase ${
+                      isMission 
+                        ? 'bg-yellow-400/10 text-yellow-400 border-yellow-500/20' 
+                        : 'bg-white/20 text-emerald-400 border-emerald-500/30'
+                    }`}>
+                      {isMission ? 'MISSÃO' : 'ATIVO'}
+                    </span>
+                  )}
                 </h3>
                 {isActive ? (
-                  <p className="text-emerald-400 text-xs font-bold tracking-widest">
-                    Tempo: <span className="text-white">{getTimeActiveText(vice.id) || 'iniciando...'}</span>
-                  </p>
+                  isMission ? (
+                    <p className="text-yellow-400/80 text-xs font-bold tracking-widest uppercase">
+                      Progresso: <span className="text-white font-black">Estágio {Math.min(10, (activeVice.antitabagismoLevel ?? 0) + 1)}/10</span>
+                    </p>
+                  ) : (
+                    <p className="text-emerald-400 text-xs font-bold tracking-widest">
+                      Tempo: <span className="text-white">{getTimeActiveText(vice.id) || 'iniciando...'}</span>
+                    </p>
+                  )
                 ) : (
                   <p className="text-slate-400 text-xs">{vice.desc}</p>
                 )}

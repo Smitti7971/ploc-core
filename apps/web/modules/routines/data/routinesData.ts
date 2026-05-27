@@ -1,4 +1,4 @@
-import { Activity, Brain, Heart, Bird, Flag } from 'lucide-react';
+import { Dumbbell, Brain, UsersRound, Wallet, Flag } from 'lucide-react';
 import { UserAttributes } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
 
 export interface RoutineImpact {
@@ -28,7 +28,7 @@ export const PILLARS_DATA: Record<string, PillarConfig> = {
     id: 'corpo',
     label: 'CORPO',
     color: '#ef4444',
-    icon: Activity,
+    icon: Dumbbell,
     summary: 'Saúde, sono e energia física.',
     options: [
       { id: 'heavy-workout', title: 'TREINO', desc: 'Foco em força total.', image: '/images/routines/workout.png', impacts: [{ pilar: 'corpo', val: 8 }, { pilar: 'mente', val: -2 }] },
@@ -52,7 +52,7 @@ export const PILLARS_DATA: Record<string, PillarConfig> = {
     id: 'vida',
     label: 'VIDA',
     color: '#facc15',
-    icon: Heart,
+    icon: UsersRound,
     summary: 'Equilíbrio, lazer e relações.',
     options: [
       { id: 'party-night', title: 'Noite com Amigos', desc: 'Socialização intensa.', image: '/images/routines/social.png', impacts: [{ pilar: 'vida', val: 8 }, { pilar: 'corpo', val: -5 }, { pilar: 'liberdade', val: -2 }] },
@@ -64,7 +64,7 @@ export const PILLARS_DATA: Record<string, PillarConfig> = {
     id: 'liberdade',
     label: 'LIBERDADE',
     color: '#2dd4bf',
-    icon: Bird,
+    icon: Wallet,
     summary: 'Autonomia e finanças.',
     options: [
       { id: 'extra-gig', title: 'Freela Extra', desc: 'Aumento de renda.', image: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=400', impacts: [{ pilar: 'liberdade', val: 7 }, { pilar: 'vida', val: -4 }, { pilar: 'mente', val: -2 }] },
@@ -87,9 +87,9 @@ export const PILLARS_DATA: Record<string, PillarConfig> = {
 };
 
 export const IMPACT_ICONS = {
-  corpo: Activity,
+  corpo: Dumbbell,
   mente: Brain,
-  vida: Heart,
-  liberdade: Bird,
+  vida: UsersRound,
+  liberdade: Wallet,
   proposito: Flag
 };

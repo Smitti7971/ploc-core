@@ -160,7 +160,7 @@ const playSpeechItem = (text: string, duration: number, onFinished: () => void, 
           console.warn('TTS OpenAI demorou muito para responder. Usando fallback silencioso.');
           triggerFallback();
         }
-      }, 8000);
+      }, 15000);
  
       audio.onplaying = () => {
         clearTimeout(loadingTimeout);

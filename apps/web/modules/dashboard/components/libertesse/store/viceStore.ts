@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { apiService } from '@/services/api';
 
-export type ViceMode = 'acompanhe' | 'diminua' | 'pare' | null;
+export type ViceMode = 'acompanhe' | 'diminua' | 'missao-antitabagismo' | null;
 
 export interface ActiveVice {
   viceId: string;
@@ -18,6 +18,10 @@ export interface ActiveVice {
   defaultConsumptionSeconds?: number; 
   costPerUse?: number; 
   currentMotivator?: string; 
+  isMission?: boolean;
+  isHidden?: boolean;
+  isVulnerability?: boolean;
+  antitabagismoLevel?: number;
 }
 
 export interface ViceLog {
@@ -45,6 +49,9 @@ interface ViceResponse {
   defaultConsumptionSeconds: number;
   costPerUse?: number;
   currentMotivator?: string;
+  isMission?: boolean;
+  isHidden?: boolean;
+  isVulnerability?: boolean;
   logs: ViceLogResponse[];
 }
 
@@ -78,17 +85,23 @@ interface ViceStore {
   
   addLog: (log: Omit<ViceLog, 'id' | 'timestamp'>) => void;
   clearLogs: (viceId: string) => void;
+  toggleVisibility: (viceId: string) => void;
+  toggleVulnerability: (viceId: string) => void;
+  advanceAntitabagismoLevel: (viceId: string) => void;
 }
 
-const syncViceToBackend = async (vice: ActiveVice | null) => {
+const syncViceToBackend = async (vice: ActiveVice | null): Promise<boolean> => {
   if (vice) {
     try {
       await apiService.post('/vices', vice);
+      return true;
     } catch (e) {
       console.error('Erro ao sincronizar vício:', e);
       alert('Aviso: Falha ao sincronizar as configurações do vício com o banco de dados. Seus dados podem não estar salvos permanentemente.');
+      return false;
     }
   }
+  return false;
 };
 
 const syncLogToBackend = async (log: ViceLog) => {
@@ -131,7 +144,10 @@ export const useViceStore = create<ViceStore>()(
                 consumptionStartTime: v.consumptionStartTime ? Number(v.consumptionStartTime) : undefined,
                 defaultConsumptionSeconds: v.defaultConsumptionSeconds,
                 costPerUse: v.costPerUse,
-                currentMotivator: v.currentMotivator
+                currentMotivator: v.currentMotivator,
+                isMission: v.isMission,
+                isHidden: v.isHidden,
+                isVulnerability: v.isVulnerability
               };
             });
 
@@ -176,8 +192,8 @@ export const useViceStore = create<ViceStore>()(
         });
 
         (async () => {
-          await syncViceToBackend(vice);
-          if (createdLog) await syncLogToBackend(createdLog);
+          const success = await syncViceToBackend(vice);
+          if (success && createdLog) await syncLogToBackend(createdLog);
         })();
       },
 
@@ -205,8 +221,8 @@ export const useViceStore = create<ViceStore>()(
         });
 
         (async () => {
+          if (createdLog) await syncLogToBackend(createdLog).catch(console.error);
           await apiService.delete(`/vices/${viceId}`).catch(console.error);
-          if (createdLog) await syncLogToBackend(createdLog);
         })();
       },
 
@@ -304,8 +320,8 @@ export const useViceStore = create<ViceStore>()(
           };
         });
         (async () => {
-          await syncViceToBackend(get().activeVices[viceId]);
-          if (createdLog) await syncLogToBackend(createdLog);
+          const success = await syncViceToBackend(get().activeVices[viceId]);
+          if (success && createdLog) await syncLogToBackend(createdLog);
         })();
       },
 
@@ -389,6 +405,60 @@ export const useViceStore = create<ViceStore>()(
         set((state) => ({
           logs: state.logs.filter(l => l.viceId !== viceId)
         }));
+      },
+
+      toggleVisibility: (viceId) => {
+        set((state) => {
+          const vice = state.activeVices[viceId];
+          if (!vice) return state;
+
+          const updatedVice = {
+            ...vice,
+            isHidden: !vice.isHidden
+          };
+
+          return {
+            activeVices: { ...state.activeVices, [viceId]: updatedVice }
+          };
+        });
+        syncViceToBackend(get().activeVices[viceId]);
+      },
+
+      toggleVulnerability: (viceId) => {
+        set((state) => {
+          const vice = state.activeVices[viceId];
+          if (!vice) return state;
+
+          const updatedVice = {
+            ...vice,
+            isVulnerability: !vice.isVulnerability
+          };
+
+          return {
+            activeVices: { ...state.activeVices, [viceId]: updatedVice }
+          };
+        });
+        syncViceToBackend(get().activeVices[viceId]);
+      },
+
+      advanceAntitabagismoLevel: (viceId) => {
+        set((state) => {
+          const vice = state.activeVices[viceId];
+          if (!vice) return state;
+
+          const currentLevel = vice.antitabagismoLevel ?? 0;
+          const nextLevel = Math.min(10, currentLevel + 1);
+
+          const updatedVice = {
+            ...vice,
+            antitabagismoLevel: nextLevel
+          };
+
+          return {
+            activeVices: { ...state.activeVices, [viceId]: updatedVice }
+          };
+        });
+        syncViceToBackend(get().activeVices[viceId]);
       }
     }),
     {

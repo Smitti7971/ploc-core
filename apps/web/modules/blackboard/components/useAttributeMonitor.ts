@@ -10,7 +10,7 @@ import { blackboardEventBus, BLACKBOARD_EVENTS } from '../events/eventBus';
 import { attributeEngine, UserAttributes, AttributeChange } from '../engine/attribute-engine/AttributeEngine';
 import { useAuth } from '@/modules/auth/hooks/useAuth';
 
-export function useAttributeMonitor(onClose: () => void) {
+export function useAttributeMonitor(onClose: () => void, inline: boolean = false) {
   const [attributes, setAttributes] = useState<UserAttributes>(attributeEngine.getAttributes());
   const [lastChanges, setLastChanges] = useState<Record<string, number>>({});
   const [history, setHistory] = useState<{
@@ -90,14 +90,14 @@ export function useAttributeMonitor(onClose: () => void) {
     const handleClickOutside = (e: MouseEvent) => {
       if (!(e.target as HTMLElement).closest('.attribute-bubble') && !(e.target as HTMLElement).closest('.monitor-panel')) {
         setActiveTooltip(null);
-        if (!isDemo) {
+        if (!isDemo && !inline) {
           onClose();
         }
       }
     };
     window.addEventListener('mousedown', handleClickOutside);
     return () => window.removeEventListener('mousedown', handleClickOutside);
-  }, [onClose]);
+  }, [onClose, inline]);
 
   const resetTimer = useCallback(() => {
     if (!attributeEngine.getIsDemoMode()) return;

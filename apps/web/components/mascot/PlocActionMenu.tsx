@@ -5,7 +5,7 @@
 
 import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
-import { Mic, Moon } from 'lucide-react';
+import { Mic, Moon, Backpack } from 'lucide-react';
 
 interface PlocActionMenuProps {
   isVisible: boolean;
@@ -15,14 +15,15 @@ interface PlocActionMenuProps {
   onToggleListening: () => void;
   onToggleChat: () => void;
   onSleep: () => void;
+  onToggleBag?: () => void;
 }
 
 export const PlocActionMenu = forwardRef<HTMLDivElement, PlocActionMenuProps>(
-  ({ isVisible, isSleeping, isListening, isChatInputVisible, onToggleListening, onToggleChat, onSleep }, ref) => {
+  ({ isVisible, isSleeping, isListening, isChatInputVisible, onToggleListening, onToggleChat, onSleep, onToggleBag }, ref) => {
     if (!isVisible) return null;
 
     return (
-      <div ref={ref} className="absolute top-[-55px] left-1/2 -translate-x-1/2 z-[99999]">
+      <div ref={ref} className="absolute top-[-55px] left-1/2 -translate-x-1/2 z-[9999]">
         <motion.div
           animate={{ y: [3, -3, 3] }}
           transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
@@ -76,6 +77,26 @@ export const PlocActionMenu = forwardRef<HTMLDivElement, PlocActionMenuProps>(
               title="Digitar mensagem"
             >
               ...
+            </button>
+          )}
+
+          {/* Bolha de Bolsa (Inventário) */}
+          {!isSleeping && (
+            <button
+              onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              onMouseUp={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleBag?.();
+              }}
+              className="w-7 h-7 rounded-full border border-orange-500/40 flex items-center justify-center cursor-pointer shadow-[0_4px_12px_rgba(249,115,22,0.2)] transition-all duration-200 backdrop-blur-[4px] hover:scale-110 bg-slate-900/85 text-orange-400"
+              title="Abrir Bolsa"
+            >
+              <Backpack size={14} />
             </button>
           )}
 

@@ -88,15 +88,17 @@ return (
       {/* Header do Usuário movido para AuthCapsule (Global) */}
 
       {/* Mascote Ploc com posicionamento inteligente - Oculto na página dedicada do Ploc */}
-      {/* Avatar do Ploc, posicionado dinamicamente */}
+      {/* Usando Flexbox para posicionar ao invés de bottom/right/transform para evitar bugs de pulo no drag do Framer Motion */}
       {!isPlocPage && (
         <div style={{
           position: 'fixed',
-          top: pathname === '/' ? '50%' : 'auto',
-          left: pathname === '/' ? '50%' : 'auto',
-          bottom: pathname === '/' ? 'auto' : '110px',
-          right: pathname === '/' ? 'auto' : '30px',
-          transform: pathname === '/' ? 'translate(-50%, -50%)' : 'none',
+          inset: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: pathname === '/' ? 'center' : 'flex-end',
+          alignItems: pathname === '/' ? 'center' : 'flex-end',
+          paddingBottom: pathname === '/' ? 0 : '110px',
+          paddingRight: pathname === '/' ? 0 : '30px',
           zIndex: 1000,
           pointerEvents: 'none'
         }}>

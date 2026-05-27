@@ -53,7 +53,7 @@ export function SodaWave() {
   if (!isActive) return null;
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-[99999]">
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-[30]">
       {/* Local keyframe injection to prevent Next.js caching issues */}
       <style dangerouslySetInnerHTML={{
         __html: `

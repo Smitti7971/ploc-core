@@ -8,10 +8,11 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 import { PlocAvatarClient } from '@/components/mascot/PlocAvatarClient';
-import { Target, ZoomIn, ZoomOut, Plus, Map, Grid3X3, Activity as ActivityIcon } from 'lucide-react';
+import { Target, ZoomIn, ZoomOut, Plus, Map, Grid3X3, Activity as ActivityIcon, Menu, Bell } from 'lucide-react';
 import { motion, AnimatePresence, useMotionValue, useTransform, useMotionValueEvent, animate } from 'framer-motion';
 import { DockMenu } from '@/components/layout/DockMenu';
 
@@ -20,31 +21,29 @@ import { bubbleEngine } from '../engine/bubble-engine/BubbleEngine';
 import { BlackboardBubble } from '../types/bubbles';
 import { blackboardEventBus, BLACKBOARD_EVENTS } from '../events/eventBus';
 import { ViceBubble } from '../../dashboard/components/libertesse/components/ViceBubble';
-import { attributeEngine } from '../engine/attribute-engine/AttributeEngine';
+import { attributeEngine, UserAttributes } from '../engine/attribute-engine/AttributeEngine';
+import { PILLARS_CONFIG, isPillarProfileFilled } from './AttributePillars';
 
 // Components extraídos
-import { BlackboardStickyNote } from './BlackboardStickyNote';
+import { NotificationsModal } from './NotificationsModal';
+import { ResourceLayer } from './ResourceLayer';
+import { resourceEngine } from '../engine/resource-engine/ResourceEngine';
 
 import { AmbientGlowBackground } from '../../landing/particles/AmbientGlowBackground';
 import { Vignette } from '../../landing/particles/Vignette';
 import { useViceStore } from '../../dashboard/components/libertesse/store/viceStore';
 import { usePlocSpeech } from '../../../components/mascot/usePlocSpeech';
+import { usePlocStateStore } from '../../mascot/store/plocStateStore';
 
-interface StickyNote {
-  id: number;
-  content: string;
-  x: number;
-  y: number;
-  colorClass: string;
-}
 
-const NOTE_COLORS = ['', 'note-blue', 'note-green', 'note-pink', 'note-purple'] as const;
 
 
 export default function BlackboardPage() {
   const { user } = useAuthStore();
   const router = useRouter();
   const [isHydrated, setIsHydrated] = useState(false);
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [isPillarActive, setIsPillarActive] = useState(false);
 
   // Espera a hidratação do Zustand (carregar do localStorage)
   useEffect(() => {
@@ -66,14 +65,14 @@ export default function BlackboardPage() {
     }
   }, [isHydrated, user, router]);
 
-  const [notes, setNotes] = useState<StickyNote[]>([]);
   const [showGrid, setShowGrid] = useState(true);
   const [showMinimap, setShowMinimap] = useState(false);
   const [showAttributes, setShowAttributes] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const scale = 1; // Constante mantida para compatibilidade visual dos filhos
   const [plocReaction, setPlocReaction] = useState<'idle' | 'happy' | 'stressed' | 'dizzy'>('idle');
   const [score, setScore] = useState(attributeEngine.getScore());
-  const [showFocusInfo, setShowFocusInfo] = useState(false);
 
   // Janela de tempo baseada no modo de visualização
 
@@ -142,9 +141,51 @@ export default function BlackboardPage() {
     }
   };
 
-  // === LÓGICA DE CONSUMO ATIVO (LIBERTESSE) ===
+  // === LÓGICA DE CONSUMO ATIVO (LIBERTESSE) E ALERTAS ===
   const { activeVices, endConsumption, cancelConsumption } = useViceStore();
   const activeConsumingVice = Object.values(activeVices).find(v => v.isConsuming);
+
+  const plocMood = usePlocStateStore(state => state.mood);
+
+  const getAvatarEmotion = useCallback((): 'calm' | 'happy' | 'stressed' | 'pissed' | 'sleeping' | 'dizzy' => {
+    if (activeConsumingVice?.isConsuming) return 'dizzy';
+    if (plocReaction !== 'idle') return plocReaction as any;
+
+    switch (plocMood) {
+      case 'ILUMINADO': return 'happy';
+      case 'FELIZ': return 'calm';
+      case 'APÁTICO': return 'calm';
+      case 'CHATEADO': return 'stressed';
+      case 'RAIVA': return 'pissed';
+      default: return 'calm';
+    }
+  }, [plocMood, plocReaction, activeConsumingVice?.isConsuming]);
+
+  const [hasPendingPillars, setHasPendingPillars] = useState(false);
+
+  useEffect(() => {
+    // Atualiza a flag de pendências
+    const checkPendingPillars = () => {
+      const attributes = attributeEngine.getAttributes();
+      const activeBubbles = bubbleEngine.getActiveBubbles();
+      const vices = Object.values(useViceStore.getState().activeVices || {});
+
+      const pending = (Object.keys(PILLARS_CONFIG) as Array<keyof UserAttributes>).some(key => {
+        if (attributes[key] > 0) return false;
+        const config = PILLARS_CONFIG[key];
+        const tasks = activeBubbles.filter(b => config.habits.includes((b.metadata as { habit?: string })?.habit || ''));
+        if (tasks.length > 0) return false;
+        if (key === 'liberdade' && vices.length > 0) return false;
+        if (isPillarProfileFilled(key)) return false;
+        return true;
+      });
+      setHasPendingPillars(pending);
+    };
+
+    checkPendingPillars();
+    const interval = setInterval(checkPendingPillars, 1000);
+    return () => clearInterval(interval);
+  }, []);
   const [consumptionElapsed, setConsumptionElapsed] = useState(0);
   const { speak } = usePlocSpeech();
 
@@ -293,58 +334,13 @@ export default function BlackboardPage() {
 
 
 
-  // Load notes from localStorage
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('ploc_blackboard_notes');
-      if (saved) {
-        setTimeout(() => setNotes(JSON.parse(saved)), 0);
-      }
-    } catch {
-      setTimeout(() => setNotes([]), 0);
-    }
-  }, []);
 
-  const saveNotes = useCallback((updated: StickyNote[]) => {
-    setNotes(updated);
-    localStorage.setItem('ploc_blackboard_notes', JSON.stringify(updated));
-  }, []);
-
-
-  const addNote = () => {
-    const newNote: StickyNote = {
-      id: Date.now(),
-      content: '',
-      // Nascimento no Marco Zero (com um pequeno offset aleatório para não sobrepor)
-      x: 1000 + (Math.random() * 100 - 50),
-      y: 1000 + (Math.random() * 100 - 50),
-      colorClass: '',
-    };
-    saveNotes([...notes, newNote]);
-  };
-
-  const deleteNote = (id: number) => saveNotes(notes.filter((n) => n.id !== id));
-
-  const updateNoteContent = (id: number, content: string) =>
-    saveNotes(notes.map((n) => (n.id === id ? { ...n, content } : n)));
-
-  const cycleNoteColor = (id: number) =>
-    saveNotes(
-      notes.map((n) => {
-        if (n.id !== id) return n;
-        const idx = NOTE_COLORS.indexOf(n.colorClass as typeof NOTE_COLORS[number]);
-        return { ...n, colorClass: NOTE_COLORS[(idx + 1) % NOTE_COLORS.length] };
-      })
-    );
-
-  const updateNotePosition = (id: number, x: number, y: number) =>
-    saveNotes(notes.map((n) => (n.id === id ? { ...n, x, y } : n)));
 
 
 
   // Bubble Engine Subscription & Event Listeners
   useEffect(() => {
-    const unsubscribe = bubbleEngine.subscribe(() => {});
+    const unsubscribe = bubbleEngine.subscribe(() => { });
 
     const onExplode = (bubble: BlackboardBubble & { collided?: boolean; value?: string }) => {
       if (bubble?.collided) return;
@@ -398,7 +394,7 @@ export default function BlackboardPage() {
           dragMomentum={true}
           style={{ x: mapX, y: mapY }}
           whileTap={{ cursor: "grabbing" }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[10000px] h-[10000px] cursor-grab active:cursor-grabbing touch-none z-[2]"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[3000px] h-[3000px] cursor-grab active:cursor-grabbing touch-none z-[2]"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -408,7 +404,7 @@ export default function BlackboardPage() {
             className="w-full h-full relative origin-center"
           >
             <div
-              className="canvas-background absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[50000px] h-[50000px] bg-transparent overflow-visible pointer-events-none"
+              className="canvas-background absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[3000px] h-[3000px] bg-transparent overflow-visible pointer-events-none"
               style={{
                 backgroundImage: showGrid
                   ? `linear-gradient(rgba(56, 189, 248, 0.05) 2px, transparent 2px),
@@ -424,19 +420,7 @@ export default function BlackboardPage() {
 
               {/* Minimapa / HUD Renderizado por Fora, mas Grid aplicada aqui para senso de direção */}
 
-              <div className="absolute inset-0 pointer-events-none z-[5]">
-                {notes.map((note) => (
-                  <BlackboardStickyNote
-                    key={note.id}
-                    note={note}
-                    onDelete={() => deleteNote(note.id)}
-                    onContentChange={(c: string) => updateNoteContent(note.id, c)}
-                    onColorCycle={() => cycleNoteColor(note.id)}
-                    onPositionChange={(x: number, y: number) => updateNotePosition(note.id, x, y)}
-                    onSave={() => localStorage.setItem('ploc_blackboard_notes', JSON.stringify(notes))}
-                  />
-                ))}
-              </div>
+
 
               <div
                 id="ploc-anchor"
@@ -466,18 +450,24 @@ export default function BlackboardPage() {
                     }}
                     transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
                     className="absolute w-[500px] h-[500px] rounded-full border border-sky-400/15 bg-sky-400/2 flex items-center justify-center pointer-events-none z-0"
-                    style={{
-                      boxShadow: 'inset 0 0 50px rgba(56, 189, 248, 0.08), 0 0 30px rgba(56, 189, 248, 0.03)'
-                    }}
-                  />
+                  >
+                    <span className="absolute top-[25px] text-[9px] font-bold text-sky-400/40 uppercase tracking-[0.25em]">
+                      BOLHA PADRÃO
+                    </span>
+                  </motion.div>
 
                   {/* FUMAÇA DE FUNDO removida para otimização de performance */}
+
+                  {/* RESOURCE LAYER (GAMIFICATION BUBBLES) */}
+                  <div className="pointer-events-auto z-0 absolute inset-0">
+                    <ResourceLayer />
+                  </div>
 
                   {/* PLOC AVATAR */}
                   <div className="pointer-events-auto z-10">
                     <PlocAvatarClient
                       draggable={true}
-                      emotion={activeConsumingVice?.isConsuming ? 'dizzy' : (plocState.emotion === 'calm' ? (plocReaction === 'idle' ? 'calm' : plocReaction as 'calm' | 'happy' | 'stressed' | 'pissed' | 'sleeping' | 'dizzy') : plocState.emotion as 'calm' | 'happy' | 'stressed' | 'pissed' | 'sleeping' | 'dizzy')}
+                      emotion={getAvatarEmotion()}
                     />
                   </div>
 
@@ -541,13 +531,13 @@ export default function BlackboardPage() {
                 </AnimatePresence>
 
                 {/* Bolhas de Pensamento do Libertesse (Controle de Vícios) */}
-                {Object.keys(activeVices).map((viceId, index) => (
+                {Object.keys(activeVices).filter(viceId => !activeVices[viceId].isHidden && !activeVices[viceId].isVulnerability).map((viceId, index, array) => (
                   <ViceBubble
                     key={viceId}
                     viceId={viceId}
                     canvasScale={scale}
                     index={index}
-                    total={Object.keys(activeVices).length}
+                    total={array.length}
                   />
                 ))}
 
@@ -561,126 +551,129 @@ export default function BlackboardPage() {
 
         {/* Interface / HUD (Fixo) */}
       </div>
-      <motion.div
-        className="fixed bottom-[120px] right-[40px] flex flex-col gap-3 z-[100]"
-      >
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={addNote}
-          className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex items-center justify-center text-white cursor-pointer"
-        >
-          <Plus size={32} strokeWidth={1.5} />
-        </motion.button>
-      </motion.div>
 
-      <div className="fixed top-[90px] left-[30px] z-[100001]">
-        {/* PlocCoins Wallet - MOEDAS DE FOCO */}
-        <motion.div
-          key={score}
-          onClick={() => {
-            setShowAttributes(false);
-            setShowFocusInfo(true);
-          }}
-          initial={{ x: -20, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="bg-[#0f0f0f]/90 backdrop-blur-md px-3.5 py-1.5 rounded-[20px] border border-amber-400/40 flex items-center gap-2.5 cursor-pointer shadow-[0_8px_30px_rgba(0,0,0,0.5)] pointer-events-auto"
-        >
-          <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-amber-500 to-amber-400 flex items-center justify-center text-xs font-black text-black shadow-[0_0_10px_rgba(251,191,36,0.3)]">$</div>
-          <span className="text-[1.1rem] font-bold text-amber-400 font-mono tracking-[1px]">
-            {score.toLocaleString('pt-BR')}
-          </span>
-        </motion.div>
-      </div>
 
-      {/* Modal Explicativo das Moedas de Foco */}
-      <AnimatePresence>
-        {showFocusInfo && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200000] flex items-center justify-center p-5" onClick={() => setShowFocusInfo(false)}>
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-[#1a1c1a] border border-amber-400/30 p-[30px] rounded-[24px] max-w-[400px] text-center shadow-[0_20px_60px_rgba(0,0,0,0.6)]"
-            >
-              <div className="w-[60px] h-[60px] rounded-full bg-gradient-to-tr from-amber-500 to-amber-400 mx-auto mb-5 flex items-center justify-center text-3xl shadow-[0_0_30px_rgba(251,191,36,0.4)]">🪙</div>
-              <h2 style={{ color: '#fbbf24', marginBottom: '15px', fontWeight: 900 }}>MOEDAS DE FOCO</h2>
-              <p style={{ color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, marginBottom: '20px' }}>
-                Estas moedas representam a sua **Energia de Produtividade**. Elas são o combustível para o crescimento do Ploc!
-              </p>
-              <div style={{ textAlign: 'left', background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <h4 style={{ color: '#fff', fontSize: '0.9rem', marginBottom: '10px' }}>Como ganhar?</h4>
-                <ul style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', paddingLeft: '15px' }}>
-                  <li style={{ marginBottom: '8px' }}>Estoure bolhas de tarefas clicando nelas.</li>
-                  <li style={{ marginBottom: '8px' }}>Mantenha o Radar limpo e seguro.</li>
-                  <li>Evite que as bolhas colidam com o Ploc!</li>
-                </ul>
-              </div>
-              <button
-                onClick={() => setShowFocusInfo(false)}
-                style={{
-                  marginTop: '25px',
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: '12px',
-                  background: '#fbbf24',
-                  color: '#000',
-                  border: 'none',
-                  fontWeight: 900,
-                  cursor: 'pointer'
-                }}
-              >
-                ENTENDI!
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      <div className="fixed top-[90px] right-[30px] flex flex-col items-end gap-3 z-[100001] pointer-events-none">
-        <div className="flex items-center gap-3">
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            onClick={() => {
-              userClosedMinimap.current = showMinimap; // Registra se o usuário fechou manualmente
-              setShowMinimap(!showMinimap);
-            }}
-            className={`w-11 h-11 rounded-[50px] backdrop-blur-xl flex items-center justify-center cursor-pointer pointer-events-auto ${showMinimap ? 'bg-sky-400/20 border border-sky-400/40 text-sky-400' : 'bg-white/5 border border-white/10 text-white'
-              }`}
-          >
-            <Map size={18} />
-          </motion.button>
-
+      <div className="fixed top-[25px] left-[25px] flex items-start gap-3 z-[100001] pointer-events-none">
+        {/* Menu 1: Grid e Map */}
+        <div className="flex items-center bg-black/40 border border-white/10 backdrop-blur-md rounded-full p-1 shadow-[0_4px_20px_rgba(0,0,0,0.5)] pointer-events-auto gap-1">
           <motion.button
             whileHover={{ scale: 1.1 }}
             onClick={() => setShowGrid(!showGrid)}
-            className={`w-11 h-11 rounded-[50px] backdrop-blur-xl flex items-center justify-center cursor-pointer pointer-events-auto ${showGrid ? 'bg-sky-400/20 border border-sky-400/40 text-sky-400' : 'bg-white/5 border border-white/10 text-white'
-              }`}
+            className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shrink-0 transition-colors ${showGrid ? 'bg-sky-400/20 text-sky-400' : 'bg-white/5 text-white/70 hover:text-white hover:bg-white/10'}`}
+            title="Grade"
           >
-            <Grid3X3 size={18} />
+            <Grid3X3 size={16} />
           </motion.button>
-
           <motion.button
             whileHover={{ scale: 1.1 }}
             onClick={() => {
-              const newState = !showAttributes;
-              if (newState) {
-                setShowFocusInfo(false);
-              }
-              setShowAttributes(newState);
+              userClosedMinimap.current = showMinimap;
+              setShowMinimap(!showMinimap);
             }}
-            className={`attribute-bubble w-11 h-11 rounded-[50px] backdrop-blur-xl flex items-center justify-center cursor-pointer pointer-events-auto ${showAttributes ? 'bg-yellow-400/20 border border-yellow-400/40 text-yellow-400' : 'bg-white/5 border border-white/10 text-white'
-              }`}
+            className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shrink-0 transition-colors ${showMinimap ? 'bg-sky-400/20 text-sky-400' : 'bg-white/5 text-white/70 hover:text-white hover:bg-white/10'}`}
+            title="Minimapa"
           >
-            <ActivityIcon size={18} />
+            <Map size={16} />
           </motion.button>
-
         </div>
 
-        {/* Modal/Dropdown do Minimapa */}
+        {/* Menu 2: Status/Missão */}
+        <div className="relative pointer-events-auto">
+          <div className="flex items-center bg-black/40 border border-white/10 backdrop-blur-md rounded-full p-1 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowStatusMenu(!showStatusMenu)}
+              className={`h-9 px-4 rounded-full flex items-center justify-center gap-2 cursor-pointer transition-colors ${showStatusMenu ? 'bg-purple-400/20 text-purple-400' : 'bg-white/5 text-white/70 hover:text-white hover:bg-white/10'}`}
+            >
+              <ActivityIcon size={16} />
+              <span className="text-[12px] font-black tracking-[1.5px] font-display">STATUS</span>
+
+              {/* Badge de atenção (Novidades/Ações necessárias) */}
+              {hasPendingPillars && (
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-yellow-400 rounded-full border-[1.5px] border-black/80 flex items-center justify-center shadow-[0_0_8px_rgba(250,204,21,0.6)] animate-pulse">
+                  <span className="text-black text-[10px] font-black leading-none mt-[1px]">!</span>
+                </span>
+              )}
+            </motion.button>
+          </div>
+
+          {/* Dropdown de Status (Pilares + Modal de Tarefas) */}
+          <AnimatePresence>
+            {showStatusMenu && (
+              <>
+                {/* Backdrop invisível para clique fora */}
+                <div
+                  className="fixed inset-0 z-[100004]"
+                  onClick={() => setShowStatusMenu(false)}
+                />
+
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="fixed top-[80px] left-1/2 -translate-x-1/2 w-[360px] flex flex-col gap-3 pointer-events-auto z-[100005]"
+                >
+                  {/* Pilares */}
+                  <div className="p-4 relative z-10">
+                    <AttributeMonitor
+                      inline
+                      onClose={() => setShowStatusMenu(false)}
+                      onTooltipChange={(t) => setIsPillarActive(!!t)}
+                    />
+                  </div>
+
+                  {/* Tarefas e Cofre */}
+                  <AnimatePresence>
+                    {!isPillarActive && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0, transition: { duration: 0.15 } }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <NotificationsModal inline isOpen={true} onClose={() => setShowStatusMenu(false)} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Botão de DEBUG temporário para gamificação */}
+      <div className="fixed bottom-[120px] right-[25px] z-[100001] pointer-events-auto flex flex-col items-end gap-2">
+        <button
+          onClick={() => {
+            // As coordenadas são relativas ao Ploc (0,0)
+            resourceEngine.spawnBubble('food', 'Maçã', 0, -150);
+            resourceEngine.spawnBubble('water', 'Água', -100, -120);
+            resourceEngine.spawnBubble('medicine', 'Medicina', 100, -120);
+          }}
+          className="bg-purple-600/80 hover:bg-purple-500 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-[10px] font-bold shadow-[0_0_15px_rgba(168,85,247,0.3)] border border-purple-400/30 flex items-center gap-1 transition-all"
+        >
+          <span>🍎 Spawn Drops</span>
+        </button>
+        <button
+          onClick={() => {
+            const store = usePlocStateStore.getState();
+            usePlocStateStore.setState({
+              hunger: Math.max(0, store.hunger - 30),
+              thirst: Math.max(0, store.thirst - 30),
+              fatigue: Math.max(0, store.fatigue - 30),
+            });
+          }}
+          className="bg-rose-600/85 hover:bg-rose-500 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-[10px] font-bold shadow-[0_0_15px_rgba(244,63,94,0.3)] border border-rose-400/30 flex items-center gap-1 transition-all"
+        >
+          <span>⚡ Drenar Status (-30%)</span>
+        </button>
+      </div>
+
+      {/* Modal/Dropdown do Minimapa (posicionado abaixo da AuthCapsule) */}
+      {/* Modal/Dropdown do Minimapa (posicionado abaixo dos botões de controle de tela se fosse no menu antigo, mas agora no canto direito para não poluir) */}
+      <div className="fixed top-[80px] left-[25px] flex flex-col items-start gap-3 z-[100001] pointer-events-none">
         <AnimatePresence>
           {showMinimap && (
             <motion.div
@@ -725,22 +718,6 @@ export default function BlackboardPage() {
 
       {/* ── Menu de Navegação Global (Dock) ────────────────── */}
       <DockMenu />
-      <AnimatePresence>
-        {showAttributes && (
-          <motion.div
-            key="attr-monitor-wrapper"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
-            className="fixed top-0 left-0 w-full z-[100005] pointer-events-none" // Permite clicar no oceano através do wrapper
-          >
-            <div className="pointer-events-auto">
-              <AttributeMonitor onClose={() => setShowAttributes(false)} />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

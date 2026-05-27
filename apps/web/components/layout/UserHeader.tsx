@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
 import { getAssetUrl } from '@/lib/config';
@@ -13,11 +13,23 @@ export function UserHeader() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const headerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   if (!isAuthenticated) return null;
 
   return (
     <div
+      ref={headerRef}
       onClick={() => setIsOpen(!isOpen)}
       style={{
         display: 'flex',
@@ -36,109 +48,131 @@ export function UserHeader() {
         pointerEvents: 'all'
       }}
     >
-        {/* Foto / Avatar */}
-        <div style={{
-          width: '28px',
-          height: '28px',
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, #38bdf8, #818cf8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontWeight: 900,
-          fontSize: '0.7rem',
-          color: '#fff',
-          overflow: 'hidden',
-          flexShrink: 0
-        }}>
-          {user?.profilePhoto && !imgError ? (
-            <img 
-              src={getAssetUrl(user.profilePhoto)} 
-              onError={() => setImgError(true)}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-              alt="Profile"
-            />
-          ) : (
-            (user?.name || 'U').charAt(0).toUpperCase()
-          )}
-        </div>
-
-        {/* Level e XP (Sempre visível ou expandido) */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          gap: '2px',
-          marginLeft: isOpen ? '0px' : '6px',
-          marginRight: isOpen ? '0px' : '6px'
-        }}>
-          <span style={{ 
-            fontSize: '0.65rem', 
-            fontWeight: 800, 
-            color: '#fff', 
-            opacity: 0.9,
-            letterSpacing: '0.3px',
-            whiteSpace: 'nowrap',
-            maxWidth: '80px',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
-          }}>
-            {user?.name?.split(' ')[0] || 'Usuário'}
-          </span>
-          <div style={{ 
-            width: '40px', 
-            height: '3px', 
-            background: 'rgba(255,255,255,0.1)', 
-            borderRadius: '10px',
-            overflow: 'hidden' 
-          }}>
+        <AnimatePresence mode="wait">
+          {!isOpen ? (
             <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: `${(user?.stats?.xp || 0) % 100}%` }}
-              style={{ 
-                height: '100%', 
-                background: 'linear-gradient(90deg, #38bdf8, #818cf8)',
-                borderRadius: '10px'
-              }} 
-            />
-          </div>
-        </div>
-
-        {/* Menu Expandido */}
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div 
+              key="profile"
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: 'auto', opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '12px', overflow: 'hidden' }}
+              style={{ display: 'flex', alignItems: 'center' }}
             >
-              <Link href="/settings" style={{ color: '#fff', display: 'flex', opacity: 0.7 }}>
-                <Settings size={18} />
+              {/* Foto / Avatar */}
+              <div style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #38bdf8, #818cf8)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 900,
+                fontSize: '0.7rem',
+                color: '#fff',
+                overflow: 'hidden',
+                flexShrink: 0
+              }}>
+                {user?.profilePhoto && !imgError ? (
+                  <img 
+                    src={getAssetUrl(user.profilePhoto)} 
+                    onError={() => setImgError(true)}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    alt="Profile"
+                  />
+                ) : (
+                  (user?.name || 'U').charAt(0).toUpperCase()
+                )}
+              </div>
+
+              {/* Level e XP */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                gap: '2px',
+                marginLeft: '6px',
+                marginRight: '6px'
+              }}>
+                <span style={{ 
+                  fontSize: '0.65rem', 
+                  fontWeight: 800, 
+                  color: '#fff', 
+                  opacity: 0.9,
+                  letterSpacing: '0.3px',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '80px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>
+                  {user?.name?.split(' ')[0] || 'Usuário'}
+                </span>
+                <div style={{ 
+                  width: '40px', 
+                  height: '3px', 
+                  background: 'rgba(255,255,255,0.1)', 
+                  borderRadius: '10px',
+                  overflow: 'hidden' 
+                }}>
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(user?.stats?.xp || 0) % 100}%` }}
+                    style={{ 
+                      height: '100%', 
+                      background: 'linear-gradient(90deg, #38bdf8, #818cf8)',
+                      borderRadius: '10px'
+                    }} 
+                  />
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div 
+              key="actions"
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 'auto', opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}
+            >
+              {/* SETTINGS (Esquerda: só icone engrenagem em uma capsula) */}
+              <Link href="/settings" style={{ 
+                color: '#fff', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                opacity: 0.8, 
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.1)',
+                transition: 'all 0.2s'
+              }}>
+                <Settings size={15} />
               </Link>
-              
+
               <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.1)' }} />
 
+              {/* SAIR (Direita: capsula vermelha, texto branco, sem icone) */}
               <motion.button 
-                whileHover={{ scale: 1.05, color: '#ef4444' }}
+                whileHover={{ scale: 1.05 }}
                 onClick={(e) => {
                   e.stopPropagation();
                   logout();
                   router.push('/');
                 }} 
                 style={{ 
-                  background: 'none', 
+                  background: '#ef4444', 
                   border: 'none', 
-                  color: '#ef4444', 
+                  color: '#fff', 
                   cursor: 'pointer', 
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  padding: '4px 8px'
+                  justifyContent: 'center',
+                  borderRadius: '50px',
+                  padding: '4px 24px',
+                  height: '28px'
                 }}
               >
-                <LogOut size={16} />
-                <span style={{ fontSize: '0.7rem', fontWeight: 900, letterSpacing: '1px' }}>SAIR</span>
+                <span style={{ fontSize: '0.65rem', fontWeight: 900, letterSpacing: '1px' }}>SAIR</span>
               </motion.button>
             </motion.div>
           )}
