@@ -485,7 +485,7 @@ export default function BlackboardPage() {
                         {/* UI DO CONSUMO ATIVO (BOTÃO PARAR E TIMER) */}
                         <div className="absolute -top-[160px] left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-auto z-[400] scale-90">
                           <div className="bg-red-500/10 border border-red-500/30 backdrop-blur-md px-4 py-1.5 rounded-2xl mb-2 flex flex-col items-center justify-center shadow-[0_0_15px_rgba(239,68,68,0.2)] min-w-[140px]">
-                            <span className="text-[0.5rem] font-bold text-red-400 uppercase tracking-[0.15em] mb-0.5 text-center ml-[0.15em]">Tempo real de uso</span>
+                            <span className="text-[0.5rem] font-bold text-red-400 uppercase tracking-[0.15em] mb-0.5 text-center ml-[0.15em]">Não desista agora! Você consegue!</span>
                             <span className={`font-mono font-black text-lg leading-none text-center ${activeSecondsRemaining < 0 ? 'text-red-500' : 'text-white'}`}>
                               {formatConsumingTime(activeSecondsRemaining)}
                             </span>
@@ -498,13 +498,13 @@ export default function BlackboardPage() {
                               }}
                               className="bg-zinc-700/80 hover:bg-zinc-600 text-white font-bold px-4 py-2.5 rounded-xl text-[0.55rem] tracking-widest transition-colors shadow-lg whitespace-nowrap backdrop-blur-md"
                             >
-                              REVERTER
+                              NÃO VOU CEDER!
                             </button>
                             <button
                               onClick={() => endConsumption(activeConsumingVice.viceId, consumptionElapsed)}
                               className="bg-red-500 hover:bg-red-600 text-white font-black px-5 py-2.5 rounded-xl text-[0.6rem] tracking-widest transition-colors shadow-lg whitespace-nowrap"
                             >
-                              FINALIZAR
+                              CEDER
                             </button>
                           </div>
                         </div>

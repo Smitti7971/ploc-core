@@ -90,14 +90,18 @@ interface ViceStore {
   advanceAntitabagismoLevel: (viceId: string) => void;
 }
 
+const hasAuthToken = () => {
+  if (typeof window === 'undefined') return false;
+  return !!localStorage.getItem('ploc_token') || !!localStorage.getItem('ploc-auth');
+};
+
 const syncViceToBackend = async (vice: ActiveVice | null): Promise<boolean> => {
-  if (vice) {
+  if (vice && hasAuthToken()) {
     try {
       await apiService.post('/vices', vice);
       return true;
     } catch (e) {
       console.error('Erro ao sincronizar vício:', e);
-      alert('Aviso: Falha ao sincronizar as configurações do vício com o banco de dados. Seus dados podem não estar salvos permanentemente.');
       return false;
     }
   }
@@ -105,11 +109,11 @@ const syncViceToBackend = async (vice: ActiveVice | null): Promise<boolean> => {
 };
 
 const syncLogToBackend = async (log: ViceLog) => {
+  if (!hasAuthToken()) return;
   try {
     await apiService.post('/vices/log', log);
   } catch (e) {
     console.error('Erro ao sincronizar log de vício:', e);
-    alert('Aviso: Falha ao salvar o histórico do vício no banco de dados. Os dados recentes podem ser perdidos.');
   }
 };
 
