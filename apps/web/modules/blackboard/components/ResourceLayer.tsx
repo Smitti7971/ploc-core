@@ -16,11 +16,11 @@ function ResourceBubble({ bubble }: { bubble: ResourceBubbleData }) {
     // Checagem de colisão com o PLOC enquanto ele é arrastado
     const handlePlocMove = (payload: { x: number, y: number }) => {
       if (isPopping) return;
-      
+
       const dx = payload.x - bubble.x;
       const dy = payload.y - bubble.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      
+
       if (distance < COLLISION_RADIUS) {
         setIsPopping(true);
         // Colidiu! Come direto
@@ -39,7 +39,7 @@ function ResourceBubble({ bubble }: { bubble: ResourceBubbleData }) {
             name: bubble.name
           });
         }
-        
+
         // Efeito visual / som aqui se quiser
         setTimeout(() => {
           resourceEngine.removeBubble(bubble.id);
@@ -55,7 +55,7 @@ function ResourceBubble({ bubble }: { bubble: ResourceBubbleData }) {
     e.stopPropagation();
     if (isPopping) return;
     setIsPopping(true);
-    
+
     // Clicou, vai pra bolsa
     store({
       type: bubble.type,
@@ -68,7 +68,7 @@ function ResourceBubble({ bubble }: { bubble: ResourceBubbleData }) {
   };
 
   const getBubbleColor = () => {
-    switch(bubble.type) {
+    switch (bubble.type) {
       case 'food': return '#ef4444'; // red
       case 'water': return '#3b82f6'; // blue
       case 'medicine': return '#22c55e'; // green
@@ -77,7 +77,7 @@ function ResourceBubble({ bubble }: { bubble: ResourceBubbleData }) {
   };
 
   const getIcon = () => {
-    switch(bubble.type) {
+    switch (bubble.type) {
       case 'food': return <Apple size={24} className="text-red-400 drop-shadow-lg" />;
       case 'water': return <Droplet size={24} className="text-blue-400 drop-shadow-lg" />;
       case 'medicine': return <Pill size={24} className="text-green-400 drop-shadow-lg" />;
@@ -105,7 +105,7 @@ function ResourceBubble({ bubble }: { bubble: ResourceBubbleData }) {
       onClick={handleClick}
       initial={{ scale: 0, opacity: 0 }}
       animate={isPopping ? { scale: 1.5, opacity: 0 } : { scale: 1, opacity: 1, y: [0, -10, 0] }}
-      transition={{ 
+      transition={{
         y: { repeat: Infinity, duration: 2, ease: "easeInOut" },
         scale: isPopping ? { duration: 0.2 } : { type: "spring", stiffness: 300, damping: 20 },
         opacity: isPopping ? { duration: 0.2 } : { duration: 0.3 }
@@ -124,9 +124,16 @@ export function ResourceLayer() {
 
   useEffect(() => {
     setBubbles(resourceEngine.getBubbles());
-    return resourceEngine.subscribe(() => {
+
+    // Armazena a função de unsubscribe numa variável
+    const unsubscribe = resourceEngine.subscribe(() => {
       setBubbles([...resourceEngine.getBubbles()]);
     });
+
+    // Retorna uma função vazia (void) que apenas executa o unsubscribe
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   return (
