@@ -81,10 +81,22 @@ export const apiService = {
 
   /** Upload de arquivos (multipart/form-data) */
   upload: async <T>(endpoint: string, formData: FormData): Promise<T> => {
-    const token =
+    let token =
       typeof window !== 'undefined'
         ? localStorage.getItem(config.auth.tokenKey)
         : null;
+
+    if (!token && typeof window !== 'undefined') {
+      try {
+        const persisted = localStorage.getItem('ploc-auth');
+        if (persisted) {
+          const parsed = JSON.parse(persisted);
+          token = parsed.state?.token || null;
+        }
+      } catch (e) {
+        // Ignora erro de parse
+      }
+    }
 
     const response = await fetch(`${config.api.baseUrl}${endpoint}`, {
       method: 'POST',
