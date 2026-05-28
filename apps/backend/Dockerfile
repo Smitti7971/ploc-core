@@ -5,6 +5,9 @@ FROM node:22-slim
 RUN apt-get update && apt-get install -y \
     openssl \
     libssl-dev \
+    python3 \
+    make \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
 
 # 2. Definir diretório de trabalho
@@ -15,7 +18,8 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # 4. Instalar dependências e gerar o cliente Prisma (Build-time)
-RUN npm install
+# Usando flags para economizar memória (OOM) no servidor
+RUN npm install --no-audit --no-fund --legacy-peer-deps
 RUN npx prisma generate
 
 # 5. Copiar o restante do código fonte
