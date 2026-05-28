@@ -630,7 +630,7 @@ export default function BlackboardPage() {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="fixed top-[80px] left-1/2 -translate-x-1/2 w-[360px] flex flex-col gap-3 pointer-events-auto z-[100005]"
+                  className="fixed top-[80px] left-1/2 -translate-x-1/2 w-[calc(100vw-32px)] sm:w-[360px] flex flex-col gap-3 pointer-events-auto z-[100005]"
                 >
                   {/* Pilares */}
                   <div className="p-4 relative z-10">

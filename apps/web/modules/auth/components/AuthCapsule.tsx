@@ -36,8 +36,8 @@ export const AuthCapsule: React.FC = () => {
   };
 
   return (
-    <div className="absolute top-[25px] right-[25px] z-[9999] flex items-center gap-3 pointer-events-auto">
-      <div id="blackboard-portal-target" className="flex items-center gap-3" />
+    <div className="absolute top-4 right-4 md:top-[25px] md:right-[25px] z-[9999] flex items-center justify-end gap-3 pointer-events-auto max-w-[calc(100vw-32px)]">
+      <div id="blackboard-portal-target" className="flex items-center gap-2 md:gap-3 flex-wrap justify-end" />
       {isAuthenticated ? (
         <UserHeader />
       ) : (
