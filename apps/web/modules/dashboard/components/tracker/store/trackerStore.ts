@@ -28,6 +28,13 @@ export interface TrackerItem {
     expectedFrequency?: string;
     target?: number;
     showCoverPhoto?: boolean;
+    stages?: {
+      id: string;
+      name: string;
+      startDate: number;
+      endDate?: number;
+    }[];
+    activeMarkers?: string[];
     [key: string]: any;
   };
   startDate: number;
@@ -57,6 +64,7 @@ interface TrackerStore {
   
   addLog: (log: Omit<TrackerLog, 'id' | 'timestamp'>) => void;
   updateLog: (logId: string, updates: Partial<TrackerLog>) => void;
+  deleteLog: (logId: string) => void;
   toggleCoverPhoto: (itemId: string) => void;
 }
 
@@ -226,6 +234,15 @@ export const useTrackerStore = create<TrackerStore>()(
           return { logs: newLogs };
         });
         if (updatedLog) syncLogToBackend(updatedLog);
+      },
+
+      deleteLog: (logId) => {
+        set((state) => ({
+          logs: state.logs.filter(log => log.id !== logId)
+        }));
+        if (hasAuthToken()) {
+          apiService.delete(`/tracker/logs/${logId}`).catch(console.error);
+        }
       },
 
       toggleCoverPhoto: (itemId) => {

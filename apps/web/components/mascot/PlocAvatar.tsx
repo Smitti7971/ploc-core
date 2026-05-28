@@ -150,6 +150,29 @@ export default function PlocAvatar({
   // que nos repassa via callback.
   const [transitionEffect, setTransitionEffect] = useState<'up' | 'down' | null>(null);
 
+  const [isEating, setIsEating] = useState(false);
+  const [storePop, setStorePop] = useState(false);
+
+  useEffect(() => {
+    const handleEat = () => {
+      setIsEating(true);
+      setTimeout(() => setIsEating(false), 2500);
+    };
+    
+    const handleStore = () => {
+      setStorePop(true);
+      setTimeout(() => setStorePop(false), 1000);
+    };
+
+    const unsubEat = blackboardEventBus.subscribe('PLOC_EAT', handleEat);
+    const unsubStore = blackboardEventBus.subscribe('PLOC_STORE_ITEM', handleStore);
+    
+    return () => {
+      unsubEat();
+      unsubStore();
+    };
+  }, []);
+
   const [areActionsVisible, setAreActionsVisible] = useState(false);
   const [isBagOpen, setIsBagOpen] = useState(false);
   const [achievementToast, setAchievementToast] = useState<{ title: string; message: string } | null>(null);
@@ -591,6 +614,7 @@ export default function PlocAvatar({
               isPissed={isPissed}
               isHurt={plocState.isHurt}
               isSpeaking={isSpeakingMouth}
+              isEating={isEating}
               appearance={appearance}
               isHit={plocState.isHit}
               isPositiveHit={plocState.isPositiveHit}
@@ -617,10 +641,26 @@ export default function PlocAvatar({
               e.stopPropagation();
               setIsBagOpen(!isBagOpen);
             }}
-            className="w-12 h-12 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-all duration-200 backdrop-blur-md hover:scale-110 hover:bg-white/10 text-orange-400 group"
+            className={`w-12 h-12 rounded-2xl border flex items-center justify-center cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 backdrop-blur-md group relative ${
+              storePop 
+                ? 'bg-emerald-500/80 border-emerald-400 text-white scale-110' 
+                : 'bg-black/40 border-white/10 hover:scale-110 hover:bg-white/10 text-orange-400'
+            }`}
             title="Inventário (Mochila)"
           >
             <Backpack size={22} className="group-hover:scale-110 transition-transform" />
+            <AnimatePresence>
+              {storePop && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.5 }}
+                  animate={{ opacity: 1, y: -25, scale: 1.2 }}
+                  exit={{ opacity: 0, y: -35 }}
+                  className="absolute text-emerald-300 font-black text-[13px] drop-shadow-md"
+                >
+                  +1
+                </motion.div>
+              )}
+            </AnimatePresence>
           </button>
         </div>,
         document.body

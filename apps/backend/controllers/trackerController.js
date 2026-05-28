@@ -138,3 +138,32 @@ exports.createTrackerLog = async (req, res) => {
     res.status(500).json({ error: "Failed to sync TrackerLog." });
   }
 };
+
+exports.deleteTrackerLog = async (req, res) => {
+  try {
+    const userId = req.user?.id || 'c3dd1b0e-7465-4739-86de-db474c853d8e';
+    const { id } = req.params;
+
+    const existing = await prisma.trackerLog.findUnique({
+      where: { id }
+    });
+
+    if (!existing) {
+      console.warn(`TrackerLog with id ${id} not found in DB, assuming already deleted`);
+      return res.status(200).json({ message: "TrackerLog deleted or not found" });
+    }
+    if (existing.userId !== userId) {
+      console.error(`Unauthorized deletion. DB user: ${existing.userId}, Request user: ${userId}`);
+      return res.status(403).json({ error: "TrackerLog unauthorized" });
+    }
+
+    await prisma.trackerLog.delete({
+      where: { id }
+    });
+
+    res.status(200).json({ message: "TrackerLog deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting TrackerLog:", error);
+    res.status(500).json({ error: "Failed to delete TrackerLog." });
+  }
+};

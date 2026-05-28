@@ -122,21 +122,28 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
                 {activeTrackers.map(tracker => {
                   const days = Math.floor((Date.now() - tracker.startDate) / 86400000);
                   const showCoverPhoto = tracker.config?.showCoverPhoto !== false;
+                  const isActive = confirmingTracker === tracker.id;
+                  
                   return (
                     <div key={tracker.id} className="flex flex-col gap-1">
                       <div 
                         onClick={() => {
-                          setDetailedTrackerId(tracker.id);
+                          if (!isActive) {
+                            setConfirmingTracker(tracker.id);
+                          } else {
+                            setDetailedTrackerId(tracker.id);
+                            setConfirmingTracker(null);
+                          }
                         }}
-                        className="bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 rounded-xl p-3 flex flex-col gap-2 cursor-pointer transition-colors relative"
+                        className={`border rounded-xl p-3 flex flex-col gap-2 cursor-pointer transition-colors relative ${isActive ? 'bg-sky-500/20 border-sky-500/40 hover:bg-sky-500/30' : 'bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/20'}`}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex flex-col">
                             <div className="flex items-center gap-2">
-                              <LineChart size={12} className="text-amber-400" />
-                              <span className="text-amber-400 text-sm font-bold">{tracker.name}</span>
+                              <LineChart size={12} className={isActive ? 'text-sky-400' : 'text-amber-400'} />
+                              <span className={`text-sm font-bold ${isActive ? 'text-sky-400' : 'text-amber-400'}`}>{tracker.name}</span>
                             </div>
-                            <span className="text-amber-400 opacity-50 text-[10px] uppercase tracking-wider">{days} dias ativos</span>
+                            <span className={`opacity-50 text-[10px] uppercase tracking-wider ${isActive ? 'text-sky-400' : 'text-amber-400'}`}>{days} dias ativos</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <button 
@@ -152,7 +159,45 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
                           </div>
                         </div>
                       </div>
-                      {/* Popup removido a pedido, o card agora abre o TrackerOverlay direto */}
+                      
+                      {/* Menu de Ação Rápida */}
+                      <AnimatePresence>
+                        {isActive && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="bg-sky-500/10 border border-sky-500/20 rounded-xl p-3 flex flex-col gap-2 overflow-hidden mt-1"
+                          >
+                            <div className="flex gap-2 w-full">
+                              <input 
+                                type="text" 
+                                placeholder="Registrar valor (opcional)..." 
+                                className="flex-1 bg-black/40 border border-sky-500/30 rounded-lg px-2 text-xs text-white outline-none focus:border-sky-500/60 transition-colors"
+                                id={`quick-tracker-${tracker.id}`}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const valStr = (document.getElementById(`quick-tracker-${tracker.id}`) as HTMLInputElement)?.value;
+                                  const store = useTrackerStore.getState();
+                                  store.addLog({
+                                    trackerItemId: tracker.id,
+                                    type: 'consumption',
+                                    info: 'Registro Rápido via pop-up',
+                                    value: valStr ? Number(valStr) : 1
+                                  });
+                                  setConfirmingTracker(null);
+                                }}
+                                className="bg-sky-500/20 text-sky-400 hover:bg-sky-500/40 py-2 px-3 rounded-lg text-xs font-bold transition-colors"
+                              >
+                                SALVAR
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   );
                 })}
@@ -371,10 +416,10 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
           </div>
 
           <MissionAntitabagismoModal isOpen={showAntitabagismo} onClose={() => setShowAntitabagismo(false)} />
+          </motion.div>
           {detailedTrackerId && (
             <TrackerOverlay itemId={detailedTrackerId} onClose={() => setDetailedTrackerId(null)} />
           )}
-          </motion.div>
         </div>
       )}
     </AnimatePresence>

@@ -18,6 +18,7 @@ interface PlocFaceProps {
   isPissed: boolean;
   isHurt: boolean;
   isSpeaking?: boolean;
+  isEating?: boolean;
   appearance?: {
     eyes?: 'bored' | 'cute' | 'anime' | 'nerd' | 'sparkle' | 'spiral';
     mouth?: 'none' | 'smile' | 'straight' | 'masculine' | 'feminine' | 'shock' | 'sad' | 'wavy' | 'rage';
@@ -33,6 +34,7 @@ export function PlocFace({
   isPissed,
   isHurt,
   isSpeaking = false,
+  isEating = false,
   appearance = { eyes: 'bored', mouth: 'straight' },
   isHit = false,
   isPositiveHit = false,
@@ -92,6 +94,8 @@ export function PlocFace({
   let activeMouth = 'straight';
   if (isSleeping) {
     activeMouth = 'none';
+  } else if (isEating) {
+    activeMouth = 'eating';
   } else if (isDizzy) {
     activeMouth = 'wavy';
   } else if (isHurt || isHit) {
@@ -287,6 +291,25 @@ export function PlocFace({
   // -------------------------------------------------------------
   const renderMouth = (style: string) => {
     switch (style) {
+      case 'eating':
+        return (
+          <svg width="100%" height="100%" viewBox="0 0 80 60" fill="none" className="overflow-visible">
+            <motion.g
+              animate={{
+                y: [0, 2, 0, 2, 0],
+                scaleY: [0.7, 1.3, 0.7, 1.3, 0.7],
+                scaleX: [1.1, 0.9, 1.1, 0.9, 1.1]
+              }}
+              transition={{
+                duration: 0.35,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            >
+              <ellipse cx="40" cy="30" rx="15" ry="10" fill="#4c0519" stroke={lashColor} strokeWidth="5" />
+            </motion.g>
+          </svg>
+        );
       case 'smile':
         return (
           <svg width="100%" height="100%" viewBox="0 0 80 60" fill="none" className="overflow-visible">

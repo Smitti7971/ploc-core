@@ -36,6 +36,15 @@ class ResourceEngine {
     this.notify();
   }
 
+  public updateBubblePosition(id: string, x: number, y: number) {
+    const bubble = this.bubbles.find(b => b.id === id);
+    if (bubble) {
+      bubble.x = x;
+      bubble.y = y;
+      this.notify();
+    }
+  }
+
   public getBubbles() {
     return this.bubbles;
   }
