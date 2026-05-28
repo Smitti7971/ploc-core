@@ -9,7 +9,7 @@
   "description": "Backend Enterprise do SaaS Ploc",
   "main": "index.js",
   "scripts": {
-    "dev": "node index.js",
+    "dev": "npx nodemon index.js",
     "start": "npx prisma generate && npx prisma db push && node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
