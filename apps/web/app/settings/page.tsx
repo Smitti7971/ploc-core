@@ -34,6 +34,7 @@ export default function SettingsPage() {
   const [username, setUsername] = useState(user?.username || ''); // Username atual no input
   const [isUploading, setIsUploading] = useState(false); // Flag de loading para upload de foto
   const [isSaving, setIsSaving] = useState(false); // Flag de loading para salvar dados
+  const [imgError, setImgError] = useState(false); // Trata imagem quebrada
 
   const [isHydrated, setIsHydrated] = useState(false); // Flag para confirmar que a store do Zustand carregou no cliente
   
@@ -87,6 +88,7 @@ export default function SettingsPage() {
 
     try {
       setIsUploading(true); // Liga o loading de foto
+      setImgError(false); // Reseta o estado de erro da imagem
       const previewUrl = URL.createObjectURL(file); // Cria URL temporária para mostrar no frontend imediatamente
       updateUser({ profilePhoto: previewUrl }); // Otimismo UI: Mostra a foto no Ploc/Store antes de confirmar no back
 
@@ -97,16 +99,16 @@ export default function SettingsPage() {
       const uploadData = await apiService.upload<{ url: string }>('/upload?type=avatar', formData);
       
       // Atualiza o perfil do usuário no DB com a URL nova da foto
-      const response = await apiService.put<any>('/users/me', { profilePhoto: uploadData.url }, { token: token || undefined });
-
-      // Atualiza a store com o usuário inteiro vindo do banco
-      updateUser(response.user);
+      await apiService.put('/users/me', { profilePhoto: uploadData.url });
       
-    } catch (error) {
-      console.error(error);
-      alert('Erro ao atualizar foto.'); // Feedback de erro
+      // Substitui a URL temporária pela URL real oficial vinda do DB
+      updateUser({ profilePhoto: uploadData.url });
+      
+    } catch (error: any) {
+      console.error('Erro ao fazer upload da foto:', error);
+      alert(`Falha ao subir a imagem: ${error.message || 'Verifique a conexão.'}`);
     } finally {
-      setIsUploading(false); // Tira o loading
+      setIsUploading(false); // Desliga o loading
     }
   };
 
@@ -191,12 +193,17 @@ export default function SettingsPage() {
                   width: '100%', height: '100%', borderRadius: '28px', background: '#0f172a',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
                 }}>
-                  {user?.profilePhoto ? (
-                    <img src={getAssetUrl(user.profilePhoto)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {user?.profilePhoto && !imgError ? (
+                    <img 
+                      src={getAssetUrl(user.profilePhoto)} 
+                      onError={() => setImgError(true)}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                      alt="Profile"
+                    />
                   ) : (
-                    <div style={{ fontSize: '2rem', fontWeight: 900 }}>{user?.name?.charAt(0) || 'P'}</div>
+                    <div style={{ fontSize: '2rem', fontWeight: 900 }}>{user?.name?.charAt(0).toUpperCase() || 'P'}</div>
                   )}
-                  {isUploading && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⌛</div>}
+                  {isUploading && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⏳</div>}
                 </div>
               </div>
               <button 

@@ -38,6 +38,14 @@ export const useAuthStore = create<AuthState>()(
         })),
 
       logout: () => {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(config.auth.tokenKey);
+          localStorage.removeItem(config.auth.userKey);
+          localStorage.removeItem('ploc-auth');
+          localStorage.removeItem('ploc-tracker-storage');
+          localStorage.removeItem('ploc-vice-storage');
+          localStorage.removeItem('ploc-state');
+        }
         set({ token: null, user: null, isAuthenticated: false });
       },
 
