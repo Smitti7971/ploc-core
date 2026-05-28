@@ -176,7 +176,7 @@ const NODES_CONFIG: NodeConfig[] = [
 ];
 
 export function MissionPathMap() {
-  const { activeVices, advanceAntitabagismoLevel } = useViceStore();
+  const { activeVices, logs: allLogs, advanceAntitabagismoLevel } = useViceStore();
   const currentVice = activeVices['tabagismo'];
   const currentLevel = currentVice?.antitabagismoLevel ?? 0;
 
@@ -184,8 +184,8 @@ export function MissionPathMap() {
   const calculateProgress = (req: MissionRequirement) => {
     if (!currentVice) return { current: 0, target: req.target, isCompleted: false };
     
-    const logs = currentVice.logs || [];
-    const startTime = currentVice.startTime || new Date(0).toISOString();
+    const logs = allLogs.filter(log => log.viceId === currentVice.viceId);
+    const startTime = currentVice.startTime || new Date(0).getTime();
     
     // Filtramos apenas os logs depois do início da missão atual
     const relevantLogs = logs.filter((log: any) => new Date(log.timestamp).getTime() >= new Date(startTime).getTime());
