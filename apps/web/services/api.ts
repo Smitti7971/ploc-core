@@ -48,9 +48,12 @@ async function request<T>(
     method,
     headers: {
       'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
       ...headers,
     },
+    cache: 'no-store',
     body: body ? JSON.stringify(body) : undefined,
   });
 
