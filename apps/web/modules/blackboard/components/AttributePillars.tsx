@@ -110,8 +110,8 @@ export function AttributePillars({
   };
 
   return (
-    <div className="relative flex flex-col items-center gap-4 max-w-[100vw]">
-      <div className="flex justify-center items-center gap-2 sm:gap-5 px-1 sm:px-2">
+    <div className="relative flex flex-col items-center gap-4 max-w-[100vw] w-full">
+      <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-5 px-1 sm:px-2 max-w-full">
         {(Object.keys(PILLARS_CONFIG) as Array<keyof UserAttributes>).map((key, index) => {
           const config = PILLARS_CONFIG[key];
           const Icon = config.icon;
@@ -210,7 +210,7 @@ export function AttributePillars({
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            className="absolute top-[80px] left-1/2 -translate-x-1/2 z-50 w-[360px] p-4 bg-slate-900/95 backdrop-blur-xl border rounded-2xl text-white shadow-[0_20px_50px_rgba(0,0,0,0.6)] pointer-events-auto cursor-pointer hover:bg-slate-800/95 transition-colors"
+            className="absolute top-[80px] left-1/2 -translate-x-1/2 z-50 w-[calc(100vw-32px)] sm:w-[360px] p-4 bg-slate-900/95 backdrop-blur-xl border rounded-2xl text-white shadow-[0_20px_50px_rgba(0,0,0,0.6)] pointer-events-auto cursor-pointer hover:bg-slate-800/95 transition-colors"
             style={{
               borderColor: `${getStatusColor(attributes[activeTooltip as keyof UserAttributes], activeConfig.color)}40`
             }}
