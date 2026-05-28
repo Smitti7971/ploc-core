@@ -74,6 +74,26 @@ exports.getTrackerItems = async (req, res) => {
   }
 };
 
+exports.getTrackerLogs = async (req, res) => {
+  try {
+    const userId = req.user?.id || 'c3dd1b0e-7465-4739-86de-db474c853d8e';
+    const logs = await prisma.trackerLog.findMany({
+      where: { userId },
+      orderBy: { timestamp: 'desc' }
+    });
+    
+    const serializedLogs = logs.map(log => ({
+      ...log,
+      timestamp: log.timestamp.toString()
+    }));
+    
+    res.status(200).json(serializedLogs);
+  } catch (error) {
+    console.error("Error fetching TrackerLogs:", error);
+    res.status(500).json({ error: "Failed to fetch TrackerLogs." });
+  }
+};
+
 exports.deleteTrackerItem = async (req, res) => {
   try {
     const userId = req.user?.id || 'c3dd1b0e-7465-4739-86de-db474c853d8e';

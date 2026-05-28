@@ -104,12 +104,15 @@ export const useTrackerStore = create<TrackerStore>()(
       fetchItems: async () => {
         if (!hasAuthToken()) return;
         try {
-          const data = await apiService.get('/tracker/items');
+          // Busca os itens e logs do servidor
+          const [itemsData, logsData] = await Promise.all([
+            apiService.get('/tracker/items').catch(() => []),
+            apiService.get('/tracker/logs').catch(() => [])
+          ]);
           
-          if (Array.isArray(data)) {
+          if (Array.isArray(itemsData)) {
             const itemsRecord: Record<string, TrackerItem> = {};
-            data.forEach((item: any) => {
-              // Converte as datas e bigints que chegam como string ou int
+            itemsData.forEach((item: any) => {
               itemsRecord[item.id] = {
                 ...item,
                 startDate: new Date(item.startDate).getTime(),
@@ -119,8 +122,17 @@ export const useTrackerStore = create<TrackerStore>()(
             });
             set({ items: itemsRecord });
           }
+
+          if (Array.isArray(logsData)) {
+            const formattedLogs = logsData.map((log: any) => ({
+              ...log,
+              timestamp: Number(log.timestamp)
+            }));
+            set({ logs: formattedLogs });
+          }
+
         } catch (error) {
-          console.error("Erro ao buscar items no backend:", error);
+          console.error("Erro ao buscar dados do tracker no backend:", error);
         }
       },
 
