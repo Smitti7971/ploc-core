@@ -111,7 +111,7 @@ export function AttributePillars({
 
   return (
     <div className="relative flex flex-col items-center gap-4 max-w-[100vw] w-full">
-      <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-5 px-1 sm:px-2 max-w-full">
+      <div className="flex justify-center items-center gap-1.5 sm:gap-5 px-1 sm:px-2 w-full max-w-full">
         {(Object.keys(PILLARS_CONFIG) as Array<keyof UserAttributes>).map((key, index) => {
           const config = PILLARS_CONFIG[key];
           const Icon = config.icon;
@@ -141,20 +141,11 @@ export function AttributePillars({
                     delay: index * 0.4
                   }
                 }}
+                className="w-12 h-12 sm:w-[60px] sm:h-[60px] rounded-full flex flex-col items-center justify-center relative cursor-help pointer-events-auto shrink-0"
                 style={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '50%',
                   background: 'rgba(20,25,30,0.85)',
                   border: `1px solid ${isActive ? statusColor : statusColor + '40'}`,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
                   boxShadow: `0 10px 30px rgba(0,0,0,0.5), inset 0 0 20px ${statusColor}20`,
-                  position: 'relative',
-                  cursor: 'help',
-                  pointerEvents: 'all'
                 }}
               >
                 <div style={{
@@ -167,8 +158,8 @@ export function AttributePillars({
                   borderRadius: '50%',
                 }} />
 
-                <Icon size={20} color={statusColor} style={{ opacity: 0.8, marginBottom: '2px' }} />
-                <span style={{ fontSize: '0.8rem', color: '#fff', fontWeight: 900 }}>{value}</span>
+                <Icon className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px] opacity-80 mb-0.5" color={statusColor} />
+                <span className="text-[0.7rem] sm:text-[0.8rem] text-white font-black">{value}</span>
 
                 {/* Badge de atenção para pilar não preenchido */}
                 {showBadge && (
