@@ -23,7 +23,9 @@
  */
 
 import { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion';
+import { Backpack } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { blackboardEventBus } from '@/modules/blackboard/events/eventBus';
@@ -140,7 +142,7 @@ export default function PlocAvatar({
 
   const { hasDraggedRef, onDragStart, onDrag, onDragEnd } = usePlocDragSystem({
     x, y, facingTargetX, SIZE, pathname, isAuthenticated, isSleeping,
-    setIsDragging, setIsTapped, setIsHovered, triggerHurt: () => {},
+    setIsDragging, setIsTapped, setIsHovered, triggerHurt: () => { },
     setFocusedRoutine, setFocusedPillar, setShowSimulation, focusedRoutine
   });
 
@@ -347,7 +349,7 @@ export default function PlocAvatar({
     <>
       {/* Floating Achievement Toast */}
       <PlocAchievementToast toast={achievementToast} />
-      
+
       {/* Inventory Bag Modal */}
       <InventoryModal isOpen={isBagOpen} onClose={() => setIsBagOpen(false)} />
 
@@ -469,10 +471,6 @@ export default function PlocAvatar({
             setPlocState(prev => ({ ...prev, mode: 'sleeping' }));
             setAreActionsVisible(false);
           }}
-          onToggleBag={() => {
-            setIsBagOpen(!isBagOpen);
-            setAreActionsVisible(false);
-          }}
         />
 
         {/* Shockwave Rings (Onda de choque HSL-reativa de transição) */}
@@ -507,7 +505,7 @@ export default function PlocAvatar({
           style={{ zIndex: 10 }}
         >
           {/* Corpo (Fundo de Vidro) separado para permitir Z-Index das costas */}
-          <div 
+          <div
             className="absolute inset-0 border-[1.5px] border-white/20"
             style={{
               borderRadius: 'inherit',
@@ -555,7 +553,7 @@ export default function PlocAvatar({
           {/* 1. Máscara Circular para elementos internos que precisam de recorte (Brilhos, Roupas, Bolhas internas) */}
           <div
             className="absolute inset-0 overflow-hidden pointer-events-none z-10"
-            style={{ 
+            style={{
               borderRadius: '50%',
               transform: 'translateZ(0)'
             }}
@@ -610,6 +608,23 @@ export default function PlocAvatar({
           />
         </motion.div>
       </motion.div>
+
+      {/* Botão Fixo de Mochila (Inventário) no Canto Inferior Esquerdo (acima da Navbar) apenas no Blackboard */}
+      {!isHidden && !isLanding && pathname === '/' && typeof document !== 'undefined' && createPortal(
+        <div className="fixed bottom-[90px] left-[25px] z-[99999] pointer-events-auto">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsBagOpen(!isBagOpen);
+            }}
+            className="w-12 h-12 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-all duration-200 backdrop-blur-md hover:scale-110 hover:bg-white/10 text-orange-400 group"
+            title="Inventário (Mochila)"
+          >
+            <Backpack size={22} className="group-hover:scale-110 transition-transform" />
+          </button>
+        </div>,
+        document.body
+      )}
 
       {/* Portal React independente com AnimatePresence próprio para a interface de chat desacoplada. */}
       <PlocChatOverlay

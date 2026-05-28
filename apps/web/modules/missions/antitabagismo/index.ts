@@ -1,2 +1,2 @@
-export * from './components/MissionDuolingoPath';
+export * from './components/MissionPathMap';
 export * from './components/MissionAntitabagismoModal';

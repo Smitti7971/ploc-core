@@ -32,6 +32,7 @@ import { resourceEngine } from '../engine/resource-engine/ResourceEngine';
 import { AmbientGlowBackground } from '../../landing/particles/AmbientGlowBackground';
 import { Vignette } from '../../landing/particles/Vignette';
 import { useViceStore } from '../../dashboard/components/libertesse/store/viceStore';
+import { useTrackerStore } from '../../dashboard/components/tracker/store/trackerStore';
 import { usePlocSpeech } from '../../../components/mascot/usePlocSpeech';
 import { usePlocStateStore } from '../../mascot/store/plocStateStore';
 
@@ -47,15 +48,32 @@ export default function BlackboardPage() {
 
   // Espera a hidratação do Zustand (carregar do localStorage)
   useEffect(() => {
-    const unsub = useAuthStore.persist.onFinishHydration(() => {
+    const unsubAuth = useAuthStore.persist.onFinishHydration(() => {
       setIsHydrated(true);
+      useViceStore.getState().fetchVices();
+    });
+
+    const unsubTracker = useTrackerStore.persist.onFinishHydration(() => {
+      useTrackerStore.getState().fetchItems();
     });
 
     if (useAuthStore.persist.hasHydrated()) {
-      setTimeout(() => setIsHydrated(true), 0);
+      setTimeout(() => {
+        setIsHydrated(true);
+        useViceStore.getState().fetchVices();
+      }, 0);
+    }
+    
+    if (useTrackerStore.persist.hasHydrated()) {
+      setTimeout(() => {
+        useTrackerStore.getState().fetchItems();
+      }, 0);
     }
 
-    return () => unsub();
+    return () => {
+      unsubAuth();
+      unsubTracker();
+    };
   }, []);
 
   // Redireciona se não houver usuário (sessão perdida) - APÓS HIDRATAÇÃO
@@ -485,7 +503,7 @@ export default function BlackboardPage() {
                         {/* UI DO CONSUMO ATIVO (BOTÃO PARAR E TIMER) */}
                         <div className="absolute -top-[160px] left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-auto z-[400] scale-90">
                           <div className="bg-red-500/10 border border-red-500/30 backdrop-blur-md px-4 py-1.5 rounded-2xl mb-2 flex flex-col items-center justify-center shadow-[0_0_15px_rgba(239,68,68,0.2)] min-w-[140px]">
-                            <span className="text-[0.5rem] font-bold text-red-400 uppercase tracking-[0.15em] mb-0.5 text-center ml-[0.15em]">Não desista agora! Você consegue!</span>
+                            <span className="text-[0.5rem] font-bold text-red-400 uppercase tracking-[0.15em] mb-0.5 text-center ml-[0.15em]">TE DESAFIO A FICAR SEM!</span>
                             <span className={`font-mono font-black text-lg leading-none text-center ${activeSecondsRemaining < 0 ? 'text-red-500' : 'text-white'}`}>
                               {formatConsumingTime(activeSecondsRemaining)}
                             </span>

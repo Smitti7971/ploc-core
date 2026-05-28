@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Eye, EyeOff, Zap } from 'lucide-react';
+import { Shield, Eye, EyeOff, Zap, LineChart } from 'lucide-react';
 import { useViceStore } from '../../dashboard/components/libertesse/store/viceStore';
+import { useTrackerStore } from '../../dashboard/components/tracker/store/trackerStore';
 import { MissionAntitabagismoModal } from '@/modules/missions';
+import { TrackerOverlay } from '../../dashboard/components/tracker/components/TrackerOverlay';
+import { AmbientGlowBackground } from '../../landing/particles/AmbientGlowBackground';
 
 interface NotificationsModalProps {
   isOpen: boolean;
@@ -14,12 +17,21 @@ type TabType = 'tarefas' | 'missoes' | 'cofre';
 
 export function NotificationsModal({ isOpen, onClose, inline = false }: NotificationsModalProps) {
   const { activeVices, toggleVisibility, startConsumption } = useViceStore();
+  const { items: trackerItems, toggleCoverPhoto, addLog, fetchItems } = useTrackerStore();
   const [activeTab, setActiveTab] = useState<TabType>('tarefas');
   const [showAntitabagismo, setShowAntitabagismo] = useState(false);
   const [unlockedVault, setUnlockedVault] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [confirmingTask, setConfirmingTask] = useState<string | null>(null);
+  const [confirmingTracker, setConfirmingTracker] = useState<string | null>(null);
+  const [detailedTrackerId, setDetailedTrackerId] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchItems();
+    }
+  }, [isOpen, fetchItems]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -45,6 +57,7 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
   const isMission = (v: any) => v.isMission || v.mode === 'missao-antitabagismo';
   
   const tarefas = vices.filter(v => !isMission(v) && !v.isVulnerability);
+  const activeTrackers = Object.values(trackerItems || {}).filter(t => t.status === 'ACTIVE');
   const missoes = vices.filter(v => isMission(v) && !v.isVulnerability);
   const vulnerabilidades = vices.filter(v => v.isVulnerability);
 
@@ -70,10 +83,15 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={inline ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -20, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className={`w-full ${inline ? 'max-w-none' : 'max-w-[340px]'} bg-black/60 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col pointer-events-auto`}
+            className={`w-full ${inline ? 'max-w-none' : 'max-w-[340px]'} bg-black/80 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col pointer-events-auto relative`}
           >
+          {/* Fundo Glow Estilizado */}
+          <div className="absolute inset-0 z-0 opacity-50 pointer-events-none mix-blend-screen">
+            <AmbientGlowBackground />
+          </div>
+
           {/* Header & Tabs */}
-          <div className="flex bg-white/5 border-b border-white/10 p-1">
+          <div className="flex bg-white/5 border-b border-white/10 p-1 relative z-10">
             <button 
               onClick={() => setActiveTab('tarefas')}
               className={`flex-1 py-2 text-[11px] font-bold tracking-wider rounded-lg transition-colors ${activeTab === 'tarefas' ? 'bg-sky-400/20 text-sky-400' : 'text-white/50 hover:text-white/80 hover:bg-white/5'}`}
@@ -95,10 +113,51 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
           </div>
 
           {/* Content */}
-          <div className="p-4 max-h-[400px] overflow-y-auto custom-scrollbar">
+          <div className="p-4 max-h-[400px] overflow-y-auto custom-scrollbar relative z-10">
             {activeTab === 'tarefas' && (
               <div className="flex flex-col gap-3">
-                {tarefas.length === 0 && <p className="text-white/40 text-xs text-center py-4">Nenhuma tarefa ativa.</p>}
+                {tarefas.length === 0 && activeTrackers.length === 0 && <p className="text-white/40 text-xs text-center py-4">Nenhuma tarefa ativa.</p>}
+                
+                {/* Acompanhe (Trackers) */}
+                {activeTrackers.map(tracker => {
+                  const days = Math.floor((Date.now() - tracker.startDate) / 86400000);
+                  const showCoverPhoto = tracker.config?.showCoverPhoto !== false;
+                  return (
+                    <div key={tracker.id} className="flex flex-col gap-1">
+                      <div 
+                        onClick={() => {
+                          setDetailedTrackerId(tracker.id);
+                        }}
+                        className="bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 rounded-xl p-3 flex flex-col gap-2 cursor-pointer transition-colors relative"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <LineChart size={12} className="text-amber-400" />
+                              <span className="text-amber-400 text-sm font-bold">{tracker.name}</span>
+                            </div>
+                            <span className="text-amber-400 opacity-50 text-[10px] uppercase tracking-wider">{days} dias ativos</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleCoverPhoto(tracker.id);
+                              }}
+                              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${!showCoverPhoto ? 'bg-white/10 text-white/40 hover:text-white' : 'bg-white/20 text-white hover:bg-white/30'}`}
+                              title={!showCoverPhoto ? "Mostrar no mapa" : "Ocultar do mapa"}
+                            >
+                              {!showCoverPhoto ? <EyeOff size={14} /> : <Eye size={14} />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Popup removido a pedido, o card agora abre o TrackerOverlay direto */}
+                    </div>
+                  );
+                })}
+
+                {/* Tarefas Padrão (Libertesse) */}
                 {tarefas.map(t => {
                   const elapsedSeconds = Math.floor((Date.now() - t.startTime) / 1000);
                   const isCountUp = t.timerLimitSeconds ? elapsedSeconds >= t.timerLimitSeconds : true;
@@ -312,6 +371,9 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
           </div>
 
           <MissionAntitabagismoModal isOpen={showAntitabagismo} onClose={() => setShowAntitabagismo(false)} />
+          {detailedTrackerId && (
+            <TrackerOverlay itemId={detailedTrackerId} onClose={() => setDetailedTrackerId(null)} />
+          )}
           </motion.div>
         </div>
       )}

@@ -364,5 +364,15 @@
       "role": "assistant",
       "content": "A beleza aqui é só um reflexo de você. Vamos focar no que realmente importa: como você vai melhorar hoje?"
     }
+  ],
+  "c88a0963-b1c5-4f41-8a75-3f6cada878a5:2026-05-27": [
+    {
+      "role": "user",
+      "content": "oi"
+    },
+    {
+      "role": "assistant",
+      "content": "Você não veio aqui para trocar ideias, certo? Vamos ao que interessa. O que precisa fazer hoje?"
+    }
   ]
 }

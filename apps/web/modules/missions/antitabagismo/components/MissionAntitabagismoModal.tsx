@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { X, CigaretteOff } from 'lucide-react';
-import { MissionDuolingoPath } from './MissionDuolingoPath';
+import { MissionPathMap } from './MissionPathMap';
 import { useViceStore } from '@/modules/dashboard/components/libertesse/store/viceStore';
 
 interface MissionAntitabagismoModalProps {
@@ -63,7 +63,7 @@ export function MissionAntitabagismoModal({ isOpen, onClose }: MissionAntitabagi
 
       {/* Mapa do Tabuleiro ocupando todo o Viewport */}
       <div className="flex-1 w-full h-full pt-16">
-        <MissionDuolingoPath />
+        <MissionPathMap />
       </div>
 
     </div>

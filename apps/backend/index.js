@@ -13,6 +13,7 @@ const authMiddleware = require('./middleware/authMiddleware');
 const healthRoutes = require('./routes/healthRoutes');
 const routineRoutes = require('./routes/routineRoutes');
 const viceRoutes = require('./routes/viceRoutes');
+const trackerRoutes = require('./routes/trackerRoutes');
 
 const path = require('path');
 
@@ -126,6 +127,7 @@ app.use('/api/users', authMiddleware, userRoutes);
 app.use('/api/tasks', authMiddleware, taskRoutes);
 app.use('/api/routines', authMiddleware, routineRoutes);
 app.use('/api/vices', viceRoutes); // AuthMiddleware já está dentro do viceRoutes
+app.use('/api/tracker', authMiddleware, trackerRoutes);
 app.get('/api/ping-routines', (req, res) => res.json({ message: "Routine route is registered! 🚀" }));
 
 // Rotas de IA (Proteção agora é interna por rota)

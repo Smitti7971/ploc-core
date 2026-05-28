@@ -4,11 +4,18 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trophy, Check, Lock, Play, Sparkles, Star,
-  Activity, Shield, Heart, Zap, Award, X
+  Activity, Shield, Heart, Zap, Award, X, CheckCircle
 } from 'lucide-react';
 import { useViceStore } from '@/modules/dashboard/components/libertesse/store/viceStore';
 import { attributeEngine } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
 import { PlocAvatarClient } from '@/components/mascot/PlocAvatarClient';
+
+export interface MissionRequirement {
+  id: string;
+  type: 'count_logs' | 'count_motivators' | 'custom_action';
+  target: number;
+  label: string;
+}
 
 export interface MissionStage {
   id: number;
@@ -16,6 +23,7 @@ export interface MissionStage {
   title: string;
   desc: string;
   challenge: string;
+  requirements: MissionRequirement[];
   rewardText: string;
   rewardStats: { body?: number; mind?: number; xp?: number };
 }
@@ -27,6 +35,11 @@ export const STAGES: MissionStage[] = [
     title: "A Grande Decisão",
     desc: "A jornada de mil milhas começa com o primeiro passo.",
     challenge: "Jogue fora todos os cinzeiros, isqueiros e maços de cigarro de sua casa e escritório. Crie um ambiente 100% purificado.",
+    requirements: [
+      { id: 'consumption_logs', type: 'count_logs', target: 10, label: 'Registros de uso real de cigarro' },
+      { id: 'motivator_logs', type: 'count_motivators', target: 5, label: 'Registrar o que motivou' },
+      { id: 'profile_update', type: 'custom_action', target: 1, label: 'Atualizar dados de Liberdade' }
+    ],
     rewardText: "+15 Corpo, +10 Foco",
     rewardStats: { body: 15, xp: 10 }
   },
@@ -36,6 +49,9 @@ export const STAGES: MissionStage[] = [
     title: "Primeiras 24 Horas",
     desc: "O monóxido de carbono e a nicotina começam a deixar seu corpo.",
     challenge: "Fique 24 horas inteiras sem fumar nenhum cigarro. Quando sentir fissura, beba um copo de água extremamente gelada imediatamente.",
+    requirements: [
+      { id: 'fasting_24h', type: 'custom_action', target: 1, label: 'Alcançar 24 horas de jejum registrado' }
+    ],
     rewardText: "+20 Mente, +15 Foco",
     rewardStats: { mind: 20, xp: 15 }
   },
@@ -45,6 +61,9 @@ export const STAGES: MissionStage[] = [
     title: "Pico de Limpeza",
     desc: "Seus pulmões começam a relaxar e a capacidade respiratória aumenta.",
     challenge: "Realize 3 sessões de respiração controlada (4s inspira, 4s segura, 4s expira) hoje para acalmar a ansiedade física.",
+    requirements: [
+      { id: 'breathing_logs', type: 'custom_action', target: 3, label: 'Sessões de respiração controlada' }
+    ],
     rewardText: "+15 Corpo, +15 Mente",
     rewardStats: { body: 15, mind: 15 }
   },
@@ -54,6 +73,9 @@ export const STAGES: MissionStage[] = [
     title: "Olfato Restaurado",
     desc: "Suas terminações nervosas olfativas e gustativas voltam a crescer.",
     challenge: "Saboreie uma refeição de forma extremamente lenta hoje, listando mentalmente 3 sabores/temperos novos que você não sentia antes.",
+    requirements: [
+      { id: 'mindful_eating', type: 'custom_action', target: 1, label: 'Registrar refeição consciente' }
+    ],
     rewardText: "+20 Corpo, +20 Foco",
     rewardStats: { body: 20, xp: 20 }
   },
@@ -63,6 +85,9 @@ export const STAGES: MissionStage[] = [
     title: "Uma Semana Limpa",
     desc: "Primeiro grande marco de oxigenação corporal completa!",
     challenge: "Escreva em um papel (ou nota mental) seus 3 maiores motivos de vitória pessoal e leia-os em voz alta ao acordar.",
+    requirements: [
+      { id: 'fasting_7d', type: 'custom_action', target: 1, label: 'Alcançar 7 dias de jejum' }
+    ],
     rewardText: "+25 Mente, +30 Foco",
     rewardStats: { mind: 25, xp: 30 }
   },
@@ -72,6 +97,9 @@ export const STAGES: MissionStage[] = [
     title: "Vencendo Gatilhos",
     desc: "O cérebro reconfigura a rotina de hábitos sem nicotina.",
     challenge: "Se houver gatilho para acender um cigarro (ex: após o almoço ou estresse), faça uma caminhada rápida de 5 min ou tome um chá gelado.",
+    requirements: [
+      { id: 'resist_trigger', type: 'custom_action', target: 3, label: 'Registrar gatilhos resistidos' }
+    ],
     rewardText: "+15 Mente, +15 Foco",
     rewardStats: { mind: 15, xp: 15 }
   },
@@ -81,6 +109,9 @@ export const STAGES: MissionStage[] = [
     title: "Regeneração Física",
     desc: "A circulação sanguínea periférica e a fadiga caem drasticamente.",
     challenge: "Pratique 20 minutos de exercícios físicos moderados (corrida, agachamentos, alongamento) para comemorar seu fôlego novo.",
+    requirements: [
+      { id: 'exercise_20m', type: 'custom_action', target: 1, label: 'Registrar 20 min de exercício' }
+    ],
     rewardText: "+30 Corpo, +20 Foco",
     rewardStats: { body: 30, xp: 20 }
   },
@@ -90,6 +121,9 @@ export const STAGES: MissionStage[] = [
     title: "Pulmões Livres",
     desc: "Seus cílios bronquiais limpam as vias aéreas de resíduos antigos.",
     challenge: "Consuma pelo menos 2.5 litros de água hoje para expulsar toxinas residuais e manter sua garganta hidratada.",
+    requirements: [
+      { id: 'water_2500ml', type: 'custom_action', target: 1, label: 'Registrar 2.5L de hidratação' }
+    ],
     rewardText: "+20 Corpo, +10 Mente",
     rewardStats: { body: 20, mind: 10 }
   },
@@ -99,6 +133,9 @@ export const STAGES: MissionStage[] = [
     title: "Nova Plasticidade",
     desc: "O cérebro se acostuma à dopamina natural livre de vícios.",
     challenge: "Compartilhe sua jornada de quase um mês com alguém próximo ou tire 10 minutos para meditar em silêncio profundo.",
+    requirements: [
+      { id: 'meditation_10m', type: 'custom_action', target: 1, label: 'Registrar 10 min de meditação' }
+    ],
     rewardText: "+25 Mente, +25 Foco",
     rewardStats: { mind: 25, xp: 25 }
   },
@@ -108,6 +145,9 @@ export const STAGES: MissionStage[] = [
     title: "Liberdade Absoluta!",
     desc: "O grande troféu de ouro da reconquista da sua vida saudável.",
     challenge: "Comemore 30 dias sem cigarro! Dê um presente a si mesmo usando o dinheiro economizado no período. Você é livre!",
+    requirements: [
+      { id: 'fasting_30d', type: 'custom_action', target: 1, label: 'Alcançar 30 dias sem fumar!' }
+    ],
     rewardText: "+50 Corpo, +50 Mente, +100 Foco",
     rewardStats: { body: 50, mind: 50, xp: 100 }
   }
@@ -135,9 +175,44 @@ const NODES_CONFIG: NodeConfig[] = [
   { id: 10, x: 50, y: 96, isTrophy: true }
 ];
 
-export function MissionDuolingoPath() {
+export function MissionPathMap() {
   const { activeVices, advanceAntitabagismoLevel } = useViceStore();
-  const currentLevel = activeVices['tabagismo']?.antitabagismoLevel ?? 0;
+  const currentVice = activeVices['tabagismo'];
+  const currentLevel = currentVice?.antitabagismoLevel ?? 0;
+
+  // Motor de Progresso
+  const calculateProgress = (req: MissionRequirement) => {
+    if (!currentVice) return { current: 0, target: req.target, isCompleted: false };
+    
+    const logs = currentVice.logs || [];
+    const startTime = currentVice.startTime || new Date(0).toISOString();
+    
+    // Filtramos apenas os logs depois do início da missão atual
+    const relevantLogs = logs.filter((log: any) => new Date(log.timestamp).getTime() >= new Date(startTime).getTime());
+    
+    let current = 0;
+    
+    if (req.type === 'count_logs') {
+      current = relevantLogs.length;
+    } else if (req.type === 'count_motivators') {
+      current = relevantLogs.filter((log: any) => log.motivator && log.motivator.trim().length > 0).length;
+    } else if (req.type === 'custom_action') {
+      // Mock para ações customizadas, como a "Update Perfil" ou "Jejum 24h"
+      // Para fins de teste, permitiremos progredir automaticamente no MVP se for só isso
+      // ou então mantemos em 0 para vermos o cadeado.
+      current = 0;
+    }
+    
+    return {
+      current: Math.min(current, req.target),
+      target: req.target,
+      isCompleted: current >= req.target
+    };
+  };
+
+  const areAllRequirementsMet = (stage: MissionStage) => {
+    return stage.requirements.every(req => calculateProgress(req).isCompleted);
+  };
 
   const [selectedStage, setSelectedStage] = useState<MissionStage | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -466,13 +541,29 @@ export function MissionDuolingoPath() {
                 </p>
               </div>
 
-              <div className="bg-black/45 border border-white/5 rounded-2xl p-4 flex flex-col gap-2">
+              <div className="bg-black/45 border border-white/5 rounded-2xl p-4 flex flex-col gap-3">
                 <span className="text-[9px] font-black text-yellow-400 uppercase tracking-widest">
-                  DESAFIO DO DIA
+                  REQUISITOS DA ETAPA
                 </span>
-                <p className="text-white text-xs font-bold leading-relaxed">
-                  {selectedStage.challenge}
-                </p>
+                
+                <div className="flex flex-col gap-2.5">
+                  {selectedStage.requirements.map(req => {
+                    const { current, target, isCompleted } = calculateProgress(req);
+                    return (
+                      <div key={req.id} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle size={14} className={isCompleted ? "text-emerald-400" : "text-white/20"} />
+                          <span className={`text-xs font-medium ${isCompleted ? "text-emerald-100" : "text-white/60"}`}>
+                            {req.label}
+                          </span>
+                        </div>
+                        <span className={`text-[10px] font-black tracking-widest ${isCompleted ? "text-emerald-400" : "text-white/40"}`}>
+                          [{current}/{target}]
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="bg-white/2 flex items-center gap-3 border border-white/5 rounded-2xl p-4">
@@ -492,13 +583,27 @@ export function MissionDuolingoPath() {
               <div className="mt-2">
                 {selectedStage.id === currentLevel ? (
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => handleCompleteChallenge(selectedStage)}
-                    className="w-full py-4 rounded-2xl bg-yellow-400 hover:bg-yellow-300 text-black font-black text-sm tracking-widest uppercase flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(234,179,8,0.25)]"
+                    whileHover={areAllRequirementsMet(selectedStage) ? { scale: 1.02 } : {}}
+                    whileTap={areAllRequirementsMet(selectedStage) ? { scale: 0.98 } : {}}
+                    onClick={() => areAllRequirementsMet(selectedStage) && handleCompleteChallenge(selectedStage)}
+                    disabled={!areAllRequirementsMet(selectedStage)}
+                    className={`w-full py-4 rounded-2xl font-black text-sm tracking-widest uppercase flex items-center justify-center gap-2 transition-all ${
+                      areAllRequirementsMet(selectedStage)
+                        ? "bg-yellow-400 hover:bg-yellow-300 text-black shadow-[0_10px_25px_rgba(234,179,8,0.25)]"
+                        : "bg-white/5 border border-white/10 text-white/30 cursor-not-allowed"
+                    }`}
                   >
-                    <Zap size={16} className="fill-black" />
-                    CONCLUIR DESAFIO
+                    {areAllRequirementsMet(selectedStage) ? (
+                      <>
+                        <Zap size={16} className="fill-black" />
+                        CONCLUIR DESAFIO
+                      </>
+                    ) : (
+                      <>
+                        <Lock size={16} />
+                        REQUISITOS INCOMPLETOS
+                      </>
+                    )}
                   </motion.button>
                 ) : selectedStage.id < currentLevel ? (
                   <div className="w-full py-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-center font-bold text-xs tracking-widest uppercase">

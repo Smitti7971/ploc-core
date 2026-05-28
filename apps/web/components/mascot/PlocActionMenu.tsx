@@ -80,25 +80,6 @@ export const PlocActionMenu = forwardRef<HTMLDivElement, PlocActionMenuProps>(
             </button>
           )}
 
-          {/* Bolha de Bolsa (Inventário) */}
-          {!isSleeping && (
-            <button
-              onPointerDown={(e) => e.stopPropagation()}
-              onPointerUp={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-              onMouseUp={(e) => e.stopPropagation()}
-              onTouchStart={(e) => e.stopPropagation()}
-              onTouchEnd={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleBag?.();
-              }}
-              className="w-7 h-7 rounded-full border border-orange-500/40 flex items-center justify-center cursor-pointer shadow-[0_4px_12px_rgba(249,115,22,0.2)] transition-all duration-200 backdrop-blur-[4px] hover:scale-110 bg-slate-900/85 text-orange-400"
-              title="Abrir Bolsa"
-            >
-              <Backpack size={14} />
-            </button>
-          )}
 
           {/* Bolha de Sono (Dormir) */}
           {!isSleeping && (

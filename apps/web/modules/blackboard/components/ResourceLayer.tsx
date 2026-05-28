@@ -111,10 +111,23 @@ function ResourceBubble({ bubble }: { bubble: ResourceBubbleData }) {
         opacity: isPopping ? { duration: 0.2 } : { duration: 0.3 }
       }}
     >
-      {getIcon()}
-      <span className="text-white text-[8px] mt-0.5 font-black uppercase text-center leading-tight drop-shadow-md">
-        {bubble.name}
-      </span>
+      <div className={`absolute inset-0 rounded-full shadow-lg border-2 ${bubble.type === 'medicine' ? 'border-emerald-500/50' : 'border-white/20'} overflow-hidden`}>
+        {bubble.showCoverPhoto && bubble.coverPhoto ? (
+          <div 
+            className="w-full h-full bg-cover bg-center" 
+            style={{ backgroundImage: `url(${bubble.coverPhoto})` }}
+          />
+        ) : (
+          <div className="w-full h-full bg-black/50 backdrop-blur-sm" />
+        )}
+      </div>
+
+      <div className="relative z-10 flex flex-col items-center">
+        {!bubble.showCoverPhoto && getIcon()}
+        <span className="text-white text-[8px] mt-0.5 font-black uppercase text-center leading-tight drop-shadow-md">
+          {bubble.name}
+        </span>
+      </div>
     </motion.div>
   );
 }

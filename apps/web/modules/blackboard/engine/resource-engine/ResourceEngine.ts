@@ -8,20 +8,24 @@ export interface ResourceBubbleData {
   x: number;
   y: number;
   createdAt: number;
+  coverPhoto?: string;
+  showCoverPhoto?: boolean;
 }
 
 class ResourceEngine {
   private bubbles: ResourceBubbleData[] = [];
   private listeners: Set<() => void> = new Set();
 
-  public spawnBubble(type: ResourceType, name: string, x: number, y: number) {
+  public spawnBubble(type: ResourceType, name: string, x: number, y: number, coverPhoto?: string, showCoverPhoto?: boolean) {
     const bubble: ResourceBubbleData = {
       id: uuidv4(),
       type,
       name,
       x,
       y,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      coverPhoto,
+      showCoverPhoto
     };
     this.bubbles.push(bubble);
     this.notify();

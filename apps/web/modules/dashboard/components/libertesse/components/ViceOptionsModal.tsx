@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Activity, TrendingDown, Ban, Edit, History, XCircle } from 'lucide-react';
+import { X, Activity, TrendingDown, Ban, Edit, History, XCircle, Trophy } from 'lucide-react';
 import { useViceStore, ViceMode } from '../store/viceStore';
 import { MissionAntitabagismoModal } from '@/modules/missions';
 
@@ -177,8 +177,8 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
                   )}
 
                   <OptionCard 
-                    title="ACOMPANHE"
-                    desc="Apenas registre cada vez que usar, para ter ciência da realidade."
+                    title="SE CONHEÇA"
+                    desc="Apenas registre cada vez que usar, para ter mais autoconhecimento sobre seus hábitos."
                     icon={Activity}
                     color="#3b82f6"
                     onClick={() => setStep('form_acompanhe')}
@@ -197,10 +197,10 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
                     }}
                   />
                   <OptionCard 
-                    title="PARE"
-                    desc={viceId === 'tabagismo' ? "Inicie a Missão Antitabagismo e pare de fumar passo a passo!" : "Interrompa completamente o vício (Em breve)."}
-                    icon={Ban}
-                    color="#ef4444"
+                    title="MISSÃO"
+                    desc={viceId === 'tabagismo' ? "Inicie a Missão Antitabagismo e pare de fumar passo a passo!" : "Missão guiada para vencer definitivamente este vício (Em breve)."}
+                    icon={Trophy}
+                    color="#eab308"
                     disabled={viceId !== 'tabagismo'}
                     onClick={() => {
                       if (viceId === 'tabagismo') {
@@ -501,7 +501,7 @@ export function ViceOptionsModal({ isOpen, onClose, viceId, initialStep }: ViceO
                     disabled={!expectedFrequency}
                     className="w-full bg-[#3b82f6] text-white font-bold py-3 rounded-xl hover:bg-blue-600 disabled:opacity-50 transition-colors mt-2"
                   >
-                    INICIAR ACOMPANHAMENTO
+                    INICIAR AUTOCONHECIMENTO
                   </button>
                 </div>
               )}

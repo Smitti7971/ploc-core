@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Flame, Wine, Pill, Eye, ChevronRight, XCircle, PlusCircle } from 'lucide-react';
+import { Cigarette, Wine, EyeOff, Smartphone, Pill, Cookie, Gamepad2, ShoppingBag, Zap, ChevronRight, Wand2 } from 'lucide-react';
 import { ViceOptionsModal } from './ViceOptionsModal';
 import { useViceStore } from '../store/viceStore';
 
 export const VICES = [
-  { id: 'tabagismo', label: 'TABAGISMO', icon: Flame, color: '#ef4444', desc: 'Controle o vício em nicotina' },
-  { id: 'alcoolismo', label: 'ALCOOLISMO', icon: Wine, color: '#f59e0b', desc: 'Reduza ou pare de beber' },
-  { id: 'drogas', label: 'DROGAS', icon: Pill, color: '#a855f7', desc: 'Acompanhe seu processo' },
-  { id: 'pornografia', label: 'PORNOGRAFIA', icon: Eye, color: '#3b82f6', desc: 'Quebre o ciclo' },
-  { id: 'personalizado', label: 'PERSONALIZADO', icon: PlusCircle, color: '#10b981', desc: 'Crie seu próprio acompanhamento' },
+  { id: 'tabagismo', label: 'CIGARRO / VAPE', icon: Cigarette, color: '#f59e0b', desc: 'Missão de redução passo a passo' },
+  { id: 'alcool', label: 'ÁLCOOL', icon: Wine, color: '#ef4444', desc: 'Controle sua frequência de consumo' },
+  { id: 'pornografia', label: 'PORNOGRAFIA', icon: EyeOff, color: '#ec4899', desc: 'Aumente seus intervalos de jejum' },
+  { id: 'redes-sociais', label: 'REDES SOCIAIS', icon: Smartphone, color: '#3b82f6', desc: 'Recupere seu tempo e atenção' },
+  { id: 'drogas', label: 'DROGAS', icon: Pill, color: '#a855f7', desc: 'Conheça e controle seu processo' },
+  { id: 'doces', label: 'DOCES / AÇÚCAR', icon: Cookie, color: '#f97316', desc: 'Reduza o consumo de açúcar' },
+  { id: 'jogos', label: 'JOGOS / APOSTAS', icon: Gamepad2, color: '#10b981', desc: 'Controle o vício em dopamina' },
+  { id: 'compras', label: 'COMPRAS', icon: ShoppingBag, color: '#06b6d4', desc: 'Evite compras por impulso' },
+  { id: 'personalizado', label: 'OUTRO (PERSONALIZADO)', icon: Zap, color: '#64748b', desc: 'Crie seu próprio acompanhamento' }
 ];
 
 export function LibertesseScreen() {
@@ -49,8 +53,11 @@ export function LibertesseScreen() {
   return (
     <div className="w-full px-4 pb-6">
       <div className="mb-6 mt-2">
-        <h2 className="text-xl font-black text-white mb-2 tracking-widest">LIBERTESSE</h2>
-        <p className="text-slate-400 text-sm font-medium">Acompanhe, diminua ou pare com vícios que limitam sua liberdade.</p>
+        <h2 className="text-white font-black tracking-widest text-lg uppercase flex items-center gap-2">
+          <Wand2 size={20} className="text-sky-400" />
+          LIBERTESSE
+        </h2>
+        <p className="text-slate-400 text-sm font-medium">Se conheça, diminua ou pare com vícios que limitam sua liberdade.</p>
       </div>
 
       <div className="flex flex-col gap-4">

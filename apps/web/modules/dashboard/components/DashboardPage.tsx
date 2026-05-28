@@ -41,6 +41,9 @@ import { ViceOptionsModal } from '../components/libertesse/components/ViceOption
 import { attributeEngine } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
 import { useViceStore } from '../components/libertesse/store/viceStore';
 import { PlanejeScreen } from '../components/planeje/components/PlanejeScreen';
+import { AcompanheScreen } from '../components/tracker/components/AcompanheScreen';
+import { useTrackerStore } from '../components/tracker/store/trackerStore';
+import { TrackerOverlay } from '../components/tracker/components/TrackerOverlay';
 
 const allRoutines = Object.values(PILLARS_DATA).flatMap(pillar =>
   pillar.options.map(opt => ({
@@ -141,12 +144,18 @@ export default function DashboardPage() {
   const activeVices = useViceStore(state => state.activeVices);
   const activeVicesList = Object.values(activeVices || {});
 
+  const trackerItems = useTrackerStore(state => state.items);
+  const activeTrackers = Object.values(trackerItems || {}).filter(t => t.status === 'ACTIVE');
+  
+  const [selectedTrackerId, setSelectedTrackerId] = useState<string | null>(null);
+
 
   useEffect(() => {
     setTimeout(() => {
       setAttributes(attributeEngine.getAttributes() as unknown as Record<string, number>);
     }, 0);
     useViceStore.getState().fetchVices();
+    useTrackerStore.getState().fetchItems();
   }, []);
 
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -332,8 +341,10 @@ export default function DashboardPage() {
           >
             {/* TELA: ROTINAS ATIVAS */}
             <div className="w-full shrink-0 snap-start px-4 pb-2 flex flex-col relative pt-4">
-              {activeVicesList.length > 0 ? (
-                activeVicesList.map(activeVice => {
+              {activeVicesList.length > 0 || activeTrackers.length > 0 ? (
+                <>
+                {/* Renderizar Vices */}
+                {activeVicesList.map(activeVice => {
                   const isMission = activeVice.mode === 'missao-antitabagismo';
                   return (
                     <div key={activeVice.viceId} className={`mb-6 border rounded-2xl p-4 flex flex-col gap-3 ${
@@ -405,7 +416,62 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   );
-                })
+                })}
+
+                {/* Renderizar Trackers do Acompanhe */}
+                {activeTrackers.map(tracker => {
+                  const days = Math.floor((Date.now() - tracker.startDate) / (1000 * 60 * 60 * 24));
+                  const showCoverPhoto = tracker.config?.showCoverPhoto !== false;
+                  
+                  return (
+                    <div 
+                      key={tracker.id} 
+                      onClick={() => setSelectedTrackerId(tracker.id)}
+                      className="mb-6 border rounded-2xl p-4 flex flex-col gap-3 bg-amber-950/30 border-amber-500/30 relative overflow-hidden group cursor-pointer hover:bg-amber-950/50 transition-colors"
+                    >
+                      
+                      {/* Background Image */}
+                      {showCoverPhoto && tracker.coverPhoto && (
+                        <>
+                          <div 
+                            className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-luminosity transition-opacity group-hover:opacity-60 pointer-events-none"
+                            style={{ backgroundImage: `url(${tracker.coverPhoto})` }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-[#0f1115]/60 to-transparent pointer-events-none" />
+                        </>
+                      )}
+
+                      <div className="relative z-10 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-amber-500/20">
+                            <LineChart size={18} className="text-amber-500" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold tracking-widest uppercase text-amber-400">
+                              Acompanhe Ativo
+                            </p>
+                            <h3 className="text-white text-sm font-extrabold tracking-widest uppercase">
+                              {tracker.name}
+                            </h3>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-slate-400 text-[0.6rem] font-bold tracking-widest uppercase">Acompanhado há</p>
+                          <p className="text-white text-xs font-extrabold">{days} dias</p>
+                        </div>
+                      </div>
+                      <div className="relative z-10 flex gap-2">
+                        <div
+                          className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl backdrop-blur-md transition-colors flex items-center justify-center gap-2 text-[0.6rem] tracking-widest"
+                        >
+                          <Edit size={14} />
+                          EDITAR
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                </>
               ) : (
                 <div className="flex-1 flex items-center justify-center opacity-50">
                   <span className="text-slate-400 font-bold text-sm">Nenhuma rotina ativa no momento.</span>
@@ -511,7 +577,13 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {activeMethod !== 'rotinas' && activeMethod !== 'libertesse' && activeMethod !== 'planeje' && (
+      {activeMethod === 'acompanhe' && (
+        <div className="flex-1 min-h-0 w-full relative flex flex-col pt-2">
+          <AcompanheScreen />
+        </div>
+      )}
+
+      {activeMethod !== 'rotinas' && activeMethod !== 'libertesse' && activeMethod !== 'planeje' && activeMethod !== 'acompanhe' && (
         <div className="flex-1 min-h-0 w-full flex flex-col items-center px-6 pb-24 overflow-y-auto pt-8">
           {(() => {
             const methodDef = METHODS.find(m => m.id === activeMethod);
@@ -619,6 +691,13 @@ export default function DashboardPage() {
         viceId={selectedViceId}
         initialStep={modalInitialStep}
       />
+
+      {selectedTrackerId && (
+        <TrackerOverlay 
+          itemId={selectedTrackerId} 
+          onClose={() => setSelectedTrackerId(null)} 
+        />
+      )}
     </div>
   );
 }

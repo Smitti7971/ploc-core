@@ -80,9 +80,12 @@ model User {
   stats                UserStats?
   statTransactions     StatTransaction[]
   taskExecutions       TaskExecution[]
-  // Libertesse (Vícios)
+  // Libertesse (Vícios) - A ser descontinuado
   vices                Vice[]
   viceLogs             ViceLog[]
+  // Rastreamento Universal (Acompanhe, Libertesse V2, etc)
+  trackerItems         TrackerItem[]
+  trackerLogs          TrackerLog[]
 }
 
 model UserStats {
@@ -287,6 +290,70 @@ model ViceLog {
   createdAt         DateTime @default(now())
 
   @@index([viceId])
+  @@index([userId])
+  @@index([type])
+}
+
+// --- RASTREAMENTO UNIVERSAL (Acompanhe, Vícios, Hábitos) ---
+
+model TrackerItem {
+  id               String   @id @default(uuid())
+  type             String   // 'medicine', 'vice', 'habit', 'savings', etc
+  name             String   // Nome da tarefa/item
+  description      String?  // Propósito/Finalidade
+  status           String   @default("ACTIVE") // 'ACTIVE', 'PAUSED', 'COMPLETED'
+  coverPhoto       String?  // URL da foto no MinIO
+
+  // Configurações e Condições (Flexible JSON)
+  // Ex: { "conditions": ["Jejum", "Antes de dormir"], "frequency": "daily" }
+  config           Json?    @default("{}")
+
+  // Prazos e Tempos
+  startDate        DateTime @default(now())
+  endDate          DateTime?
+
+  // Relações e Lógicas
+  correlations     Json?    @default("{}") // Ex: { "dependsOn": ["id1"], "triggers": ["id2"] }
+
+  // Timers e Controles de Execução em Andamento (Herdados do Libertesse)
+  isConsuming      Boolean  @default(false)
+  consumptionStart BigInt?
+  defaultTimer     Int      @default(300)
+
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  logs             TrackerLog[]
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId])
+  @@index([type])
+}
+
+model TrackerLog {
+  id               String   @id @default(uuid())
+  
+  trackerItemId    String
+  trackerItem      TrackerItem @relation(fields: [trackerItemId], references: [id], onDelete: Cascade)
+
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type             String   // 'consumption', 'expense', 'start', 'end', 'milestone'
+  timestamp        BigInt
+  
+  // Detalhes flexíveis de Log
+  photoUrl         String?  // Foto tirada na hora do log (MinIO)
+  info             String?  // Observações livres ou motivadores
+  durationSeconds  Int?     // Tempo de duração da execução
+  value            Float?   // Custo (dinheiro) ou outra métrica
+  metadata         Json?    @default("{}") // Qualquer dado extra do log
+
+  createdAt        DateTime @default(now())
+
+  @@index([trackerItemId])
   @@index([userId])
   @@index([type])
 }
