@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Play, Pause, Activity } from 'lucide-react';
-import { TrackerItem } from '../store/trackerStore';
+import { TrackerItem, useTrackerStore } from '../store/trackerStore';
 
 interface TrackerStatusCardProps {
   item: TrackerItem;
@@ -67,6 +67,18 @@ export function TrackerStatusCard({ item, onClick }: TrackerStatusCardProps) {
           <p className="text-white/60 text-xs font-medium mt-1 truncate">
             {calculateDays()} dias registrados
           </p>
+          {(() => {
+            const logs = useTrackerStore.getState().logs.filter(l => l.trackerItemId === item.id);
+            if (logs.length > 0) {
+              const lastLog = logs.sort((a,b) => b.timestamp - a.timestamp)[0];
+              return (
+                <p className="text-white/40 text-[10px] mt-0.5 truncate">
+                  Último registro: {new Date(lastLog.timestamp).toLocaleDateString('pt-BR')}
+                </p>
+              );
+            }
+            return null;
+          })()}
         </div>
       </div>
     </motion.div>

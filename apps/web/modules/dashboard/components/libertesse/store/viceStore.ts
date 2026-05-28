@@ -135,17 +135,47 @@ export const useViceStore = create<ViceStore>()(
           const vices = await apiService.get<ViceResponse[]>('/vices');
           if (vices && vices.length > 0) {
             const newActiveVices: Record<string, ActiveVice> = {};
+            const autoEndedLogs: ViceLog[] = [];
+            
             vices.forEach(v => {
+              let isConsuming = v.isConsuming;
+              let startTime = Number(v.startTime);
+              let consumptionStartTime = v.consumptionStartTime ? Number(v.consumptionStartTime) : undefined;
+              
+              // Verifica se a bolha foi deixada aberta (consumo) por mais tempo que o default (ex: 5 min)
+              if (isConsuming && consumptionStartTime) {
+                const elapsedSeconds = (Date.now() - consumptionStartTime) / 1000;
+                const limit = v.defaultConsumptionSeconds || 300;
+                if (elapsedSeconds > limit) {
+                  isConsuming = false;
+                  startTime = Date.now();
+                  
+                  // Gera o log de finalização automatica
+                  const actualSecondsUsed = limit;
+                  const fastingSeconds = Math.floor((Date.now() - startTime) / 1000) - actualSecondsUsed;
+                  autoEndedLogs.push({
+                    id: crypto.randomUUID(),
+                    viceId: v.viceId,
+                    type: 'consumption',
+                    timestamp: Date.now(),
+                    durationSeconds: actualSecondsUsed,
+                    fastingSeconds: Math.max(0, fastingSeconds),
+                    motivator: v.currentMotivator || 'Auto-encerrado'
+                  });
+                  consumptionStartTime = undefined;
+                }
+              }
+
               newActiveVices[v.viceId] = {
                 viceId: v.viceId,
                 customName: v.customName,
                 mode: v.mode,
-                startTime: Number(v.startTime),
+                startTime,
                 expectedFrequency: v.expectedFrequency,
                 timerLimitSeconds: v.timerLimitSeconds,
                 reductionTarget: v.reductionTarget,
-                isConsuming: v.isConsuming,
-                consumptionStartTime: v.consumptionStartTime ? Number(v.consumptionStartTime) : undefined,
+                isConsuming,
+                consumptionStartTime,
                 defaultConsumptionSeconds: v.defaultConsumptionSeconds,
                 costPerUse: v.costPerUse,
                 currentMotivator: v.currentMotivator,
@@ -157,13 +187,21 @@ export const useViceStore = create<ViceStore>()(
 
             set({
               activeVices: newActiveVices,
-              logs: vices.flatMap(v => 
-                (v.logs || []).map((l: ViceLogResponse) => ({
-                  ...l,
-                  viceId: v.viceId,
-                  timestamp: Number(l.timestamp)
-                }))
-              )
+              logs: [
+                ...vices.flatMap(v => 
+                  (v.logs || []).map((l: ViceLogResponse) => ({
+                    ...l,
+                    viceId: v.viceId,
+                    timestamp: Number(l.timestamp)
+                  }))
+                ),
+                ...autoEndedLogs
+              ]
+            });
+            
+            // Sync any auto-ended logs
+            autoEndedLogs.forEach(log => {
+               syncLogToBackend(log).catch(console.error);
             });
           }
         } catch (error) {

@@ -23,7 +23,7 @@ export const AuthCapsule: React.FC = () => {
   const pathname = usePathname();
   
   const isSettings = pathname === '/settings';
-  const isPlocPage = pathname === '/ploc';
+  const isPlocPage = pathname === '/ploc' || pathname === '/'; // Blackboard now at /
 
   // Se estivermos nas páginas onde o UserHeader não deve aparecer (para evitar colisão visual), ocultamos.
   if (isAuthenticated && (isSettings || isPlocPage)) {

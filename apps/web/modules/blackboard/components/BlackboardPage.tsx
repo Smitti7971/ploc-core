@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * @module BlackboardPage
@@ -7,37 +7,60 @@
  * a interação com o mascote virtual.
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
-import { useAuthStore } from '@/store/authStore';
-import { useRouter } from 'next/navigation';
-import { PlocAvatarClient } from '@/components/mascot/PlocAvatarClient';
-import { Target, ZoomIn, ZoomOut, Plus, Map, Grid3X3, Activity as ActivityIcon, Menu, Bell } from 'lucide-react';
-import { motion, AnimatePresence, useMotionValue, useTransform, useMotionValueEvent, animate } from 'framer-motion';
-import { DockMenu } from '@/components/layout/DockMenu';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
+import { useAuthStore } from "@/store/authStore";
+import { useRouter } from "next/navigation";
+import { PlocAvatarClient } from "@/components/mascot/PlocAvatarClient";
+import {
+  Trophy,
+  Clock,
+  Target,
+  Grid3X3,
+  Map,
+  Play,
+  Pause,
+  Square,
+  Activity as ActivityIcon,
+  Menu,
+  Bell,
+  ZoomIn,
+  ZoomOut,
+  Plus,
+} from "lucide-react";
+import { UserHeader } from "@/components/layout/UserHeader";
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useTransform,
+  useMotionValueEvent,
+  animate,
+} from "framer-motion";
+import { DockMenu } from "@/components/layout/DockMenu";
 
-import { AttributeMonitor } from './AttributeMonitor';
-import { bubbleEngine } from '../engine/bubble-engine/BubbleEngine';
-import { BlackboardBubble } from '../types/bubbles';
-import { blackboardEventBus, BLACKBOARD_EVENTS } from '../events/eventBus';
-import { ViceBubble } from '../../dashboard/components/libertesse/components/ViceBubble';
-import { attributeEngine, UserAttributes } from '../engine/attribute-engine/AttributeEngine';
-import { PILLARS_CONFIG, isPillarProfileFilled } from './AttributePillars';
+import { AttributeMonitor } from "./AttributeMonitor";
+import { bubbleEngine } from "../engine/bubble-engine/BubbleEngine";
+import { BlackboardBubble } from "../types/bubbles";
+import { blackboardEventBus, BLACKBOARD_EVENTS } from "../events/eventBus";
+import { ViceBubble } from "../../dashboard/components/libertesse/components/ViceBubble";
+import {
+  attributeEngine,
+  UserAttributes,
+} from "../engine/attribute-engine/AttributeEngine";
+import { PILLARS_CONFIG, isPillarProfileFilled } from "./AttributePillars";
 
 // Components extraídos
-import { NotificationsModal } from './NotificationsModal';
-import { ResourceLayer } from './ResourceLayer';
-import { resourceEngine } from '../engine/resource-engine/ResourceEngine';
+import { NotificationsModal } from "./NotificationsModal";
+import { ResourceLayer } from "./ResourceLayer";
+import { resourceEngine } from "../engine/resource-engine/ResourceEngine";
 
-import { AmbientGlowBackground } from '../../landing/particles/AmbientGlowBackground';
-import { Vignette } from '../../landing/particles/Vignette';
-import { useViceStore } from '../../dashboard/components/libertesse/store/viceStore';
-import { useTrackerStore } from '../../dashboard/components/tracker/store/trackerStore';
-import { usePlocSpeech } from '../../../components/mascot/usePlocSpeech';
-import { usePlocStateStore } from '../../mascot/store/plocStateStore';
-
-
-
+import { AmbientGlowBackground } from "../../landing/particles/AmbientGlowBackground";
+import { Vignette } from "../../landing/particles/Vignette";
+import { useViceStore } from "../../dashboard/components/libertesse/store/viceStore";
+import { useTrackerStore } from "../../dashboard/components/tracker/store/trackerStore";
+import { usePlocSpeech } from "../../../components/mascot/usePlocSpeech";
+import { usePlocStateStore } from "../../mascot/store/plocStateStore";
 
 export default function BlackboardPage() {
   const { user } = useAuthStore();
@@ -63,7 +86,7 @@ export default function BlackboardPage() {
         useViceStore.getState().fetchVices();
       }, 0);
     }
-    
+
     if (useTrackerStore.persist.hasHydrated()) {
       setTimeout(() => {
         useTrackerStore.getState().fetchItems();
@@ -78,8 +101,8 @@ export default function BlackboardPage() {
 
   // Redireciona se não houver usuário (sessão perdida) - APÓS HIDRATAÇÃO
   useEffect(() => {
-    if (isHydrated && !user && typeof window !== 'undefined') {
-      router.push('/');
+    if (isHydrated && !user && typeof window !== "undefined") {
+      router.push("/");
     }
   }, [isHydrated, user, router]);
 
@@ -89,17 +112,21 @@ export default function BlackboardPage() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const scale = 1; // Constante mantida para compatibilidade visual dos filhos
-  const [plocReaction, setPlocReaction] = useState<'idle' | 'happy' | 'stressed' | 'dizzy'>('idle');
+  const [plocReaction, setPlocReaction] = useState<
+    "idle" | "happy" | "stressed" | "dizzy"
+  >("idle");
   const [score, setScore] = useState(attributeEngine.getScore());
 
   // Janela de tempo baseada no modo de visualização
 
-
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [plocState] = useState<{ emotion: string, energy: number, lastAction: string }>({ emotion: 'calm', energy: 50, lastAction: 'none' });
+  const [plocState] = useState<{
+    emotion: string;
+    energy: number;
+    lastAction: string;
+  }>({ emotion: "calm", energy: 50, lastAction: "none" });
   const [plocMessage, setPlocMessage] = useState<string | null>(null);
-
 
   const mapX = useMotionValue(0);
   const mapY = useMotionValue(0);
@@ -107,12 +134,12 @@ export default function BlackboardPage() {
 
   // --- RESPONSIVE ZOOM FOR MOBILE ---
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const isMobile = window.innerWidth < 768;
       if (isMobile) {
         // Ajusta o zoom inicial no Mobile para caber a bolha do Ploc inteira (500px + margem)
         const idealScale = window.innerWidth / 550;
-        mapScale.set(Math.min(idealScale, 0.70));
+        mapScale.set(Math.min(idealScale, 0.7));
       }
     }
   }, [mapScale]);
@@ -161,21 +188,35 @@ export default function BlackboardPage() {
 
   // === LÓGICA DE CONSUMO ATIVO (LIBERTESSE) E ALERTAS ===
   const { activeVices, endConsumption, cancelConsumption } = useViceStore();
-  const activeConsumingVice = Object.values(activeVices).find(v => v.isConsuming);
+  const activeConsumingVice = Object.values(activeVices).find(
+    (v) => v.isConsuming,
+  );
 
-  const plocMood = usePlocStateStore(state => state.mood);
+  const plocMood = usePlocStateStore((state) => state.mood);
 
-  const getAvatarEmotion = useCallback((): 'calm' | 'happy' | 'stressed' | 'pissed' | 'sleeping' | 'dizzy' => {
-    if (activeConsumingVice?.isConsuming) return 'dizzy';
-    if (plocReaction !== 'idle') return plocReaction as any;
+  const getAvatarEmotion = useCallback(():
+    | "calm"
+    | "happy"
+    | "stressed"
+    | "pissed"
+    | "sleeping"
+    | "dizzy" => {
+    if (activeConsumingVice?.isConsuming) return "dizzy";
+    if (plocReaction !== "idle") return plocReaction as any;
 
     switch (plocMood) {
-      case 'ILUMINADO': return 'happy';
-      case 'FELIZ': return 'calm';
-      case 'APÁTICO': return 'calm';
-      case 'CHATEADO': return 'stressed';
-      case 'RAIVA': return 'pissed';
-      default: return 'calm';
+      case "ILUMINADO":
+        return "happy";
+      case "FELIZ":
+        return "calm";
+      case "APÁTICO":
+        return "calm";
+      case "CHATEADO":
+        return "stressed";
+      case "RAIVA":
+        return "pissed";
+      default:
+        return "calm";
     }
   }, [plocMood, plocReaction, activeConsumingVice?.isConsuming]);
 
@@ -188,12 +229,18 @@ export default function BlackboardPage() {
       const activeBubbles = bubbleEngine.getActiveBubbles();
       const vices = Object.values(useViceStore.getState().activeVices || {});
 
-      const pending = (Object.keys(PILLARS_CONFIG) as Array<keyof UserAttributes>).some(key => {
+      const pending = (
+        Object.keys(PILLARS_CONFIG) as Array<keyof UserAttributes>
+      ).some((key) => {
         if (attributes[key] > 0) return false;
         const config = PILLARS_CONFIG[key];
-        const tasks = activeBubbles.filter(b => config.habits.includes((b.metadata as { habit?: string })?.habit || ''));
+        const tasks = activeBubbles.filter((b) =>
+          config.habits.includes(
+            (b.metadata as { habit?: string })?.habit || "",
+          ),
+        );
         if (tasks.length > 0) return false;
-        if (key === 'liberdade' && vices.length > 0) return false;
+        if (key === "liberdade" && vices.length > 0) return false;
         if (isPillarProfileFilled(key)) return false;
         return true;
       });
@@ -209,15 +256,20 @@ export default function BlackboardPage() {
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (activeConsumingVice?.isConsuming && activeConsumingVice.consumptionStartTime) {
+    if (
+      activeConsumingVice?.isConsuming &&
+      activeConsumingVice.consumptionStartTime
+    ) {
       interval = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - activeConsumingVice.consumptionStartTime!) / 1000);
+        const elapsed = Math.floor(
+          (Date.now() - activeConsumingVice.consumptionStartTime!) / 1000,
+        );
         setConsumptionElapsed(elapsed);
 
-        // Auto-encerra quando zera o cronômetro
+        // Auto-encerra quando passa de 5 minutos
         const limit = 300; // Fixo em 5 minutos
         if (elapsed >= limit) {
-          endConsumption(activeConsumingVice.viceId, elapsed);
+          endConsumption(activeConsumingVice.viceId, limit);
         }
       }, 1000);
     } else {
@@ -225,13 +277,19 @@ export default function BlackboardPage() {
       return () => clearTimeout(timeout);
     }
     return () => clearInterval(interval);
-  }, [activeConsumingVice?.isConsuming, activeConsumingVice?.consumptionStartTime, activeConsumingVice?.defaultConsumptionSeconds, activeConsumingVice?.viceId, endConsumption]);
+  }, [
+    activeConsumingVice?.isConsuming,
+    activeConsumingVice?.consumptionStartTime,
+    activeConsumingVice?.defaultConsumptionSeconds,
+    activeConsumingVice?.viceId,
+    endConsumption,
+  ]);
 
   const formatConsumingTime = (seconds: number) => {
     const absSeconds = Math.abs(seconds);
     const m = Math.floor(absSeconds / 60);
     const s = absSeconds % 60;
-    return `${seconds < 0 ? '+' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${seconds < 0 ? "+" : ""}${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
   const activeSecondsRemaining = 300 - consumptionElapsed;
   // ============================================
@@ -246,8 +304,8 @@ export default function BlackboardPage() {
       setMinScale(Math.max(0.1, vh / 3000));
     };
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useMotionValueEvent(mapX, "change", (latestX) => {
@@ -258,7 +316,12 @@ export default function BlackboardPage() {
     if (distance > 500 && !showMinimap && !userClosedMinimap.current) {
       setShowMinimap(true);
       autoOpenedMinimap.current = true;
-    } else if (distance <= 500 && showMinimap && autoOpenedMinimap.current && !userClosedMinimap.current) {
+    } else if (
+      distance <= 500 &&
+      showMinimap &&
+      autoOpenedMinimap.current &&
+      !userClosedMinimap.current
+    ) {
       setShowMinimap(false);
       autoOpenedMinimap.current = false;
     }
@@ -291,14 +354,14 @@ export default function BlackboardPage() {
       mapScale.set(newScale);
     };
 
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    return () => container.removeEventListener('wheel', handleWheel);
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    return () => container.removeEventListener("wheel", handleWheel);
   }, [minScale, mapScale]);
 
   const recenterMap = () => {
-    animate(mapX, 0, { type: 'spring', stiffness: 300, damping: 30 });
-    animate(mapY, 0, { type: 'spring', stiffness: 300, damping: 30 });
-    animate(mapScale, 1, { type: 'spring', stiffness: 300, damping: 30 });
+    animate(mapX, 0, { type: "spring", stiffness: 300, damping: 30 });
+    animate(mapY, 0, { type: "spring", stiffness: 300, damping: 30 });
+    animate(mapScale, 1, { type: "spring", stiffness: 300, damping: 30 });
   };
 
   const zoomIn = () => {
@@ -316,25 +379,33 @@ export default function BlackboardPage() {
   // Então scale 1.5 = w-24 h-24, scale minScale = w-8 h-8
   const miniViewportSize = useTransform(mapScale, [1.5, minScale], [24, 8]);
 
-
   useEffect(() => {
-    const unsubscribe = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED, (change: { pillar: string; value: number }) => {
-      if (change.pillar === 'foco') {
-        setScore(change.value);
-      }
-    });
+    const unsubscribe = blackboardEventBus.subscribe(
+      BLACKBOARD_EVENTS.ATTRIBUTE_CHANGED,
+      (change: { pillar: string; value: number }) => {
+        if (change.pillar === "foco") {
+          setScore(change.value);
+        }
+      },
+    );
     // Reações do Ploc a eventos das bolhas
-    const unsubscribeTimeout = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_TIMEOUT, (bubble: BlackboardBubble) => {
-      setPlocReaction('dizzy');
-      setTimeout(() => setPlocReaction('idle'), 2000);
-    });
+    const unsubscribeTimeout = blackboardEventBus.subscribe(
+      BLACKBOARD_EVENTS.BUBBLE_TIMEOUT,
+      (bubble: BlackboardBubble) => {
+        setPlocReaction("dizzy");
+        setTimeout(() => setPlocReaction("idle"), 2000);
+      },
+    );
 
-    const unsubscribeExplosion = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_EXPLODED, (bubble: BlackboardBubble & { collided?: boolean; value?: string }) => {
-      if (bubble?.collided) return;
-      const isNegative = bubble && bubble.value === 'negative';
-      setPlocReaction(isNegative ? 'dizzy' : 'happy');
-      setTimeout(() => setPlocReaction('idle'), 1500);
-    });
+    const unsubscribeExplosion = blackboardEventBus.subscribe(
+      BLACKBOARD_EVENTS.BUBBLE_EXPLODED,
+      (bubble: BlackboardBubble & { collided?: boolean; value?: string }) => {
+        if (bubble?.collided) return;
+        const isNegative = bubble && bubble.value === "negative";
+        setPlocReaction(isNegative ? "dizzy" : "happy");
+        setTimeout(() => setPlocReaction("idle"), 1500);
+      },
+    );
 
     return () => {
       unsubscribe();
@@ -350,48 +421,45 @@ export default function BlackboardPage() {
     }
   }, [user]);
 
-
-
-
-
-
-
   // Bubble Engine Subscription & Event Listeners
   useEffect(() => {
-    const unsubscribe = bubbleEngine.subscribe(() => { });
+    const unsubscribe = bubbleEngine.subscribe(() => {});
 
-    const onExplode = (bubble: BlackboardBubble & { collided?: boolean; value?: string }) => {
+    const onExplode = (
+      bubble: BlackboardBubble & { collided?: boolean; value?: string },
+    ) => {
       if (bubble?.collided) return;
-      setPlocReaction('happy');
+      setPlocReaction("happy");
       setTimeout(() => {
-        setPlocReaction('idle');
+        setPlocReaction("idle");
       }, 3000);
     };
 
     const onTimeout = () => {
-      setPlocReaction('dizzy');
+      setPlocReaction("dizzy");
       setTimeout(() => {
-        setPlocReaction('idle');
+        setPlocReaction("idle");
       }, 3000);
     };
 
     blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_EXPLODED, onExplode);
     blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_TIMEOUT, onTimeout);
 
-    const unsubReaction = blackboardEventBus.subscribe(BLACKBOARD_EVENTS.PLOC_REACTION, (data: { message?: string }) => {
-      setPlocMessage(data.message || null);
-      if (data.message) {
-        setTimeout(() => setPlocMessage(null), 4000);
-      }
-    });
+    const unsubReaction = blackboardEventBus.subscribe(
+      BLACKBOARD_EVENTS.PLOC_REACTION,
+      (data: { message?: string }) => {
+        setPlocMessage(data.message || null);
+        if (data.message) {
+          setTimeout(() => setPlocMessage(null), 4000);
+        }
+      },
+    );
 
     return () => {
       unsubscribe();
       unsubReaction();
     };
   }, []);
-
-
 
   return (
     <div
@@ -407,7 +475,12 @@ export default function BlackboardPage() {
       >
         <motion.div
           drag
-          dragConstraints={{ left: -1500, right: 1500, top: -1500, bottom: 1500 }}
+          dragConstraints={{
+            left: -1500,
+            right: 1500,
+            top: -1500,
+            bottom: 1500,
+          }}
           dragElastic={0}
           dragMomentum={true}
           style={{ x: mapX, y: mapY }}
@@ -431,14 +504,11 @@ export default function BlackboardPage() {
                    linear-gradient(90deg, rgba(56, 189, 248, 0.02) 1px, transparent 1px)`
                   : `radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px)`,
                 backgroundSize: showGrid
-                  ? '100px 100px, 100px 100px, 20px 20px, 20px 20px'
-                  : '40px 40px'
+                  ? "100px 100px, 100px 100px, 20px 20px, 20px 20px"
+                  : "40px 40px",
               }}
             >
-
               {/* Minimapa / HUD Renderizado por Fora, mas Grid aplicada aqui para senso de direção */}
-
-
 
               <div
                 id="ploc-anchor"
@@ -448,25 +518,36 @@ export default function BlackboardPage() {
                   className="absolute left-0 top-0 pointer-events-none flex items-center justify-center"
                   initial={{ x: "-50%", y: "-50%", scale: 1.0 }}
                   animate={{
-                    x: plocReaction === 'dizzy' ? ["-50%", "-52%", "-48%", "-52%", "-48%", "-50%"] : "-50%",
+                    x:
+                      plocReaction === "dizzy"
+                        ? ["-50%", "-52%", "-48%", "-52%", "-48%", "-50%"]
+                        : "-50%",
                     y: "-50%",
                     // Escalonamento Fixo: O elemento cancela o zoom do mapa perfeitamente,
                     // garantindo que fique sempre no tamanho base (100px).
-                    scale: (plocReaction === 'happy' ? 1.1 : 1.0) * (1 / scale),
+                    scale: (plocReaction === "happy" ? 1.1 : 1.0) * (1 / scale),
                   }}
                   transition={{
-                    scale: { type: 'spring', stiffness: 300, damping: 20 },
-                    x: { duration: 0.4 }
+                    scale: { type: "spring", stiffness: 300, damping: 20 },
+                    x: { duration: 0.4 },
                   }}
                 >
                   {/* A BOLHA DO PLOC (SONAR DE 500px) - Otimizada para Celular */}
                   <motion.div
-                    animate={!activeConsumingVice?.isConsuming ? {
-                      scale: [1, 1.02, 0.98, 1],
-                    } : {
-                      scale: 1,
+                    animate={
+                      !activeConsumingVice?.isConsuming
+                        ? {
+                            scale: [1, 1.02, 0.98, 1],
+                          }
+                        : {
+                            scale: 1,
+                          }
+                    }
+                    transition={{
+                      duration: 6,
+                      repeat: Infinity,
+                      ease: "easeInOut",
                     }}
-                    transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
                     className="absolute w-[500px] h-[500px] rounded-full border border-sky-400/15 bg-sky-400/2 flex items-center justify-center pointer-events-none z-0"
                   >
                     <span className="absolute top-[25px] text-[9px] font-bold text-sky-400/40 uppercase tracking-[0.25em]">
@@ -496,15 +577,22 @@ export default function BlackboardPage() {
                         className="absolute inset-0 z-20 pointer-events-none"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        exit={{ opacity: 0, transition: { duration: 1.5, ease: "easeInOut" } }}
+                        exit={{
+                          opacity: 0,
+                          transition: { duration: 1.5, ease: "easeInOut" },
+                        }}
                       >
                         {/* FUMAÇA DE FRENTE removida para otimização de performance */}
 
                         {/* UI DO CONSUMO ATIVO (BOTÃO PARAR E TIMER) */}
                         <div className="absolute -top-[160px] left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-auto z-[400] scale-90">
                           <div className="bg-red-500/10 border border-red-500/30 backdrop-blur-md px-4 py-1.5 rounded-2xl mb-2 flex flex-col items-center justify-center shadow-[0_0_15px_rgba(239,68,68,0.2)] min-w-[140px]">
-                            <span className="text-[0.5rem] font-bold text-red-400 uppercase tracking-[0.15em] mb-0.5 text-center ml-[0.15em]">TE DESAFIO A FICAR SEM!</span>
-                            <span className={`font-mono font-black text-lg leading-none text-center ${activeSecondsRemaining < 0 ? 'text-red-500' : 'text-white'}`}>
+                            <span className="text-[0.5rem] font-bold text-red-400 uppercase tracking-[0.15em] mb-0.5 text-center ml-[0.15em]">
+                              TE DESAFIO A FICAR SEM!
+                            </span>
+                            <span
+                              className={`font-mono font-black text-lg leading-none text-center ${activeSecondsRemaining < 0 ? "text-red-500" : "text-white"}`}
+                            >
                               {formatConsumingTime(activeSecondsRemaining)}
                             </span>
                           </div>
@@ -512,14 +600,22 @@ export default function BlackboardPage() {
                             <button
                               onClick={() => {
                                 cancelConsumption(activeConsumingVice.viceId);
-                                speak("Essa é a melhor escolha que fez!!", 4000);
+                                speak(
+                                  "Essa é a melhor escolha que fez!!",
+                                  4000,
+                                );
                               }}
                               className="bg-zinc-700/80 hover:bg-zinc-600 text-white font-bold px-4 py-2.5 rounded-xl text-[0.55rem] tracking-widest transition-colors shadow-lg whitespace-nowrap backdrop-blur-md"
                             >
                               NÃO VOU CEDER!
                             </button>
                             <button
-                              onClick={() => endConsumption(activeConsumingVice.viceId, consumptionElapsed)}
+                              onClick={() =>
+                                endConsumption(
+                                  activeConsumingVice.viceId,
+                                  consumptionElapsed,
+                                )
+                              }
                               className="bg-red-500 hover:bg-red-600 text-white font-black px-5 py-2.5 rounded-xl text-[0.6rem] tracking-widest transition-colors shadow-lg whitespace-nowrap"
                             >
                               CEDER
@@ -536,9 +632,9 @@ export default function BlackboardPage() {
                 <AnimatePresence>
                   {plocMessage && (
                     <motion.div
-                      initial={{ opacity: 0, y: 20, scale: 0.8, x: '-50%' }}
-                      animate={{ opacity: 1, y: -110, scale: 1, x: '-50%' }}
-                      exit={{ opacity: 0, scale: 0.8, x: '-50%' }}
+                      initial={{ opacity: 0, y: 20, scale: 0.8, x: "-50%" }}
+                      animate={{ opacity: 1, y: -110, scale: 1, x: "-50%" }}
+                      exit={{ opacity: 0, scale: 0.8, x: "-50%" }}
                       className="absolute left-0 w-max max-w-[280px] bg-slate-900/90 backdrop-blur-xl px-5 py-3 rounded-3xl text-white text-[0.85rem] font-extrabold text-center shadow-[0_20px_40px_rgba(0,0,0,0.4)] border border-sky-400/30 z-[300] pointer-events-none"
                     >
                       {plocMessage}
@@ -549,116 +645,124 @@ export default function BlackboardPage() {
                 </AnimatePresence>
 
                 {/* Bolhas de Pensamento do Libertesse (Controle de Vícios) */}
-                {Object.keys(activeVices).filter(viceId => !activeVices[viceId].isHidden && !activeVices[viceId].isVulnerability).map((viceId, index, array) => (
-                  <ViceBubble
-                    key={viceId}
-                    viceId={viceId}
-                    canvasScale={scale}
-                    index={index}
-                    total={array.length}
-                  />
-                ))}
-
-
+                {Object.keys(activeVices)
+                  .filter(
+                    (viceId) =>
+                      !activeVices[viceId].isHidden &&
+                      !activeVices[viceId].isVulnerability,
+                  )
+                  .map((viceId, index, array) => (
+                    <ViceBubble
+                      key={viceId}
+                      viceId={viceId}
+                      canvasScale={scale}
+                      index={index}
+                      total={array.length}
+                    />
+                  ))}
               </div>
-
               {/* Bolhas da Wave removidas para otimização de performance */}
             </div>
           </motion.div>
         </motion.div>
-
-        {/* Interface / HUD (Fixo) */}
       </div>
 
-
-      <div className="fixed top-[25px] left-[25px] flex items-start gap-3 z-[100001] pointer-events-none">
-        {/* Menu 1: Grid e Map */}
-        <div className="flex items-center bg-black/40 border border-white/10 backdrop-blur-md rounded-full p-1 shadow-[0_4px_20px_rgba(0,0,0,0.5)] pointer-events-auto gap-1">
+      <div className="fixed top-[25px] left-0 w-full px-6 flex justify-between items-start z-[100001] pointer-events-none">
+        {/* Botões à esquerda */}
+        <div className="flex items-center bg-black/40 border border-white/10 backdrop-blur-md rounded-full p-1 shadow-[0_4px_20px_rgba(0,0,0,0.5)] pointer-events-auto gap-1 h-[46px]">
           <motion.button
             whileHover={{ scale: 1.1 }}
             onClick={() => setShowGrid(!showGrid)}
-            className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shrink-0 transition-colors ${showGrid ? 'bg-sky-400/20 text-sky-400' : 'bg-white/5 text-white/70 hover:text-white hover:bg-white/10'}`}
+            className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shrink-0 transition-colors ${showGrid ? "bg-sky-400/20 text-sky-400" : "bg-white/5 text-white/70 hover:text-white hover:bg-white/10"}`}
             title="Grade"
           >
             <Grid3X3 size={16} />
           </motion.button>
+
           <motion.button
             whileHover={{ scale: 1.1 }}
             onClick={() => {
               userClosedMinimap.current = showMinimap;
               setShowMinimap(!showMinimap);
             }}
-            className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shrink-0 transition-colors ${showMinimap ? 'bg-sky-400/20 text-sky-400' : 'bg-white/5 text-white/70 hover:text-white hover:bg-white/10'}`}
+            className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shrink-0 transition-colors ${showMinimap ? "bg-sky-400/20 text-sky-400" : "bg-white/5 text-white/70 hover:text-white hover:bg-white/10"}`}
             title="Minimapa"
           >
             <Map size={16} />
           </motion.button>
-        </div>
 
-        {/* Menu 2: Status/Missão */}
-        <div className="relative pointer-events-auto">
-          <div className="flex items-center bg-black/40 border border-white/10 backdrop-blur-md rounded-full p-1 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowStatusMenu(!showStatusMenu)}
-              className={`h-9 px-4 rounded-full flex items-center justify-center gap-2 cursor-pointer transition-colors ${showStatusMenu ? 'bg-purple-400/20 text-purple-400' : 'bg-white/5 text-white/70 hover:text-white hover:bg-white/10'}`}
-            >
-              <ActivityIcon size={16} />
-              <span className="text-[12px] font-black tracking-[1.5px] font-display">STATUS</span>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowStatusMenu(!showStatusMenu)}
+            className={`w-9 h-9 rounded-full flex items-center justify-center relative cursor-pointer transition-colors ${showStatusMenu ? "bg-purple-400/20 text-purple-400" : "bg-white/5 text-white/70 hover:text-white hover:bg-white/10"}`}
+            title="Status"
+          >
+            <ActivityIcon size={16} />
 
-              {/* Badge de atenção (Novidades/Ações necessárias) */}
-              {hasPendingPillars && (
-                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-yellow-400 rounded-full border-[1.5px] border-black/80 flex items-center justify-center shadow-[0_0_8px_rgba(250,204,21,0.6)] animate-pulse">
-                  <span className="text-black text-[10px] font-black leading-none mt-[1px]">!</span>
+            {/* Badge de atenção (Novidades/Ações necessárias) */}
+            {hasPendingPillars && (
+              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-yellow-400 rounded-full border-[1.5px] border-black/80 flex items-center justify-center shadow-[0_0_8px_rgba(250,204,21,0.6)] animate-pulse">
+                <span className="text-black text-[10px] font-black leading-none mt-[1px]">
+                  !
                 </span>
-              )}
-            </motion.button>
-          </div>
-
-          {/* Dropdown de Status (Pilares + Modal de Tarefas) */}
-          <AnimatePresence>
-            {showStatusMenu && (
-              <>
-                {/* Backdrop invisível para clique fora */}
-                <div
-                  className="fixed inset-0 z-[100004]"
-                  onClick={() => setShowStatusMenu(false)}
-                />
-
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="fixed top-[80px] left-1/2 -translate-x-1/2 w-[calc(100vw-32px)] sm:w-[360px] flex flex-col gap-3 pointer-events-auto z-[100005]"
-                >
-                  {/* Pilares */}
-                  <div className="p-4 relative z-10">
-                    <AttributeMonitor
-                      inline
-                      onClose={() => setShowStatusMenu(false)}
-                      onTooltipChange={(t) => setIsPillarActive(!!t)}
-                    />
-                  </div>
-
-                  {/* Tarefas e Cofre */}
-                  <AnimatePresence>
-                    {!isPillarActive && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0, transition: { duration: 0.15 } }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <NotificationsModal inline isOpen={true} onClose={() => setShowStatusMenu(false)} />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              </>
+              </span>
             )}
-          </AnimatePresence>
+          </motion.button>
         </div>
+
+        {/* UserHeader à direita */}
+        <div className="flex items-center justify-center pointer-events-auto h-[46px]">
+          <UserHeader />
+        </div>
+      </div>
+
+      {/* Dropdown de Status (Pilares + Modal de Tarefas) */}
+      <div className="pointer-events-none fixed inset-0 z-[100002]">
+        <AnimatePresence>
+          {showStatusMenu && (
+            <>
+              <div
+                className="absolute inset-0 pointer-events-auto"
+                onClick={() => setShowStatusMenu(false)}
+              />
+
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="absolute top-[80px] left-6 w-[calc(100vw-48px)] sm:w-[360px] max-h-[80vh] overflow-y-auto no-scrollbar flex flex-col gap-3 pointer-events-auto rounded-3xl"
+              >
+                {/* Pilares */}
+                <div className="p-4 relative z-10">
+                  <AttributeMonitor
+                    inline
+                    onClose={() => setShowStatusMenu(false)}
+                    onTooltipChange={(t) => setIsPillarActive(!!t)}
+                  />
+                </div>
+
+                {/* Tarefas e Cofre */}
+                <AnimatePresence>
+                  {!isPillarActive && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0, transition: { duration: 0.15 } }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <NotificationsModal
+                        inline
+                        isOpen={true}
+                        onClose={() => setShowStatusMenu(false)}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Botão de DEBUG temporário para gamificação */}
@@ -666,9 +770,9 @@ export default function BlackboardPage() {
         <button
           onClick={() => {
             // As coordenadas são relativas ao Ploc (0,0)
-            resourceEngine.spawnBubble('food', 'Maçã', 0, -150);
-            resourceEngine.spawnBubble('water', 'Água', -100, -120);
-            resourceEngine.spawnBubble('medicine', 'Medicina', 100, -120);
+            resourceEngine.spawnBubble("food", "Maçã", 0, -150);
+            resourceEngine.spawnBubble("water", "Água", -100, -120);
+            resourceEngine.spawnBubble("medicine", "Medicina", 100, -120);
           }}
           className="bg-purple-600/80 hover:bg-purple-500 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-[10px] font-bold shadow-[0_0_15px_rgba(168,85,247,0.3)] border border-purple-400/30 flex items-center gap-1 transition-all"
         >
@@ -701,13 +805,23 @@ export default function BlackboardPage() {
             >
               {/* Controles de Câmera */}
               <div className="flex items-center justify-between w-[100px] bg-black/40 border border-white/10 backdrop-blur-md rounded-xl p-1 pointer-events-auto shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
-                <button onClick={zoomOut} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 text-white/70 hover:text-white transition-colors">
+                <button
+                  onClick={zoomOut}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+                >
                   <ZoomOut size={16} />
                 </button>
-                <button onClick={recenterMap} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 text-sky-400 transition-colors" title="Centralizar no Ploc">
+                <button
+                  onClick={recenterMap}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 text-sky-400 transition-colors"
+                  title="Centralizar no Ploc"
+                >
                   <Target size={16} />
                 </button>
-                <button onClick={zoomIn} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 text-white/70 hover:text-white transition-colors">
+                <button
+                  onClick={zoomIn}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+                >
                   <ZoomIn size={16} />
                 </button>
               </div>
@@ -715,15 +829,23 @@ export default function BlackboardPage() {
               {/* Minimapa */}
               <div className="w-[100px] h-[100px] rounded-xl bg-black/60 border border-white/10 backdrop-blur-md overflow-hidden pointer-events-none shadow-[0_4px_20px_rgba(0,0,0,0.5)] relative flex items-center justify-center">
                 {/* Grade Interna do Minimapa */}
-                <div className="absolute inset-0 opacity-20" style={{
-                  backgroundImage: `radial-gradient(rgba(255, 255, 255, 1) 1px, transparent 1px)`,
-                  backgroundSize: '10px 10px'
-                }}></div>
+                <div
+                  className="absolute inset-0 opacity-20"
+                  style={{
+                    backgroundImage: `radial-gradient(rgba(255, 255, 255, 1) 1px, transparent 1px)`,
+                    backgroundSize: "10px 10px",
+                  }}
+                ></div>
 
                 {/* Indicador de Viewport (Câmera) com tamanho responsivo ao zoom */}
                 <motion.div
                   className="absolute top-1/2 left-1/2 rounded-full border border-sky-400/80 bg-sky-400/20 shadow-[0_0_8px_rgba(56,189,248,0.5)] transform -translate-x-1/2 -translate-y-1/2 origin-center"
-                  style={{ x: miniDotX, y: miniDotY, width: miniViewportSize, height: miniViewportSize }}
+                  style={{
+                    x: miniDotX,
+                    y: miniDotY,
+                    width: miniViewportSize,
+                    height: miniViewportSize,
+                  }}
                 />
               </div>
             </motion.div>
@@ -731,11 +853,8 @@ export default function BlackboardPage() {
         </AnimatePresence>
       </div>
 
-
-
       {/* ── Menu de Navegação Global (Dock) ────────────────── */}
       <DockMenu />
     </div>
   );
 }
-

@@ -33,23 +33,7 @@ export function AcompanheScreen() {
 
   return (
     <div className="w-full flex flex-col px-4 pb-24 h-full overflow-y-auto">
-      {/* Header Acompanhe */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center gap-3 relative my-6"
-      >
-        <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center relative overflow-hidden text-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.15)]">
-          <div className="absolute inset-0 bg-amber-400/5 animate-pulse" />
-          <LineChart size={28} />
-        </div>
-        <h3 className="text-white font-black text-2xl tracking-widest uppercase mt-1">
-          Acompanhe
-        </h3>
-        <p className="text-slate-400 text-center text-[0.8rem] font-medium leading-relaxed max-w-[280px]">
-          Monitore métricas, hábitos complexos e uso de medicamentos.
-        </p>
-      </motion.div>
+      {/* O header grande foi removido conforme solicitação */}
 
       {/* Grid de Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

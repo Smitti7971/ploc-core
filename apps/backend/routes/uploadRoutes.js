@@ -24,7 +24,7 @@ const upload = multer({
 // Rota de Ping para Diagnóstico
 router.get('/ping', (req, res) => res.json({ message: "Rota de Upload está VIVA! 🚀" }));
 
-// Rota de Upload Único (Autenticação removida temporariamente para TESTE)
-router.post('/upload', upload.single('file'), uploadController.upload);
+// Rota de Upload Único (Autenticação adicionada novamente)
+router.post('/upload', authMiddleware, upload.single('file'), uploadController.upload);
 
 module.exports = router;

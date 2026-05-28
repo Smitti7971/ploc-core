@@ -44,6 +44,32 @@ exports.deleteMe = async (req, res) => {
   }
 };
 
+exports.updatePlocState = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { plocState } = req.body;
+    
+    const prisma = require('../config/database');
+    await prisma.userStats.upsert({
+      where: { userId },
+      update: {
+        plocState: plocState,
+        lastPlocSync: new Date()
+      },
+      create: {
+        userId,
+        plocState: plocState,
+        lastPlocSync: new Date()
+      }
+    });
+
+    res.json({ message: "Estado do Ploc atualizado com sucesso!" });
+  } catch (error) {
+    console.error('❌ Erro ao sincronizar PlocState:', error.message);
+    res.status(500).json({ error: 'Erro ao sincronizar estado do Mascote' });
+  }
+};
+
 exports.seedUsers = async (req, res) => {
   try {
     const result = await userService.seedTestData();

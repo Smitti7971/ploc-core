@@ -26,6 +26,13 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
   const [confirmingTracker, setConfirmingTracker] = useState<string | null>(null);
   const [detailedTrackerId, setDetailedTrackerId] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -62,7 +69,18 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
   const vulnerabilidades = vices.filter(v => v.isVulnerability);
 
   const formatDays = (startTime: number) => {
-    return Math.floor((Date.now() - startTime) / 86400000);
+    return Math.floor((now - startTime) / 86400000);
+  };
+
+  const formatTime = (seconds: number) => {
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+
+    if (d > 0) return `${d}d ${h}h ${m}m`;
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    return `${m}m ${s}s`;
   };
 
   const handleVaultUnlock = () => {
@@ -135,9 +153,18 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
                             setConfirmingTracker(null);
                           }
                         }}
-                        className={`border rounded-xl p-3 flex flex-col gap-2 cursor-pointer transition-colors relative ${isActive ? 'bg-sky-500/20 border-sky-500/40 hover:bg-sky-500/30' : 'bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/20'}`}
+                        className={`border rounded-xl p-3 flex flex-col gap-2 cursor-pointer transition-colors overflow-hidden relative ${isActive ? 'bg-sky-500/20 border-sky-500/40 hover:bg-sky-500/30' : 'bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/20'}`}
                       >
-                        <div className="flex items-center justify-between">
+                        {showCoverPhoto && tracker.coverPhoto && (
+                          <>
+                            <div 
+                              className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-luminosity pointer-events-none"
+                              style={{ backgroundImage: `url(${tracker.coverPhoto})` }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent pointer-events-none" />
+                          </>
+                        )}
+                        <div className="flex items-center justify-between relative z-10">
                           <div className="flex flex-col">
                             <div className="flex items-center gap-2">
                               <LineChart size={12} className={isActive ? 'text-sky-400' : 'text-amber-400'} />
@@ -173,7 +200,7 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
                               <input 
                                 type="text" 
                                 placeholder="Registrar valor (opcional)..." 
-                                className="flex-1 bg-black/40 border border-sky-500/30 rounded-lg px-2 text-xs text-white outline-none focus:border-sky-500/60 transition-colors"
+                                className="flex-1 min-w-0 bg-black/40 border border-sky-500/30 rounded-lg px-2 text-xs text-white outline-none focus:border-sky-500/60 transition-colors"
                                 id={`quick-tracker-${tracker.id}`}
                                 onClick={(e) => e.stopPropagation()}
                               />
@@ -182,15 +209,16 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
                                   e.stopPropagation();
                                   const valStr = (document.getElementById(`quick-tracker-${tracker.id}`) as HTMLInputElement)?.value;
                                   const store = useTrackerStore.getState();
+                                  const valNum = Number(valStr);
                                   store.addLog({
                                     trackerItemId: tracker.id,
                                     type: 'consumption',
-                                    info: 'Registro Rápido via pop-up',
-                                    value: valStr ? Number(valStr) : 1
+                                    info: valStr || 'Registro Rápido via pop-up',
+                                    value: (!isNaN(valNum) && valStr) ? valNum : 1
                                   });
                                   setConfirmingTracker(null);
                                 }}
-                                className="bg-sky-500/20 text-sky-400 hover:bg-sky-500/40 py-2 px-3 rounded-lg text-xs font-bold transition-colors"
+                                className="bg-sky-500/20 text-sky-400 hover:bg-sky-500/40 py-2 px-3 rounded-lg text-xs font-bold transition-colors shrink-0"
                               >
                                 SALVAR
                               </button>
@@ -204,10 +232,16 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
 
                 {/* Tarefas Padrão (Libertesse) */}
                 {tarefas.map(t => {
-                  const elapsedSeconds = Math.floor((Date.now() - t.startTime) / 1000);
+                  const elapsedSeconds = Math.floor((now - t.startTime) / 1000);
                   const isCountUp = t.timerLimitSeconds ? elapsedSeconds >= t.timerLimitSeconds : true;
                   const isResistaPhase = t.mode === 'diminua' && !isCountUp;
                   const isAcompanhe = t.mode === 'acompanhe';
+                  
+                  const displayedSeconds = t.timerLimitSeconds
+                    ? (isCountUp ? elapsedSeconds - t.timerLimitSeconds : t.timerLimitSeconds - elapsedSeconds)
+                    : elapsedSeconds;
+
+                  const timeString = formatTime(displayedSeconds);
                   
                   const bgClass = isAcompanhe 
                     ? 'bg-white/5 border-white/5 hover:bg-white/10'
@@ -244,7 +278,9 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
                         <div className="flex items-center justify-between">
                           <div className="flex flex-col">
                             <span className={`${textClass} text-sm font-bold`}>{t.customName || t.viceId.toUpperCase()}</span>
-                            <span className={`${textClass} opacity-50 text-[10px] uppercase tracking-wider`}>{formatDays(t.startTime)} dias ativos</span>
+                            <span className={`${textClass} opacity-80 text-[11px] font-mono mt-0.5 tracking-wider font-black`}>
+                              ⏱ {timeString}
+                            </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <button 
@@ -262,6 +298,19 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
                         {t.mode === 'diminua' && (
                           <div className={`text-[10px] uppercase font-bold tracking-wider mt-1 ${isResistaPhase ? 'text-red-500' : 'text-emerald-500'}`}>
                             {isResistaPhase ? '⚠️ Não pode ceder ao impulso' : '✅ Impulso Liberado'}
+                          </div>
+                        )}
+                        {/* Display Timer if Consuming */}
+                        {t.isConsuming && t.consumptionStartTime && (
+                          <div className="text-xs font-bold text-red-500 mt-1 flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                            Tempo de Uso Ativo!
+                          </div>
+                        )}
+                        {/* Ultimo Registro */}
+                        {useViceStore.getState().logs?.filter(l => l.viceId === t.viceId && l.type === 'consumption').length > 0 && (
+                          <div className="text-[9px] text-white/40 mt-1">
+                            Último registro: {new Date(useViceStore.getState().logs.filter(l => l.viceId === t.viceId && l.type === 'consumption').sort((a,b) => b.timestamp - a.timestamp)[0].timestamp).toLocaleDateString('pt-BR')}
                           </div>
                         )}
                       </div>
@@ -287,6 +336,7 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
                                 onClick={() => {
                                   startConsumption(t.viceId, "");
                                   setConfirmingTask(null);
+                                  onClose(); // Close modal when clicking 'Ceder'
                                 }}
                                 className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors ${btnClass}`}
                               >

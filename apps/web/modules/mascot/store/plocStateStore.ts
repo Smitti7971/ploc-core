@@ -19,6 +19,7 @@ interface PlocStateStore {
   thirst: number; // 0 a 100
   fatigue: number; // 0 a 100
   spoiledEatenCount: number;
+  lastTickAt: number;
   
   // Derivados
   mood: PlocMood;
@@ -37,6 +38,10 @@ interface PlocStateStore {
   
   // Util
   _calculateMood: (hunger: number, thirst: number, fatigue: number, spoiledEatenCount: number) => PlocMood;
+  
+  // Backend Sync
+  syncWithBackend: () => Promise<void>;
+  loadFromBackend: (data: any) => void;
 }
 
 const MAX_NEED = 100;
@@ -49,6 +54,7 @@ export const usePlocStateStore = create<PlocStateStore>()(
       thirst: 100, // 100% = Hidratado/Saudável
       fatigue: 100, // 100% = Cheio de energia
       spoiledEatenCount: 0,
+      lastTickAt: Date.now(),
       mood: 'FELIZ',
       inventory: [],
 
@@ -71,10 +77,16 @@ export const usePlocStateStore = create<PlocStateStore>()(
       tick: () => {
         const now = Date.now();
         set(state => {
-          // Diminuir Fome, Sede e Energia em 1% a cada tick (1 minuto)
-          const newHunger = Math.max(0, state.hunger - 1); // -1 por tick
-          const newThirst = Math.max(0, state.thirst - 1); // -1 por tick
-          const newFatigue = Math.max(0, state.fatigue - 1); // -1 por tick
+          const lastTick = state.lastTickAt || now;
+          const minutesElapsed = Math.floor((now - lastTick) / 60000);
+          
+          // Se não passou 1 minuto ainda, não decai, mas atualiza validade. Se passou muito tempo, compensa.
+          const decay = Math.max(1, minutesElapsed);
+
+          // Diminuir Fome, Sede e Energia baseado no tempo passado
+          const newHunger = Math.max(0, state.hunger - decay);
+          const newThirst = Math.max(0, state.thirst - decay);
+          const newFatigue = Math.max(0, state.fatigue - decay);
           
           // Checar validade dos itens
           const updatedInventory = state.inventory.map(item => {
@@ -89,9 +101,11 @@ export const usePlocStateStore = create<PlocStateStore>()(
             thirst: newThirst,
             fatigue: newFatigue,
             inventory: updatedInventory,
+            lastTickAt: now,
             mood: get()._calculateMood(newHunger, newThirst, newFatigue, state.spoiledEatenCount)
           };
         });
+        get().syncWithBackend();
       },
 
       eat: (item: PlocItem, source: 'direct' | 'stored') => {
@@ -152,6 +166,7 @@ export const usePlocStateStore = create<PlocStateStore>()(
             mood: get()._calculateMood(newHunger, newThirst, state.fatigue, newSpoiledEatenCount)
           };
         });
+        get().syncWithBackend();
       },
 
       store: (itemData) => {
@@ -166,6 +181,7 @@ export const usePlocStateStore = create<PlocStateStore>()(
             }
           ]
         }));
+        get().syncWithBackend();
       },
 
       dropItem: (itemData) => {
@@ -187,6 +203,42 @@ export const usePlocStateStore = create<PlocStateStore>()(
             mood: get()._calculateMood(state.hunger, state.thirst, newFatigue, 0)
           };
         });
+        get().syncWithBackend();
+      },
+
+      syncWithBackend: async () => {
+        const { apiService } = await import('@/services/api');
+        const state = get();
+        try {
+          await apiService.put('/users/me/ploc', {
+            plocState: {
+              hunger: state.hunger,
+              thirst: state.thirst,
+              fatigue: state.fatigue,
+              spoiledEatenCount: state.spoiledEatenCount,
+              mood: state.mood,
+              inventory: state.inventory,
+              lastTickAt: state.lastTickAt
+            }
+          });
+        } catch (error) {
+          console.error("Erro ao sincronizar Ploc com o backend", error);
+        }
+      },
+
+      loadFromBackend: (data: any) => {
+        if (!data) return;
+        set({
+          hunger: data.hunger ?? 100,
+          thirst: data.thirst ?? 100,
+          fatigue: data.fatigue ?? 100,
+          spoiledEatenCount: data.spoiledEatenCount ?? 0,
+          mood: data.mood ?? 'FELIZ',
+          inventory: data.inventory ?? [],
+          lastTickAt: data.lastTickAt ?? Date.now(),
+        });
+        // Roda um tick inicial para calcular offline decay imediato
+        get().tick();
       }
     }),
     {

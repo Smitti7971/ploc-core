@@ -40,6 +40,10 @@ export const getAssetUrl = (url?: string | null) => {
     if (url.includes('localhost:') && typeof window !== 'undefined') {
       return url.replace(/^https?:\/\/localhost:\d+/, backendRoot);
     }
+    // Proteção automática contra Mixed Content para imagens da CDN:
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
+      return url.replace('http://', 'https://');
+    }
     return url;
   }
 

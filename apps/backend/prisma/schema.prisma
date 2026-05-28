@@ -112,6 +112,10 @@ model UserStats {
   // Consistência
   streakDays       Int      @default(0)
 
+  // Mascot State (Mochila, Humor, Vitais)
+  plocState        Json?
+  lastPlocSync     DateTime?
+
   lastCalculatedAt DateTime?
 
   createdAt        DateTime @default(now())

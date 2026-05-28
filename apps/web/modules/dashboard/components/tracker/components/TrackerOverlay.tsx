@@ -194,8 +194,18 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
           dragConstraints={{ top: 0, bottom: 0 }}
           onDragEnd={handleDragEnd}
           dragElastic={0.2}
-          className="flex-1 w-full flex flex-col relative bg-[#0a0c0a]"
+          className="flex-1 w-full flex flex-col relative bg-[#0a0c0a] overflow-hidden"
         >
+          {showCoverPhoto && item.coverPhoto && (
+            <>
+              <div 
+                className="absolute inset-0 bg-cover bg-center opacity-10 mix-blend-luminosity pointer-events-none"
+                style={{ backgroundImage: `url(${item.coverPhoto})` }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-[#0a0c0a]/50 via-[#0a0c0a]/80 to-[#0a0c0a] pointer-events-none" />
+            </>
+          )}
+
           <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-white/20 rounded-full z-[1000006]" />
 
           {/* Hidden file input for log photos */}
@@ -208,14 +218,14 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
           />
 
           {/* Header */}
-          <div className="relative h-28 bg-zinc-900 shrink-0 flex flex-col justify-end p-4 border-b border-white/5">
+          <div className="relative h-28 shrink-0 flex flex-col justify-end p-4 border-b border-white/5 bg-transparent">
             {showCoverPhoto && item.coverPhoto && (
               <div 
-                className="absolute inset-0 bg-cover bg-center opacity-50 mix-blend-luminosity"
+                className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-luminosity"
                 style={{ backgroundImage: `url(${item.coverPhoto})` }}
               />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0c0a] via-[#0a0c0a]/50 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0c0a] via-[#0a0c0a]/40 to-transparent pointer-events-none" />
             
             {/* Top Right Controls */}
             <div 

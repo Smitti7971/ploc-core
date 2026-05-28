@@ -131,8 +131,8 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
         vy.current = (vy.current - 2 * dot * ny) * 0.8 + pvy * 0.55;
       }
 
-      // 4. Quique elástico na Parede Circular externa do Sonar de 500px (raio 160px)
-      const maxRadius = 160;
+      // 4. Quique elástico na Parede Circular externa do Sonar de 500px (raio 160px orig -> 110px para evitar clip)
+      const maxRadius = 110;
       const distFromCenter = Math.sqrt(nextX * nextX + nextY * nextY);
       if (distFromCenter > maxRadius) {
         const ratio = maxRadius / distFromCenter;

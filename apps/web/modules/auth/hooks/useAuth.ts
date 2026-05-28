@@ -64,6 +64,13 @@ export function useAuth() {
       updateUser(response);
       // Mantém os dados antigos e mescla com os novos (stats)
       localStorage.setItem('ploc_user', JSON.stringify({ ...user, ...response }));
+      
+      // Carrega estado do ploc do backend
+      if ((response as any)?.stats?.plocState) {
+        const { usePlocStateStore } = await import('@/modules/mascot/store/plocStateStore');
+        usePlocStateStore.getState().loadFromBackend((response as any).stats.plocState);
+      }
+      
       return response;
     } catch (err) {
       console.error('❌ Falha ao atualizar perfil:', err);

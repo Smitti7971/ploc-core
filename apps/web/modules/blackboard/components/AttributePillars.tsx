@@ -141,7 +141,7 @@ export function AttributePillars({
                     delay: index * 0.4
                   }
                 }}
-                className="w-12 h-12 sm:w-[60px] sm:h-[60px] rounded-full flex flex-col items-center justify-center relative cursor-help pointer-events-auto shrink-0"
+                className="w-[50px] h-[50px] min-w-[50px] sm:w-[60px] sm:h-[60px] rounded-full flex flex-col items-center justify-center relative cursor-help pointer-events-auto shrink-0"
                 style={{
                   background: 'rgba(20,25,30,0.85)',
                   border: `1px solid ${isActive ? statusColor : statusColor + '40'}`,

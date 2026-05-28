@@ -95,7 +95,16 @@ function ResourceBubble({ bubble }: { bubble: ResourceBubbleData }) {
     };
 
     const unsubscribe = blackboardEventBus.subscribe('PLOC_DRAG_MOVE', handlePlocMove);
-    return () => unsubscribe();
+    
+    // Auto-decay after 45 seconds to prevent map clutter
+    const decayTimer = setTimeout(() => {
+      if (!isPopping) resourceEngine.removeBubble(bubble.id);
+    }, 45000);
+
+    return () => {
+      unsubscribe();
+      clearTimeout(decayTimer);
+    };
   }, [bubble, eat, store, isPopping]);
 
   const handleClick = (e: React.MouseEvent) => {

@@ -6,6 +6,7 @@ const userController = require('../controllers/userController');
 router.get('/me', userController.getMe);
 router.put('/me', userController.updateMe);
 router.delete('/me', userController.deleteMe);
+router.put('/me/ploc', userController.updatePlocState);
 
 // Rota para listar usuários (Adm/Debug)
 router.get('/', userController.getAllUsers);
