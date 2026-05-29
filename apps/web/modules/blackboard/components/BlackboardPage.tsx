@@ -261,7 +261,7 @@ export default function BlackboardPage() {
     let interval: NodeJS.Timeout;
     if (
       activeConsumingVice?.isConsuming &&
-      activeConsumingVice.consumptionStartTime
+      activeConsumingVice.consumptionStart
     ) {
       interval = setInterval(() => {
         const elapsed = Math.floor(
