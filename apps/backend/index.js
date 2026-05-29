@@ -64,11 +64,12 @@ const allowedOrigins = [
 // --- CONFIGURAÇÃO DE CORS ---
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
+    // Permite qualquer origem que contenha 'midializando.cloud', ou localhost
+    if (!origin || origin.includes('midializando.cloud') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      callback(null, origin || true);
     } else {
       console.warn(`Tentativa de acesso bloqueada por CORS da origem: ${origin}`);
-      callback(new Error('Acesso negado por CORS'));
+      callback(null, false); // false = não permite, mas não quebra a app
     }
   },
   credentials: true,
