@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useMotionValue } from 'framer-motion';
 import { Flame, Wine, WineOff, Pill, Eye, EyeOff, Check, Cigarette, CigaretteOff, X, RotateCcw, History } from 'lucide-react';
-import { useViceStore } from '../store/viceStore';
-import { ViceOptionsModal } from './ViceOptionsModal';
+import { useTrackerStore } from '../../tracker/store/trackerStore';
 import { blackboardEventBus, BLACKBOARD_EVENTS } from '@/modules/blackboard/events/eventBus';
 import { usePlocSpeech } from '@/components/mascot/usePlocSpeech';
 
@@ -36,8 +35,8 @@ interface ViceBubbleProps {
 }
 
 export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: ViceBubbleProps) {
-  const { activeVices, removeActiveVice, startConsumption, addFastingTime, setDefaultConsumptionSeconds } = useViceStore();
-  const activeVice = activeVices[viceId];
+  const { items, removeItem, startConsumption, setItem } = useTrackerStore();
+  const activeVice = items[viceId];
   const { speak } = usePlocSpeech();
 
   const [showMotivatorModal, setShowMotivatorModal] = useState(false);
@@ -163,9 +162,9 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
     };
   }, [index]);
   useEffect(() => {
-    if (activeVice?.mode === 'diminua' && activeVice.timerLimitSeconds) {
+    if (activeVice?.config?.mode === 'diminua' && activeVice.config?.timerLimitSeconds) {
       const updateTimer = () => {
-        const elapsedSeconds = Math.floor((Date.now() - activeVice.startTime) / 1000);
+        const elapsedSeconds = Math.floor((Date.now() - activeVice.startDate) / 1000);
         setElapsed(elapsedSeconds);
       };
       updateTimer();
@@ -176,14 +175,14 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
 
   if (!activeVice) return null;
 
-  const isCountUp = activeVice?.timerLimitSeconds
-    ? elapsed >= activeVice.timerLimitSeconds
+  const isCountUp = activeVice?.config?.timerLimitSeconds
+    ? elapsed >= activeVice.config.timerLimitSeconds
     : true;
 
   // Decide qual ícone usar com base no modo e fase (resista vs meta atingida)
-  const isResistaPhase = activeVice.mode === 'diminua' && !isCountUp;
-  const Icon = isResistaPhase ? (VICE_ICONS_OFF[activeVice.viceId] || Flame) : (VICE_ICONS_ON[activeVice.viceId] || Flame);
-  const color = VICE_COLORS[activeVice.viceId] || '#ef4444';
+  const isResistaPhase = activeVice.config?.mode === 'diminua' && !isCountUp;
+  const Icon = isResistaPhase ? (VICE_ICONS_OFF[activeVice.config?.viceId] || Flame) : (VICE_ICONS_ON[activeVice.config?.viceId] || Flame);
+  const color = VICE_COLORS[activeVice.config?.viceId] || '#ef4444';
 
   const formatTime = (seconds: number) => {
     const d = Math.floor(seconds / 86400);
@@ -197,15 +196,15 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
   };
 
 
-  const displayedSeconds = activeVice?.timerLimitSeconds
-    ? (isCountUp ? elapsed - activeVice.timerLimitSeconds : activeVice.timerLimitSeconds - elapsed)
+  const displayedSeconds = activeVice?.config?.timerLimitSeconds
+    ? (isCountUp ? elapsed - activeVice.config.timerLimitSeconds : activeVice.config.timerLimitSeconds - elapsed)
     : elapsed;
 
   const handleBubbleClick = () => {
     setShowMotivatorModal(true);
     setShowResistInput(false);
 
-    if (activeVice?.mode === 'diminua' && !isCountUp) {
+    if (activeVice?.config?.mode === 'diminua' && !isCountUp) {
       const phrases = [
         "Você tem certeza disso?",
         "Não ceda agora, você consegue!",
@@ -226,7 +225,7 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
   };
 
   const handleRegistrar = () => {
-    startConsumption(viceId, "");
+    startConsumption(viceId);
 
     setShowMotivatorModal(false);
   };
@@ -234,7 +233,28 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
   const handleResistMore = (minsOverride?: number) => {
     const mins = minsOverride !== undefined ? minsOverride : parseInt(resistMinutes, 10);
     if (!isNaN(mins) && mins > 0) {
-      addFastingTime(viceId, mins * 60);
+      const additionalSeconds = mins * 60;
+      const currentElapsed = Math.floor((Date.now() - activeVice.startDate) / 1000);
+      const currentLimit = activeVice.config?.timerLimitSeconds || 0;
+      
+      let newStartDate = activeVice.startDate;
+      let newLimit = currentLimit;
+
+      if (currentElapsed >= currentLimit) {
+        newStartDate = Date.now();
+        newLimit = additionalSeconds;
+      } else {
+        newLimit = currentLimit + additionalSeconds;
+      }
+
+      setItem({
+        ...activeVice,
+        startDate: newStartDate,
+        config: {
+          ...activeVice.config,
+          timerLimitSeconds: newLimit
+        }
+      });
       setShowMotivatorModal(false);
       setShowResistInput(false);
     }
@@ -271,26 +291,26 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
           onClick={handleBubbleClick}
           className="w-[60px] h-[60px] flex flex-col items-center justify-center cursor-pointer relative group rounded-full backdrop-blur-sm"
           style={{
-            backgroundColor: activeVice.mode === 'diminua' ? 'rgba(20,25,30,0.85)' : `${color}30`,
-            border: `1px solid ${activeVice.mode === 'diminua' ? (!isCountUp ? '#ef4444' : '#10b981') : `${color}60`}`,
+            backgroundColor: activeVice.config?.mode === 'diminua' ? 'rgba(20,25,30,0.85)' : `${color}30`,
+            border: `1px solid ${activeVice.config?.mode === 'diminua' ? (!isCountUp ? '#ef4444' : '#10b981') : `${color}60`}`,
             boxShadow: `inset 0 0 10px ${color}20` // Lightweight inner shadow instead of gradient
           }}
         >
           {!isPerformanceMode && (
             <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center border mb-0.5 bg-transparent ${activeVice.mode === 'diminua'
+              className={`w-6 h-6 rounded-full flex items-center justify-center border mb-0.5 bg-transparent ${activeVice.config?.mode === 'diminua'
                 ? (!isCountUp ? 'border-red-500/60 shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'border-emerald-500/60 shadow-[0_0_8px_rgba(16,185,129,0.4)]')
                 : 'border-white/20'
                 }`}
             >
               <Icon
                 size={14}
-                color={activeVice.mode === 'diminua' ? (!isCountUp ? '#ef4444' : '#10b981') : '#ffffff'}
+                color={activeVice.config?.mode === 'diminua' ? (!isCountUp ? '#ef4444' : '#10b981') : '#ffffff'}
               />
             </div>
           )}
 
-          {activeVice.mode === 'diminua' && (
+          {activeVice.config?.mode === 'diminua' && (
             <div className="flex flex-col items-center mt-[1px]">
               {!isPerformanceMode && (
                 <span className="text-[0.35rem] font-bold uppercase tracking-widest leading-none mt-0.5 shadow-sm text-white/90">
@@ -303,7 +323,7 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
             </div>
           )}
 
-          {activeVice.mode === 'acompanhe' && (
+          {activeVice.config?.mode === 'acompanhe' && (
             <span className={`font-bold uppercase tracking-widest leading-none shadow-sm ${isPerformanceMode ? 'text-[0.5rem] text-white' : 'text-[0.45rem] text-white/90 mt-1'}`}>
               Uso
             </span>
@@ -337,9 +357,9 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
               </button>
 
               <h3 className="text-white font-black text-center tracking-widest text-xs mt-2">
-                {activeVice.mode === 'acompanhe'
+                {activeVice.config?.mode === 'acompanhe'
                   ? 'REGISTRAR USO'
-                  : (activeVice.mode === 'diminua'
+                  : (activeVice.config?.mode === 'diminua'
                     ? (!isCountUp ? 'NÃO CEDA AO IMPULSO, ESTAMOS QUASE LÁ!' : 'PARABÉNS! META CONCLUÍDA')
                     : 'QUEBRA DE JEJUM')}
               </h3>
@@ -385,20 +405,20 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
                 <div className="flex flex-col gap-2 mt-2">
                   <button
                     onClick={handleRegistrar}
-                    className={`w-full font-black py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-xs tracking-widest ${activeVice.mode === 'diminua' ? 'text-white' : 'text-black'}`}
+                    className={`w-full font-black py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-xs tracking-widest ${activeVice.config?.mode === 'diminua' ? 'text-white' : 'text-black'}`}
                     style={{
-                      backgroundColor: activeVice.mode === 'diminua'
+                      backgroundColor: activeVice.config?.mode === 'diminua'
                         ? (!isCountUp ? '#ef4444' : '#10b981')
                         : color
                     }}
                   >
                     <Check size={16} />
-                    {activeVice.mode === 'diminua'
+                    {activeVice.config?.mode === 'diminua'
                       ? (!isCountUp ? 'CEDER AO IMPULSO' : 'REGISTRAR CONSUMO')
                       : 'SALVAR'}
                   </button>
 
-                  {activeVice.mode === 'diminua' && isCountUp && (
+                  {activeVice.config?.mode === 'diminua' && isCountUp && (
                     <button
                       onClick={() => setShowResistInput(true)}
                       className="w-full border border-sky-400/50 text-sky-400 font-bold py-3 rounded-xl transition-colors text-xs tracking-widest hover:bg-sky-400/10"
@@ -427,7 +447,7 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
                     </button>
                     <button
                       onClick={() => {
-                        removeActiveVice(activeVice.viceId);
+                        removeItem(activeVice.id);
                         setShowMotivatorModal(false);
                         setShowConfirmEnd(false);
                       }}
@@ -450,12 +470,7 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
         </AnimatePresence>,
         document.body
       )}
-      {/* Componente Modal de Histórico */}
-      <ViceOptionsModal
-        isOpen={showHistoryModal}
-        onClose={() => setShowHistoryModal(false)}
-        viceId={activeVice?.viceId || null}
-      />
+      {/* Fim do Bubble */}
     </>
   );
 }

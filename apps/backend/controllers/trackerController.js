@@ -33,6 +33,7 @@ exports.createTrackerItem = async (req, res) => {
     };
     
     const updateData = {
+      type,
       name,
       description,
       status,

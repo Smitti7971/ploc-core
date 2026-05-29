@@ -11,7 +11,7 @@ import { Brain, Dumbbell, UsersRound, Wallet, Flag, X } from 'lucide-react';
 import { UserAttributes } from '../engine/attribute-engine/AttributeEngine';
 import { bubbleEngine } from '../engine/bubble-engine/BubbleEngine';
 import { PillarPage } from '@/modules/routines/components/PillarPage';
-import { useViceStore } from '@/modules/dashboard/components/libertesse/store/viceStore';
+import { useTrackerStore } from '@/modules/dashboard/components/tracker/store/trackerStore';
 
 export const PILLARS_CONFIG = {
   corpo: { 
@@ -93,8 +93,8 @@ export function AttributePillars({
 }: AttributePillarsProps) {
 
   const [activePillarOverlay, setActivePillarOverlay] = useState<string | null>(null);
-  const activeVices = useViceStore(state => state.activeVices);
-  const activeVicesList = Object.values(activeVices || {});
+  const items = useTrackerStore(state => state.items);
+  const activeVicesList = Object.values(items || {}).filter(t => t.type === 'vice' && t.status === 'ACTIVE');
 
   const getNextTasks = (pillarKey: string) => {
     const activeBubbles = bubbleEngine.getActiveBubbles();
@@ -225,8 +225,8 @@ export function AttributePillars({
                     <div key={b.id} className="text-[0.7rem] text-white mb-1">• {b.content}</div>
                   ))}
                   {activeTooltip === 'liberdade' && activeVicesList.map(v => (
-                    <div key={v.viceId} className="text-[0.7rem] text-white mb-1">
-                      • {v.viceId === 'tabagismo' ? 'TABAGISMO' : v.viceId.toUpperCase()} <span className="text-[0.6rem] text-slate-500">({v.mode === 'missao-antitabagismo' ? 'MISSÃO' : 'ATIVO'})</span>
+                    <div key={v.id} className="text-[0.7rem] text-white mb-1">
+                      • {v.config?.viceId === 'tabagismo' ? 'TABAGISMO' : v.name.toUpperCase()} <span className="text-[0.6rem] text-slate-500">({v.config?.mode === 'missao-antitabagismo' ? 'MISSÃO' : 'ATIVO'})</span>
                     </div>
                   ))}
                 </>

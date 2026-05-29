@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { X, CigaretteOff } from 'lucide-react';
 import { MissionPathMap } from './MissionPathMap';
-import { useViceStore } from '@/modules/dashboard/components/libertesse/store/viceStore';
+import { useTrackerStore } from '@/modules/dashboard/components/tracker/store/trackerStore';
 
 interface MissionAntitabagismoModalProps {
   isOpen: boolean;
@@ -10,8 +10,9 @@ interface MissionAntitabagismoModalProps {
 }
 
 export function MissionAntitabagismoModal({ isOpen, onClose }: MissionAntitabagismoModalProps) {
-  const { activeVices } = useViceStore();
-  const currentLevel = activeVices['tabagismo']?.antitabagismoLevel ?? 0;
+  const { items } = useTrackerStore();
+  const currentVice = Object.values(items || {}).find(t => t.config?.viceId === 'tabagismo' && t.type === 'vice' && t.status === 'ACTIVE');
+  const currentLevel = currentVice?.config?.antitabagismoLevel ?? 0;
   const progressPercent = Math.min(100, Math.round((currentLevel / 10) * 100));
 
   if (!isOpen) return null;

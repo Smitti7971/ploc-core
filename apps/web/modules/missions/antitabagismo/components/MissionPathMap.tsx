@@ -6,7 +6,7 @@ import {
   Trophy, Check, Lock, Play, Sparkles, Star,
   Activity, Shield, Heart, Zap, Award, X, CheckCircle
 } from 'lucide-react';
-import { useViceStore } from '@/modules/dashboard/components/libertesse/store/viceStore';
+import { useTrackerStore } from '@/modules/dashboard/components/tracker/store/trackerStore';
 import { attributeEngine } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
 import { PlocAvatarClient } from '@/components/mascot/PlocAvatarClient';
 
@@ -176,26 +176,26 @@ const NODES_CONFIG: NodeConfig[] = [
 ];
 
 export function MissionPathMap() {
-  const { activeVices, logs: allLogs, advanceAntitabagismoLevel } = useViceStore();
-  const currentVice = activeVices['tabagismo'];
-  const currentLevel = currentVice?.antitabagismoLevel ?? 0;
+  const { items, logs: allLogs, setItem } = useTrackerStore();
+  const currentVice = Object.values(items || {}).find(t => t.config?.viceId === 'tabagismo' && t.type === 'vice' && t.status === 'ACTIVE');
+  const currentLevel = currentVice?.config?.antitabagismoLevel ?? 0;
 
   // Motor de Progresso
   const calculateProgress = (req: MissionRequirement) => {
     if (!currentVice) return { current: 0, target: req.target, isCompleted: false };
     
-    const logs = allLogs.filter(log => log.viceId === currentVice.viceId);
-    const startTime = currentVice.startTime || new Date(0).getTime();
+    const logs = allLogs?.filter(log => log.trackerItemId === currentVice.id) || [];
+    const startTime = currentVice.startDate || new Date(0).getTime();
     
     // Filtramos apenas os logs depois do início da missão atual
-    const relevantLogs = logs.filter((log: any) => new Date(log.timestamp).getTime() >= new Date(startTime).getTime());
+    const relevantLogs = logs.filter(log => new Date(log.timestamp).getTime() >= new Date(startTime).getTime());
     
     let current = 0;
     
     if (req.type === 'count_logs') {
       current = relevantLogs.length;
     } else if (req.type === 'count_motivators') {
-      current = relevantLogs.filter((log: any) => log.motivator && log.motivator.trim().length > 0).length;
+      current = relevantLogs.filter(log => log.info && log.info.trim().length > 0).length;
     } else if (req.type === 'custom_action') {
       // Mock para ações customizadas, como a "Update Perfil" ou "Jejum 24h"
       // Para fins de teste, permitiremos progredir automaticamente no MVP se for só isso
@@ -240,7 +240,15 @@ export function MissionPathMap() {
       (attributeEngine as any).updateScore(stats.xp);
     }
 
-    advanceAntitabagismoLevel('tabagismo');
+    if (currentVice) {
+      setItem({
+        ...currentVice,
+        config: {
+          ...currentVice.config,
+          antitabagismoLevel: currentLevel + 1
+        }
+      });
+    }
 
     setCelebrateEffect(true);
     setTimeout(() => {

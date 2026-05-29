@@ -11,21 +11,17 @@
  */
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Activity, Brain, Heart, Bird, Flag, 
-  Plus, ArrowRight, Zap, Info, Sparkles, Check, Save 
+import {
+  Activity, Brain, Heart, Bird, Flag,
+  Plus, ArrowRight, Zap, Info, Sparkles, Check, Save
 } from 'lucide-react';
 import { attributeEngine, UserAttributes } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
 import { bubbleEngine } from '@/modules/blackboard/engine/bubble-engine/BubbleEngine';
 import { PILLARS_DATA, IMPACT_ICONS, RoutineOption } from '../data/routinesData';
-import { useViceStore } from '@/modules/dashboard/components/libertesse/store/viceStore';
 
 export function PillarPage({ pillarId }: { pillarId: string }) {
   const config = PILLARS_DATA[pillarId];
   if (!config) return null;
-
-  const activeVices = useViceStore(state => state.activeVices);
-  const activeVicesList = Object.values(activeVices || {});
 
   const [isMounted, setIsMounted] = useState(false);
   const [attributes, setAttributes] = useState(attributeEngine.getAttributes());
@@ -89,13 +85,13 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
       localStorage.setItem('ploc_pillar_profiles', JSON.stringify(profile));
     }
     setSaveSuccess(true);
-    
+
     // SPARKLE / DROP REWARDS SYSTEM
     // Depending on the pillar, we spawn bubbles for the Ploc!
     import('@/modules/blackboard/engine/resource-engine/ResourceEngine').then(({ resourceEngine }) => {
       // Spawn items near the center of the screen (0,0 is center in our setup)
       const randomOffset = () => -150 + Math.random() * 300;
-      
+
       if (pillarId === 'corpo') {
         resourceEngine.spawnBubble('food', 'Maçã', randomOffset(), randomOffset());
         resourceEngine.spawnBubble('water', 'Água', randomOffset(), randomOffset());
@@ -150,66 +146,66 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div style={formGroupStyle}>
             <label style={labelStyle}>PESO (KG)</label>
-            <input 
-              type="text" 
-              placeholder="Ex: 75" 
-              value={profile.peso || ''} 
-              onChange={e => handleInputChange('peso', e.target.value)} 
+            <input
+              type="text"
+              placeholder="Ex: 75"
+              value={profile.peso || ''}
+              onChange={e => handleInputChange('peso', e.target.value)}
               style={inputStyle}
               className="focus:border-red-500/50 focus:bg-white/[0.05]"
             />
           </div>
           <div style={formGroupStyle}>
             <label style={labelStyle}>ALTURA (CM)</label>
-            <input 
-              type="text" 
-              placeholder="Ex: 180" 
-              value={profile.altura || ''} 
-              onChange={e => handleInputChange('altura', e.target.value)} 
+            <input
+              type="text"
+              placeholder="Ex: 180"
+              value={profile.altura || ''}
+              onChange={e => handleInputChange('altura', e.target.value)}
               style={inputStyle}
               className="focus:border-red-500/50 focus:bg-white/[0.05]"
             />
           </div>
           <div style={formGroupStyle}>
             <label style={labelStyle}>HORAS DE SONO DIÁRIAS</label>
-            <input 
-              type="text" 
-              placeholder="Ex: 7h a 8h" 
-              value={profile.horasSono || ''} 
-              onChange={e => handleInputChange('horasSono', e.target.value)} 
+            <input
+              type="text"
+              placeholder="Ex: 7h a 8h"
+              value={profile.horasSono || ''}
+              onChange={e => handleInputChange('horasSono', e.target.value)}
               style={inputStyle}
               className="focus:border-red-500/50 focus:bg-white/[0.05]"
             />
           </div>
           <div style={formGroupStyle}>
             <label style={labelStyle}>FREQUÊNCIA DE ACADEMIA / TREINO</label>
-            <input 
-              type="text" 
-              placeholder="Ex: 3x na semana" 
-              value={profile.treinoFreq || ''} 
-              onChange={e => handleInputChange('treinoFreq', e.target.value)} 
+            <input
+              type="text"
+              placeholder="Ex: 3x na semana"
+              value={profile.treinoFreq || ''}
+              onChange={e => handleInputChange('treinoFreq', e.target.value)}
               style={inputStyle}
               className="focus:border-red-500/50 focus:bg-white/[0.05]"
             />
           </div>
           <div style={formGroupStyle} className="sm:col-span-2">
             <label style={labelStyle}>TAMANHOS / MEDIDAS CORPORAIS</label>
-            <input 
-              type="text" 
-              placeholder="Ex: Peito: 100cm, Cintura: 80cm, Bíceps: 38cm" 
-              value={profile.medidas || ''} 
-              onChange={e => handleInputChange('medidas', e.target.value)} 
+            <input
+              type="text"
+              placeholder="Ex: Peito: 100cm, Cintura: 80cm, Bíceps: 38cm"
+              value={profile.medidas || ''}
+              onChange={e => handleInputChange('medidas', e.target.value)}
               style={inputStyle}
               className="focus:border-red-500/50 focus:bg-white/[0.05]"
             />
           </div>
           <div style={formGroupStyle} className="sm:col-span-2">
             <label style={labelStyle}>CONSUMO DE ÁGUA DIÁRIO</label>
-            <input 
-              type="text" 
-              placeholder="Ex: 2.5 Litros" 
-              value={profile.aguaLiters || ''} 
-              onChange={e => handleInputChange('aguaLiters', e.target.value)} 
+            <input
+              type="text"
+              placeholder="Ex: 2.5 Litros"
+              value={profile.aguaLiters || ''}
+              onChange={e => handleInputChange('aguaLiters', e.target.value)}
               style={inputStyle}
               className="focus:border-red-500/50 focus:bg-white/[0.05]"
             />
@@ -229,10 +225,10 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
               style={inputStyle}
               className="focus:border-sky-500/50 focus:bg-white/[0.05] appearance-none"
             >
-              <option value="" disabled style={{background: '#0d0f0d'}}>Selecione...</option>
-              <option value="Baixo" style={{background: '#0d0f0d'}}>Baixo</option>
-              <option value="Médio" style={{background: '#0d0f0d'}}>Médio</option>
-              <option value="Alto" style={{background: '#0d0f0d'}}>Alto</option>
+              <option value="" disabled style={{ background: '#0d0f0d' }}>Selecione...</option>
+              <option value="Baixo" style={{ background: '#0d0f0d' }}>Baixo</option>
+              <option value="Médio" style={{ background: '#0d0f0d' }}>Médio</option>
+              <option value="Alto" style={{ background: '#0d0f0d' }}>Alto</option>
             </select>
           </div>
           <div style={formGroupStyle}>
@@ -243,30 +239,30 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
               style={inputStyle}
               className="focus:border-sky-500/50 focus:bg-white/[0.05]"
             >
-              <option value="" disabled style={{background: '#0d0f0d'}}>Selecione...</option>
-              <option value="Sim, Diariamente" style={{background: '#0d0f0d'}}>Sim, Diariamente</option>
-              <option value="Sim, Ocasionalmente" style={{background: '#0d0f0d'}}>Sim, Ocasionalmente</option>
-              <option value="Não pratico" style={{background: '#0d0f0d'}}>Não pratico</option>
+              <option value="" disabled style={{ background: '#0d0f0d' }}>Selecione...</option>
+              <option value="Sim, Diariamente" style={{ background: '#0d0f0d' }}>Sim, Diariamente</option>
+              <option value="Sim, Ocasionalmente" style={{ background: '#0d0f0d' }}>Sim, Ocasionalmente</option>
+              <option value="Não pratico" style={{ background: '#0d0f0d' }}>Não pratico</option>
             </select>
           </div>
           <div style={formGroupStyle}>
             <label style={labelStyle}>HORAS DE TELA DIÁRIAS</label>
-            <input 
-              type="text" 
-              placeholder="Ex: 5h" 
-              value={profile.horasTela || ''} 
-              onChange={e => handleInputChange('horasTela', e.target.value)} 
+            <input
+              type="text"
+              placeholder="Ex: 5h"
+              value={profile.horasTela || ''}
+              onChange={e => handleInputChange('horasTela', e.target.value)}
               style={inputStyle}
               className="focus:border-sky-500/50 focus:bg-white/[0.05]"
             />
           </div>
           <div style={formGroupStyle} className="sm:col-span-2">
             <label style={labelStyle}>FOCO PRINCIPAL ATUAL</label>
-            <input 
-              type="text" 
-              placeholder="Ex: Controlar ansiedade / Manter foco nos estudos" 
-              value={profile.focoPrincipal || ''} 
-              onChange={e => handleInputChange('focoPrincipal', e.target.value)} 
+            <input
+              type="text"
+              placeholder="Ex: Controlar ansiedade / Manter foco nos estudos"
+              value={profile.focoPrincipal || ''}
+              onChange={e => handleInputChange('focoPrincipal', e.target.value)}
               style={inputStyle}
               className="focus:border-sky-500/50 focus:bg-white/[0.05]"
             />
@@ -280,33 +276,33 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div style={formGroupStyle}>
             <label style={labelStyle}>QUALIDADE DA ALIMENTAÇÃO</label>
-            <input 
-              type="text" 
-              placeholder="Ex: Saudável, equilibrada" 
-              value={profile.alimentacao || ''} 
-              onChange={e => handleInputChange('alimentacao', e.target.value)} 
+            <input
+              type="text"
+              placeholder="Ex: Saudável, equilibrada"
+              value={profile.alimentacao || ''}
+              onChange={e => handleInputChange('alimentacao', e.target.value)}
               style={inputStyle}
               className="focus:border-emerald-500/50 focus:bg-white/[0.05]"
             />
           </div>
           <div style={formGroupStyle}>
             <label style={labelStyle}>TEMPO DE LAZER DIÁRIO</label>
-            <input 
-              type="text" 
-              placeholder="Ex: 2 horas" 
-              value={profile.lazerHoras || ''} 
-              onChange={e => handleInputChange('lazerHoras', e.target.value)} 
+            <input
+              type="text"
+              placeholder="Ex: 2 horas"
+              value={profile.lazerHoras || ''}
+              onChange={e => handleInputChange('lazerHoras', e.target.value)}
               style={inputStyle}
               className="focus:border-emerald-500/50 focus:bg-white/[0.05]"
             />
           </div>
           <div style={formGroupStyle} className="sm:col-span-2">
             <label style={labelStyle}>SATISFAÇÃO COM RELACIONAMENTOS</label>
-            <input 
-              type="text" 
-              placeholder="Ex: Muito satisfeito com a família e círculo social" 
-              value={profile.relacionamentos || ''} 
-              onChange={e => handleInputChange('relacionamentos', e.target.value)} 
+            <input
+              type="text"
+              placeholder="Ex: Muito satisfeito com a família e círculo social"
+              value={profile.relacionamentos || ''}
+              onChange={e => handleInputChange('relacionamentos', e.target.value)}
               style={inputStyle}
               className="focus:border-emerald-500/50 focus:bg-white/[0.05]"
             />
@@ -320,33 +316,33 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div style={formGroupStyle}>
             <label style={labelStyle}>HORAS LIVRES DIÁRIAS</label>
-            <input 
-              type="text" 
-              placeholder="Ex: 4h livres" 
-              value={profile.horasLivres || ''} 
-              onChange={e => handleInputChange('horasLivres', e.target.value)} 
+            <input
+              type="text"
+              placeholder="Ex: 4h livres"
+              value={profile.horasLivres || ''}
+              onChange={e => handleInputChange('horasLivres', e.target.value)}
               style={inputStyle}
               className="focus:border-amber-500/50 focus:bg-white/[0.05]"
             />
           </div>
           <div style={formGroupStyle}>
             <label style={labelStyle}>VÍCIOS EM MONITORAMENTO</label>
-            <input 
-              type="text" 
-              placeholder="Ex: Tabagismo, Redes Sociais" 
-              value={profile.viciosAtivos || ''} 
-              onChange={e => handleInputChange('viciosAtivos', e.target.value)} 
+            <input
+              type="text"
+              placeholder="Ex: Tabagismo, Redes Sociais"
+              value={profile.viciosAtivos || ''}
+              onChange={e => handleInputChange('viciosAtivos', e.target.value)}
               style={inputStyle}
               className="focus:border-amber-500/50 focus:bg-white/[0.05]"
             />
           </div>
           <div style={formGroupStyle} className="sm:col-span-2">
             <label style={labelStyle}>NÍVEL DE AUTONOMIA PESSOAL</label>
-            <input 
-              type="text" 
-              placeholder="Ex: Consigo organizar meus horários de trabalho de forma flexível" 
-              value={profile.autonomia || ''} 
-              onChange={e => handleInputChange('autonomia', e.target.value)} 
+            <input
+              type="text"
+              placeholder="Ex: Consigo organizar meus horários de trabalho de forma flexível"
+              value={profile.autonomia || ''}
+              onChange={e => handleInputChange('autonomia', e.target.value)}
               style={inputStyle}
               className="focus:border-amber-500/50 focus:bg-white/[0.05]"
             />
@@ -360,33 +356,33 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div style={formGroupStyle}>
             <label style={labelStyle}>META PRINCIPAL DO ANO</label>
-            <input 
-              type="text" 
-              placeholder="Ex: Passar na prova X / Lançar o produto Y" 
-              value={profile.metaAno || ''} 
-              onChange={e => handleInputChange('metaAno', e.target.value)} 
+            <input
+              type="text"
+              placeholder="Ex: Passar na prova X / Lançar o produto Y"
+              value={profile.metaAno || ''}
+              onChange={e => handleInputChange('metaAno', e.target.value)}
               style={inputStyle}
               className="focus:border-purple-500/50 focus:bg-white/[0.05]"
             />
           </div>
           <div style={formGroupStyle}>
             <label style={labelStyle}>ALINHAMENTO COM CARREIRA</label>
-            <input 
-              type="text" 
-              placeholder="Ex: Super alinhado com meus objetivos" 
-              value={profile.alinhamentoCarreira || ''} 
-              onChange={e => handleInputChange('alinhamentoCarreira', e.target.value)} 
+            <input
+              type="text"
+              placeholder="Ex: Super alinhado com meus objetivos"
+              value={profile.alinhamentoCarreira || ''}
+              onChange={e => handleInputChange('alinhamentoCarreira', e.target.value)}
               style={inputStyle}
               className="focus:border-purple-500/50 focus:bg-white/[0.05]"
             />
           </div>
           <div style={formGroupStyle} className="sm:col-span-2">
             <label style={labelStyle}>SENTIMENTO DE DIREÇÃO ATUAL</label>
-            <input 
-              type="text" 
-              placeholder="Ex: Totalmente focado nas minhas conquistas diárias" 
-              value={profile.sentidoDirecao || ''} 
-              onChange={e => handleInputChange('sentidoDirecao', e.target.value)} 
+            <input
+              type="text"
+              placeholder="Ex: Totalmente focado nas minhas conquistas diárias"
+              value={profile.sentidoDirecao || ''}
+              onChange={e => handleInputChange('sentidoDirecao', e.target.value)}
               style={inputStyle}
               className="focus:border-purple-500/50 focus:bg-white/[0.05]"
             />
@@ -463,7 +459,7 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
             <h2 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 900, margin: 0, letterSpacing: '2px' }}>
               {config.label}
             </h2>
-            <div style={{ 
+            <div style={{
               display: 'inline-block',
               padding: '2px 8px',
               borderRadius: '6px',
@@ -478,9 +474,9 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
           </div>
         </div>
 
-        <div style={{ 
-          background: 'rgba(255,255,255,0.02)', 
-          border: '1px solid rgba(255,255,255,0.05)', 
+        <div style={{
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.05)',
           padding: '1.2rem',
           borderRadius: '24px'
         }}>
@@ -495,7 +491,7 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
         <h3 style={{ color: '#fff', fontSize: '0.7rem', fontWeight: 900, letterSpacing: '2px', opacity: 0.5, margin: 0 }}>
           CADASTRO DE INFORMAÇÕES BASE
         </h3>
-        
+
         <div style={{
           background: 'rgba(255,255,255,0.01)',
           backdropFilter: 'blur(10px)',
@@ -543,8 +539,8 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
             activeVicesList.map(activeVice => {
               const isMission = activeVice.mode === 'missao-antitabagismo';
               return (
-                <div 
-                  key={activeVice.viceId} 
+                <div
+                  key={activeVice.viceId}
                   style={{
                     padding: '1.25rem',
                     background: isMission ? 'rgba(234,179,8,0.05)' : 'rgba(16,185,129,0.05)',
@@ -558,7 +554,7 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
                   className="flex items-center justify-between gap-4"
                 >
                   <div className="flex items-center gap-3">
-                    <div 
+                    <div
                       style={{
                         width: '36px',
                         height: '36px',
@@ -574,7 +570,7 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span 
+                        <span
                           style={{
                             fontSize: '0.6rem',
                             fontWeight: 900,
@@ -614,10 +610,10 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
               );
             })
           ) : (
-            <div style={{ 
-              padding: '1rem', 
-              background: 'rgba(255,255,255,0.01)', 
-              border: '1px dashed rgba(255,255,255,0.1)', 
+            <div style={{
+              padding: '1rem',
+              background: 'rgba(255,255,255,0.01)',
+              border: '1px dashed rgba(255,255,255,0.1)',
               borderRadius: '16px',
               textAlign: 'center'
             }}>

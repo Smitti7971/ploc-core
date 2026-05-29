@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Cigarette, Wine, EyeOff, Smartphone, Pill, Cookie, Gamepad2, ShoppingBag, Zap, ChevronRight, Wand2 } from 'lucide-react';
-import { ViceOptionsModal } from './ViceOptionsModal';
-import { useViceStore } from '../store/viceStore';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Cigarette, Wine, EyeOff, Smartphone, Pill, Cookie, Gamepad2, ShoppingBag, Zap, Wand2, PlusCircle, X, ChevronRight } from 'lucide-react';
+import { useTrackerStore, TrackerItem } from '../../tracker/store/trackerStore';
+import { TrackerOverlay } from '../../tracker/components/TrackerOverlay';
+
+import { TrackerStatusCard } from '../../tracker/components/TrackerStatusCard';
 
 export const VICES = [
   { id: 'tabagismo', label: 'CIGARRO / VAPE', icon: Cigarette, color: '#f59e0b', desc: 'Missão de redução passo a passo' },
@@ -17,29 +19,34 @@ export const VICES = [
 ];
 
 export function LibertesseScreen() {
-  const [selectedViceId, setSelectedViceId] = useState<string | null>(null);
-  const { activeVices, setActiveVice, removeActiveVice, logs } = useViceStore();
+  const [selectedTrackerId, setSelectedTrackerId] = useState<string | null>(null);
+  const [showCatalog, setShowCatalog] = useState(false);
+  const { items, setItem, fetchItems } = useTrackerStore();
   const [now, setNow] = useState<number | null>(null);
 
   React.useEffect(() => {
+    fetchItems();
+
+    const handleOpenTracker = (e: any) => {
+      setSelectedTrackerId(e.detail);
+    };
+    window.addEventListener('openTracker', handleOpenTracker);
+    
     const initialTimeout = setTimeout(() => setNow(Date.now()), 0);
     const interval = setInterval(() => setNow(Date.now()), 60000);
+    
     return () => {
+      window.removeEventListener('openTracker', handleOpenTracker);
       clearTimeout(initialTimeout);
       clearInterval(interval);
     };
-  }, []);
+  }, [fetchItems]);
 
-  const handleSelectVice = (viceId: string) => {
-    setSelectedViceId(viceId);
-  };
+  const activeVices = Object.values(items).filter(t => t.type === 'vice' && t.status === 'ACTIVE');
 
-  const getTimeActiveText = (viceId: string) => {
-    if (!now) return null;
-    const activeVice = activeVices[viceId];
-    if (!activeVice || !activeVice.startTime) return null;
-    
-    const diffSeconds = Math.floor((now - activeVice.startTime) / 1000);
+  const getTimeActiveText = (item: TrackerItem) => {
+    if (!now || !item.startDate) return null;
+    const diffSeconds = Math.floor((now - item.startDate) / 1000);
     if (diffSeconds < 0) return '0m';
     
     const d = Math.floor(diffSeconds / 86400);
@@ -50,83 +57,144 @@ export function LibertesseScreen() {
     return `${m}m`;
   };
 
+  const handleCreateNewVice = (viceDef: typeof VICES[0]) => {
+    // If it's standard, default to mission if tabagismo, else acompanhe
+    const newId = `tracker_${Date.now()}`;
+    const newItem: TrackerItem = {
+      id: newId,
+      type: 'vice',
+      name: viceDef.label,
+      status: 'ACTIVE',
+      startDate: Date.now(),
+      isConsuming: false,
+      defaultTimer: 0,
+      correlations: {},
+      config: {
+        viceId: viceDef.id,
+        mode: viceDef.id === 'tabagismo' ? 'missao-antitabagismo' : 'acompanhe',
+        activeMarkers: ['elapsed', 'remaining']
+      }
+    };
+    setItem(newItem);
+    setShowCatalog(false);
+    setSelectedTrackerId(newId);
+  };
+
   return (
-    <div className="w-full px-4 pb-6">
-      <div className="mb-6 mt-2">
-        <h2 className="text-white font-black tracking-widest text-lg uppercase flex items-center gap-2">
-          <Wand2 size={20} className="text-sky-400" />
-          LIBERTESSE
-        </h2>
-        <p className="text-slate-400 text-sm font-medium">Se conheça, diminua ou pare com vícios que limitam sua liberdade.</p>
+    <div className="w-full px-4 pb-24 h-full overflow-y-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Botão Adicionar Novo (Primeira Opção) */}
+        <motion.div
+          onClick={() => setShowCatalog(true)}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full h-20 rounded-3xl overflow-hidden cursor-pointer bg-white/5 border border-white/10 flex flex-row items-center justify-center gap-3 group hover:bg-white/10 transition-colors md:col-span-2 md:h-16"
+        >
+          <div className="flex items-center justify-center group-hover:scale-110 transition-transform">
+            <PlusCircle size={22} className="text-sky-400" />
+          </div>
+          <span className="text-white/50 text-[11px] font-black uppercase tracking-widest group-hover:text-sky-400 transition-colors">
+            Adicionar Novo
+          </span>
+        </motion.div>
+
+        {/* Active Vices Cards */}
+        {activeVices.map((activeVice, idx) => (
+          <motion.div
+            key={activeVice.id}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: (idx + 1) * 0.05 }}
+          >
+            <TrackerStatusCard 
+              item={activeVice} 
+              onClick={() => setSelectedTrackerId(activeVice.id)} 
+            />
+          </motion.div>
+        ))}
       </div>
 
-      <div className="flex flex-col gap-4">
-        {VICES.map((vice) => {
-          const Icon = vice.icon;
-          const activeVice = activeVices[vice.id];
-          const isActive = !!activeVice;
-          const isMission = activeVice?.mode === 'missao-antitabagismo';
-
-          return (
+      {/* Catalog Modal */}
+      <AnimatePresence>
+        {showCatalog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowCatalog(false)}
+          >
             <motion.div
-              key={vice.id}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => handleSelectVice(vice.id)}
-              className={`w-full border rounded-2xl p-4 flex items-center gap-4 cursor-pointer transition-colors shadow-lg ${
-                isActive 
-                  ? 'bg-white/10 border-white/20' 
-                  : 'bg-[#0f1115] border-white/5 hover:bg-white/5'
-              }`}
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-[#0f1115] border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
             >
-              <div 
-                className="w-14 h-14 rounded-full flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(0,0,0,0.5)]"
-                style={{ backgroundColor: `${vice.color}20`, border: `1px solid ${vice.color}40` }}
-              >
-                <Icon size={24} color={vice.color} />
-              </div>
-              
-              <div className="flex-1">
-                <h3 className="text-white text-sm font-extrabold tracking-widest mb-1 flex items-center gap-1.5 flex-wrap">
-                  {vice.label}
-                  {isActive && (
-                    <span className={`text-[0.6rem] px-2 py-0.5 rounded-full border font-black uppercase ${
-                      isMission 
-                        ? 'bg-yellow-400/10 text-yellow-400 border-yellow-500/20' 
-                        : 'bg-white/20 text-emerald-400 border-emerald-500/30'
-                    }`}>
-                      {isMission ? 'MISSÃO' : 'ATIVO'}
-                    </span>
-                  )}
+              <div className="p-5 flex justify-between items-center border-b border-white/5 bg-[#16181c]">
+                <h3 className="text-white font-extrabold tracking-widest text-sm uppercase flex items-center gap-2">
+                  <Wand2 size={16} className="text-sky-400" />
+                  Escolha o que libertar
                 </h3>
-                {isActive ? (
-                  isMission ? (
-                    <p className="text-yellow-400/80 text-xs font-bold tracking-widest uppercase">
-                      Progresso: <span className="text-white font-black">Estágio {Math.min(10, (activeVice.antitabagismoLevel ?? 0) + 1)}/10</span>
-                    </p>
-                  ) : (
-                    <p className="text-emerald-400 text-xs font-bold tracking-widest">
-                      Tempo: <span className="text-white">{getTimeActiveText(vice.id) || 'iniciando...'}</span>
-                    </p>
-                  )
-                ) : (
-                  <p className="text-slate-400 text-xs">{vice.desc}</p>
-                )}
+                <button 
+                  onClick={() => setShowCatalog(false)}
+                  className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white"
+                >
+                  <X size={16} />
+                </button>
               </div>
-
-              <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50">
-                <ChevronRight size={16} />
+              <div className="p-5 overflow-y-auto flex flex-col gap-3">
+                {VICES.map((vice) => {
+                  const Icon = vice.icon;
+                  const isActive = activeVices.some(v => v.config?.viceId === vice.id);
+                  
+                  return (
+                    <motion.button
+                      key={vice.id}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleCreateNewVice(vice)}
+                      className={`w-full border rounded-2xl p-4 flex items-center gap-4 text-left transition-all ${
+                        isActive ? 'bg-white/10 border-white/20' : 'bg-white/5 border-white/10 hover:bg-white/10 cursor-pointer'
+                      }`}
+                    >
+                      <div 
+                        className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: `${vice.color}20`, border: `1px solid ${vice.color}40` }}
+                      >
+                        <Icon size={20} color={vice.color} />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-white font-extrabold text-sm mb-1 flex items-center gap-2">
+                          {vice.label}
+                          {isActive && (
+                            <span className="text-[0.6rem] px-2 py-0.5 rounded-full border font-black uppercase bg-white/20 text-emerald-400 border-emerald-500/30">
+                              ATIVO
+                            </span>
+                          )}
+                        </h4>
+                        <p className="text-slate-400 text-[0.7rem] leading-tight">{vice.desc}</p>
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50">
+                        <ChevronRight size={16} />
+                      </div>
+                    </motion.button>
+                  );
+                })}
               </div>
             </motion.div>
-          );
-        })}
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <ViceOptionsModal 
-        isOpen={!!selectedViceId}
-        onClose={() => setSelectedViceId(null)}
-        viceId={selectedViceId}
-      />
+      <AnimatePresence>
+        {selectedTrackerId && (
+          <TrackerOverlay 
+            itemId={selectedTrackerId} 
+            onClose={() => setSelectedTrackerId(null)} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

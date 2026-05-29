@@ -11,15 +11,21 @@ export function AcompanheScreen() {
 
   useEffect(() => {
     fetchItems();
+
+    const handleOpenTracker = (e: any) => {
+      setSelectedItemId(e.detail);
+    };
+    window.addEventListener('openTracker', handleOpenTracker);
+    return () => window.removeEventListener('openTracker', handleOpenTracker);
   }, [fetchItems]);
 
-  const trackedItems = Object.values(items).filter(item => item.type === 'medicine' || item.type === 'habit' || item.type === 'vice');
+  const trackedItems = Object.values(items).filter(item => item.type !== 'vice');
 
   const handleCreateNew = () => {
     const newItemId = crypto.randomUUID();
     setItem({
       id: newItemId,
-      type: 'medicine',
+      type: 'acompanhe',
       name: '',
       status: 'ACTIVE',
       config: { showCoverPhoto: true },
@@ -37,12 +43,27 @@ export function AcompanheScreen() {
 
       {/* Grid de Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Botão Criar Novo (Primeiro) */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          onClick={handleCreateNew}
+          className="w-full h-20 rounded-3xl overflow-hidden cursor-pointer bg-white/5 border border-white/10 flex flex-row items-center justify-center gap-3 group hover:bg-white/10 transition-colors md:col-span-2 md:h-16"
+        >
+          <div className="flex items-center justify-center group-hover:scale-110 transition-transform">
+            <PlusCircle size={22} className="text-amber-400" />
+          </div>
+          <span className="text-white/50 text-[11px] font-black uppercase tracking-widest group-hover:text-amber-400 transition-colors">
+            Adicionar Novo
+          </span>
+        </motion.div>
+
         {trackedItems.map((item, idx) => (
           <motion.div
             key={item.id}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: idx * 0.05 }}
+            transition={{ delay: (idx + 1) * 0.05 }}
           >
             <TrackerStatusCard 
               item={item} 
@@ -50,22 +71,6 @@ export function AcompanheScreen() {
             />
           </motion.div>
         ))}
-
-        {/* Botão Criar Novo */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: trackedItems.length * 0.05 }}
-          onClick={handleCreateNew}
-          className="w-full h-32 rounded-3xl overflow-hidden cursor-pointer bg-white/5 border border-white/10 flex flex-col items-center justify-center group hover:bg-white/10 transition-colors"
-        >
-          <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-            <PlusCircle size={24} className="text-amber-400" />
-          </div>
-          <span className="text-white/50 text-[10px] font-black uppercase tracking-widest group-hover:text-amber-400 transition-colors">
-            Adicionar Novo
-          </span>
-        </motion.div>
       </div>
 
       {/* Overlay Modal */}

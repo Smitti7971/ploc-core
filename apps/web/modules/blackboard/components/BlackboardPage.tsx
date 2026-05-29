@@ -58,7 +58,6 @@ import { resourceEngine } from "../engine/resource-engine/ResourceEngine";
 
 import { AmbientGlowBackground } from "../../landing/particles/AmbientGlowBackground";
 import { Vignette } from "../../landing/particles/Vignette";
-import { useViceStore } from "../../dashboard/components/libertesse/store/viceStore";
 import { useTrackerStore } from "../../dashboard/components/tracker/store/trackerStore";
 import { usePlocSpeech } from "../../../components/mascot/usePlocSpeech";
 import { usePlocStateStore } from "../../mascot/store/plocStateStore";
@@ -76,7 +75,6 @@ export default function BlackboardPage() {
   useEffect(() => {
     const unsubAuth = useAuthStore.persist.onFinishHydration(() => {
       setIsHydrated(true);
-      useViceStore.getState().fetchVices();
     });
 
     const unsubTracker = useTrackerStore.persist.onFinishHydration(() => {
@@ -86,7 +84,6 @@ export default function BlackboardPage() {
     if (useAuthStore.persist.hasHydrated()) {
       setTimeout(() => {
         setIsHydrated(true);
-        useViceStore.getState().fetchVices();
       }, 0);
     }
 
@@ -193,9 +190,9 @@ export default function BlackboardPage() {
   };
 
   // === LÓGICA DE CONSUMO ATIVO (LIBERTESSE) E ALERTAS ===
-  const { activeVices, endConsumption, cancelConsumption } = useViceStore();
-  const activeConsumingVice = Object.values(activeVices).find(
-    (v) => v.isConsuming,
+  const { items, endConsumption, cancelConsumption } = useTrackerStore();
+  const activeConsumingVice = Object.values(items).find(
+    (v) => v.type === 'vice' && v.isConsuming,
   );
 
   const plocMood = usePlocStateStore((state) => state.mood);
@@ -233,7 +230,7 @@ export default function BlackboardPage() {
     const checkPendingPillars = () => {
       const attributes = attributeEngine.getAttributes();
       const activeBubbles = bubbleEngine.getActiveBubbles();
-      const vices = Object.values(useViceStore.getState().activeVices || {});
+      const vices = Object.values(useTrackerStore.getState().items).filter(v => v.type === 'vice' && v.status === 'ACTIVE');
 
       const pending = (
         Object.keys(PILLARS_CONFIG) as Array<keyof UserAttributes>
@@ -275,7 +272,7 @@ export default function BlackboardPage() {
         // Auto-encerra quando passa de 5 minutos
         const limit = 300; // Fixo em 5 minutos
         if (elapsed >= limit) {
-          endConsumption(activeConsumingVice.viceId, limit);
+          endConsumption(activeConsumingVice.id, limit);
         }
       }, 1000);
     } else {
@@ -286,8 +283,8 @@ export default function BlackboardPage() {
   }, [
     activeConsumingVice?.isConsuming,
     activeConsumingVice?.consumptionStartTime,
-    activeConsumingVice?.defaultConsumptionSeconds,
-    activeConsumingVice?.viceId,
+    activeConsumingVice?.defaultTimer,
+    activeConsumingVice?.id,
     endConsumption,
   ]);
 
@@ -601,7 +598,7 @@ export default function BlackboardPage() {
                           <div className="flex gap-2">
                             <button
                               onClick={() => {
-                                cancelConsumption(activeConsumingVice.viceId);
+                                cancelConsumption(activeConsumingVice.id);
                                 speak(
                                   "Esperar te faz mais forte!",
                                   4000,
@@ -614,7 +611,7 @@ export default function BlackboardPage() {
                             <button
                               onClick={() =>
                                 endConsumption(
-                                  activeConsumingVice.viceId,
+                                  activeConsumingVice.id,
                                   consumptionElapsed,
                                 )
                               }
@@ -647,16 +644,18 @@ export default function BlackboardPage() {
                 </AnimatePresence>
 
                 {/* Bolhas de Pensamento do Libertesse (Controle de Vícios) */}
-                {Object.keys(activeVices)
+                {Object.values(items)
                   .filter(
-                    (viceId) =>
-                      !activeVices[viceId].isHidden &&
-                      !activeVices[viceId].isVulnerability,
+                    (v) =>
+                      v.type === 'vice' &&
+                      v.status === 'ACTIVE' &&
+                      !v.config?.isHidden &&
+                      !v.config?.isVulnerability,
                   )
-                  .map((viceId, index, array) => (
+                  .map((vice, index, array) => (
                     <ViceBubble
-                      key={viceId}
-                      viceId={viceId}
+                      key={vice.id}
+                      viceId={vice.id}
                       canvasScale={scale}
                       index={index}
                       total={array.length}

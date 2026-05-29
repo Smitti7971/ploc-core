@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { X, Camera, Link as LinkIcon, Loader2, Trash2, Check, EyeOff, Eye, Clock, Edit2 } from 'lucide-react';
+import { X, Camera, Link as LinkIcon, Loader2, Trash2, Check, EyeOff, Eye, Clock, Edit2, TrendingDown, Activity, ListChecks, CheckSquare, PlusCircle } from 'lucide-react';
 import { TrackerItem, useTrackerStore } from '../store/trackerStore';
 import { apiService } from '@/services/api';
 
@@ -30,6 +30,30 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
   const activeMarkers = item?.config?.activeMarkers || ['elapsed', 'stage', 'remaining'];
   const [showMarkersMenu, setShowMarkersMenu] = useState(false);
 
+  const [isAddConditionModalOpen, setIsAddConditionModalOpen] = useState(false);
+  const [newConditionTitle, setNewConditionTitle] = useState('');
+  const [editingConditionIndex, setEditingConditionIndex] = useState<number | null>(null);
+  const conditions = item?.config?.conditions || [];
+
+  const addCondition = () => {
+    if (!newCondition.trim()) return;
+    const updated = [...conditions, newCondition.trim()];
+    updateItem({
+      ...item,
+      config: { ...item.config, conditions: updated }
+    });
+    setNewCondition('');
+  };
+
+  const removeCondition = (index: number) => {
+    const updated = [...conditions];
+    updated.splice(index, 1);
+    updateItem({
+      ...item,
+      config: { ...item.config, conditions: updated }
+    });
+  };
+
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -44,6 +68,75 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
   const showCoverPhoto = item?.config?.showCoverPhoto !== false;
 
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+
+  const [checkedConditions, setCheckedConditions] = useState<Record<string, boolean>>({});
+  const [conditionPhotos, setConditionPhotos] = useState<Record<string, string>>({});
+
+  const [editingLogCheckedConditions, setEditingLogCheckedConditions] = useState<Record<string, boolean>>({});
+  const [editingLogConditionPhotos, setEditingLogConditionPhotos] = useState<Record<string, string>>({});
+  const [uploadingConditionKey, setUploadingConditionKey] = useState<string | null>(null);
+  const conditionPhotoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUploadConditionPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !uploadingConditionKey) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await apiService.upload<{ url: string }>('/upload?type=tracker', formData);
+      if (res.url) {
+        if (editingLogId) {
+          setEditingLogConditionPhotos(prev => ({ ...prev, [uploadingConditionKey]: res.url }));
+        } else {
+          setConditionPhotos(prev => ({ ...prev, [uploadingConditionKey]: res.url }));
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao subir foto da condição', e);
+      alert('Falha ao subir imagem da condição.');
+    } finally {
+      setUploadingConditionKey(null);
+      if (conditionPhotoInputRef.current) conditionPhotoInputRef.current.value = '';
+    }
+  };
+
+  const transformConditionToAcompanhe = (condText: string, condIndex: number) => {
+    const newItemId = crypto.randomUUID();
+    // Cria o novo Acompanhe
+    updateItem({
+      id: newItemId,
+      type: 'acompanhe',
+      name: condText,
+      status: 'ACTIVE',
+      config: { showCoverPhoto: true },
+      startDate: Date.now(),
+      correlations: { [item.id]: 'linked' },
+      isConsuming: false,
+      defaultTimer: 300,
+      userId: item.userId || 'test-user',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    } as any);
+
+    // Remove das condições textuais e adiciona como correlação
+    const newConditions = [...conditions];
+    newConditions.splice(condIndex, 1);
+
+    updateItem({
+      ...item,
+      config: { ...item.config, conditions: newConditions },
+      correlations: { ...item.correlations, [newItemId]: 'linked' }
+    });
+  };
+
+  const openCorrelatedItem = (cId: string) => {
+    // Dispara evento para a tela "pai" fechar este modal e abrir o outro
+    onClose();
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('openTracker', { detail: cId }));
+    }, 50);
+  };
 
   const handleUploadPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -95,14 +188,29 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
     }
   };
 
-  const handleEditLog = (logId: string, currentInfo: string = '', currentPhoto?: string) => {
+  const handleEditLog = (logId: string, currentInfo: string = '', currentPhoto?: string, currentMetadata?: any) => {
     setEditingLogId(logId);
     setEditingLogInfo(currentInfo);
     setEditingLogPhoto(currentPhoto || null);
+    setEditingLogCheckedConditions(currentMetadata?.checkedConditions || {});
+    setEditingLogConditionPhotos(currentMetadata?.conditionPhotos || {});
   };
 
   const saveLogEdit = (logId: string) => {
-    updateLog(logId, { info: editingLogInfo, photoUrl: editingLogPhoto || undefined });
+    const totalConditions = conditions.length + Object.keys(item.correlations || {}).length;
+    const metCount = Object.values(editingLogCheckedConditions).filter(Boolean).length;
+    const allMet = totalConditions > 0 && metCount === totalConditions;
+
+    updateLog(logId, { 
+      info: editingLogInfo, 
+      photoUrl: editingLogPhoto || undefined,
+      metadata: {
+        checkedConditions: editingLogCheckedConditions,
+        conditionPhotos: editingLogConditionPhotos,
+        totalConditions,
+        allConditionsMet: allMet
+      }
+    });
     setEditingLogId(null);
   };
 
@@ -143,13 +251,22 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
   };
 
   const toggleCorrelation = (targetId: string) => {
+    const targetItem = items[targetId];
+    if (!targetItem) return;
+
     const newCorrelations = { ...item.correlations };
+    const newTargetCorrelations = { ...(targetItem.correlations || {}) };
+    
     if (newCorrelations[targetId]) {
       delete newCorrelations[targetId];
+      delete newTargetCorrelations[item.id];
     } else {
       newCorrelations[targetId] = 'linked';
+      newTargetCorrelations[item.id] = 'linked';
     }
+    
     updateItem({ ...item, correlations: newCorrelations });
+    updateItem({ ...targetItem, correlations: newTargetCorrelations });
   };
 
   const isNameDirty = name !== item?.name;
@@ -196,16 +313,6 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
             dragElastic={0.2}
             className="flex-1 w-full flex flex-col relative bg-[#0a0c0a] overflow-hidden"
           >
-            {showCoverPhoto && item.coverPhoto && (
-              <>
-                <div
-                  className="absolute inset-0 bg-cover bg-center opacity-10 mix-blend-luminosity pointer-events-none"
-                  style={{ backgroundImage: `url(${item.coverPhoto})` }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-[#0a0c0a]/50 via-[#0a0c0a]/80 to-[#0a0c0a] pointer-events-none" />
-              </>
-            )}
-
             <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-white/20 rounded-full z-[1000006]" />
 
             {/* Hidden file input for log photos */}
@@ -218,10 +325,10 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
             />
 
             {/* Header */}
-            <div className="relative h-28 shrink-0 flex flex-col justify-end p-4 border-b border-white/5 bg-transparent">
+            <div className="relative h-48 shrink-0 flex flex-col justify-end p-4 border-b border-white/5 bg-transparent">
               {showCoverPhoto && item.coverPhoto && (
                 <div
-                  className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-luminosity"
+                  className="absolute inset-0 bg-cover bg-center opacity-50"
                   style={{ backgroundImage: `url(${item.coverPhoto})` }}
                 />
               )}
@@ -238,6 +345,13 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                   className="hidden"
                   ref={fileInputRef}
                   onChange={handleUploadPhoto}
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  ref={conditionPhotoInputRef}
+                  onChange={handleUploadConditionPhoto}
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
@@ -266,9 +380,19 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
               </div>
 
               <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-col pt-4">
-                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-1 block">
-                  {item.type === 'medicine' ? ' Medicamento' : ' Acompanhe'}
-                </span>
+                <select
+                  value={item.type}
+                  onChange={(e) => updateItem({ ...item, type: e.target.value })}
+                  className="bg-transparent text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-1 block focus:outline-none cursor-pointer appearance-none"
+                  style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
+                >
+                  <option value="acompanhe" style={{ background: '#0a0c0a' }}>Acompanhe</option>
+                  <option value="medicine" style={{ background: '#0a0c0a' }}>Medicamento</option>
+                  <option value="vice" style={{ background: '#0a0c0a' }}>Libertesse</option>
+                  <option value="hidratesse" style={{ background: '#0a0c0a' }}>Hidratesse</option>
+                  <option value="jejue" style={{ background: '#0a0c0a' }}>Jejue</option>
+                  <option value="viaje" style={{ background: '#0a0c0a' }}>Viaje</option>
+                </select>
 
                 <div className="flex items-center gap-3">
                   <input
@@ -427,7 +551,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                   <label className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-2 block">Descrição / Finalidade</label>
                   <div className="relative">
                     <textarea
-                      value={description}
+                      value={description || ""}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Descreva a finalidade..."
                       className="w-full bg-transparent p-2 text-[11px] font-medium text-white/80 focus:outline-none focus:bg-white/[0.02] resize-none h-10 transition-colors custom-scrollbar"
@@ -446,6 +570,45 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                         </motion.button>
                       )}
                     </AnimatePresence>
+                  </div>
+                </div>
+
+                <div className="py-2 mb-2 border-t border-white/5 pt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <CheckSquare size={14} className="text-emerald-400" />
+                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Condições</span>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        setEditingConditionIndex(null);
+                        setNewConditionTitle('');
+                        setIsAddConditionModalOpen(true);
+                      }}
+                      className="w-5 h-5 flex items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
+                      title="Adicionar Condição"
+                    >
+                      <PlusCircle size={12} />
+                    </button>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    {conditions.length === 0 ? (
+                      <p className="text-[10px] text-white/30 font-medium">Nenhuma condição definida.</p>
+                    ) : (
+                      conditions.map((cond, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-300 px-2.5 py-1 text-[10px] font-bold rounded-md border border-emerald-500/20">
+                          <span className="cursor-pointer hover:underline" onClick={() => {
+                            setEditingConditionIndex(idx);
+                            setNewConditionTitle(cond);
+                            setIsAddConditionModalOpen(true);
+                          }}>{cond}</span>
+                          <button onClick={() => removeCondition(idx)} className="text-emerald-400/50 hover:text-emerald-300">
+                            <X size={10} />
+                          </button>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -516,28 +679,198 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                     )}
                   </AnimatePresence>
                 </div>
+                
+                {/* Libertesse Specific Settings */}
+                {item.type === 'vice' && (
+                  <div className="py-2 mb-4 border-t border-white/5 pt-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <TrendingDown size={14} className="text-yellow-400" />
+                      <span className="text-[10px] font-bold text-yellow-400 uppercase tracking-wider">Estratégia Libertesse</span>
+                    </div>
+                    
+                    <div className="flex flex-col gap-3">
+                      <select
+                        value={item.config?.mode || 'acompanhe'}
+                        onChange={(e) => updateItem({ ...item, config: { ...item.config, mode: e.target.value } })}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-[12px] text-white/80 focus:outline-none focus:border-yellow-500/50 appearance-none cursor-pointer"
+                        style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
+                      >
+                        <option value="acompanhe" style={{background: '#0a0c0a'}}>SE CONHEÇA - Apenas Acompanhar</option>
+                        <option value="diminua" style={{background: '#0a0c0a'}}>DIMINUA - Definir Metas de Redução e Jejum</option>
+                        <option value="missao-antitabagismo" style={{background: '#0a0c0a'}}>MISSÃO - Desafio Guiado</option>
+                      </select>
+
+                      {item.config?.mode === 'missao-antitabagismo' && (
+                        <div className="bg-yellow-950/30 border border-yellow-500/30 rounded-xl p-3 flex items-center justify-between shadow-[0_0_15px_rgba(234,179,8,0.05)]">
+                          <div className="flex items-center gap-2">
+                            <Activity size={16} className="text-yellow-400 animate-pulse" />
+                            <span className="text-yellow-400 text-xs font-black tracking-widest uppercase">MISSÃO ATIVA</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-slate-400 text-[0.6rem] font-bold tracking-widest uppercase block mb-0.5">Progresso</span>
+                            <span className="text-yellow-400 text-xs font-extrabold">Estágio {Math.min(10, (item.config?.antitabagismoLevel ?? 0) + 1)}/10</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {item.config?.mode === 'diminua' && (
+                        <div className="flex flex-col gap-2">
+                          <label className="text-[9px] font-bold text-white/30 uppercase tracking-widest block">Meta de Tempo sem usar (Jejum em Segundos)</label>
+                          <input
+                            type="number"
+                            value={item.config?.timerLimitSeconds || 0}
+                            onChange={(e) => updateItem({ ...item, config: { ...item.config, timerLimitSeconds: parseInt(e.target.value) || 0 } })}
+                            className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-[12px] text-white/80 focus:outline-none focus:border-yellow-500/50"
+                          />
+                        </div>
+                      )}
+
+                      <div className="flex flex-col gap-2 mt-2">
+                        <label className="text-[9px] font-bold text-white/30 uppercase tracking-widest block">Custo por Uso (R$)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={item.config?.costPerUse || ''}
+                          onChange={(e) => updateItem({ ...item, config: { ...item.config, costPerUse: parseFloat(e.target.value) || undefined } })}
+                          placeholder="Ex: 0.50"
+                          className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-[12px] text-white/80 focus:outline-none focus:border-red-500/50"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Nova Área de Adicionar Registro */}
+                <div className="py-2 mb-4 border-t border-white/5 pt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CheckSquare size={14} className="text-sky-400" />
+                    <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider">Novo Registro</span>
+                  </div>
+                  
+                  <input type="file" ref={conditionPhotoInputRef} className="hidden" accept="image/*" onChange={handleUploadConditionPhoto} />
+
+                  {(conditions.length > 0 || Object.keys(item.correlations || {}).length > 0) && (
+                    <div className="flex flex-col gap-2 mb-4">
+                      {conditions.map((cond, idx) => {
+                        const addCondPhoto = (cKey: string) => {
+                          setUploadingConditionKey(cKey);
+                          setTimeout(() => conditionPhotoInputRef.current?.click(), 0);
+                        };
+
+                        return (
+                          <div key={idx} className="flex flex-col gap-1 p-2 rounded-xl bg-black/40 border border-white/5 group">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] text-white/80 flex-1">{cond}</span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => transformConditionToAcompanhe(cond, idx)}
+                                  title="Transformar em Acompanhe"
+                                  className="text-white/20 hover:text-amber-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <PlusCircle size={14} />
+                                </button>
+                                <button
+                                  onClick={() => addCondPhoto(`cond-${idx}`)}
+                                  title="Anexar Foto"
+                                  className={`p-1 rounded-full hover:bg-white/10 transition-colors ${conditionPhotos[`cond-${idx}`] ? 'text-emerald-400' : 'text-white/30'}`}
+                                >
+                                  <Camera size={14} />
+                                </button>
+                                <button 
+                                  onClick={() => setCheckedConditions(prev => ({...prev, [`cond-${idx}`]: !prev[`cond-${idx}`]}))}
+                                  className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors ${checkedConditions[`cond-${idx}`] ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-white/5 border-white/20 text-transparent'}`}
+                                >
+                                  <Check size={12} />
+                                </button>
+                              </div>
+                            </div>
+                            {conditionPhotos[`cond-${idx}`] && (
+                              <div className="h-16 w-16 mt-1 rounded-lg overflow-hidden border border-white/10 relative">
+                                <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${conditionPhotos[`cond-${idx}`]})` }} />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      
+                      {Object.keys(item.correlations || {}).map(cId => {
+                        const cItem = items[cId];
+                        if (!cItem) return null;
+                        const addCondPhoto = (cKey: string) => {
+                          setUploadingConditionKey(cKey);
+                          setTimeout(() => conditionPhotoInputRef.current?.click(), 0);
+                        };
+                        
+                        return (
+                          <div key={cId} className="flex flex-col gap-1 p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 group">
+                            <div className="flex items-center justify-between">
+                              <span 
+                                className="text-[11px] text-indigo-300 font-bold flex-1 cursor-pointer hover:underline"
+                                onClick={() => openCorrelatedItem(cId)}
+                              >
+                                {cItem.name || cItem.id.substring(0, 8)}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => addCondPhoto(`corr-${cId}`)}
+                                  title="Anexar Foto"
+                                  className={`p-1 rounded-full hover:bg-white/10 transition-colors ${conditionPhotos[`corr-${cId}`] ? 'text-emerald-400' : 'text-white/30'}`}
+                                >
+                                  <Camera size={14} />
+                                </button>
+                                <button 
+                                  onClick={() => setCheckedConditions(prev => ({...prev, [`corr-${cId}`]: !prev[`corr-${cId}`]}))}
+                                  className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors ${checkedConditions[`corr-${cId}`] ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-white/5 border-white/20 text-transparent'}`}
+                                >
+                                  <Check size={12} />
+                                </button>
+                              </div>
+                            </div>
+                            {conditionPhotos[`corr-${cId}`] && (
+                              <div className="h-16 w-16 mt-1 rounded-lg overflow-hidden border border-white/10 relative">
+                                <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${conditionPhotos[`corr-${cId}`]})` }} />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      const totalConditions = conditions.length + Object.keys(item.correlations || {}).length;
+                      const metCount = Object.values(checkedConditions).filter(Boolean).length;
+                      const allMet = totalConditions > 0 && metCount === totalConditions;
+
+                      useTrackerStore.getState().addLog({
+                        trackerItemId: itemId,
+                        type: 'consumption',
+                        info: '',
+                        value: 1,
+                        metadata: {
+                          checkedConditions,
+                          conditionPhotos,
+                          totalConditions,
+                          allConditionsMet: allMet
+                        }
+                      });
+                      setCheckedConditions({});
+                      setConditionPhotos({});
+                    }}
+                    className="w-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 font-black uppercase tracking-widest text-xs py-3 rounded-xl transition-colors shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+                  >
+                    Gravar Registro
+                  </button>
+                </div>
 
                 {/* Histórico de Registros */}
                 <div className="py-2">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <Clock size={14} className="text-emerald-400" />
-                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Histórico de Registros</span>
+                      <Clock size={14} className="text-white/40" />
+                      <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider">Histórico de Registros</span>
                     </div>
-                    <button
-                      onClick={() => {
-                        const store = useTrackerStore.getState();
-                        store.addLog({
-                          trackerItemId: itemId,
-                          type: 'consumption',
-                          info: '',
-                          value: 1
-                        });
-                      }}
-                      className="text-[9px] bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded hover:bg-emerald-500/20 font-bold uppercase transition-colors"
-                    >
-                      + Novo
-                    </button>
                   </div>
 
                   {itemLogs.length === 0 ? (
@@ -550,11 +883,20 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                         const timeStr = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
                         const isEditing = editingLogId === log.id;
 
+                        let visualClass = "border-white/5 bg-zinc-900/30";
+                        if (log.metadata?.totalConditions > 0) {
+                          if (log.metadata.allConditionsMet) {
+                            visualClass = "border-emerald-500/50 bg-emerald-950/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]";
+                          } else {
+                            visualClass = "border-rose-500/50 bg-rose-950/20 shadow-[0_0_15px_rgba(244,63,94,0.1)]";
+                          }
+                        }
+
                         return (
                           <div
                             key={log.id}
-                            onClick={() => handleEditLog(log.id, log.info, log.photoUrl)}
-                            className="py-3 px-3 flex flex-col gap-2 relative overflow-hidden rounded-xl border border-white/5 bg-zinc-900/30 cursor-pointer hover:border-white/10 transition-colors"
+                            onClick={() => handleEditLog(log.id, log.info, log.photoUrl, log.metadata)}
+                            className={`py-3 px-3 flex flex-col gap-2 relative overflow-hidden rounded-xl border cursor-pointer transition-colors ${visualClass}`}
                           >
                             {log.photoUrl && (
                               <>
@@ -638,6 +980,109 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
         </motion.div>
       </AnimatePresence>
 
+      {/* Add Condition Modal */}
+      <AnimatePresence>
+        {isAddConditionModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[1000010] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-zinc-900 border border-white/10 rounded-3xl p-5 w-full max-w-sm flex flex-col gap-4 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                <span className="text-[12px] font-bold text-emerald-400 uppercase tracking-widest">
+                  {editingConditionIndex !== null ? 'Editar Condição' : 'Adicionar Condição'}
+                </span>
+                <button
+                  onClick={() => {
+                    setIsAddConditionModalOpen(false);
+                    setNewConditionTitle('');
+                    setEditingConditionIndex(null);
+                  }}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              <input
+                value={newConditionTitle}
+                onChange={(e) => setNewConditionTitle(e.target.value)}
+                placeholder="Título da Condição..."
+                className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[13px] text-white focus:outline-none focus:border-emerald-500/50"
+                autoFocus
+              />
+
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => {
+                    if (!newConditionTitle.trim()) return;
+                    const newConditions = [...conditions];
+                    if (editingConditionIndex !== null) {
+                      newConditions[editingConditionIndex] = newConditionTitle.trim();
+                    } else {
+                      newConditions.push(newConditionTitle.trim());
+                    }
+                    updateItem({ ...item, config: { ...item.config, conditions: newConditions } });
+                    setIsAddConditionModalOpen(false);
+                    setNewConditionTitle('');
+                    setEditingConditionIndex(null);
+                  }}
+                  className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-[11px] uppercase tracking-wider transition-colors"
+                >
+                  {editingConditionIndex !== null ? 'Salvar Edição' : 'Adicionar Condição Simples'}
+                </button>
+                <button
+                  onClick={() => {
+                    if (!newConditionTitle.trim()) return;
+                    const newItemId = crypto.randomUUID();
+                    updateItem({
+                      id: newItemId,
+                      type: 'acompanhe', // We use 'acompanhe' as default
+                      name: newConditionTitle.trim(),
+                      status: 'ACTIVE',
+                      config: { showCoverPhoto: true },
+                      startDate: Date.now(),
+                      correlations: { [item.id]: 'linked' },
+                      isConsuming: false,
+                      defaultTimer: 300,
+                      userId: item.userId || 'test-user',
+                      createdAt: new Date(),
+                      updatedAt: new Date()
+                    } as any);
+
+                    const newConditions = [...conditions];
+                    if (editingConditionIndex !== null) {
+                      newConditions.splice(editingConditionIndex, 1);
+                    }
+
+                    updateItem({
+                      ...item,
+                      config: { ...item.config, conditions: newConditions },
+                      correlations: { ...item.correlations, [newItemId]: 'linked' }
+                    });
+
+                    setIsAddConditionModalOpen(false);
+                    setNewConditionTitle('');
+                    setEditingConditionIndex(null);
+                  }}
+                  className="w-full py-3 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
+                >
+                  Tornar Condição em Tarefa
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Edit Log Modal */}
       <AnimatePresence>
         {editingLogId && (
@@ -651,72 +1096,107 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-zinc-900 border border-white/10 rounded-2xl p-5 w-full max-w-sm flex flex-col gap-4 shadow-2xl"
+              className="bg-zinc-900 border border-white/10 rounded-3xl p-5 w-full max-w-sm flex flex-col shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                <span className="text-[12px] font-bold text-emerald-400 uppercase tracking-widest">
-                  Editar Registro
-                </span>
-                <button
-                  onClick={() => setEditingLogId(null)}
-                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors"
-                >
-                  <X size={14} />
-                </button>
-              </div>
+              {(() => {
+                const currentLog = itemLogs.find(l => l.id === editingLogId);
+                const logTime = currentLog ? new Date(currentLog.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+                const logTitle = `REGISTRO - ${logTime}`;
 
-              <div className="flex flex-col gap-3">
-                <textarea
-                  value={editingLogInfo}
-                  onChange={(e) => setEditingLogInfo(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 resize-none h-24 custom-scrollbar"
-                  placeholder="Anotação..."
-                />
+                return (
+                  <>
+                    <div className="flex items-center justify-between pb-4">
+                      <span className="text-[12px] font-black text-white/50 uppercase tracking-widest">{logTitle}</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => editingLogId && handleDeleteLog(editingLogId)} className="w-8 h-8 flex items-center justify-center rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"><Trash2 size={14} /></button>
+                        <button onClick={() => setEditingLogId(null)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors"><X size={14} /></button>
+                        <button onClick={() => editingLogId && saveLogEdit(editingLogId)} className="w-8 h-8 flex items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors shadow-[0_0_15px_rgba(16,185,129,0.1)]"><Check size={14} /></button>
+                      </div>
+                    </div>
 
-                {editingLogPhoto && (
-                  <div className="rounded-xl overflow-hidden border border-white/10 relative h-32 w-full">
-                    <div
-                      className="absolute inset-0 bg-cover bg-center"
-                      style={{ backgroundImage: `url(${editingLogPhoto})` }}
-                    />
-                    <button
-                      onClick={() => setEditingLogPhoto(null)}
-                      className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-red-500/80 transition-colors shadow-lg"
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                )}
+                    <div className="flex flex-col gap-4 mt-2">
+                      <div className="flex gap-3">
+                        <div 
+                          onClick={() => logFileInputRef.current?.click()}
+                          className={`w-20 h-20 shrink-0 rounded-2xl flex items-center justify-center border transition-colors cursor-pointer relative overflow-hidden group ${editingLogPhoto ? 'border-white/10' : 'border-dashed border-white/20 bg-black/40 hover:bg-white/5 hover:border-white/30'}`}
+                        >
+                          {editingLogPhoto ? (
+                            <>
+                              <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${editingLogPhoto})` }} />
+                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Camera size={14} className="text-white" />
+                              </div>
+                            </>
+                          ) : (
+                            isUploadingLogPhoto ? <Loader2 size={16} className="animate-spin text-white/50" /> : <Camera size={16} className="text-white/30 group-hover:text-white/60" />
+                          )}
+                        </div>
 
-                <div className="flex justify-between items-center mt-2">
-                  <button
-                    onClick={() => logFileInputRef.current?.click()}
-                    disabled={isUploadingLogPhoto}
-                    className="text-[10px] font-bold text-white/60 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 flex items-center gap-2 disabled:opacity-50 transition-colors"
-                  >
-                    {isUploadingLogPhoto ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
-                    ALTERAR FOTO
-                  </button>
-                </div>
-              </div>
+                        <textarea
+                          value={editingLogInfo || ""}
+                          onChange={(e) => setEditingLogInfo(e.target.value)}
+                          className="flex-1 bg-black/40 border border-white/10 rounded-2xl p-3 text-[12px] text-white/80 focus:outline-none focus:border-white/30 resize-none h-20 custom-scrollbar"
+                          placeholder="Anotação..."
+                        />
+                      </div>
 
-              <div className="flex flex-col gap-2 pt-2 mt-2 border-t border-white/5">
-                <button
-                  onClick={() => editingLogId && saveLogEdit(editingLogId)}
-                  className="w-full py-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
-                >
-                  <Check size={14} />
-                  Salvar Alterações
-                </button>
-                <button
-                  onClick={() => editingLogId && handleDeleteLog(editingLogId)}
-                  className="w-full py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
-                >
-                  <Trash2 size={14} />
-                  Deletar Registro
-                </button>
-              </div>
+                      {(conditions.length > 0 || Object.keys(item.correlations || {}).length > 0) && (
+                        <div className="flex flex-col gap-2 pt-2 border-t border-white/5">
+                          {conditions.map((cond, idx) => {
+                            const cKey = `cond-${idx}`;
+                            const addCondPhoto = () => {
+                              setUploadingConditionKey(cKey);
+                              setTimeout(() => conditionPhotoInputRef.current?.click(), 0);
+                            };
+                            return (
+                              <div key={idx} className="flex flex-col gap-1 p-2 rounded-xl bg-black/40 border border-white/5">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] text-white/80 flex-1">{cond}</span>
+                                  <div className="flex items-center gap-2">
+                                    <button onClick={addCondPhoto} className={`p-1 rounded-full hover:bg-white/10 transition-colors ${editingLogConditionPhotos[cKey] ? 'text-emerald-400' : 'text-white/30'}`}><Camera size={14} /></button>
+                                    <button onClick={() => setEditingLogCheckedConditions(p => ({...p, [cKey]: !p[cKey]}))} className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors ${editingLogCheckedConditions[cKey] ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-white/5 border-white/20 text-transparent'}`}><Check size={12} /></button>
+                                  </div>
+                                </div>
+                                {editingLogConditionPhotos[cKey] && (
+                                  <div className="h-12 w-12 mt-1 rounded-lg overflow-hidden border border-white/10 relative">
+                                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${editingLogConditionPhotos[cKey]})` }} />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                          {Object.keys(item.correlations || {}).map(cId => {
+                            const cItem = items[cId];
+                            if (!cItem) return null;
+                            const cKey = `corr-${cId}`;
+                            const addCondPhoto = () => {
+                              setUploadingConditionKey(cKey);
+                              setTimeout(() => conditionPhotoInputRef.current?.click(), 0);
+                            };
+                            return (
+                              <div key={cId} className="flex flex-col gap-1 p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] text-indigo-300 font-bold flex-1">{cItem.name || cItem.id.substring(0, 8)}</span>
+                                  <div className="flex items-center gap-2">
+                                    <button onClick={addCondPhoto} className={`p-1 rounded-full hover:bg-white/10 transition-colors ${editingLogConditionPhotos[cKey] ? 'text-emerald-400' : 'text-white/30'}`}><Camera size={14} /></button>
+                                    <button onClick={() => setEditingLogCheckedConditions(p => ({...p, [cKey]: !p[cKey]}))} className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors ${editingLogCheckedConditions[cKey] ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-white/5 border-white/20 text-transparent'}`}><Check size={12} /></button>
+                                  </div>
+                                </div>
+                                {editingLogConditionPhotos[cKey] && (
+                                  <div className="h-12 w-12 mt-1 rounded-lg overflow-hidden border border-white/10 relative">
+                                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${editingLogConditionPhotos[cKey]})` }} />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
             </motion.div>
           </motion.div>
         )}

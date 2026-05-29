@@ -37,13 +37,12 @@ import { getAssetUrl } from '@/lib/config';
 import { PillarPage } from '@/modules/routines/components/PillarPage';
 import { PILLARS_DATA, IMPACT_ICONS } from '@/modules/routines/data/routinesData';
 import { LibertesseScreen, VICES } from '../components/libertesse/components/LibertesseScreen';
-import { ViceOptionsModal } from '../components/libertesse/components/ViceOptionsModal';
 import { attributeEngine } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
-import { useViceStore } from '../components/libertesse/store/viceStore';
 import { PlanejeScreen } from '../components/planeje/components/PlanejeScreen';
 import { AcompanheScreen } from '../components/tracker/components/AcompanheScreen';
 import { useTrackerStore } from '../components/tracker/store/trackerStore';
 import { TrackerOverlay } from '../components/tracker/components/TrackerOverlay';
+import { TrackerStatusCard } from '../components/tracker/components/TrackerStatusCard';
 
 const allRoutines = Object.values(PILLARS_DATA).flatMap(pillar =>
   pillar.options.map(opt => ({
@@ -137,25 +136,24 @@ export default function DashboardPage() {
   const [activePillar, setActivePillar] = useState<string | null>(null);
   const [activeMethod, setActiveMethod] = useState('rotinas');
   const [activeTab, setActiveTab] = useState(TABS[0].id);
-  const [selectedViceId, setSelectedViceId] = useState<string | null>(null);
-  const [modalInitialStep, setModalInitialStep] = useState<'options' | 'active_options' | 'history' | 'form_acompanhe' | 'form_diminua' | 'confirm_end' | undefined>();
-  const [attributes, setAttributes] = useState<Record<string, number>>({});
-
-  const activeVices = useViceStore(state => state.activeVices);
-  const activeVicesList = Object.values(activeVices || {});
-
   const trackerItems = useTrackerStore(state => state.items);
-  const activeTrackers = Object.values(trackerItems || {}).filter(t => t.status === 'ACTIVE');
+  const activeVicesList = Object.values(trackerItems || {}).filter(t => t.status === 'ACTIVE' && t.type === 'vice');
+  const activeTrackers = Object.values(trackerItems || {}).filter(t => t.status === 'ACTIVE' && t.type !== 'vice');
   
   const [selectedTrackerId, setSelectedTrackerId] = useState<string | null>(null);
-
+  const [attributes, setAttributes] = useState<Record<string, number>>({});
 
   useEffect(() => {
     setTimeout(() => {
       setAttributes(attributeEngine.getAttributes() as unknown as Record<string, number>);
     }, 0);
-    useViceStore.getState().fetchVices();
     useTrackerStore.getState().fetchItems();
+
+    const handleOpenTracker = (e: any) => {
+      setSelectedTrackerId(e.detail);
+    };
+    window.addEventListener('openTracker', handleOpenTracker);
+    return () => window.removeEventListener('openTracker', handleOpenTracker);
   }, []);
 
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -200,12 +198,10 @@ export default function DashboardPage() {
     return () => clearInterval(timer);
   }, []);
 
-  const getTimeActiveText = (viceId: string) => {
-    if (!now) return null;
-    const activeVice = activeVices[viceId];
-    if (!activeVice || !activeVice.startTime) return null;
+  const getTimeActiveText = (item: any) => {
+    if (!now || !item.startDate) return null;
 
-    const diffSeconds = Math.floor((now - activeVice.startTime) / 1000);
+    const diffSeconds = Math.floor((now - item.startDate) / 1000);
     if (diffSeconds < 0) return '0m';
 
     const d = Math.floor(diffSeconds / 86400);
@@ -343,134 +339,25 @@ export default function DashboardPage() {
             <div className="w-full shrink-0 snap-start px-4 pb-2 flex flex-col relative pt-4">
               {activeVicesList.length > 0 || activeTrackers.length > 0 ? (
                 <>
-                {/* Renderizar Vices */}
-                {activeVicesList.map(activeVice => {
-                  const isMission = activeVice.mode === 'missao-antitabagismo';
-                  return (
-                    <div key={activeVice.viceId} className={`mb-6 border rounded-2xl p-4 flex flex-col gap-3 ${
-                      isMission 
-                        ? 'bg-yellow-950/30 border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.05)]' 
-                        : 'bg-emerald-950/30 border-emerald-500/30'
-                    }`}>
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                            isMission ? 'bg-yellow-500/20' : 'bg-emerald-500/20'
-                          }`}>
-                            <Wand2 size={18} className={isMission ? 'text-yellow-400' : 'text-emerald-500'} />
-                          </div>
-                          <div>
-                            <p className={`text-xs font-bold tracking-widest uppercase ${
-                              isMission ? 'text-yellow-400' : 'text-emerald-400'
-                            }`}>
-                              {isMission ? 'MISSÃO' : 'Libertesse Ativo'}
-                            </p>
-                            <h3 className="text-white text-sm font-extrabold tracking-widest uppercase">
-                              {VICES.find(v => v.id === activeVice.viceId)?.label || activeVice.viceId}
-                            </h3>
-                          </div>
-                        </div>
-                        {isMission ? (
-                          <div className="text-right">
-                            <p className="text-slate-400 text-[0.6rem] font-bold tracking-widest uppercase">Progresso</p>
-                            <p className="text-yellow-400 text-xs font-extrabold">Estágio {Math.min(10, (activeVice.antitabagismoLevel ?? 0) + 1)}/10</p>
-                          </div>
-                        ) : getTimeActiveText(activeVice.viceId) && (
-                          <div className="text-right">
-                            <p className="text-slate-400 text-[0.6rem] font-bold tracking-widest uppercase">Ativo há</p>
-                            <p className="text-white text-xs font-extrabold">{getTimeActiveText(activeVice.viceId)}</p>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            setModalInitialStep('history');
-                            setSelectedViceId(activeVice.viceId);
-                          }}
-                          className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-[0.6rem] tracking-widest"
-                        >
-                          <History size={14} />
-                          HISTÓRICO
-                        </button>
-                        <button
-                          onClick={() => {
-                            setModalInitialStep('options');
-                            setSelectedViceId(activeVice.viceId);
-                          }}
-                          className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-[0.6rem] tracking-widest"
-                        >
-                          <Edit size={14} />
-                          EDITAR
-                        </button>
-                        <button
-                          onClick={() => {
-                            setModalInitialStep('confirm_end');
-                            setSelectedViceId(activeVice.viceId);
-                          }}
-                          className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold py-3 rounded-xl border border-red-500/20 transition-colors flex items-center justify-center gap-2 text-[0.6rem] tracking-widest"
-                        >
-                          <X size={14} />
-                          ENCERRAR
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+                <div className="flex flex-col gap-4">
+                  {/* Renderizar Vices */}
+                  {activeVicesList.map(activeVice => (
+                    <TrackerStatusCard 
+                      key={activeVice.id}
+                      item={activeVice} 
+                      onClick={() => setSelectedTrackerId(activeVice.id)} 
+                    />
+                  ))}
 
-                {/* Renderizar Trackers do Acompanhe */}
-                {activeTrackers.map(tracker => {
-                  const days = Math.floor((Date.now() - tracker.startDate) / (1000 * 60 * 60 * 24));
-                  const showCoverPhoto = tracker.config?.showCoverPhoto !== false;
-                  
-                  return (
-                    <div 
-                      key={tracker.id} 
-                      onClick={() => setSelectedTrackerId(tracker.id)}
-                      className="mb-6 border rounded-2xl p-4 flex flex-col gap-3 bg-amber-950/30 border-amber-500/30 relative overflow-hidden group cursor-pointer hover:bg-amber-950/50 transition-colors"
-                    >
-                      
-                      {/* Background Image */}
-                      {showCoverPhoto && tracker.coverPhoto && (
-                        <>
-                          <div 
-                            className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-luminosity transition-opacity group-hover:opacity-60 pointer-events-none"
-                            style={{ backgroundImage: `url(${tracker.coverPhoto})` }}
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-[#0f1115]/60 to-transparent pointer-events-none" />
-                        </>
-                      )}
-
-                      <div className="relative z-10 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-amber-500/20">
-                            <LineChart size={18} className="text-amber-500" />
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold tracking-widest uppercase text-amber-400">
-                              Acompanhe Ativo
-                            </p>
-                            <h3 className="text-white text-sm font-extrabold tracking-widest uppercase">
-                              {tracker.name}
-                            </h3>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-slate-400 text-[0.6rem] font-bold tracking-widest uppercase">Acompanhado há</p>
-                          <p className="text-white text-xs font-extrabold">{days} dias</p>
-                        </div>
-                      </div>
-                      <div className="relative z-10 flex gap-2">
-                        <div
-                          className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl backdrop-blur-md transition-colors flex items-center justify-center gap-2 text-[0.6rem] tracking-widest"
-                        >
-                          <Edit size={14} />
-                          EDITAR
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                  {/* Renderizar Trackers do Acompanhe */}
+                  {activeTrackers.map(tracker => (
+                    <TrackerStatusCard 
+                      key={tracker.id}
+                      item={tracker} 
+                      onClick={() => setSelectedTrackerId(tracker.id)} 
+                    />
+                  ))}
+                </div>
                 </>
               ) : (
                 <div className="flex-1 flex items-center justify-center opacity-50">
@@ -682,15 +569,7 @@ export default function DashboardPage() {
         )}
       </AnimatePresence>
 
-      <ViceOptionsModal
-        isOpen={!!selectedViceId}
-        onClose={() => {
-          setSelectedViceId(null);
-          setModalInitialStep(undefined);
-        }}
-        viceId={selectedViceId}
-        initialStep={modalInitialStep}
-      />
+
 
       {selectedTrackerId && (
         <TrackerOverlay 

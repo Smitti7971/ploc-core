@@ -1,5 +1,5 @@
 import { useMemo, useEffect } from 'react';
-import { useViceStore } from '../../dashboard/components/libertesse/store/viceStore';
+import { useTrackerStore } from '../../dashboard/components/tracker/store/trackerStore';
 import { useCalendarStore, CalendarTask } from '../store/calendarStore';
 import { toISODate } from '../utils/dateUtils';
 
@@ -19,34 +19,32 @@ const VICES_MAP: Record<string, string> = {
 };
 
 export const useCalendarData = () => {
-  const { logs, activeVices, fetchVices } = useViceStore();
+  const { logs, items, fetchItems } = useTrackerStore();
   const { tasks, fetchTasks, addTask, updateTask, deleteTask, moveTaskToDate } = useCalendarStore();
 
   // Load data if not loaded
   useEffect(() => {
-    fetchVices();
+    fetchItems();
     fetchTasks();
-  }, [fetchVices, fetchTasks]);
+  }, [fetchItems, fetchTasks]);
 
   const allEvents = useMemo(() => {
     const events: CalendarTask[] = [];
 
     // 1. Mapear Logs Históricos do Libertesse (Não arrastáveis)
-    logs.forEach(log => {
-      const meta = LOG_META[log.type] || { title: 'Evento', category: 'Libertesse', color: 'text-white' };
+    (logs || []).forEach(log => {
+      const meta = LOG_META[log.type] || { title: 'Evento', category: 'Tracker', color: 'text-white' };
       const d = new Date(log.timestamp);
       
-      const customName = activeVices[log.viceId]?.customName;
-      const viceName = log.viceId === 'personalizado' && customName 
-        ? customName 
-        : VICES_MAP[log.viceId] || 'LIBERTESSE';
+      const item = items?.[log.trackerItemId];
+      const customName = item?.config?.customName || item?.name;
+      const viceName = customName ? customName : VICES_MAP[item?.config?.viceId || ''] || 'TRACKER';
 
-      let description = '';
+      let description = log.info || '';
       if (log.type === 'consumption') {
-        description = log.durationSeconds ? `Duração: ${log.durationSeconds}s` : 'Consumo rápido';
-        if (log.motivator) description += ` • Motivador: ${log.motivator}`;
+        description = log.value ? `Valor: ${log.value} ${description}` : (description || 'Consumo rápido');
       } else if (log.type === 'start') {
-        description = 'Cronômetro iniciado';
+        description = 'Monitoramento iniciado';
       } else if (log.type === 'end') {
         description = 'Monitoramento pausado';
       }
@@ -70,44 +68,44 @@ export const useCalendarData = () => {
     });
 
     // 3. Adicionar Consumo Ativo se houver
-    Object.values(activeVices).forEach(activeVice => {
-      const viceName = activeVice.viceId === 'personalizado' && activeVice.customName
-        ? activeVice.customName
-        : VICES_MAP[activeVice.viceId] || 'LIBERTESSE';
+    Object.values(items || {}).forEach(activeItem => {
+      if (activeItem.status !== 'ACTIVE') return;
+
+      const viceName = activeItem.config?.customName || activeItem.name || 'TRACKER';
         
-      if (activeVice.isConsuming && activeVice.consumptionStartTime) {
+      if (activeItem.isConsuming && activeItem.consumptionStart) {
         const now = new Date();
 
         events.push({
-          id: `active_consumption_${activeVice.viceId}`,
+          id: `active_consumption_${activeItem.id}`,
           title: `[${viceName}] Consumindo Agora`,
-          description: activeVice.currentMotivator ? `Motivo: ${activeVice.currentMotivator}` : 'Cronômetro rodando...',
+          description: 'Cronômetro rodando...',
           dateStr: toISODate(now),
           timeStr: 'Agora',
           color: 'text-sky-400',
           isDraggable: false,
           status: 'active',
-          category: 'Libertesse'
+          category: 'Tracker'
         });
       } else {
-        // Evento genérico para indicar que o vício está sendo monitorado hoje
+        // Evento genérico para indicar que o tracker está sendo monitorado hoje
         const today = new Date();
         events.push({
-          id: `tracking_${activeVice.viceId}_${toISODate(today)}`,
+          id: `tracking_${activeItem.id}_${toISODate(today)}`,
           title: `[${viceName}] Monitoramento Ativo`,
-          description: activeVice.mode === 'diminua' ? 'Desafio de redução em andamento' : 'Acompanhamento de uso',
+          description: activeItem.config?.mode === 'diminua' ? 'Desafio de redução em andamento' : 'Acompanhamento de uso',
           dateStr: toISODate(today),
-          timeStr: new Date(activeVice.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          timeStr: new Date(activeItem.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           color: 'text-emerald-400/70',
           isDraggable: false,
           status: 'pending',
-          category: 'Libertesse'
+          category: 'Tracker'
         });
       }
     });
 
     return events;
-  }, [logs, activeVices, tasks]);
+  }, [logs, items, tasks]);
 
   const getEventsByDate = (dateStr: string) => {
     return allEvents.filter(e => e.dateStr === dateStr).sort((a, b) => {
