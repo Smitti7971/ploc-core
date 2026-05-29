@@ -18,6 +18,7 @@ import {
 import { attributeEngine, UserAttributes } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
 import { bubbleEngine } from '@/modules/blackboard/engine/bubble-engine/BubbleEngine';
 import { PILLARS_DATA, IMPACT_ICONS, RoutineOption } from '../data/routinesData';
+import { useTrackerStore } from '@/modules/dashboard/components/tracker/store/trackerStore';
 
 export function PillarPage({ pillarId }: { pillarId: string }) {
   const config = PILLARS_DATA[pillarId];
@@ -26,6 +27,8 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
   const [isMounted, setIsMounted] = useState(false);
   const [attributes, setAttributes] = useState(attributeEngine.getAttributes());
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const { items } = useTrackerStore();
+  const activeVicesList = Object.values(items || {}).filter(t => t.type === 'vice' && t.status === 'ACTIVE');
 
   const [profile, setProfile] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -537,10 +540,10 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {pillarId === 'liberdade' && activeVicesList.length > 0 ? (
             activeVicesList.map(activeVice => {
-              const isMission = activeVice.mode === 'missao-antitabagismo';
+              const isMission = activeVice.config?.mode === 'missao-antitabagismo';
               return (
                 <div
-                  key={activeVice.viceId}
+                  key={activeVice.id}
                   style={{
                     padding: '1.25rem',
                     background: isMission ? 'rgba(234,179,8,0.05)' : 'rgba(16,185,129,0.05)',
@@ -583,7 +586,7 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
                         </span>
                       </div>
                       <h4 style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 800, margin: '2px 0 0 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        {activeVice.viceId === 'tabagismo' ? 'TABAGISMO' : activeVice.viceId.toUpperCase()}
+                        {activeVice.name ? activeVice.name.toUpperCase() : 'VÍCIO'}
                       </h4>
                     </div>
                   </div>
@@ -593,7 +596,7 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
                         Progresso
                       </span>
                       <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#eab308' }}>
-                        Estágio {Math.min(10, (activeVice.antitabagismoLevel ?? 0) + 1)}/10
+                        Estágio {Math.min(10, (activeVice.config?.antitabagismoLevel ?? 0) + 1)}/10
                       </span>
                     </div>
                   ) : (
