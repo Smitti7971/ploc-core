@@ -4,7 +4,7 @@
  */
 
 const getApiUrl = () => {
-  let url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+  let url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
   
   // Garante que a URL termine com /api se não tiver
   if (!url.endsWith('/api') && !url.endsWith('/api/')) {

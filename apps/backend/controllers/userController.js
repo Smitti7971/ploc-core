@@ -70,6 +70,50 @@ exports.updatePlocState = async (req, res) => {
   }
 };
 
+exports.addPlocInventoryItem = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { item } = req.body;
+    
+    if (!item || !item.type) {
+      return res.status(400).json({ error: 'Item inválido ou ausente' });
+    }
+
+    const prisma = require('../config/database');
+    
+    // Tenta mapear o item do frontend para um slug do banco
+    let slug = 'apple';
+    if (item.type === 'food' && item.name?.toLowerCase().includes('caf')) slug = 'coffee';
+    if (item.type === 'water') slug = 'water';
+    if (item.type === 'medicine') slug = 'medicine';
+
+    const dbItem = await prisma.inventoryItem.findUnique({
+      where: { slug }
+    });
+
+    if (dbItem) {
+      try {
+        await prisma.userInventory.create({
+          data: {
+            userId: userId,
+            inventoryItemId: dbItem.id,
+            quantity: 1,
+            acquiredAt: new Date(item.createdAt || Date.now())
+          }
+        });
+      } catch (err) {
+        // Ignora duplicidade caso já exista restrição (dependendo do banco)
+        console.warn('Possível duplicidade no inventário ignorada');
+      }
+    }
+
+    res.json({ message: "Item adicionado ao inventário relacional com sucesso!" });
+  } catch (error) {
+    console.error('❌ Erro ao adicionar item no UserInventory:', error.message);
+    res.status(500).json({ error: 'Erro ao adicionar item na mochila do Mascote' });
+  }
+};
+
 exports.seedUsers = async (req, res) => {
   try {
     const result = await userService.seedTestData();

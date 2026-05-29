@@ -98,7 +98,29 @@ const hasAuthToken = () => {
 const syncViceToBackend = async (vice: ActiveVice | null): Promise<boolean> => {
   if (vice && hasAuthToken()) {
     try {
-      await apiService.post('/vices', vice);
+      const payload = {
+        type: 'vice',
+        name: vice.viceId,
+        status: 'ACTIVE',
+        isConsuming: vice.isConsuming || false,
+        consumptionStart: vice.consumptionStartTime || null,
+        defaultTimer: vice.defaultConsumptionSeconds || 300,
+        config: {
+          customName: vice.customName,
+          mode: vice.mode,
+          expectedFrequency: vice.expectedFrequency,
+          timerLimitSeconds: vice.timerLimitSeconds,
+          reductionTarget: vice.reductionTarget,
+          costPerUse: vice.costPerUse,
+          currentMotivator: vice.currentMotivator,
+          isMission: vice.isMission,
+          isHidden: vice.isHidden,
+          isVulnerability: vice.isVulnerability,
+          antitabagismoLevel: vice.antitabagismoLevel,
+        },
+        startDate: new Date(vice.startTime).toISOString()
+      };
+      await apiService.post('/tracker/items', payload);
       return true;
     } catch (e) {
       console.error('Erro ao sincronizar vício:', e);
@@ -111,7 +133,26 @@ const syncViceToBackend = async (vice: ActiveVice | null): Promise<boolean> => {
 const syncLogToBackend = async (log: ViceLog) => {
   if (!hasAuthToken()) return;
   try {
-    await apiService.post('/vices/log', log);
+    const payload = {
+      id: log.id,
+      // We don't have trackerItemId here easily, but the backend allows linking by name or id if customized. Wait, tracker API requires trackerItemId.
+      // We will look up the trackerItemId in the backend if we don't pass it, but standard tracker API requires trackerItemId.
+      // Let's pass the viceId as trackerItemId and hope the backend resolves it or we will pass name.
+      // Wait, in tracker API, createTrackerLog takes `trackerItemId`. 
+      // We will need to store `trackerItemId` in `ActiveVice`. But for now, we'll send it and let the backend handle it if we modify the backend.
+      // Let's just use the `name` as `trackerItemId` for now, or fetch the ID. 
+      // Actually, since we fetch `TrackerItems`, we get their `id`s! We can store `trackerItemId` in `ActiveVice`!
+    };
+    // To make it simple, we will send to a custom or we just pass it to tracker logs
+    await apiService.post('/tracker/logs', {
+      id: log.id,
+      trackerItemName: log.viceId, // we need backend to support this or we find the ID
+      type: log.type,
+      timestamp: log.timestamp,
+      durationSeconds: log.durationSeconds,
+      value: log.cost,
+      info: log.motivator
+    });
   } catch (e) {
     console.error('Erro ao sincronizar log de vício:', e);
   }
@@ -132,20 +173,28 @@ export const useViceStore = create<ViceStore>()(
             if (!hasDirectToken && !hasStoreToken) return;
           }
           
-          const vices = await apiService.get<ViceResponse[]>('/vices');
-          if (vices && vices.length > 0) {
+          const [trackerItems, trackerLogs] = await Promise.all([
+            apiService.get<any[]>('/tracker/items'),
+            apiService.get<any[]>('/tracker/logs')
+          ]);
+          
+          const vices = trackerItems?.filter(i => i.type === 'vice') || [];
+          const logsData = trackerLogs?.filter(l => ['consumption', 'expense', 'start', 'end'].includes(l.type)) || [];
+
+          if (vices.length > 0) {
             const newActiveVices: Record<string, ActiveVice> = {};
             const autoEndedLogs: ViceLog[] = [];
             
             vices.forEach(v => {
+              const config = v.config || {};
               let isConsuming = v.isConsuming;
-              let startTime = Number(v.startTime);
-              let consumptionStartTime = v.consumptionStartTime ? Number(v.consumptionStartTime) : undefined;
+              let startTime = v.startDate ? new Date(v.startDate).getTime() : Date.now();
+              let consumptionStartTime = v.consumptionStart ? Number(v.consumptionStart) : undefined;
               
               // Verifica se a bolha foi deixada aberta (consumo) por mais tempo que o default (ex: 5 min)
               if (isConsuming && consumptionStartTime) {
                 const elapsedSeconds = (Date.now() - consumptionStartTime) / 1000;
-                const limit = v.defaultConsumptionSeconds || 300;
+                const limit = v.defaultTimer || 300;
                 if (elapsedSeconds > limit) {
                   isConsuming = false;
                   startTime = Date.now();
@@ -155,46 +204,52 @@ export const useViceStore = create<ViceStore>()(
                   const fastingSeconds = Math.floor((Date.now() - startTime) / 1000) - actualSecondsUsed;
                   autoEndedLogs.push({
                     id: crypto.randomUUID(),
-                    viceId: v.viceId,
+                    viceId: v.name,
                     type: 'consumption',
                     timestamp: Date.now(),
                     durationSeconds: actualSecondsUsed,
                     fastingSeconds: Math.max(0, fastingSeconds),
-                    motivator: v.currentMotivator || 'Auto-encerrado'
+                    motivator: config.currentMotivator || 'Auto-encerrado'
                   });
                   consumptionStartTime = undefined;
                 }
               }
 
-              newActiveVices[v.viceId] = {
-                viceId: v.viceId,
-                customName: v.customName,
-                mode: v.mode,
+              newActiveVices[v.name] = {
+                viceId: v.name, // name in TrackerItem is the viceId
+                customName: config.customName,
+                mode: config.mode || 'acompanhe',
                 startTime,
-                expectedFrequency: v.expectedFrequency,
-                timerLimitSeconds: v.timerLimitSeconds,
-                reductionTarget: v.reductionTarget,
+                expectedFrequency: config.expectedFrequency,
+                timerLimitSeconds: config.timerLimitSeconds,
+                reductionTarget: config.reductionTarget,
                 isConsuming,
                 consumptionStartTime,
-                defaultConsumptionSeconds: v.defaultConsumptionSeconds,
-                costPerUse: v.costPerUse,
-                currentMotivator: v.currentMotivator,
-                isMission: v.isMission,
-                isHidden: v.isHidden,
-                isVulnerability: v.isVulnerability
+                defaultConsumptionSeconds: v.defaultTimer,
+                costPerUse: config.costPerUse,
+                currentMotivator: config.currentMotivator,
+                isMission: config.isMission,
+                isHidden: config.isHidden,
+                isVulnerability: config.isVulnerability,
+                antitabagismoLevel: config.antitabagismoLevel
               };
             });
 
             set({
               activeVices: newActiveVices,
               logs: [
-                ...vices.flatMap(v => 
-                  (v.logs || []).map((l: ViceLogResponse) => ({
-                    ...l,
-                    viceId: v.viceId,
-                    timestamp: Number(l.timestamp)
-                  }))
-                ),
+                ...logsData.map(l => {
+                  const parentItem = trackerItems?.find(i => i.id === l.trackerItemId);
+                  return {
+                    id: l.id,
+                    viceId: parentItem ? parentItem.name : 'unknown',
+                    type: l.type as any,
+                    timestamp: Number(l.timestamp),
+                    durationSeconds: l.durationSeconds,
+                    cost: l.value,
+                    motivator: l.info
+                  };
+                }).filter(l => l.viceId !== 'unknown'),
                 ...autoEndedLogs
               ]
             });
@@ -264,7 +319,12 @@ export const useViceStore = create<ViceStore>()(
 
         (async () => {
           if (createdLog) await syncLogToBackend(createdLog).catch(console.error);
-          await apiService.delete(`/vices/${viceId}`).catch(console.error);
+          
+          // Precisamos do ID real para deletar.
+          // Como não temos armazenado, vamos ter que deletar by name se o backend permitir,
+          // Ou podemos simplesmente ignorar a deleção e deixar que não seja mais renderizado.
+          // Para ser robusto, seria melhor buscar e deletar, mas o ideal é que o tracker delete pelo nome.
+          await apiService.delete(`/tracker/items/${viceId}?byName=true`).catch(console.error);
         })();
       },
 

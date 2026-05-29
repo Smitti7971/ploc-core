@@ -44,9 +44,12 @@ export const useAuthStore = create<AuthState>()(
           localStorage.removeItem('ploc-auth');
           localStorage.removeItem('ploc-tracker-storage');
           localStorage.removeItem('ploc-vice-storage');
-          localStorage.removeItem('ploc-state');
+          localStorage.removeItem('ploc-state-store');
         }
         set({ token: null, user: null, isAuthenticated: false });
+        if (typeof window !== 'undefined') {
+          window.location.href = '/';
+        }
       },
 
       isAuthModalOpen: false,

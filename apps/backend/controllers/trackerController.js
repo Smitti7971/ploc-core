@@ -16,36 +16,57 @@ exports.createTrackerItem = async (req, res) => {
     const parsedStartDate = startDate ? new Date(startDate) : new Date();
     const parsedEndDate = endDate ? new Date(endDate) : null;
 
-    const trackerItem = await prisma.trackerItem.upsert({
-      where: { id: id || '' }, // if not found, create
-      create: {
-        id,
-        userId,
-        type,
-        name,
-        description,
-        status,
-        config: config || {},
-        correlations: correlations || {},
-        coverPhoto,
-        defaultTimer,
-        isConsuming: isConsuming || false,
-        startDate: parsedStartDate,
-        endDate: parsedEndDate,
-      },
-      update: {
-        name,
-        description,
-        status,
-        config: config || {},
-        correlations: correlations || {},
-        coverPhoto,
-        defaultTimer,
-        isConsuming: isConsuming || false,
-        startDate: parsedStartDate,
-        endDate: parsedEndDate,
+    let trackerItem;
+    const createData = {
+      userId,
+      type,
+      name,
+      description,
+      status,
+      config: config || {},
+      correlations: correlations || {},
+      coverPhoto,
+      defaultTimer,
+      isConsuming: isConsuming || false,
+      startDate: parsedStartDate,
+      endDate: parsedEndDate,
+    };
+    
+    const updateData = {
+      name,
+      description,
+      status,
+      config: config || {},
+      correlations: correlations || {},
+      coverPhoto,
+      defaultTimer,
+      isConsuming: isConsuming || false,
+      startDate: parsedStartDate,
+      endDate: parsedEndDate,
+    };
+
+    if (id) {
+      trackerItem = await prisma.trackerItem.upsert({
+        where: { id },
+        create: { id, ...createData },
+        update: updateData
+      });
+    } else {
+      // Try to find by user, type, and name
+      const existing = await prisma.trackerItem.findFirst({
+        where: { userId, type, name }
+      });
+      if (existing) {
+        trackerItem = await prisma.trackerItem.update({
+          where: { id: existing.id },
+          data: updateData
+        });
+      } else {
+        trackerItem = await prisma.trackerItem.create({
+          data: createData
+        });
       }
-    });
+    }
 
     res.status(201).json(trackerItem);
   } catch (error) {
@@ -98,18 +119,25 @@ exports.deleteTrackerItem = async (req, res) => {
   try {
     const userId = req.user?.id || 'c3dd1b0e-7465-4739-86de-db474c853d8e';
     const { id } = req.params;
+    const { byName } = req.query;
 
-    // Verify it belongs to the user
-    const existing = await prisma.trackerItem.findUnique({
-      where: { id }
-    });
+    let existing;
+    if (byName === 'true') {
+      existing = await prisma.trackerItem.findFirst({
+        where: { userId, name: id } // in this case id is actually the name
+      });
+    } else {
+      existing = await prisma.trackerItem.findUnique({
+        where: { id }
+      });
+    }
 
     if (!existing || existing.userId !== userId) {
       return res.status(404).json({ error: "TrackerItem not found or unauthorized" });
     }
 
     await prisma.trackerItem.delete({
-      where: { id }
+      where: { id: existing.id }
     });
 
     res.status(200).json({ message: "TrackerItem deleted successfully" });
@@ -124,30 +152,65 @@ exports.createTrackerLog = async (req, res) => {
     const userId = req.user?.id || 'c3dd1b0e-7465-4739-86de-db474c853d8e';
     const { id, trackerItemId, type, timestamp, photoUrl, info, durationSeconds, value, metadata } = req.body;
 
-    const log = await prisma.trackerLog.upsert({
-      where: { id: id || '' },
-      create: {
-        id,
-        trackerItemId,
-        userId,
-        type,
-        timestamp: BigInt(timestamp),
-        photoUrl,
-        info,
-        durationSeconds,
-        value,
-        metadata: metadata || {}
-      },
-      update: {
-        type,
-        timestamp: BigInt(timestamp),
-        photoUrl,
-        info,
-        durationSeconds,
-        value,
-        metadata: metadata || {}
+    let finalTrackerItemId = trackerItemId;
+    
+    // If trackerItemId is missing or not a UUID, it might be a 'name' passed from frontend. Try to look it up.
+    if (!finalTrackerItemId || finalTrackerItemId.length < 10) {
+      const { trackerItemName } = req.body;
+      const lookupName = trackerItemName || trackerItemId; // fallback to trackerItemId if it was actually the name
+      if (lookupName) {
+         const item = await prisma.trackerItem.findFirst({
+            where: { userId, name: lookupName }
+         });
+         if (item) {
+            finalTrackerItemId = item.id;
+         } else {
+            return res.status(404).json({ error: "Linked TrackerItem not found by name" });
+         }
+      } else {
+         return res.status(400).json({ error: "TrackerItemId is required" });
       }
-    });
+    }
+
+    let log;
+    if (id && id.length > 10) {
+      try {
+        const existingLog = await prisma.trackerLog.findUnique({ where: { id } });
+        if (existingLog) {
+          log = await prisma.trackerLog.update({
+            where: { id },
+            data: {
+              type,
+              timestamp: BigInt(timestamp),
+              photoUrl,
+              info,
+              durationSeconds,
+              value,
+              metadata: metadata || {}
+            }
+          });
+        }
+      } catch (e) {
+        console.warn("Error updating tracker log, will create instead", e.message);
+      }
+    }
+    
+    if (!log) {
+      log = await prisma.trackerLog.create({
+        data: {
+          id: id && id.length > 10 ? id : undefined,
+          trackerItemId: finalTrackerItemId,
+          userId,
+          type,
+          timestamp: BigInt(timestamp),
+          photoUrl,
+          info,
+          durationSeconds,
+          value,
+          metadata: metadata || {}
+        }
+      });
+    }
 
     // BigInt cant be directly JSON stringified
     const logObj = { ...log, timestamp: log.timestamp.toString() };

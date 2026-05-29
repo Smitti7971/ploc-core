@@ -2,39 +2,27 @@ const prisma = require('../config/database');
 
 /**
  * TaskRepository
- * Responsável exclusivamente pela persistência de dados no banco.
+ * Tarefas legadas foram deletadas e migradas para TrackerItem.
  */
 class TaskRepository {
     async findAllByUserId(userId) {
-        return prisma.task.findMany({
-            where: { userId },
-            orderBy: { createdAt: 'desc' }
-        });
+        throw new Error("Tarefas foram migradas para TrackerItem. Atualize o Frontend para usar /api/tracker");
     }
 
     async findById(id) {
-        return prisma.task.findUnique({
-            where: { id }
-        });
+        throw new Error("Tarefas foram migradas para TrackerItem. Atualize o Frontend para usar /api/tracker");
     }
 
     async create(data) {
-        return prisma.task.create({
-            data
-        });
+        throw new Error("Tarefas foram migradas para TrackerItem. Atualize o Frontend para usar /api/tracker");
     }
 
     async update(id, data) {
-        return prisma.task.update({
-            where: { id },
-            data
-        });
+        throw new Error("Tarefas foram migradas para TrackerItem. Atualize o Frontend para usar /api/tracker");
     }
 
     async delete(id) {
-        return prisma.task.delete({
-            where: { id }
-        });
+        throw new Error("Tarefas foram migradas para TrackerItem. Atualize o Frontend para usar /api/tracker");
     }
 }
 

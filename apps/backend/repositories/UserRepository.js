@@ -17,6 +17,11 @@ class UserRepository {
             where: { id },
             include: { 
                 stats: true,
+                inventory: {
+                    include: {
+                        inventoryItem: true
+                    }
+                },
                 statTransactions: {
                     take: 10,
                     orderBy: { createdAt: 'desc' }
@@ -28,7 +33,14 @@ class UserRepository {
     async findByEmail(email) {
         return prisma.user.findUnique({
             where: { email },
-            include: { stats: true }
+            include: { 
+                stats: true,
+                inventory: {
+                    include: {
+                        inventoryItem: true
+                    }
+                }
+            }
         });
     }
 

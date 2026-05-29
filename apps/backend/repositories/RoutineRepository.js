@@ -8,69 +8,37 @@ class RoutineRepository {
     // --- Rotinas do Usuário ---
     
     async findAllByUserId(userId) {
-        return prisma.routine.findMany({
-            where: { userId },
-            include: { 
-                tasks: true,
-                rewards: true,
-                _count: { select: { executions: true } }
-            },
-            orderBy: { createdAt: 'desc' }
-        });
+        throw new Error("Rotinas foram removidas do sistema. Use /api/tracker");
     }
 
     async findById(id) {
-        return prisma.routine.findUnique({
-            where: { id },
-            include: { 
-                tasks: true,
-                rewards: true,
-                executions: {
-                    take: 5,
-                    orderBy: { createdAt: 'desc' }
-                }
-            }
-        });
+        throw new Error("Rotinas foram removidas do sistema. Use /api/tracker");
     }
 
     async create(data) {
-        return prisma.routine.create({
-            data
-        });
+        throw new Error("Rotinas foram removidas do sistema. Use /api/tracker");
     }
 
     async update(id, data) {
-        return prisma.routine.update({
-            where: { id },
-            data
-        });
+        throw new Error("Rotinas foram removidas do sistema. Use /api/tracker");
     }
 
     async delete(id) {
-        return prisma.routine.delete({
-            where: { id }
-        });
+        throw new Error("Rotinas foram removidas do sistema. Use /api/tracker");
     }
 
     // --- Modelos Globais (Templates) ---
 
     async findAllTemplates() {
-        return prisma.routineTemplate.findMany({
-            where: { isPublic: true },
-            orderBy: { name: 'asc' }
-        });
+        throw new Error("Rotinas foram removidas do sistema. Use /api/tracker");
     }
 
     async findTemplateById(id) {
-        return prisma.routineTemplate.findUnique({
-            where: { id }
-        });
+        throw new Error("Rotinas foram removidas do sistema. Use /api/tracker");
     }
 
     async createTemplate(data) {
-        return prisma.routineTemplate.create({
-            data
-        });
+        throw new Error("Rotinas foram removidas do sistema. Use /api/tracker");
     }
 }
 

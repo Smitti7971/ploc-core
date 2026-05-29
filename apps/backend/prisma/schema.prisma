@@ -73,19 +73,15 @@ model User {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   
-  routines             Routine[]
-  tasks                Task[]
-  
-  // Gamificação e Progresso
-  stats                UserStats?
-  statTransactions     StatTransaction[]
-  taskExecutions       TaskExecution[]
-  // Libertesse (Vícios) - A ser descontinuado
-  vices                Vice[]
-  viceLogs             ViceLog[]
   // Rastreamento Universal (Acompanhe, Libertesse V2, etc)
   trackerItems         TrackerItem[]
   trackerLogs          TrackerLog[]
+
+  // Gamificação e Progresso
+  stats                UserStats?
+  statTransactions     StatTransaction[]
+  // Mochila (Inventário)
+  inventory            UserInventory[]
 }
 
 model UserStats {
@@ -148,155 +144,7 @@ model StatTransaction {
   @@index([sourceType])
 }
 
-model Routine {
-  id          Int      @id @default(autoincrement())
-  name        String
-  category    String   // TREINO, ESTUDO, TRABALHO, etc
-  description String?
-  config      Json?    // Estrutura para dias da semana, horários, etc (ex: { "days": [1,3,5], "time": "08:00" })
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tasks       Task[]
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
 
-  // Gamificação e Execução
-  rewards     RoutineReward[]
-  executions  TaskExecution[]
-
-  @@index([userId])
-}
-
-model RoutineReward {
-  id          String    @id @default(uuid())
-
-  routineId   Int
-  routine     Routine   @relation(fields: [routineId], references: [id], onDelete: Cascade)
-
-  statType    StatType
-
-  amount      Int
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([routineId])
-}
-
-model TaskExecution {
-  id                String            @id @default(uuid())
-
-  userId            String
-  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  routineId         Int
-  routine           Routine           @relation(fields: [routineId], references: [id], onDelete: Cascade)
-
-  status            ExecutionStatus
-
-  startedAt         DateTime?
-  finishedAt        DateTime?
-
-  completedOnTime   Boolean           @default(false)
-
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-
-  @@index([userId])
-  @@index([routineId])
-  @@index([status])
-}
-
-model RoutineTemplate {
-  id          Int      @id @default(autoincrement())
-  name        String
-  category    String
-  description String?
-  config      Json     // Configuração padrão sugerida
-  isPublic    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-}
-
-model Task {
-  id            Int        @id @default(autoincrement())
-  name          String
-  description   String?    // Detalhes da tarefa
-  category      String     // Saude, Financias, Trabalho, etc.
-  priority      Priority   @default(MEDIA)
-  status        TaskStatus @default(PENDENTE)
-  tags          String?    // Tags separadas por vírgula
-  completed     Boolean    @default(false)
-  userId        String
-  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  routineId     Int?
-  routine       Routine?   @relation(fields: [routineId], references: [id], onDelete: SetNull)
-  createdAt     DateTime   @default(now())
-  scheduledDate DateTime   @default(now())
-  scheduledTime String?    // Horário (ex: "08:00"). Se nulo, é dia inteiro.
-  completedAt   DateTime?
-  color         String?    // Cor opcional da tarefa (ex: "text-rose-400 bg-rose-500/10")
-  isDraggable   Boolean    @default(true) // Se a tarefa pode ser arrastada no calendário
-
-  @@index([userId])
-  @@index([routineId])
-  @@index([completed])
-  @@index([status])
-  @@index([priority])
-}
-
-// --- LIBERTESSE (Vices) ---
-
-model Vice {
-  id                        String    @id @default(uuid())
-  viceId                    String    // Identificador base (ex: 'smoking', 'social_media')
-  customName                String?   // Nome customizado se houver
-  mode                      String    // 'acompanhe', 'diminua', 'pare'
-  startTime                 BigInt    // timestamp (ms) do inicio do ciclo atual
-  expectedFrequency         String?   // Para modo acompanhe
-  timerLimitSeconds         Int?      // Limite do timer (diminua/pare)
-  reductionTarget           Int?      // Meta de redução (diminua)
-  
-  // Consumo ativo
-  isConsuming               Boolean   @default(false)
-  consumptionStartTime      BigInt?   // timestamp
-  defaultConsumptionSeconds Int       @default(300)
-  costPerUse                Float?    // Custo por consumo
-  currentMotivator          String?   // Motivador atual
-
-  userId                    String
-  user                      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  logs                      ViceLog[]
-
-  createdAt                 DateTime  @default(now())
-  updatedAt                 DateTime  @updatedAt
-
-  @@index([userId])
-  @@index([viceId])
-  @@unique([userId, viceId])
-}
-
-model ViceLog {
-  id                String   @id @default(uuid())
-  type              String   // 'consumption', 'expense', 'start', 'end'
-  timestamp         BigInt   // timestamp do evento
-  durationSeconds   Int?
-  fastingSeconds    Int?
-  cost              Float?
-  motivator         String?
-
-  viceId            String
-  vice              Vice     @relation(fields: [viceId], references: [id], onDelete: Cascade)
-
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt         DateTime @default(now())
-
-  @@index([viceId])
-  @@index([userId])
-  @@index([type])
-}
 
 // --- RASTREAMENTO UNIVERSAL (Acompanhe, Vícios, Hábitos) ---
 
@@ -360,4 +208,41 @@ model TrackerLog {
   @@index([trackerItemId])
   @@index([userId])
   @@index([type])
+}
+
+// --- MOCHILA (Inventory) ---
+
+model InventoryItem {
+  id               String   @id @default(uuid())
+  slug             String   @unique // ex: 'foco-potion', 'coffee'
+  name             String
+  description      String?
+  type             String   // 'CONSUMABLE', 'EQUIPPABLE', 'COLLECTIBLE'
+  rarity           String   @default("COMMON") // 'COMMON', 'UNCOMMON', 'RARE', 'EPIC', 'LEGENDARY'
+  priceFoco        Int?     // Preço em Foco Coins
+  pricePremium     Int?     // Preço em Premium Coins
+  effects          Json?    // Efeitos ao usar: { "body": 5, "duration_minutes": 30 }
+  imageUrl         String?
+
+  users            UserInventory[]
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model UserInventory {
+  id               String   @id @default(uuid())
+
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  inventoryItemId  String
+  inventoryItem    InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+
+  quantity         Int      @default(1)
+  isEquipped       Boolean  @default(false)
+  acquiredAt       DateTime @default(now())
+
+  @@unique([userId, inventoryItemId]) // Garante que não haja linhas duplicadas pro mesmo item e usuário
+  @@index([userId])
 }

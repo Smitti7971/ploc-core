@@ -27,6 +27,13 @@ export function useAuth() {
       setAuth(data.token, data.user);
       localStorage.setItem('ploc_token', data.token);
       localStorage.setItem('ploc_user', JSON.stringify(data.user));
+      
+      // Carrega estado do ploc do backend ao logar
+      if ((data.user as any)?.stats?.plocState) {
+        const { usePlocStateStore } = await import('@/modules/mascot/store/plocStateStore');
+        usePlocStateStore.getState().loadFromBackend((data.user as any).stats.plocState);
+      }
+
       router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha na conexão');

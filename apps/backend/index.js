@@ -6,13 +6,10 @@ const rateLimit = require('express-rate-limit');
 const prisma = require('./config/database'); // Unificado para o Singleton
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
-const taskRoutes = require('./routes/taskRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const authMiddleware = require('./middleware/authMiddleware');
 const healthRoutes = require('./routes/healthRoutes');
-const routineRoutes = require('./routes/routineRoutes');
-const viceRoutes = require('./routes/viceRoutes');
 const trackerRoutes = require('./routes/trackerRoutes');
 
 const path = require('path');
@@ -43,7 +40,14 @@ app.set('trust proxy', 1);
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginEmbedderPolicy: false,
-  contentSecurityPolicy: false, // Desativado temporariamente para facilitar o debug em sslip.io
+  // Reativando o CSP (Content Security Policy) com configurações relaxadas para permitir imagens do MinIO
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "blob:", "http://72.61.63.84:9000", "https://ploc.midializando.cloud"],
+      connectSrc: ["'self'", "http://72.61.63.84:9000", "https://ploc.midializando.cloud"],
+    },
+  },
 }));
 
 const allowedOrigins = [
@@ -53,21 +57,32 @@ const allowedOrigins = [
   'http://127.0.0.1:5500',
   'http://localhost:5500',
   'http://127.0.0.1:3001',
-  'http://localhost:3001'
+  'http://localhost:3001',
+  'http://localhost:3000'
 ].filter(Boolean);
 
 // --- CONFIGURAÇÃO DE CORS ---
 app.use(cors({
   origin: function (origin, callback) {
-    // Permitir todas as origens temporariamente ou verificar via array se preferir
-    callback(null, true); 
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`Tentativa de acesso bloqueada por CORS da origem: ${origin}`);
+      callback(new Error('Acesso negado por CORS'));
+    }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
 
-// Limitador desativado para desenvolvimento
+// --- LIMITADOR DE TAXA (RATE LIMIT) ---
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minuto
+  max: 150, // Limite de 150 requests por minuto por IP
+  message: 'Muitas requisições deste IP, tente novamente mais tarde.'
+});
+app.use(limiter);
 
 // Limite de 10kb para evitar payloads gigantes (DOS)
 app.use(express.json({ limit: '10kb' }));
@@ -123,12 +138,8 @@ app.use('/api/auth', authRoutes);
 // Rotas de Usuários (PROTEGIDAS)
 app.use('/api/users', authMiddleware, userRoutes);
 
-// Rotas de Tarefas e Rotinas (PROTEGIDAS)
-app.use('/api/tasks', authMiddleware, taskRoutes);
-app.use('/api/routines', authMiddleware, routineRoutes);
-app.use('/api/vices', viceRoutes); // AuthMiddleware já está dentro do viceRoutes
+// Rotas de Rastreador Universal (PROTEGIDAS)
 app.use('/api/tracker', authMiddleware, trackerRoutes);
-app.get('/api/ping-routines', (req, res) => res.json({ message: "Routine route is registered! 🚀" }));
 
 // Rotas de IA (Proteção agora é interna por rota)
 app.use('/api/ai', aiRoutes);

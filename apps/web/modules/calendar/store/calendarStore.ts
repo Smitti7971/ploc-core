@@ -23,46 +23,48 @@ interface CalendarStore {
   moveTaskToDate: (id: string, newDateStr: string) => Promise<void>;
 }
 
-// Converte do formato do Prisma para o formato do Frontend
+// Converte do formato TrackerItem para o formato do Frontend
 const mapToFrontend = (b: any): CalendarTask => {
   let status: 'pending' | 'completed' | 'active' = 'pending';
-  if (b.status === 'CONCLUIDA' || b.completed) status = 'completed';
-  else if (b.status === 'EM_ANDAMENTO') status = 'active';
+  const config = b.config || {};
+  
+  if (b.status === 'COMPLETED' || config.completed) status = 'completed';
+  else if (b.status === 'ACTIVE') status = 'active';
 
   return {
     id: String(b.id),
     title: b.name,
-    description: b.description || undefined,
-    dateStr: b.scheduledDate ? new Date(b.scheduledDate).toISOString().split('T')[0] : '',
-    timeStr: b.scheduledTime || undefined,
-    color: b.color || undefined,
-    isDraggable: b.isDraggable !== false,
+    description: config.description || undefined,
+    dateStr: config.scheduledDate ? new Date(config.scheduledDate).toISOString().split('T')[0] : (b.createdAt ? new Date(b.createdAt).toISOString().split('T')[0] : ''),
+    timeStr: config.scheduledTime || undefined,
+    color: config.color || undefined,
+    isDraggable: config.isDraggable !== false,
     status,
-    category: b.category || 'Geral'
+    category: config.category || 'Geral'
   };
 };
 
-// Converte do formato do Frontend para o formato do Prisma
+// Converte do formato do Frontend para o formato TrackerItem
 const mapToBackend = (f: Partial<CalendarTask>): any => {
-  const b: any = {};
+  const b: any = { type: 'task', config: {} };
   if (f.title !== undefined) b.name = f.title;
-  if (f.description !== undefined) b.description = f.description;
-  if (f.dateStr !== undefined) b.scheduledDate = f.dateStr;
-  if (f.timeStr !== undefined) b.scheduledTime = f.timeStr;
-  if (f.color !== undefined) b.color = f.color;
-  if (f.isDraggable !== undefined) b.isDraggable = f.isDraggable;
-  if (f.category !== undefined) b.category = f.category;
+  if (f.description !== undefined) b.config.description = f.description;
+  if (f.dateStr !== undefined) b.config.scheduledDate = f.dateStr;
+  if (f.timeStr !== undefined) b.config.scheduledTime = f.timeStr;
+  if (f.color !== undefined) b.config.color = f.color;
+  if (f.isDraggable !== undefined) b.config.isDraggable = f.isDraggable;
+  if (f.category !== undefined) b.config.category = f.category;
   
   if (f.status !== undefined) {
     if (f.status === 'completed') {
-      b.status = 'CONCLUIDA';
-      b.completed = true;
+      b.status = 'COMPLETED';
+      b.config.completed = true;
     } else if (f.status === 'active') {
-      b.status = 'EM_ANDAMENTO';
-      b.completed = false;
+      b.status = 'ACTIVE';
+      b.config.completed = false;
     } else {
-      b.status = 'PENDENTE';
-      b.completed = false;
+      b.status = 'ACTIVE'; // Tracker item typically ACTIVE
+      b.config.completed = false;
     }
   }
   return b;
@@ -80,7 +82,7 @@ export const useCalendarStore = create<CalendarStore>()(
             const hasStoreToken = !!localStorage.getItem('ploc-auth');
             if (!hasDirectToken && !hasStoreToken) return;
           }
-          const backendTasks = await apiService.get<any[]>('/tasks');
+          const backendTasks = await apiService.get<any[]>('/tracker/items?type=task');
           if (backendTasks && Array.isArray(backendTasks)) {
             set({ tasks: backendTasks.map(mapToFrontend) });
           }
@@ -97,7 +99,7 @@ export const useCalendarStore = create<CalendarStore>()(
 
         try {
           const payload = mapToBackend(task);
-          const created = await apiService.post<any>('/tasks', payload);
+          const created = await apiService.post<any>('/tracker/items', payload);
           // Substitui o tempId pelo ID real do banco
           set((state) => ({
             tasks: state.tasks.map(t => t.id === tempId ? mapToFrontend(created) : t)
@@ -118,7 +120,7 @@ export const useCalendarStore = create<CalendarStore>()(
         if (!id.startsWith('temp-')) {
           try {
             const payload = mapToBackend(updates);
-            await apiService.put(`/tasks/${id}`, payload);
+            await apiService.put(`/tracker/items/${id}`, payload);
           } catch (e) {
             console.error('Erro ao atualizar tarefa:', e);
           }
@@ -132,7 +134,7 @@ export const useCalendarStore = create<CalendarStore>()(
 
         if (!id.startsWith('temp-')) {
           try {
-            await apiService.delete(`/tasks/${id}`);
+            await apiService.delete(`/tracker/items/${id}`);
           } catch (e) {
             console.error('Erro ao deletar tarefa:', e);
           }
@@ -151,7 +153,7 @@ export const useCalendarStore = create<CalendarStore>()(
 
         if (!id.startsWith('temp-')) {
           try {
-            await apiService.put(`/tasks/${id}`, { scheduledDate: newDateStr });
+            await apiService.put(`/tracker/items/${id}`, { config: { scheduledDate: newDateStr } });
           } catch (e) {
             console.error('Erro ao mover tarefa:', e);
           }

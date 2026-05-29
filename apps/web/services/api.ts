@@ -99,7 +99,10 @@ export const apiService = {
       }
     }
 
-    const response = await fetch(`${config.api.baseUrl}${endpoint}`, {
+    const fullUrl = `${config.api.baseUrl}${endpoint}`;
+    console.log(`[Upload] POST ${fullUrl}`, token ? 'Token: SIM' : 'Token: NÃO');
+    
+    const response = await fetch(fullUrl, {
       method: 'POST',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -109,7 +112,8 @@ export const apiService = {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Erro ${response.status}`);
+      console.error(`[Upload Error] ${response.status} ${response.statusText}`);
+      throw new Error(errorData.message || `Erro ${response.status}: ${response.statusText}`);
     }
 
     return response.json() as Promise<T>;

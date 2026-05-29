@@ -7,6 +7,7 @@ router.get('/me', userController.getMe);
 router.put('/me', userController.updateMe);
 router.delete('/me', userController.deleteMe);
 router.put('/me/ploc', userController.updatePlocState);
+router.post('/me/ploc/inventory', userController.addPlocInventoryItem);
 
 // Rota para listar usuários (Adm/Debug)
 router.get('/', userController.getAllUsers);

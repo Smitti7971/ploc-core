@@ -170,18 +170,24 @@ export const usePlocStateStore = create<PlocStateStore>()(
       },
 
       store: (itemData) => {
+        const newItem = {
+          ...itemData,
+          id: uuidv4(),
+          createdAt: Date.now(),
+          state: 'fresh' as const
+        };
+
         set(state => ({
-          inventory: [
-            ...state.inventory,
-            {
-              ...itemData,
-              id: uuidv4(),
-              createdAt: Date.now(),
-              state: 'fresh'
-            }
-          ]
+          inventory: [...state.inventory, newItem]
         }));
-        get().syncWithBackend();
+        
+        // Rota Rápida de Inventário (Async background direct push)
+        import('@/services/api').then(({ apiService }) => {
+          apiService.post('/users/me/ploc/inventory', { item: newItem }).catch(err => {
+            console.error("Erro na rota rápida de inventário, tentando sync completo...", err);
+            get().syncWithBackend(); // Fallback
+          });
+        });
       },
 
       dropItem: (itemData) => {
@@ -228,14 +234,26 @@ export const usePlocStateStore = create<PlocStateStore>()(
 
       loadFromBackend: (data: any) => {
         if (!data) return;
+        
+        // Garante que, se vier como string do banco/Prisma, seja parseado pra objeto
+        let parsedData = data;
+        if (typeof data === 'string') {
+          try {
+            parsedData = JSON.parse(data);
+          } catch (e) {
+            console.error('Erro ao fazer parse do plocState:', e);
+            return;
+          }
+        }
+
         set({
-          hunger: data.hunger ?? 100,
-          thirst: data.thirst ?? 100,
-          fatigue: data.fatigue ?? 100,
-          spoiledEatenCount: data.spoiledEatenCount ?? 0,
-          mood: data.mood ?? 'FELIZ',
-          inventory: data.inventory ?? [],
-          lastTickAt: data.lastTickAt ?? Date.now(),
+          hunger: parsedData.hunger ?? 100,
+          thirst: parsedData.thirst ?? 100,
+          fatigue: parsedData.fatigue ?? 100,
+          spoiledEatenCount: parsedData.spoiledEatenCount ?? 0,
+          mood: parsedData.mood ?? 'FELIZ',
+          inventory: parsedData.inventory ?? [],
+          lastTickAt: parsedData.lastTickAt ?? Date.now(),
         });
         // Roda um tick inicial para calcular offline decay imediato
         get().tick();
