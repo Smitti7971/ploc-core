@@ -874,7 +874,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                         const isEditing = editingLogId === log.id;
 
                         let visualClass = "border-white/5 bg-zinc-900/30";
-                        if (log.metadata?.totalConditions > 0) {
+                        if (log.metadata && log.metadata.totalConditions > 0) {
                           if (log.metadata.allConditionsMet) {
                             visualClass = "border-emerald-500/50 bg-emerald-950/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]";
                           } else {
