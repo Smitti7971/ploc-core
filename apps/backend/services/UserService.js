@@ -21,15 +21,26 @@ class UserService {
             if (typeof plocState === 'string') {
                 try { plocState = JSON.parse(plocState); } catch(e) { plocState = {}; }
             }
+            const newInventory = [];
+            for (const inv of user.inventory) {
+                const qtd = inv.quantity || 1;
+                for (let i = 0; i < qtd; i++) {
+                    let itemType = 'food';
+                    if (inv.inventoryItem?.slug === 'water') itemType = 'water';
+                    if (inv.inventoryItem?.slug === 'medicine') itemType = 'medicine';
+
+                    newInventory.push({
+                        id: `${inv.id}-${i}`,
+                        type: itemType,
+                        name: inv.inventoryItem?.name || 'Unknown',
+                        state: 'fresh',
+                        createdAt: new Date(inv.acquiredAt).getTime()
+                    });
+                }
+            }
+            console.log(`[UserService] Mapped ${newInventory.length} items for user ${userId}`);
             
-            plocState.inventory = user.inventory.map(inv => ({
-                id: inv.id,
-                type: inv.inventoryItem?.type || 'food',
-                name: inv.inventoryItem?.name || 'Unknown',
-                state: 'fresh',
-                createdAt: new Date(inv.acquiredAt).getTime()
-            }));
-            
+            plocState.inventory = newInventory;
             user.stats.plocState = plocState;
             delete user.inventory; // Remove a raiz do payload para não poluir
         }

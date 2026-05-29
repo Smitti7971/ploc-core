@@ -37,6 +37,12 @@ export function InventoryModal({ isOpen, onClose }: InventoryModalProps) {
     }
     console.log("[Ploc] Post-consume inventory:", usePlocStateStore.getState().inventory);
   };
+  
+  useEffect(() => {
+    if (isOpen) {
+      console.log("🎒 [InventoryModal] Opened! Current inventory inside component:", inventory);
+    }
+  }, [isOpen, inventory]);
 
   const getIcon = (type: string) => {
     switch (type) {

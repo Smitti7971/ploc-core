@@ -81,14 +81,26 @@ class AuthService {
                 try { plocState = JSON.parse(plocState); } catch(e) { plocState = {}; }
             }
             
-            plocState.inventory = user.inventory.map(inv => ({
-                id: inv.id,
-                type: inv.inventoryItem?.type || 'food',
-                name: inv.inventoryItem?.name || 'Unknown',
-                state: 'fresh',
-                createdAt: new Date(inv.acquiredAt).getTime()
-            }));
+            const newInventory = [];
+            for (const inv of user.inventory) {
+                const qtd = inv.quantity || 1;
+                for (let i = 0; i < qtd; i++) {
+                    let itemType = 'food';
+                    if (inv.inventoryItem?.slug === 'water') itemType = 'water';
+                    if (inv.inventoryItem?.slug === 'medicine') itemType = 'medicine';
+
+                    newInventory.push({
+                        id: `${inv.id}-${i}`,
+                        type: itemType,
+                        name: inv.inventoryItem?.name || 'Unknown',
+                        state: 'fresh',
+                        createdAt: new Date(inv.acquiredAt).getTime()
+                    });
+                }
+            }
+            console.log(`[AuthService] Mapped ${newInventory.length} items for user ${user.id}`);
             
+            plocState.inventory = newInventory;
             userStats.plocState = plocState;
         }
 

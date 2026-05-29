@@ -12,21 +12,23 @@ import { useAuthStore } from '@/store/authStore';
 import { PlocAvatarClient } from '@/components/mascot/PlocAvatarClient';
 import { usePathname } from 'next/navigation';
 import { DockMenu } from './DockMenu';
+import { useAuth } from '@/modules/auth/hooks/useAuth';
 
 // Define as props esperadas pelo AppShell
 interface AppShellProps {
   children: React.ReactNode;
 }
 
-// Componente principal que envolve a aplicação protegida
 export function AppShell({ children }: AppShellProps) {
   const { isAuthenticated } = useAuthStore();
+  const { refreshProfile } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const isSettings = pathname === '/settings';
   const isPlocPage = pathname === '/ploc';
 
   const [isHydrated, setIsHydrated] = useState(false);
+  const [profileSynced, setProfileSynced] = useState(false);
 
   useEffect(() => {
     const unsub = useAuthStore.persist.onFinishHydration(() => {
@@ -53,8 +55,12 @@ export function AppShell({ children }: AppShellProps) {
     
     if (!token && !isAuthenticated && !hasPersistedAuth) {
       router.replace('/');
+    } else if ((hasPersistedAuth || isAuthenticated) && !profileSynced) {
+      // Força a atualização do perfil para carregar o inventário do banco
+      setProfileSynced(true);
+      refreshProfile().catch(console.error);
     }
-  }, [isHydrated, isAuthenticated, router]);
+  }, [isHydrated, isAuthenticated, router, refreshProfile, profileSynced]);
 
   // Renderiza a estrutura de layout da página
 return (

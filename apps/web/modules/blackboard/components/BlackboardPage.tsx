@@ -10,6 +10,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useAuthStore } from "@/store/authStore";
+import { useAuth } from "@/modules/auth/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { PlocAvatarClient } from "@/components/mascot/PlocAvatarClient";
 import {
@@ -64,8 +65,10 @@ import { usePlocStateStore } from "../../mascot/store/plocStateStore";
 
 export default function BlackboardPage() {
   const { user } = useAuthStore();
+  const { refreshProfile } = useAuth();
   const router = useRouter();
   const [isHydrated, setIsHydrated] = useState(false);
+  const [profileSynced, setProfileSynced] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [isPillarActive, setIsPillarActive] = useState(false);
 
@@ -103,8 +106,11 @@ export default function BlackboardPage() {
   useEffect(() => {
     if (isHydrated && !user && typeof window !== "undefined") {
       router.push("/");
+    } else if (isHydrated && user && !profileSynced) {
+      setProfileSynced(true);
+      refreshProfile().catch(console.error);
     }
-  }, [isHydrated, user, router]);
+  }, [isHydrated, user, router, profileSynced, refreshProfile]);
 
   const [showGrid, setShowGrid] = useState(true);
   const [showMinimap, setShowMinimap] = useState(false);
@@ -423,7 +429,7 @@ export default function BlackboardPage() {
 
   // Bubble Engine Subscription & Event Listeners
   useEffect(() => {
-    const unsubscribe = bubbleEngine.subscribe(() => {});
+    const unsubscribe = bubbleEngine.subscribe(() => { });
 
     const onExplode = (
       bubble: BlackboardBubble & { collided?: boolean; value?: string },
@@ -537,25 +543,23 @@ export default function BlackboardPage() {
                     animate={
                       !activeConsumingVice?.isConsuming
                         ? {
-                            scale: [1, 1.02, 0.98, 1],
-                          }
+                          scale: [1, 1.02, 0.98, 1],
+                        }
                         : {
-                            scale: 1,
-                          }
+                          scale: 1,
+                        }
                     }
                     transition={{
                       duration: 6,
                       repeat: Infinity,
                       ease: "easeInOut",
                     }}
-                    className="absolute w-[500px] h-[500px] rounded-full border border-sky-400/15 bg-sky-400/2 flex items-center justify-center pointer-events-none z-0"
+                    className="absolute w-[500px] h-[500px] rounded-full border border-sky-400/15 bg-sky-400/10 flex items-center justify-center pointer-events-none z-0"
                   >
-                    <span className="absolute top-[25px] text-[9px] font-bold text-sky-400/40 uppercase tracking-[0.25em]">
+                    <span className="absolute top-[25px] text-[15px] font-bold text-sky-400/40 uppercase tracking-[0.25em]">
                       BOLHA PADRÃO
                     </span>
                   </motion.div>
-
-                  {/* FUMAÇA DE FUNDO removida para otimização de performance */}
 
                   {/* RESOURCE LAYER (GAMIFICATION BUBBLES) */}
                   <div className="pointer-events-auto z-0 absolute inset-0">
@@ -582,8 +586,6 @@ export default function BlackboardPage() {
                           transition: { duration: 1.5, ease: "easeInOut" },
                         }}
                       >
-                        {/* FUMAÇA DE FRENTE removida para otimização de performance */}
-
                         {/* UI DO CONSUMO ATIVO (BOTÃO PARAR E TIMER) */}
                         <div className="absolute -top-[160px] left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-auto z-[400] scale-90">
                           <div className="bg-red-500/10 border border-red-500/30 backdrop-blur-md px-4 py-1.5 rounded-2xl mb-2 flex flex-col items-center justify-center shadow-[0_0_15px_rgba(239,68,68,0.2)] min-w-[140px]">
@@ -601,7 +603,7 @@ export default function BlackboardPage() {
                               onClick={() => {
                                 cancelConsumption(activeConsumingVice.viceId);
                                 speak(
-                                  "Essa é a melhor escolha que fez!!",
+                                  "Esperar te faz mais forte!",
                                   4000,
                                 );
                               }}

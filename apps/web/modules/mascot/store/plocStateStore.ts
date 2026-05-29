@@ -166,6 +166,21 @@ export const usePlocStateStore = create<PlocStateStore>()(
             mood: get()._calculateMood(newHunger, newThirst, state.fatigue, newSpoiledEatenCount)
           };
         });
+        
+        // Se foi consumido do inventário, avisamos o backend diretamente para descontar
+        if (source === 'stored') {
+          let slug = 'apple';
+          if (item.type === 'food' && item.name?.toLowerCase().includes('caf')) slug = 'coffee';
+          else if (item.type === 'food') slug = 'apple';
+          else if (item.type === 'water') slug = 'water';
+          else if (item.type === 'medicine') slug = 'medicine';
+
+          import('@/services/api').then(({ apiService }) => {
+            apiService.delete(`/users/me/ploc/inventory/${slug}`).catch(err => {
+              console.error("Erro ao consumir item no relacional:", err);
+            });
+          });
+        }
         get().syncWithBackend();
       },
 
@@ -209,12 +224,20 @@ export const usePlocStateStore = create<PlocStateStore>()(
             mood: get()._calculateMood(state.hunger, state.thirst, newFatigue, 0)
           };
         });
+        
+        // Notifica o backend
+        import('@/services/api').then(({ apiService }) => {
+          apiService.delete(`/users/me/ploc/inventory/medicine`).catch(err => {
+            console.error("Erro ao consumir medicina no relacional:", err);
+          });
+        });
         get().syncWithBackend();
       },
 
       syncWithBackend: async () => {
         const { apiService } = await import('@/services/api');
         const state = get();
+        console.log("💾 [syncWithBackend] Syncing current inventory:", state.inventory);
         try {
           await apiService.put('/users/me/ploc', {
             plocState: {
@@ -245,6 +268,8 @@ export const usePlocStateStore = create<PlocStateStore>()(
             return;
           }
         }
+        
+        console.log("🔥 [plocStateStore] loadFromBackend RECEBEU parsedData.inventory:", parsedData.inventory);
 
         set({
           hunger: parsedData.hunger ?? 100,

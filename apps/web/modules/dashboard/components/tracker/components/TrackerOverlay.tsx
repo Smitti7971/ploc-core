@@ -267,7 +267,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
 
               <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-col pt-4">
                 <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-1 block">
-                  {item.type === 'medicine' ? ' Medicamento' : '✅ Acompanhe'}
+                  {item.type === 'medicine' ? ' Medicamento' : ' Acompanhe'}
                 </span>
 
                 <div className="flex items-center gap-3">

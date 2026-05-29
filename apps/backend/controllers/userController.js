@@ -50,6 +50,14 @@ exports.updatePlocState = async (req, res) => {
     const { plocState } = req.body;
     
     const prisma = require('../config/database');
+    
+    // Sincronizar Inventário Relacional
+    if (plocState.inventory && Array.isArray(plocState.inventory)) {
+      // We ONLY update the vitals in the JSON plocState.
+      // Relational inventory is managed exclusively by addPlocInventoryItem and consumePlocInventoryItem routes
+      // to avoid race conditions wiping the user's bag.
+    }
+
     await prisma.userStats.upsert({
       where: { userId },
       update: {
@@ -93,25 +101,68 @@ exports.addPlocInventoryItem = async (req, res) => {
 
     if (dbItem) {
       try {
-        await prisma.userInventory.create({
-          data: {
+        await prisma.userInventory.upsert({
+          where: {
+            userId_inventoryItemId: {
+              userId: userId,
+              inventoryItemId: dbItem.id
+            }
+          },
+          update: {
+            quantity: { increment: 1 }
+          },
+          create: {
             userId: userId,
             inventoryItemId: dbItem.id,
             quantity: 1,
-            acquiredAt: new Date(item.createdAt || Date.now())
+            acquiredAt: new Date()
           }
         });
       } catch (err) {
-        // Ignora duplicidade caso já exista restrição (dependendo do banco)
-        console.warn('Possível duplicidade no inventário ignorada');
+        console.warn('Erro no upsert do inventário:', err);
       }
+      res.json({ message: 'Item adicionado com sucesso' });
+    } else {
+      res.status(404).json({ error: 'Item não suportado no banco relacional.' });
     }
-
-    res.json({ message: "Item adicionado ao inventário relacional com sucesso!" });
   } catch (error) {
-    console.error('❌ Erro ao adicionar item no UserInventory:', error.message);
-    res.status(500).json({ error: 'Erro ao adicionar item na mochila do Mascote' });
+    console.error("Erro ao adicionar item relacional:", error);
+    res.status(500).json({ error: 'Falha ao salvar item.' });
   }
+};
+
+exports.consumePlocInventoryItem = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { slug } = req.params;
+        const prisma = require('../config/database');
+        
+        const dbItem = await prisma.inventoryItem.findFirst({ where: { slug } });
+        if (!dbItem) {
+            return res.status(404).json({ error: 'Item não suportado no banco relacional.' });
+        }
+
+        const userInv = await prisma.userInventory.findUnique({
+            where: { userId_inventoryItemId: { userId, inventoryItemId: dbItem.id } }
+        });
+
+        if (userInv && userInv.quantity > 0) {
+            if (userInv.quantity === 1) {
+                await prisma.userInventory.delete({
+                    where: { userId_inventoryItemId: { userId, inventoryItemId: dbItem.id } }
+                });
+            } else {
+                await prisma.userInventory.update({
+                    where: { userId_inventoryItemId: { userId, inventoryItemId: dbItem.id } },
+                    data: { quantity: { decrement: 1 } }
+                });
+            }
+        }
+        res.json({ message: 'Item consumido com sucesso' });
+    } catch (error) {
+        console.error("Erro ao consumir item relacional:", error);
+        res.status(500).json({ error: 'Falha ao consumir item.' });
+    }
 };
 
 exports.seedUsers = async (req, res) => {

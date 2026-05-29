@@ -74,8 +74,11 @@ export function useAuth() {
       
       // Carrega estado do ploc do backend
       if ((response as any)?.stats?.plocState) {
+        console.log("🔥 [useAuth] Recebeu plocState do backend no refreshProfile!", (response as any).stats.plocState);
         const { usePlocStateStore } = await import('@/modules/mascot/store/plocStateStore');
         usePlocStateStore.getState().loadFromBackend((response as any).stats.plocState);
+      } else {
+        console.warn("⚠️ [useAuth] Backend NÃO retornou stats.plocState no refreshProfile!");
       }
       
       return response;
