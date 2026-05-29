@@ -306,6 +306,31 @@ export default function SettingsPage() {
             >
               <Activity size={16} /> Ligar/Desligar Medidor de FPS
             </button>
+            
+            <button 
+              onClick={async () => {
+                if (!user) return;
+                const newFoco = (user.stats?.focoCoins || 0) + 100;
+                
+                // Atualiza estado local
+                const newStats = { ...user.stats, focoCoins: newFoco } as any;
+                updateUser({ stats: newStats });
+                
+                try {
+                  await apiService.post('/users/debug/foco-coins', { amount: 100 }, { token: token || undefined });
+                  alert('100 Foco Coins adicionados!');
+                } catch(e) {
+                  console.log("Mocked focus coins added locally, API endpoint may not exist yet.");
+                }
+              }}
+              style={{
+                background: 'rgba(16, 185, 129, 0.1)',
+                border: '1px dashed rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '12px', color: '#10b981', fontSize: '0.8rem', fontWeight: 600,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+              }}
+            >
+              <Activity size={16} /> [DEBUG] +100 Foco Coins
+            </button>
           </div>
 
         </div>

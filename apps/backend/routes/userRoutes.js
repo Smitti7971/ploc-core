@@ -10,6 +10,9 @@ router.put('/me/ploc', userController.updatePlocState);
 router.post('/me/ploc/inventory', userController.addPlocInventoryItem);
 router.delete('/me/ploc/inventory/:slug', userController.consumePlocInventoryItem);
 
+// Rota para debug
+router.post('/debug/foco-coins', userController.addFocoCoins);
+
 // Rota para listar usuários (Adm/Debug)
 router.get('/', userController.getAllUsers);
 

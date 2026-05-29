@@ -25,7 +25,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion';
-import { Backpack } from 'lucide-react';
+import { Backpack, Store } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { blackboardEventBus } from '@/modules/blackboard/events/eventBus';
@@ -50,6 +50,7 @@ import { PlocShockwaveRings } from './PlocShockwaveRings';
 import { PlocAura, PlocHair, PlocHat, PlocClothes } from './PlocCosmetics';
 import { PlocFloatingIndicators } from './PlocFloatingIndicators';
 import { InventoryModal } from './InventoryModal';
+import { StoreModal } from './StoreModal';
 
 import { PILLARS_DATA } from '@/modules/routines/data/routinesData';
 import { attributeEngine } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
@@ -175,6 +176,7 @@ export default function PlocAvatar({
 
   const [areActionsVisible, setAreActionsVisible] = useState(false);
   const [isBagOpen, setIsBagOpen] = useState(false);
+  const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [achievementToast, setAchievementToast] = useState<{ title: string; message: string } | null>(null);
 
   const actionsOverlayRef = useRef<HTMLDivElement>(null);
@@ -375,6 +377,9 @@ export default function PlocAvatar({
 
       {/* Inventory Bag Modal */}
       <InventoryModal isOpen={isBagOpen} onClose={() => setIsBagOpen(false)} />
+
+      {/* Store Modal */}
+      <StoreModal isOpen={isStoreOpen} onClose={() => setIsStoreOpen(false)} />
 
       <motion.div
         ref={containerRef}
@@ -635,7 +640,18 @@ export default function PlocAvatar({
 
       {/* Botão Fixo de Mochila (Inventário) no Canto Inferior Esquerdo (acima da Navbar) apenas no Blackboard */}
       {!isHidden && !isLanding && pathname === '/' && typeof document !== 'undefined' && createPortal(
-        <div className="fixed bottom-[90px] left-[25px] z-[99999] pointer-events-auto">
+        <div className="fixed bottom-[90px] left-[25px] z-[99999] pointer-events-auto flex flex-col gap-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsStoreOpen(!isStoreOpen);
+            }}
+            className="w-12 h-12 rounded-2xl border flex items-center justify-center cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 backdrop-blur-md group relative bg-black/40 border-white/10 hover:scale-110 hover:bg-white/10 text-emerald-400"
+            title="Lojinha"
+          >
+            <Store size={22} className="group-hover:scale-110 transition-transform" />
+          </button>
+          
           <button
             onClick={(e) => {
               e.stopPropagation();

@@ -173,3 +173,27 @@ exports.seedUsers = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.addFocoCoins = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const amount = req.body.amount || 100;
+    const prisma = require('../config/database');
+    
+    await prisma.userStats.upsert({
+      where: { userId },
+      update: {
+        focoCoins: { increment: amount }
+      },
+      create: {
+        userId,
+        focoCoins: amount
+      }
+    });
+
+    res.json({ message: `${amount} Foco Coins adicionados com sucesso!` });
+  } catch (error) {
+    console.error('❌ Erro ao adicionar Foco Coins:', error.message);
+    res.status(500).json({ error: 'Erro ao adicionar Foco Coins' });
+  }
+};
