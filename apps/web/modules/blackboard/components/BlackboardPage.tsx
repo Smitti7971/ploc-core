@@ -282,7 +282,7 @@ export default function BlackboardPage() {
     return () => clearInterval(interval);
   }, [
     activeConsumingVice?.isConsuming,
-    activeConsumingVice?.consumptionStartTime,
+    activeConsumingVice?.consumptionStart,
     activeConsumingVice?.defaultTimer,
     activeConsumingVice?.id,
     endConsumption,
