@@ -265,7 +265,7 @@ export default function BlackboardPage() {
     ) {
       interval = setInterval(() => {
         const elapsed = Math.floor(
-          (Date.now() - activeConsumingVice.consumptionStartTime!) / 1000,
+          (Date.now() - activeConsumingVice.consumptionStart!) / 1000,
         );
         setConsumptionElapsed(elapsed);
 
