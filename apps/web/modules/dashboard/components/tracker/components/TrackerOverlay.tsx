@@ -35,16 +35,6 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
   const [editingConditionIndex, setEditingConditionIndex] = useState<number | null>(null);
   const conditions = item?.config?.conditions || [];
 
-  const addCondition = () => {
-    if (!newCondition.trim()) return;
-    const updated = [...conditions, newCondition.trim()];
-    updateItem({
-      ...item,
-      config: { ...item.config, conditions: updated }
-    });
-    setNewCondition('');
-  };
-
   const removeCondition = (index: number) => {
     const updated = [...conditions];
     updated.splice(index, 1);
@@ -114,7 +104,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
       correlations: { [item.id]: 'linked' },
       isConsuming: false,
       defaultTimer: 300,
-      userId: item.userId || 'test-user',
+      userId: (item as any).userId || 'test-user',
       createdAt: new Date(),
       updatedAt: new Date()
     } as any);
@@ -1053,7 +1043,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                       correlations: { [item.id]: 'linked' },
                       isConsuming: false,
                       defaultTimer: 300,
-                      userId: item.userId || 'test-user',
+                      userId: (item as any).userId || 'test-user',
                       createdAt: new Date(),
                       updatedAt: new Date()
                     } as any);
