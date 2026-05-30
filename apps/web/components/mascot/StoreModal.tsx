@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Store, X, PlusCircle, Cigarette, Wine, EyeOff, Smartphone, Pill, Cookie, Gamepad2, ShoppingBag, Zap, Activity } from 'lucide-react';
 import { useTrackerStore, TrackerItem } from '@/modules/dashboard/components/tracker/store/trackerStore';
@@ -23,6 +24,12 @@ const STORE_ITEMS = [
 ];
 
 export function StoreModal({ isOpen, onClose }: StoreModalProps) {
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const { setItem } = useTrackerStore();
   const { user } = useAuthStore();
   const focoCoins = user?.stats?.focoCoins || 0;
@@ -73,22 +80,30 @@ export function StoreModal({ isOpen, onClose }: StoreModalProps) {
     }, 100);
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          onClick={onClose}
-        >
+        <>
           <motion.div
-            initial={{ scale: 0.95, y: 20 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.95, y: 20 }}
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md bg-[#0f1115] border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            className="fixed inset-0 bg-black/30 backdrop-blur-[2px] z-[99999]"
+          />
+
+          <motion.div
+            initial={{ opacity: 0, y: "100%" }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed bottom-0 left-0 w-full max-h-[85vh] pb-12 bg-[#0B0F19]/95 backdrop-blur-2xl border-t border-slate-700/50 rounded-t-[40px] shadow-[0_-20px_60px_rgba(0,0,0,0.6)] z-[100000] flex flex-col animate-none"
+            onPointerDown={(e) => e.stopPropagation()}
           >
             {/* Header da Loja */}
             <div className="p-5 flex justify-between items-center border-b border-white/5 bg-[#16181c]">
@@ -150,8 +165,9 @@ export function StoreModal({ isOpen, onClose }: StoreModalProps) {
               })}
             </div>
           </motion.div>
-        </motion.div>
+        </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
