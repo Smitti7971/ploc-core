@@ -44,6 +44,9 @@ export function NotificationsPendingTab({
 }: NotificationsPendingTabProps) {
   const store = useTrackerStore();
 
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+
   const [correlationPrompt, setCorrelationPrompt] = React.useState<{
     mainItemId: string;
     mainItemName: string;
@@ -427,12 +430,13 @@ export function NotificationsPendingTab({
       </AnimatePresence>
 
       <AnimatePresence>
-        {correlationPrompt && typeof document !== 'undefined' && createPortal(
+        {mounted && correlationPrompt && typeof document !== 'undefined' && createPortal(
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[2000000] flex items-center justify-center p-4"
+            className="fixed inset-0 flex items-center justify-center p-4"
+            style={{ zIndex: 2147483647 }}
           >
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setCorrelationPrompt(null)} />
             <motion.div
