@@ -18,6 +18,11 @@ const path = require('path');
 const app = express();
 app.use('/audio', express.static(path.join(__dirname, 'public/audio')));
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+// Fallback para quando a imagem não existir no servidor (evita o erro de CORB)
+app.use('/uploads', (req, res) => {
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.status(404).send('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>');
+});
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 const port = process.env.PORT || 3000;
