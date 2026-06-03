@@ -34,10 +34,23 @@ app.get('/api/minio-proxy/*', (req, res) => {
   });
 });
 
-// Fallback para quando a imagem não existir no servidor (evita o erro de CORB)
+// Fallback para quando a imagem não existir no servidor (evita o erro de CORB e tenta no MinIO)
 app.use('/uploads', (req, res) => {
-  res.setHeader('Content-Type', 'image/svg+xml');
-  res.status(404).send('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>');
+  const bucket = process.env.STORAGE_BUCKET || 'ploc-assets';
+  const minioUrl = `http://72.61.63.84:9000/${bucket}${req.url}`;
+  
+  http.get(minioUrl, (proxyRes) => {
+    if (proxyRes.statusCode === 200) {
+      res.writeHead(proxyRes.statusCode, proxyRes.headers);
+      proxyRes.pipe(res);
+    } else {
+      res.setHeader('Content-Type', 'image/svg+xml');
+      res.status(404).send('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>');
+    }
+  }).on('error', (err) => {
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.status(404).send('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>');
+  });
 });
 app.use(express.static(path.join(__dirname, '../frontend')));
 

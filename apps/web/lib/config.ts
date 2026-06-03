@@ -39,7 +39,11 @@ export const getAssetUrl = (url?: string | null) => {
 
   // Se já for uma URL completa
   if (url.startsWith('http://') || url.startsWith('https://')) {
-    if (url.includes('localhost:') && typeof window !== 'undefined') {
+    if (url.includes('72.61.63.84:9000')) {
+      // Proxy access to MinIO to avoid SSL and CORS issues
+      const minioPath = url.replace(/^https?:\/\/72\.61\.63\.84:9000/, '');
+      result = `${backendRoot}/api/minio-proxy${minioPath}`;
+    } else if (url.includes('localhost:') && typeof window !== 'undefined') {
       result = url.replace(/^https?:\/\/localhost:\d+/, backendRoot);
     } else if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
       // Proteção automática contra Mixed Content para imagens da CDN:
