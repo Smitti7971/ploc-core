@@ -25,7 +25,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion';
-import { Backpack, Store } from 'lucide-react';
+import { Backpack, Store, Coins } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { blackboardEventBus } from '@/modules/blackboard/events/eventBus';
@@ -51,6 +51,8 @@ import { PlocAura, PlocHair, PlocHat, PlocClothes } from './PlocCosmetics';
 import { PlocFloatingIndicators } from './PlocFloatingIndicators';
 import { InventoryModal } from './InventoryModal';
 import { StoreModal } from './StoreModal';
+import { usePlocStateStore } from '@/modules/mascot/store/plocStateStore';
+import { PlocWaterBody } from './PlocWaterBody';
 
 import { PILLARS_DATA } from '@/modules/routines/data/routinesData';
 import { attributeEngine } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
@@ -76,7 +78,7 @@ export default function PlocAvatar({
   renderCustomControls
 }: PlocAvatarProps = {}) {
   const pathname = usePathname();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const isLanding = pathname === '/' && !isAuthenticated;
   const isHidden = pathname === '/settings';
 
@@ -159,7 +161,7 @@ export default function PlocAvatar({
       setIsEating(true);
       setTimeout(() => setIsEating(false), 2500);
     };
-    
+
     const handleStore = () => {
       setStorePop(true);
       setTimeout(() => setStorePop(false), 1000);
@@ -167,7 +169,7 @@ export default function PlocAvatar({
 
     const unsubEat = blackboardEventBus.subscribe('PLOC_EAT', handleEat);
     const unsubStore = blackboardEventBus.subscribe('PLOC_STORE_ITEM', handleStore);
-    
+
     return () => {
       unsubEat();
       unsubStore();
@@ -178,6 +180,23 @@ export default function PlocAvatar({
   const [isBagOpen, setIsBagOpen] = useState(false);
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [achievementToast, setAchievementToast] = useState<{ title: string; message: string } | null>(null);
+
+  const focoCoins = user?.stats?.focoCoins || 0;
+  const [focoCoinsPop, setFocoCoinsPop] = useState(false);
+  const prevFocoCoins = useRef(focoCoins);
+  const [addedCoins, setAddedCoins] = useState(0);
+
+  useEffect(() => {
+    if (focoCoins > prevFocoCoins.current) {
+      const diff = focoCoins - prevFocoCoins.current;
+      setAddedCoins(diff);
+      setFocoCoinsPop(true);
+      const timer = setTimeout(() => setFocoCoinsPop(false), 1200);
+      prevFocoCoins.current = focoCoins;
+      return () => clearTimeout(timer);
+    }
+    prevFocoCoins.current = focoCoins;
+  }, [focoCoins]);
 
   const actionsOverlayRef = useRef<HTMLDivElement>(null);
 
@@ -319,12 +338,17 @@ export default function PlocAvatar({
 
   const attributes = attributeEngine.getAttributes();
 
+  // Call hook before any early returns (return primitive to avoid infinite loop)
+  const { hunger, thirst, fatigue, cold, humor, fatLevel } = usePlocStateStore();
+  const vitalsAvg = (hunger + thirst + fatigue) / 3;
+
   const { limbColor, limbShadow, stateR, stateG, stateB, stateAlpha } = usePlocColorState({
     appearance,
     isSleeping,
     isHurt: plocState.isHurt,
     isHit: plocState.isHit ?? false,
     isPositiveHit: plocState.isPositiveHit ?? false,
+    isSick: vitalsAvg < 30,
   });
 
   if (isHidden) return null;
@@ -332,14 +356,34 @@ export default function PlocAvatar({
 
   const shouldShake = plocState.isHurt || plocState.isHit;
 
+  let fatorX = 1;
+  let fatorY = 1;
+  let currentBorderRadius = "50%"; // Normal redondinho
+
+  // Peso agora é diretamente ligado à gordura (fatLevel)
+  const isFat = fatLevel > 80;
+  const isThin = fatLevel < 30;
+
+  if (isThin) {
+    fatorX = 0.85;
+    fatorY = 0.95; // Magro, alongado
+    currentBorderRadius = "50% 50% 45% 45% / 40% 40% 55% 55%";
+  } else if (isFat) {
+    // Gordo / Barriguinha
+    fatorX = 1 + ((fatLevel - 80) / 20) * 0.4; // Até 1.4x largura
+    fatorY = 1 + ((fatLevel - 80) / 20) * 0.05;
+    // Formato de "Gota" (pesado embaixo)
+    currentBorderRadius = "50% 50% 50% 50% / 65% 65% 40% 40%";
+  }
+
   // Dynamic breathing/wobble keyframes based on states for gelatinous effect
   const breatheScaleX = plocState.isHurt
-    ? [1.08, 1.00, 1.08]
-    : [1.07, 1.03, 1.07];
+    ? [1.08 * fatorX, 1.00 * fatorX, 1.08 * fatorX]
+    : [1.07 * fatorX, 1.03 * fatorX, 1.07 * fatorX];
 
   const breatheScaleY = plocState.isHurt
-    ? [0.92, 1.00, 0.92]
-    : [0.93, 0.97, 0.93];
+    ? [0.92 * fatorY, 1.00 * fatorY, 0.92 * fatorY]
+    : [0.93 * fatorY, 0.97 * fatorY, 0.93 * fatorY];
 
   const breatheDuration = plocState.isHurt ? 1.5 : 3.5;
 
@@ -348,8 +392,8 @@ export default function PlocAvatar({
     : 0;
 
   // EscalaX e EscalaY dinâmicas reativas a transições de sono e hover
-  const animateScaleX = plocState.isHurt ? [1, 0.9, 1.05, 0.95, 1] : (isSleeping ? [0.95, 0.95, 0.95] : breatheScaleX);
-  const animateScaleY = plocState.isHurt ? [1, 1.1, 0.95, 1.05, 1] : (isSleeping ? [0.95, 0.95, 0.95] : breatheScaleY);
+  const animateScaleX = plocState.isHurt ? [1 * fatorX, 0.9 * fatorX, 1.05 * fatorX, 0.95 * fatorX, 1 * fatorX] : (isSleeping ? [0.95 * fatorX, 0.95 * fatorX, 0.95 * fatorX] : breatheScaleX);
+  const animateScaleY = plocState.isHurt ? [1 * fatorY, 1.1 * fatorY, 0.95 * fatorY, 1.05 * fatorY, 1 * fatorY] : (isSleeping ? [0.95 * fatorY, 0.95 * fatorY, 0.95 * fatorY] : breatheScaleY);
 
   // Escala dinâmica reativa a transições (squash & stretch) e respiração/dor
   let animateScale: number | number[] = plocState.isHurt ? 1.08 : (isHovered ? 1.05 : (isSleeping ? 0.95 : 1));
@@ -367,7 +411,7 @@ export default function PlocAvatar({
     animateRotate = [0, 8, -6, 3, -1, 0];
   }
 
-  const amoebaBorderRadius = "50%";
+  const amoebaBorderRadius = currentBorderRadius;
 
   // Bloco de Renderização Principal do Avatar do Ploc
   return (
@@ -527,21 +571,27 @@ export default function PlocAvatar({
               ? { duration: 0.8, ease: "easeOut" }
               : plocState.isHurt
                 ? { type: "spring", stiffness: 240, damping: 9 }
-                : { duration: 0.6, ease: "easeInOut" }
+                : { duration: 0.6, ease: "easeInOut" },
+            borderRadius: { duration: 1.5, ease: "easeInOut" }
           }}
           className="w-full h-full relative"
           style={{ zIndex: 10 }}
         >
           {/* Corpo (Fundo de Vidro) separado para permitir Z-Index das costas */}
-          <div
+          <motion.div
             className="absolute inset-0 border-[1.5px] border-white/20"
-            style={{
-              borderRadius: 'inherit',
+            animate={{
               background: `radial-gradient(circle at 30% 30%, rgba(${stateR}, ${stateG}, ${stateB}, ${stateAlpha}) 0%, rgba(${stateR}, ${stateG}, ${stateB}, ${stateAlpha * 0.57}) 60%, rgba(${stateR}, ${stateG}, ${stateB}, ${stateAlpha * 0.23}) 100%)`,
               boxShadow: shouldShake
                 ? `0 0 25px rgba(${stateR}, ${stateG}, ${stateB}, 0.5), inset 0 0 16px rgba(255, 255, 255, 0.4)`
                 : `0 15px 35px rgba(${stateR}, ${stateG}, ${stateB}, 0.15), inset 0 0 16px rgba(255, 255, 255, 0.4)`,
-              transition: 'background 0.4s ease, box-shadow 0.4s ease',
+            }}
+            transition={{
+              duration: 1.5,
+              ease: "easeInOut"
+            }}
+            style={{
+              borderRadius: 'inherit',
               zIndex: 10
             }}
           />
@@ -591,6 +641,9 @@ export default function PlocAvatar({
               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/35 pointer-events-none" />
             </motion.div>
 
+            {/* Água da Sede (PlocWaterBody) - Fica no fundo do corpo */}
+            <PlocWaterBody thirstLevel={thirst} />
+
             {/* Brilhos 3D Especulares (Testa e reflexo inferior) ancorados perfeitamente no corpo */}
             <motion.div style={{ x: shineX }} className="absolute inset-0 pointer-events-none z-[2]">
               <div className="absolute top-[8%] left-[12%] w-[22%] h-[12%] bg-white/70 rounded-full blur-[0.5px] transform -rotate-12 pointer-events-none" />
@@ -624,60 +677,92 @@ export default function PlocAvatar({
               isHit={plocState.isHit}
               isPositiveHit={plocState.isPositiveHit}
               isDizzy={emotion === 'dizzy' || plocState.mode === 'dizzy'}
+              isSick={vitalsAvg < 30}
+              isFat={isFat}
+              isThin={isThin}
+              coldLevel={cold}
+              humorLevel={humor}
             />
           </motion.div>
 
-          {/* Membros Stick (Perninhas e Braços) */}
           <PlocLimbs
             limbColor={limbColor}
             limbShadow={limbShadow}
             appearance={appearance}
             size={SIZE}
             dragX={smoothFacingX}
+            isSick={vitalsAvg < 30}
+            hungerLevel={hunger}
           />
         </motion.div>
       </motion.div>
 
       {/* Botão Fixo de Mochila (Inventário) no Canto Inferior Esquerdo (acima da Navbar) apenas no Blackboard */}
       {!isHidden && !isLanding && pathname === '/' && typeof document !== 'undefined' && createPortal(
-        <div className="fixed bottom-[90px] left-[25px] z-[99999] pointer-events-auto flex flex-col gap-3">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsStoreOpen(!isStoreOpen);
-            }}
-            className="w-12 h-12 rounded-2xl border flex items-center justify-center cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 backdrop-blur-md group relative bg-black/40 border-white/10 hover:scale-110 hover:bg-white/10 text-emerald-400"
-            title="Lojinha"
-          >
-            <Store size={22} className="group-hover:scale-110 transition-transform" />
-          </button>
-          
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsBagOpen(!isBagOpen);
-            }}
-            className={`w-12 h-12 rounded-2xl border flex items-center justify-center cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 backdrop-blur-md group relative ${
-              storePop 
-                ? 'bg-emerald-500/80 border-emerald-400 text-white scale-110' 
+        <div className="fixed bottom-[90px] left-0 w-full px-[25px] z-[99999] pointer-events-none flex justify-between items-end">
+
+          <div className="flex flex-col gap-3 pointer-events-auto">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsBagOpen(!isBagOpen);
+              }}
+              className={`w-12 h-12 rounded-2xl border flex items-center justify-center cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 backdrop-blur-md group relative ${storePop
+                ? 'bg-emerald-500/80 border-emerald-400 text-white scale-110'
                 : 'bg-black/40 border-white/10 hover:scale-110 hover:bg-white/10 text-orange-400'
-            }`}
-            title="Inventário (Mochila)"
-          >
-            <Backpack size={22} className="group-hover:scale-110 transition-transform" />
-            <AnimatePresence>
-              {storePop && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.5 }}
-                  animate={{ opacity: 1, y: -25, scale: 1.2 }}
-                  exit={{ opacity: 0, y: -35 }}
-                  className="absolute text-emerald-300 font-black text-[13px] drop-shadow-md"
-                >
-                  +1
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </button>
+                }`}
+              title="Inventário (Mochila)"
+            >
+              <Backpack size={22} className="group-hover:scale-110 transition-transform" />
+              <AnimatePresence>
+                {storePop && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.5 }}
+                    animate={{ opacity: 1, y: -25, scale: 1.2 }}
+                    exit={{ opacity: 0, y: -35 }}
+                    className="absolute text-emerald-300 font-black text-[13px] drop-shadow-md"
+                  >
+                    +1
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-3 pointer-events-auto items-end">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsStoreOpen(!isStoreOpen);
+              }}
+              className="w-12 h-12 rounded-2xl border flex items-center justify-center cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 backdrop-blur-md group relative bg-black/40 border-white/10 hover:scale-110 hover:bg-white/10 text-emerald-400"
+              title="Lojinha"
+            >
+              <Store size={22} className="group-hover:scale-110 transition-transform" />
+            </button>
+
+            {/* Foco Coins Display */}
+            <div
+              className="flex items-center justify-center gap-1.5 px-3 h-12 rounded-2xl border shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 backdrop-blur-md relative bg-black/40 border-yellow-500/30 text-yellow-400 font-bold"
+              title="Foco Coins"
+            >
+              <Coins size={20} />
+              <span className="text-sm">{focoCoins}</span>
+              <AnimatePresence>
+                {focoCoinsPop && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.5 }}
+                    animate={{ opacity: 1, y: -30, scale: 1.2 }}
+                    exit={{ opacity: 0, y: -45 }}
+                    className="absolute left-1/2 -translate-x-1/2 text-yellow-300 font-black text-[14px] drop-shadow-md pointer-events-none"
+                  >
+                    +{addedCoins}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
         </div>,
         document.body
       )}

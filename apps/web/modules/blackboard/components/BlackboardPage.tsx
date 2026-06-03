@@ -40,7 +40,7 @@ import {
 } from "framer-motion";
 import { DockMenu } from "@/components/layout/DockMenu";
 
-import { AttributeMonitor } from "./AttributeMonitor";
+// Removido import estático do AttributeMonitor
 import { bubbleEngine } from "../engine/bubble-engine/BubbleEngine";
 import { BlackboardBubble } from "../types/bubbles";
 import { blackboardEventBus, BLACKBOARD_EVENTS } from "../events/eventBus";
@@ -51,9 +51,20 @@ import {
 } from "../engine/attribute-engine/AttributeEngine";
 import { PILLARS_CONFIG, isPillarProfileFilled } from "./AttributePillars";
 
-// Components extraídos
-import { NotificationsModal } from "./NotificationsModal";
+import dynamic from "next/dynamic";
+
+// Components extraídos (agora com lazy loading para modais pesados)
+const NotificationsModal = dynamic(
+  () => import("./NotificationsModal").then((mod) => mod.NotificationsModal),
+  { ssr: false }
+);
+const AttributeMonitor = dynamic(
+  () => import("./AttributeMonitor").then((mod) => mod.AttributeMonitor),
+  { ssr: false }
+);
+
 import { ResourceLayer } from "./ResourceLayer";
+import { OffScreenIndicators } from "./OffScreenIndicators";
 import { resourceEngine } from "../engine/resource-engine/ResourceEngine";
 
 import { AmbientGlowBackground } from "../../landing/particles/AmbientGlowBackground";
@@ -61,6 +72,9 @@ import { Vignette } from "../../landing/particles/Vignette";
 import { useTrackerStore } from "../../dashboard/components/tracker/store/trackerStore";
 import { usePlocSpeech } from "../../../components/mascot/usePlocSpeech";
 import { usePlocStateStore } from "../../mascot/store/plocStateStore";
+import { BlackboardHUD } from "./BlackboardHUD";
+import { BlackboardActiveConsumption } from "./BlackboardActiveConsumption";
+import { BlackboardMinimap } from "./BlackboardMinimap";
 
 export default function BlackboardPage() {
   const { user } = useAuthStore();
@@ -114,6 +128,7 @@ export default function BlackboardPage() {
   const [showAttributes, setShowAttributes] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [bubbles, setBubbles] = useState<any[]>([]); // Items from ResourceEngine
   const scale = 1; // Constante mantida para compatibilidade visual dos filhos
   const [plocReaction, setPlocReaction] = useState<
     "idle" | "happy" | "stressed" | "dizzy"
@@ -250,51 +265,26 @@ export default function BlackboardPage() {
       setHasPendingPillars(pending);
     };
 
+    const unsubscribeBubble = bubbleEngine.subscribe(() => {
+      checkPendingPillars();
+    });
+
+    const unsubscribeResource = resourceEngine.subscribe(() => {
+      setBubbles([...resourceEngine.getBubbles()]);
+    });
+
     checkPendingPillars();
+    setBubbles(resourceEngine.getBubbles());
+
     const interval = setInterval(checkPendingPillars, 1000);
-    return () => clearInterval(interval);
+
+    return () => {
+      clearInterval(interval);
+      if (unsubscribeBubble) unsubscribeBubble();
+      if (unsubscribeResource) unsubscribeResource();
+    };
   }, []);
-  const [consumptionElapsed, setConsumptionElapsed] = useState(0);
   const { speak } = usePlocSpeech();
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (
-      activeConsumingVice?.isConsuming &&
-      activeConsumingVice.consumptionStart
-    ) {
-      interval = setInterval(() => {
-        const elapsed = Math.floor(
-          (Date.now() - activeConsumingVice.consumptionStart!) / 1000,
-        );
-        setConsumptionElapsed(elapsed);
-
-        // Auto-encerra quando passa de 5 minutos
-        const limit = 300; // Fixo em 5 minutos
-        if (elapsed >= limit) {
-          endConsumption(activeConsumingVice.id, limit);
-        }
-      }, 1000);
-    } else {
-      const timeout = setTimeout(() => setConsumptionElapsed(0), 0);
-      return () => clearTimeout(timeout);
-    }
-    return () => clearInterval(interval);
-  }, [
-    activeConsumingVice?.isConsuming,
-    activeConsumingVice?.consumptionStart,
-    activeConsumingVice?.defaultTimer,
-    activeConsumingVice?.id,
-    endConsumption,
-  ]);
-
-  const formatConsumingTime = (seconds: number) => {
-    const absSeconds = Math.abs(seconds);
-    const m = Math.floor(absSeconds / 60);
-    const s = absSeconds % 60;
-    return `${seconds < 0 ? "+" : ""}${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  };
-  const activeSecondsRemaining = 300 - consumptionElapsed;
   // ============================================
   const [minScale, setMinScale] = useState(0.25);
 
@@ -376,11 +366,7 @@ export default function BlackboardPage() {
     animate(mapScale, target, { duration: 0.2 });
   };
 
-  const miniDotX = useTransform(mapX, [-1500, 1500], [-50, 50]);
-  const miniDotY = useTransform(mapY, [-1500, 1500], [-50, 50]);
-  // O viewport no minimapa diminui quando damos zoom out (segundo expectativa do usuário)
-  // Então scale 1.5 = w-24 h-24, scale minScale = w-8 h-8
-  const miniViewportSize = useTransform(mapScale, [1.5, minScale], [24, 8]);
+
 
   useEffect(() => {
     const unsubscribe = blackboardEventBus.subscribe(
@@ -471,6 +457,8 @@ export default function BlackboardPage() {
     >
       <AmbientGlowBackground />
       <Vignette />
+      
+      <OffScreenIndicators bubbles={bubbles} mapX={mapX} mapY={mapY} mapScale={mapScale} />
 
       <div
         id="blackboard-canvas"
@@ -572,58 +560,7 @@ export default function BlackboardPage() {
                   </div>
 
                   {/* FUMAÇA E UI DO CONSUMO ATIVO */}
-                  <AnimatePresence>
-                    {activeConsumingVice?.isConsuming && (
-                      <motion.div
-                        className="absolute inset-0 z-20 pointer-events-none"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{
-                          opacity: 0,
-                          transition: { duration: 1.5, ease: "easeInOut" },
-                        }}
-                      >
-                        {/* UI DO CONSUMO ATIVO (BOTÃO PARAR E TIMER) */}
-                        <div className="absolute -top-[160px] left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-auto z-[400] scale-90">
-                          <div className="bg-red-500/10 border border-red-500/30 backdrop-blur-md px-4 py-1.5 rounded-2xl mb-2 flex flex-col items-center justify-center shadow-[0_0_15px_rgba(239,68,68,0.2)] min-w-[140px]">
-                            <span className="text-[0.5rem] font-bold text-red-400 uppercase tracking-[0.15em] mb-0.5 text-center ml-[0.15em]">
-                              TE DESAFIO A FICAR SEM!
-                            </span>
-                            <span
-                              className={`font-mono font-black text-lg leading-none text-center ${activeSecondsRemaining < 0 ? "text-red-500" : "text-white"}`}
-                            >
-                              {formatConsumingTime(activeSecondsRemaining)}
-                            </span>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => {
-                                cancelConsumption(activeConsumingVice.id);
-                                speak(
-                                  "Esperar te faz mais forte!",
-                                  4000,
-                                );
-                              }}
-                              className="bg-zinc-700/80 hover:bg-zinc-600 text-white font-bold px-4 py-2.5 rounded-xl text-[0.55rem] tracking-widest transition-colors shadow-lg whitespace-nowrap backdrop-blur-md"
-                            >
-                              NÃO VOU CEDER!
-                            </button>
-                            <button
-                              onClick={() =>
-                                endConsumption(
-                                  activeConsumingVice.id,
-                                  consumptionElapsed,
-                                )
-                              }
-                              className="bg-red-500 hover:bg-red-600 text-white font-black px-5 py-2.5 rounded-xl text-[0.6rem] tracking-widest transition-colors shadow-lg whitespace-nowrap"
-                            >
-                              CEDER
-                            </button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <BlackboardActiveConsumption activeConsumingVice={activeConsumingVice} />
                 </motion.div>
                 {/* Radar Temporal (Sonar) Removido */}
 
@@ -643,12 +580,12 @@ export default function BlackboardPage() {
                   )}
                 </AnimatePresence>
 
-                {/* Bolhas de Pensamento do Libertesse (Controle de Vícios) */}
+                {/* Bolhas de Pensamento do Libertesse/Tracker (Controle de Hábitos e Vícios) */}
                 {Object.values(items)
                   .filter(
                     (v) =>
-                      v.type === 'vice' &&
                       v.status === 'ACTIVE' &&
+                      v.config?.showCoverPhoto !== false &&
                       !v.config?.isHidden &&
                       !v.config?.isVulnerability,
                   )
@@ -668,55 +605,16 @@ export default function BlackboardPage() {
         </motion.div>
       </div>
 
-      <div className="fixed top-[25px] left-0 w-full px-6 flex justify-between items-start z-[100001] pointer-events-none">
-        {/* Botões à esquerda */}
-        <div className="flex items-center bg-black/40 border border-white/10 backdrop-blur-md rounded-full p-1 shadow-[0_4px_20px_rgba(0,0,0,0.5)] pointer-events-auto gap-1 h-[46px]">
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            onClick={() => setShowGrid(!showGrid)}
-            className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shrink-0 transition-colors ${showGrid ? "bg-sky-400/20 text-sky-400" : "bg-white/5 text-white/70 hover:text-white hover:bg-white/10"}`}
-            title="Grade"
-          >
-            <Grid3X3 size={16} />
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            onClick={() => {
-              userClosedMinimap.current = showMinimap;
-              setShowMinimap(!showMinimap);
-            }}
-            className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shrink-0 transition-colors ${showMinimap ? "bg-sky-400/20 text-sky-400" : "bg-white/5 text-white/70 hover:text-white hover:bg-white/10"}`}
-            title="Minimapa"
-          >
-            <Map size={16} />
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowStatusMenu(!showStatusMenu)}
-            className={`w-9 h-9 rounded-full flex items-center justify-center relative cursor-pointer transition-colors ${showStatusMenu ? "bg-purple-400/20 text-purple-400" : "bg-white/5 text-white/70 hover:text-white hover:bg-white/10"}`}
-            title="Status"
-          >
-            <ActivityIcon size={16} />
-
-            {/* Badge de atenção (Novidades/Ações necessárias) */}
-            {hasPendingPillars && (
-              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-yellow-400 rounded-full border-[1.5px] border-black/80 flex items-center justify-center shadow-[0_0_8px_rgba(250,204,21,0.6)] animate-pulse">
-                <span className="text-black text-[10px] font-black leading-none mt-[1px]">
-                  !
-                </span>
-              </span>
-            )}
-          </motion.button>
-        </div>
-
-        {/* UserHeader à direita */}
-        <div className="flex items-center justify-center pointer-events-auto h-[46px]">
-          <UserHeader />
-        </div>
-      </div>
+      <BlackboardHUD
+        showGrid={showGrid}
+        setShowGrid={setShowGrid}
+        showMinimap={showMinimap}
+        setShowMinimap={setShowMinimap}
+        showStatusMenu={showStatusMenu}
+        setShowStatusMenu={setShowStatusMenu}
+        hasPendingPillars={hasPendingPillars}
+        userClosedMinimap={userClosedMinimap}
+      />
 
       {/* Dropdown de Status (Pilares + Modal de Tarefas) */}
       <div className="pointer-events-none fixed inset-0 z-[100002]">
@@ -766,93 +664,18 @@ export default function BlackboardPage() {
         </AnimatePresence>
       </div>
 
-      {/* Botão de DEBUG temporário para gamificação */}
-      <div className="fixed bottom-[120px] right-[25px] z-[100001] pointer-events-auto flex flex-col items-end gap-2">
-        <button
-          onClick={() => {
-            // As coordenadas são relativas ao Ploc (0,0)
-            resourceEngine.spawnBubble("food", "Maçã", 0, -150);
-            resourceEngine.spawnBubble("water", "Água", -100, -120);
-            resourceEngine.spawnBubble("medicine", "Medicina", 100, -120);
-          }}
-          className="bg-purple-600/80 hover:bg-purple-500 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-[10px] font-bold shadow-[0_0_15px_rgba(168,85,247,0.3)] border border-purple-400/30 flex items-center gap-1 transition-all"
-        >
-          <span>+</span>
-        </button>
-        <button
-          onClick={() => {
-            const store = usePlocStateStore.getState();
-            usePlocStateStore.setState({
-              hunger: Math.max(0, store.hunger - 10),
-              thirst: Math.max(0, store.thirst - 10),
-              fatigue: Math.max(0, store.fatigue - 10),
-            });
-          }}
-          className="bg-rose-600/85 hover:bg-rose-500 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-[10px] font-bold shadow-[0_0_15px_rgba(244,63,94,0.3)] border border-rose-400/30 flex items-center gap-1 transition-all"
-        >
-          <span>-10%</span>
-        </button>
-      </div>
 
-      {/* Modal/Dropdown do Minimapa (posicionado abaixo dos botões de controle de tela se fosse no menu antigo, mas agora no canto direito para não poluir) */}
-      <div className="fixed top-[80px] left-[25px] flex flex-col items-start gap-3 z-[100001] pointer-events-none">
-        <AnimatePresence>
-          {showMinimap && (
-            <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.9 }}
-              className="flex flex-col gap-2"
-            >
-              {/* Controles de Câmera */}
-              <div className="flex items-center justify-between w-[100px] bg-black/40 border border-white/10 backdrop-blur-md rounded-xl p-1 pointer-events-auto shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
-                <button
-                  onClick={zoomOut}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 text-white/70 hover:text-white transition-colors"
-                >
-                  <ZoomOut size={16} />
-                </button>
-                <button
-                  onClick={recenterMap}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 text-sky-400 transition-colors"
-                  title="Centralizar no Ploc"
-                >
-                  <Target size={16} />
-                </button>
-                <button
-                  onClick={zoomIn}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 text-white/70 hover:text-white transition-colors"
-                >
-                  <ZoomIn size={16} />
-                </button>
-              </div>
-
-              {/* Minimapa */}
-              <div className="w-[100px] h-[100px] rounded-xl bg-black/60 border border-white/10 backdrop-blur-md overflow-hidden pointer-events-none shadow-[0_4px_20px_rgba(0,0,0,0.5)] relative flex items-center justify-center">
-                {/* Grade Interna do Minimapa */}
-                <div
-                  className="absolute inset-0 opacity-20"
-                  style={{
-                    backgroundImage: `radial-gradient(rgba(255, 255, 255, 1) 1px, transparent 1px)`,
-                    backgroundSize: "10px 10px",
-                  }}
-                ></div>
-
-                {/* Indicador de Viewport (Câmera) com tamanho responsivo ao zoom */}
-                <motion.div
-                  className="absolute top-1/2 left-1/2 rounded-full border border-sky-400/80 bg-sky-400/20 shadow-[0_0_8px_rgba(56,189,248,0.5)] transform -translate-x-1/2 -translate-y-1/2 origin-center"
-                  style={{
-                    x: miniDotX,
-                    y: miniDotY,
-                    width: miniViewportSize,
-                    height: miniViewportSize,
-                  }}
-                />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      <BlackboardMinimap
+        showMinimap={showMinimap}
+        zoomOut={zoomOut}
+        zoomIn={zoomIn}
+        recenterMap={recenterMap}
+        mapX={mapX}
+        mapY={mapY}
+        mapScale={mapScale}
+        minScale={minScale}
+        bubbles={bubbles}
+      />
 
       {/* ── Menu de Navegação Global (Dock) ────────────────── */}
       <DockMenu />

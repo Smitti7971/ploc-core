@@ -25,11 +25,8 @@ export const AuthCapsule: React.FC = () => {
   const isSettings = pathname === '/settings';
   const isPlocPage = pathname === '/ploc' || pathname === '/'; // Blackboard now at /
 
-  // Se estivermos nas páginas onde o UserHeader não deve aparecer (para evitar colisão visual), ocultamos.
-  if (isAuthenticated && (isSettings || isPlocPage)) {
-    return null;
-  }
-
+  // A cápsula sempre deve aparecer para que o usuário possa deslogar e acessar o perfil
+  // (Foi removida a restrição de ocultar nas páginas de configurações e Ploc)
   const handleEnterClick = (e: React.MouseEvent) => {
     e.preventDefault();
     setAuthModalOpen(true);

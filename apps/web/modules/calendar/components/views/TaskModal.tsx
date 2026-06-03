@@ -118,8 +118,10 @@ export function TaskModal({ isOpen, onClose, defaultDateStr, editTask }: TaskMod
 
             <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5 overflow-y-auto">
               <div>
-                <label className="block text-sm font-medium text-white/60 mb-2">Título</label>
+                <label htmlFor="task-title" className="block text-sm font-medium text-white/60 mb-2">Título</label>
                 <input
+                  id="task-title"
+                  name="title"
                   type="text"
                   value={title}
                   onChange={e => setTitle(e.target.value)}
@@ -132,8 +134,10 @@ export function TaskModal({ isOpen, onClose, defaultDateStr, editTask }: TaskMod
 
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-white/60 mb-2">Categoria</label>
+                  <label htmlFor="task-category" className="block text-sm font-medium text-white/60 mb-2">Categoria</label>
                   <select
+                    id="task-category"
+                    name="category"
                     value={category}
                     onChange={e => setCategory(e.target.value)}
                     className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-500 transition-colors appearance-none"
@@ -144,8 +148,10 @@ export function TaskModal({ isOpen, onClose, defaultDateStr, editTask }: TaskMod
                   </select>
                 </div>
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-white/60 mb-2">Cor (Opcional)</label>
+                  <label htmlFor="task-color" className="block text-sm font-medium text-white/60 mb-2">Cor (Opcional)</label>
                   <select
+                    id="task-color"
+                    name="color"
                     value={color}
                     onChange={e => setColor(e.target.value)}
                     className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-500 transition-colors appearance-none"
@@ -159,8 +165,10 @@ export function TaskModal({ isOpen, onClose, defaultDateStr, editTask }: TaskMod
 
               <div className="flex gap-4 items-end">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-white/60 mb-2">Data</label>
+                  <label htmlFor="task-date" className="block text-sm font-medium text-white/60 mb-2">Data</label>
                   <input
+                    id="task-date"
+                    name="date"
                     type="date"
                     value={dateStr}
                     onChange={e => setDateStr(e.target.value)}
@@ -169,9 +177,11 @@ export function TaskModal({ isOpen, onClose, defaultDateStr, editTask }: TaskMod
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-white/60 mb-2">Horário</label>
+                  <label htmlFor="task-time" className="block text-sm font-medium text-white/60 mb-2">Horário</label>
                   <div className="flex items-center bg-black/20 border border-white/10 rounded-xl px-2 focus-within:border-sky-500 transition-colors">
                     <input
+                      id="task-time"
+                      name="time"
                       type="time"
                       value={time}
                       onChange={e => {
@@ -181,8 +191,10 @@ export function TaskModal({ isOpen, onClose, defaultDateStr, editTask }: TaskMod
                       disabled={isAllDay}
                       className="flex-1 bg-transparent py-3 px-2 text-white focus:outline-none disabled:opacity-30"
                     />
-                    <label className="flex items-center gap-2 cursor-pointer pr-2 border-l border-white/10 pl-3">
+                    <label htmlFor="task-allday" className="flex items-center gap-2 cursor-pointer pr-2 border-l border-white/10 pl-3">
                       <input
+                        id="task-allday"
+                        name="allday"
                         type="checkbox"
                         className="w-4 h-4 rounded border-white/20 bg-black/20 text-sky-500 focus:ring-sky-500 focus:ring-offset-0"
                         checked={isAllDay}
@@ -195,8 +207,10 @@ export function TaskModal({ isOpen, onClose, defaultDateStr, editTask }: TaskMod
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white/60 mb-2">Descrição (Opcional)</label>
+                <label htmlFor="task-desc" className="block text-sm font-medium text-white/60 mb-2">Descrição (Opcional)</label>
                 <textarea
+                  id="task-desc"
+                  name="description"
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-sky-500 transition-colors resize-none h-24"

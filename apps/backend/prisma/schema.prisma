@@ -223,6 +223,7 @@ model InventoryItem {
   pricePremium     Int?     // Preço em Premium Coins
   effects          Json?    // Efeitos ao usar: { "body": 5, "duration_minutes": 30 }
   imageUrl         String?
+  isAvailableInShop Boolean @default(true)
 
   users            UserInventory[]
 

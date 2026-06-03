@@ -5,6 +5,7 @@ import { Flame, Wine, WineOff, Pill, Eye, EyeOff, Check, Cigarette, CigaretteOff
 import { useTrackerStore } from '../../tracker/store/trackerStore';
 import { blackboardEventBus, BLACKBOARD_EVENTS } from '@/modules/blackboard/events/eventBus';
 import { usePlocSpeech } from '@/components/mascot/usePlocSpeech';
+import { ViceBubbleModal } from './ViceBubbleModal';
 
 const VICE_ICONS_OFF: Record<string, React.ElementType> = {
   tabagismo: CigaretteOff,
@@ -35,7 +36,7 @@ interface ViceBubbleProps {
 }
 
 export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: ViceBubbleProps) {
-  const { items, removeItem, startConsumption, setItem } = useTrackerStore();
+  const { items, removeItem, startConsumption, setItem, addLog } = useTrackerStore();
   const activeVice = items[viceId];
   const { speak } = usePlocSpeech();
 
@@ -130,9 +131,17 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
         vy.current = (vy.current - 2 * dot * ny) * 0.8 + pvy * 0.55;
       }
 
-      // 4. Quique elástico na Parede Circular externa do Sonar de 500px (raio 160px orig -> 110px para evitar clip)
-      const maxRadius = 110;
+      // 4. Quique elástico na Parede Circular próxima ao Ploc (500x500 = raio 250)
+      // Mantém as bolhas orbitando próximas ao centro
+      const maxRadius = 350;
       const distFromCenter = Math.sqrt(nextX * nextX + nextY * nextY);
+      
+      // Adiciona uma atração suave (gravidade) em direção ao Ploc se estiverem se afastando muito
+      if (distFromCenter > 280) {
+        vx.current -= (nextX / distFromCenter) * 0.05;
+        vy.current -= (nextY / distFromCenter) * 0.05;
+      }
+
       if (distFromCenter > maxRadius) {
         const ratio = maxRadius / distFromCenter;
         nextX = nextX * ratio;
@@ -161,6 +170,9 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
       cancelAnimationFrame(animationFrameId);
     };
   }, [index]);
+  const isRegretMode = !!activeVice.config?.regretStart;
+  const [regretElapsed, setRegretElapsed] = useState(0);
+
   useEffect(() => {
     if (activeVice?.config?.mode === 'diminua' && activeVice.config?.timerLimitSeconds) {
       const updateTimer = () => {
@@ -172,6 +184,38 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
       return () => clearInterval(interval);
     }
   }, [activeVice]);
+
+  useEffect(() => {
+    if (isRegretMode && activeVice.config?.regretStart) {
+      const updateRegret = () => {
+        const elapsed = Math.floor((Date.now() - activeVice.config.regretStart!) / 1000);
+        setRegretElapsed(elapsed);
+
+        if (elapsed >= 300) {
+          // 5 minutes passed, automatically register usage
+          addLog({
+            trackerItemId: viceId,
+            type: 'consumption',
+            info: 'Uso registrado automaticamente após 5 min de arrependimento',
+            durationSeconds: 300,
+            value: 1
+          });
+
+          setItem({
+            ...activeVice,
+            startDate: Date.now(),
+            config: {
+              ...activeVice.config,
+              regretStart: undefined
+            }
+          });
+        }
+      };
+      updateRegret();
+      const interval = setInterval(updateRegret, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [isRegretMode, activeVice, viceId, addLog, setItem]);
 
   if (!activeVice) return null;
 
@@ -195,12 +239,17 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
     return `${m}m ${s}s`;
   };
 
-
   const displayedSeconds = activeVice?.config?.timerLimitSeconds
     ? (isCountUp ? elapsed - activeVice.config.timerLimitSeconds : activeVice.config.timerLimitSeconds - elapsed)
     : elapsed;
 
   const handleBubbleClick = () => {
+    if (isRegretMode) {
+      // Apenas abre o modal, o cancelamento é feito lá dentro
+      setShowMotivatorModal(true);
+      return;
+    }
+
     setShowMotivatorModal(true);
     setShowResistInput(false);
 
@@ -225,9 +274,16 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
   };
 
   const handleRegistrar = () => {
-    startConsumption(viceId);
+    // Ao invés de startConsumption, iniciamos o período de arrependimento de 5 minutos
+    setItem({
+      ...activeVice,
+      config: {
+        ...activeVice.config,
+        regretStart: Date.now()
+      }
+    });
 
-    setShowMotivatorModal(false);
+    // Mantemos o modal aberto para que o usuário possa ver o botão de cancelar
   };
 
   const handleResistMore = (minsOverride?: number) => {
@@ -310,166 +366,75 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
             </div>
           )}
 
-          {activeVice.config?.mode === 'diminua' && (
+          {isRegretMode ? (
             <div className="flex flex-col items-center mt-[1px]">
               {!isPerformanceMode && (
-                <span className="text-[0.35rem] font-bold uppercase tracking-widest leading-none mt-0.5 shadow-sm text-white/90">
-                  {!isCountUp ? 'RESISTA' : 'ALCANÇADA'}
+                <span className="text-[0.35rem] font-bold uppercase tracking-widest leading-none mt-0.5 shadow-sm text-amber-400">
+                  ARREPENDIMENTO
                 </span>
               )}
-              <span className={`font-mono font-black tracking-wider shadow-sm leading-none ${isPerformanceMode ? 'text-[0.5rem]' : 'text-[0.5rem] mt-0.5'} ${!isCountUp ? 'text-red-500' : 'text-emerald-500'}`}>
-                {formatTime(displayedSeconds)}
+              <span className={`font-mono font-black tracking-wider shadow-sm leading-none ${isPerformanceMode ? 'text-[0.5rem]' : 'text-[0.5rem] mt-0.5'} text-amber-500`}>
+                {formatTime(Math.max(0, 300 - regretElapsed))}
               </span>
+              {!isPerformanceMode && (
+                <span className="text-[0.3rem] font-bold uppercase tracking-widest leading-none mt-0.5 opacity-70">
+                  Toque para cancelar
+                </span>
+              )}
             </div>
-          )}
+          ) : (
+            <>
+              {activeVice.config?.mode === 'diminua' && (
+                <div className="flex flex-col items-center mt-[1px]">
+                  {!isPerformanceMode && (
+                    <span className="text-[0.35rem] font-bold uppercase tracking-widest leading-none mt-0.5 shadow-sm text-white/90">
+                      {!isCountUp ? 'RESISTA' : 'ALCANÇADA'}
+                    </span>
+                  )}
+                  <span className={`font-mono font-black tracking-wider shadow-sm leading-none ${isPerformanceMode ? 'text-[0.5rem]' : 'text-[0.5rem] mt-0.5'} ${!isCountUp ? 'text-red-500' : 'text-emerald-500'}`}>
+                    {formatTime(displayedSeconds)}
+                  </span>
+                </div>
+              )}
 
-          {activeVice.config?.mode === 'acompanhe' && (
-            <span className={`font-bold uppercase tracking-widest leading-none shadow-sm ${isPerformanceMode ? 'text-[0.5rem] text-white' : 'text-[0.45rem] text-white/90 mt-1'}`}>
-              Uso
-            </span>
+              {activeVice.config?.mode !== 'diminua' && (
+                <span className={`font-bold uppercase tracking-widest leading-none shadow-sm ${isPerformanceMode ? 'text-[0.5rem] text-white' : 'text-[0.45rem] text-white/90 mt-1'}`}>
+                  Uso
+                </span>
+              )}
+            </>
           )}
         </div>
 
+        {/* Título do Vício Abaixo da Bolha */}
+        {!isPerformanceMode && (
+          <div className="mt-1 px-2 py-0.5 rounded text-[0.4rem] font-bold uppercase tracking-wider bg-black/60 border border-white/10 text-white/90 backdrop-blur-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[80px] text-center">
+            {activeVice.name || 'DESCONHECIDO'}
+          </div>
+        )}      </motion.div>
 
-      </motion.div>
-
-      {showMotivatorModal && typeof document !== 'undefined' && createPortal(
-        <AnimatePresence>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[999999] flex items-end justify-center p-4 pb-[120px] bg-black/60 backdrop-blur-sm pointer-events-auto"
-            onClick={() => setShowMotivatorModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.95 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-sm bg-[#0f1115] border border-white/10 rounded-3xl p-6 shadow-2xl flex flex-col gap-4"
-            >
-              <button
-                onClick={() => setShowMotivatorModal(false)}
-                className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
-              >
-                <X size={20} />
-              </button>
-
-              <h3 className="text-white font-black text-center tracking-widest text-xs mt-2">
-                {activeVice.config?.mode === 'acompanhe'
-                  ? 'REGISTRAR USO'
-                  : (activeVice.config?.mode === 'diminua'
-                    ? (!isCountUp ? 'NÃO CEDA AO IMPULSO, ESTAMOS QUASE LÁ!' : 'PARABÉNS! META CONCLUÍDA')
-                    : 'QUEBRA DE JEJUM')}
-              </h3>
-
-
-              {showResistInput && (
-                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[0.7rem] font-bold text-red-400 uppercase tracking-widest">Resistir mais...</label>
-                    <button
-                      onClick={() => setShowResistInput(false)}
-                      className="text-slate-500 hover:text-white"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2">
-                    <button onClick={() => handleResistMore(10)} className="bg-white/5 hover:bg-white/10 text-white font-black py-2 rounded-lg text-xs transition-colors">10 MIN</button>
-                    <button onClick={() => handleResistMore(30)} className="bg-white/5 hover:bg-white/10 text-white font-black py-2 rounded-lg text-xs transition-colors">30 MIN</button>
-                    <button onClick={() => handleResistMore(60)} className="bg-white/5 hover:bg-white/10 text-white font-black py-2 rounded-lg text-xs transition-colors">60 MIN</button>
-                  </div>
-
-                  <div className="flex gap-2 mt-1">
-                    <input
-                      type="number"
-                      value={resistMinutes}
-                      onChange={(e) => setResistMinutes(e.target.value)}
-                      placeholder="Outro"
-                      className="w-full bg-[#0f1115] border border-red-500/20 rounded-xl px-4 py-2 text-white font-mono text-center outline-none focus:border-red-500/50 text-sm"
-                    />
-                    <button
-                      onClick={() => handleResistMore()}
-                      className="bg-red-500 hover:bg-red-600 text-white font-black px-4 rounded-xl text-xs tracking-widest transition-colors whitespace-nowrap"
-                    >
-                      OK
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {!showResistInput && (
-                <div className="flex flex-col gap-2 mt-2">
-                  <button
-                    onClick={handleRegistrar}
-                    className={`w-full font-black py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-xs tracking-widest ${activeVice.config?.mode === 'diminua' ? 'text-white' : 'text-black'}`}
-                    style={{
-                      backgroundColor: activeVice.config?.mode === 'diminua'
-                        ? (!isCountUp ? '#ef4444' : '#10b981')
-                        : color
-                    }}
-                  >
-                    <Check size={16} />
-                    {activeVice.config?.mode === 'diminua'
-                      ? (!isCountUp ? 'CEDER AO IMPULSO' : 'REGISTRAR CONSUMO')
-                      : 'SALVAR'}
-                  </button>
-
-                  {activeVice.config?.mode === 'diminua' && isCountUp && (
-                    <button
-                      onClick={() => setShowResistInput(true)}
-                      className="w-full border border-sky-400/50 text-sky-400 font-bold py-3 rounded-xl transition-colors text-xs tracking-widest hover:bg-sky-400/10"
-                    >
-                      RESISTIR MAIS UM POUCO
-                    </button>
-                  )}
-
-
-                </div>
-              )}
-
-              {/* Botão Sutil de Encerrar */}
-              {showConfirmEnd ? (
-                <div className="mt-4 flex flex-col items-center gap-2 border-t border-white/10 pt-4">
-                  <span className="text-red-400 text-xs font-bold tracking-wider text-center leading-relaxed">
-                    Tem certeza que deseja encerrar a estratégia?<br />
-                    <span className="opacity-80">Seu progresso atual será perdido.</span>
-                  </span>
-                  <div className="flex gap-2 w-full mt-2">
-                    <button
-                      onClick={() => setShowConfirmEnd(false)}
-                      className="flex-1 text-slate-300 bg-white/5 hover:bg-white/10 py-2 rounded-lg text-xs font-bold tracking-widest transition-colors"
-                    >
-                      NÃO, VOLTAR
-                    </button>
-                    <button
-                      onClick={() => {
-                        removeItem(activeVice.id);
-                        setShowMotivatorModal(false);
-                        setShowConfirmEnd(false);
-                      }}
-                      className="flex-1 bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white py-2 rounded-lg text-xs font-bold tracking-widest transition-colors"
-                    >
-                      SIM, ENCERRAR
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setShowConfirmEnd(true)}
-                  className="mt-2 text-slate-500 text-[0.65rem] uppercase tracking-widest font-bold hover:text-white transition-colors"
-                >
-                  Encerrar Estratégia
-                </button>
-              )}
-            </motion.div>
-          </motion.div>
-        </AnimatePresence>,
-        document.body
-      )}
+      {/* Modal Extraído */}
+      <ViceBubbleModal
+        show={showMotivatorModal}
+        onClose={() => setShowMotivatorModal(false)}
+        activeVice={activeVice}
+        viceId={viceId}
+        isRegretMode={isRegretMode}
+        regretElapsed={regretElapsed}
+        isCountUp={isCountUp}
+        color={color}
+        formatTime={formatTime}
+        setItem={setItem}
+        removeItem={removeItem}
+        handleRegistrar={handleRegistrar}
+        showResistInput={showResistInput}
+        setShowResistInput={setShowResistInput}
+        resistMinutes={resistMinutes}
+        setResistMinutes={setResistMinutes}
+        handleResistMore={handleResistMore}
+        showConfirmEnd={showConfirmEnd}
+        setShowConfirmEnd={setShowConfirmEnd}
+      />
       {/* Fim do Bubble */}
     </>
   );

@@ -74,7 +74,8 @@ exports.updatePlocState = async (req, res) => {
     res.json({ message: "Estado do Ploc atualizado com sucesso!" });
   } catch (error) {
     console.error('❌ Erro ao sincronizar PlocState:', error.message);
-    res.status(500).json({ error: 'Erro ao sincronizar estado do Mascote' });
+    require('fs').writeFileSync('ploc_error.log', error.stack || error.message);
+    res.status(500).json({ error: 'Erro ao sincronizar estado do Mascote: ' + error.message });
   }
 };
 
@@ -94,10 +95,28 @@ exports.addPlocInventoryItem = async (req, res) => {
     if (item.type === 'food' && item.name?.toLowerCase().includes('caf')) slug = 'coffee';
     if (item.type === 'water') slug = 'water';
     if (item.type === 'medicine') slug = 'medicine';
+    if (item.type === 'warm_drink') slug = 'hot_chocolate';
+    if (item.type === 'immunity_food') slug = 'immunity_food';
+    if (item.type === 'immunity_water') slug = 'immunity_water';
+    if (item.type === 'toy') slug = 'dices';
+    if (item.type === 'mission_item') slug = 'toy';
 
-    const dbItem = await prisma.inventoryItem.findUnique({
+    let dbItem = await prisma.inventoryItem.findUnique({
       where: { slug }
     });
+
+    // Se o item não existir no catálogo, cria automaticamente
+    if (!dbItem) {
+      dbItem = await prisma.inventoryItem.create({
+        data: {
+          slug: slug,
+          name: item.name || item.label || slug,
+          description: `Um item do tipo ${item.type}`,
+          type: 'CONSUMABLE',
+          price: item.cost || 10
+        }
+      });
+    }
 
     if (dbItem) {
       try {
@@ -195,5 +214,38 @@ exports.addFocoCoins = async (req, res) => {
   } catch (error) {
     console.error('❌ Erro ao adicionar Foco Coins:', error.message);
     res.status(500).json({ error: 'Erro ao adicionar Foco Coins' });
+  }
+};
+
+exports.subtractPlocAttribute = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { attribute, amount = 1 } = req.body;
+    
+    if (!['body', 'mind', 'life', 'freedom', 'purpose'].includes(attribute)) {
+      return res.status(400).json({ error: 'Atributo inválido' });
+    }
+
+    const prisma = require('../config/database');
+    
+    // Decrementa o valor, não deixando ficar menor que 0 se possível (Prisma não suporta MAX no decrement facilmente, então atualizamos)
+    const userStats = await prisma.userStats.findUnique({ where: { userId } });
+    if (!userStats) {
+      return res.status(404).json({ error: 'Stats não encontrados' });
+    }
+    
+    const newValue = Math.max(0, userStats[attribute] - amount);
+
+    await prisma.userStats.update({
+      where: { userId },
+      data: {
+        [attribute]: newValue
+      }
+    });
+
+    res.json({ message: `${attribute} reduzido para ${newValue}` });
+  } catch (error) {
+    console.error(`❌ Erro ao reduzir atributo:`, error.message);
+    res.status(500).json({ error: 'Erro ao reduzir atributo' });
   }
 };

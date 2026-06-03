@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Apple, Droplet, Pill, Box, Backpack, X } from 'lucide-react';
+import { Apple, Droplet, Pill, Box, Backpack, X, Snowflake, Smile, Coffee, Dices, Pizza, GlassWater } from 'lucide-react';
 import { usePlocStateStore } from '@/modules/mascot/store/plocStateStore';
 
 interface InventoryModalProps {
@@ -21,6 +21,8 @@ export function InventoryModal({ isOpen, onClose }: InventoryModalProps) {
   const hunger = usePlocStateStore(state => state.hunger);
   const thirst = usePlocStateStore(state => state.thirst);
   const fatigue = usePlocStateStore(state => state.fatigue);
+  const cold = usePlocStateStore(state => state.cold);
+  const humor = usePlocStateStore(state => state.humor);
   const spoiledEatenCount = usePlocStateStore(state => state.spoiledEatenCount);
 
   // Helper para saber se um item apodreceu
@@ -31,6 +33,8 @@ export function InventoryModal({ isOpen, onClose }: InventoryModalProps) {
     console.log("[Ploc] Consuming item:", item);
     if (item.type === 'medicine') {
       usePlocStateStore.getState().useMedicine(item.id);
+    } else if (item.type === 'toy') {
+      usePlocStateStore.getState().useToy(item.id);
     } else {
       const state = isSpoiled(item.createdAt) ? 'spoiled' : 'fresh';
       eat({ ...item, state }, 'stored');
@@ -47,9 +51,27 @@ export function InventoryModal({ isOpen, onClose }: InventoryModalProps) {
   const getIcon = (type: string) => {
     switch (type) {
       case 'food': return <Apple size={16} className="text-red-400" />;
+      case 'immunity_food': return <Pizza size={16} className="text-amber-400" />;
       case 'water': return <Droplet size={16} className="text-blue-400" />;
+      case 'immunity_water': return <GlassWater size={16} className="text-sky-400" />;
+      case 'warm_drink': return <Coffee size={16} className="text-amber-500" />;
       case 'medicine': return <Pill size={16} className="text-green-400" />;
+      case 'toy': return <Dices size={16} className="text-rose-400" />;
       default: return <Box size={16} className="text-purple-400" />;
+    }
+  };
+
+  const getItemDetails = (type: string, itemName: string) => {
+    switch (type) {
+      case 'food': return { label: itemName, color: '#f87171' }; // red-400
+      case 'immunity_food': return { label: itemName, color: '#fbbf24' }; // amber-400
+      case 'water': return { label: itemName, color: '#60a5fa' }; // blue-400
+      case 'immunity_water': return { label: itemName, color: '#38bdf8' }; // sky-400
+      case 'warm_drink': return { label: itemName, color: '#d97706' }; // amber-500
+      case 'medicine': return { label: itemName, color: '#4ade80' }; // green-400
+      case 'toy': return { label: itemName, color: '#f43f5e' }; // rose-400
+      case 'mission_item': return { label: itemName, color: '#c084fc' }; // purple-400
+      default: return { label: itemName, color: '#94a3b8' }; // slate-400
     }
   };
 
@@ -68,7 +90,7 @@ export function InventoryModal({ isOpen, onClose }: InventoryModalProps) {
               e.stopPropagation();
               onClose();
             }}
-            className="fixed inset-0 bg-black/30 backdrop-blur-[2px] z-[99999]"
+            className="fixed inset-0 bg-transparent z-[99999]"
           />
 
           <motion.div
@@ -157,7 +179,55 @@ export function InventoryModal({ isOpen, onClose }: InventoryModalProps) {
                 </span>
               </div>
 
+              {/* Frio (Snowflake Icon) */}
+              <div className="relative flex items-center justify-center group" style={{ width: 44, height: 44 }}>
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle cx="22" cy="22" r="16" className="stroke-slate-800/70" strokeWidth="3" fill="transparent" />
+                  <circle 
+                    cx="22" 
+                    cy="22" 
+                    r="16" 
+                    className="stroke-cyan-500" 
+                    strokeWidth="3" 
+                    fill="transparent" 
+                    strokeDasharray={2 * Math.PI * 16}
+                    strokeDashoffset={(2 * Math.PI * 16) - (Math.max(0, Math.min(100, cold)) / 100) * (2 * Math.PI * 16)}
+                    strokeLinecap="round"
+                    style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
+                  />
+                </svg>
+                <div className="absolute flex items-center justify-center">
+                  <Snowflake size={14} className="text-cyan-400 drop-shadow" />
+                </div>
+                <span className="absolute -bottom-6 scale-0 group-hover:scale-100 transition-all origin-top text-[8px] font-black uppercase text-cyan-400 bg-slate-950/90 px-1.5 py-0.5 rounded border border-cyan-500/20">
+                  {cold}%
+                </span>
+              </div>
 
+              {/* Humor (Smile Icon) */}
+              <div className="relative flex items-center justify-center group" style={{ width: 44, height: 44 }}>
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle cx="22" cy="22" r="16" className="stroke-slate-800/70" strokeWidth="3" fill="transparent" />
+                  <circle 
+                    cx="22" 
+                    cy="22" 
+                    r="16" 
+                    className="stroke-rose-400" 
+                    strokeWidth="3" 
+                    fill="transparent" 
+                    strokeDasharray={2 * Math.PI * 16}
+                    strokeDashoffset={(2 * Math.PI * 16) - (Math.max(0, Math.min(100, humor)) / 100) * (2 * Math.PI * 16)}
+                    strokeLinecap="round"
+                    style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
+                  />
+                </svg>
+                <div className="absolute flex items-center justify-center">
+                  <Smile size={14} className="text-rose-400 drop-shadow" />
+                </div>
+                <span className="absolute -bottom-6 scale-0 group-hover:scale-100 transition-all origin-top text-[8px] font-black uppercase text-rose-400 bg-slate-950/90 px-1.5 py-0.5 rounded border border-rose-500/20">
+                  {humor}%
+                </span>
+              </div>
               {/* Enjôo Indicator (Apenas se tiver enjôo ativo, super sutil) */}
               {spoiledEatenCount > 0 && (
                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 animate-pulse text-[9px] font-black uppercase tracking-wider text-orange-400">
@@ -200,6 +270,8 @@ export function InventoryModal({ isOpen, onClose }: InventoryModalProps) {
 
                   const { type, isSpoiled: spoiled, items } = group;
                   const count = items.length;
+                  const firstItem = items[0];
+                  const details = getItemDetails(type, firstItem.name);
 
                   return (
                     <motion.div 
@@ -218,12 +290,27 @@ export function InventoryModal({ isOpen, onClose }: InventoryModalProps) {
                         const oldestItem = items.sort((a, b) => a.createdAt - b.createdAt)[0];
                         if (oldestItem) handleConsume(oldestItem);
                       }}
-                      className={`group relative aspect-square flex items-center justify-center cursor-pointer transition-all duration-300 ${spoiled ? 'opacity-60 grayscale' : ''}`}
+                      className={`group relative aspect-square flex flex-col items-center justify-center cursor-pointer transition-all duration-300 rounded-xl overflow-hidden border ${spoiled ? 'opacity-60 grayscale border-slate-700/50' : 'border-transparent'}`}
                     >
-                      {/* Fundo do slot sem gap, ocupando 100% e com borda sutil para separar os itens */}
-                      <div className="absolute inset-0 bg-slate-800/20 border border-slate-700/30 group-hover:bg-slate-700/40 transition-colors" />
+                      {/* Fundo dinâmico com cor do item */}
+                      <div 
+                        className="absolute inset-0 transition-colors opacity-10 group-hover:opacity-20" 
+                        style={{ backgroundColor: details.color }} 
+                      />
                       
-                      <div className="relative z-10 drop-shadow-[0_5px_10px_rgba(0,0,0,0.5)] scale-125">
+                      {/* Borda base e Borda no hover */}
+                      <div 
+                        className={`absolute inset-0 border transition-colors ${spoiled ? 'border-transparent' : 'border-slate-700/30 group-hover:border-slate-600/50'}`} 
+                      />
+
+                      {/* Pequena Label no Topo */}
+                      <div className="absolute top-1.5 w-full px-1 text-center z-20">
+                        <span className="text-[8px] font-black uppercase tracking-wider text-slate-300 drop-shadow-md truncate block w-full">
+                          {details.label}
+                        </span>
+                      </div>
+                      
+                      <div className="relative z-10 drop-shadow-[0_5px_10px_rgba(0,0,0,0.5)] scale-125 mt-3">
                         {getIcon(type)}
                       </div>
 

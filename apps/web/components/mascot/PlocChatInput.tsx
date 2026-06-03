@@ -43,7 +43,10 @@ export function PlocChatInput({
             }}
             className="flex gap-3 bg-slate-900/45 border border-white/12 shadow-[0_8px_32px_rgba(0,0,0,0.55),_inset_0_0_20px_rgba(255,255,255,0.02)] rounded-full py-1.5 pr-2 pl-5 backdrop-blur-[16px]"
           >
+            <label htmlFor="ploc-chat-input" className="sr-only" style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0 }}>Mensagem para o Ploc</label>
             <input
+              id="ploc-chat-input"
+              name="plocChatInput"
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}

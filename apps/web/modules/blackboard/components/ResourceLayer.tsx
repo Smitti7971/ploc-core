@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { resourceEngine, ResourceBubbleData } from '../engine/resource-engine/ResourceEngine';
 import { usePlocStateStore } from '../../mascot/store/plocStateStore';
 import { blackboardEventBus } from '../events/eventBus';
+import { playPlocSound } from '../../landing/components/bubbles/bubble-pop-sfx';
 
 const COLLISION_RADIUS = 60; // Distância para considerar que o PLOC encostou na bolha
 const EVADE_RADIUS = 250; // Distância na qual a bolha começa a fugir do PLOC
 const EVADE_SPEED = 12; // Velocidade de fuga da bolha
-const MAX_BUBBLE_RADIUS = 200; // Limite máximo para a bolha fugir ou nascer (para não sair do mapa de 500x500 do Ploc)
+const MAX_BUBBLE_RADIUS = 1400; // Limite máximo para a bolha fugir ou nascer (mapa total de 3000x3000)
 
 // SVGs customizados para os recursos
 const FoodSVG = () => (
@@ -68,6 +69,8 @@ function ResourceBubble({ bubble }: { bubble: ResourceBubbleData }) {
 
       if (distance <= COLLISION_RADIUS) {
         setIsPopping(true);
+        playPlocSound();
+        
         // Colidiu! Come direto
         if (bubble.type === 'food' || bubble.type === 'water') {
           // Dispara evento visual para a boca mastigar e pros indicadores flutuantes
@@ -91,6 +94,20 @@ function ResourceBubble({ bubble }: { bubble: ResourceBubbleData }) {
         setTimeout(() => {
           resourceEngine.removeBubble(bubble.id);
         }, 300); // tempo da animação de pop
+
+        // Dar Foco Coin
+        try {
+          const authStore = require('@/store/authStore').useAuthStore;
+          const apiService = require('@/services/api').apiService;
+          const state = authStore.getState();
+          if (state.user) {
+            const currentCoins = state.user.stats?.focoCoins || 0;
+            state.updateUser({ stats: { ...state.user.stats, focoCoins: currentCoins + 1 } as any });
+            apiService.post('/users/debug/foco-coins', { amount: 1 }).catch((e: any) => console.error(e));
+          }
+        } catch (e) {
+          console.error("Erro ao adicionar foco coin:", e);
+        }
       }
     };
 
@@ -112,12 +129,28 @@ function ResourceBubble({ bubble }: { bubble: ResourceBubbleData }) {
     if (isPopping) return;
     setIsPopping(true);
 
+    playPlocSound();
+
     // Clicou, vai pra bolsa
     blackboardEventBus.emit('PLOC_STORE_ITEM');
     store({
       type: bubble.type,
       name: bubble.name
     });
+
+    // Dar Foco Coin
+    try {
+      const authStore = require('@/store/authStore').useAuthStore;
+      const apiService = require('@/services/api').apiService;
+      const state = authStore.getState();
+      if (state.user) {
+        const currentCoins = state.user.stats?.focoCoins || 0;
+        state.updateUser({ stats: { ...state.user.stats, focoCoins: currentCoins + 1 } as any });
+        apiService.post('/users/debug/foco-coins', { amount: 1 }).catch((e: any) => console.error(e));
+      }
+    } catch (e) {
+      console.error("Erro ao adicionar foco coin:", e);
+    }
 
     setTimeout(() => {
       resourceEngine.removeBubble(bubble.id);

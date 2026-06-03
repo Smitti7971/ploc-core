@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Play, Pause, Activity } from 'lucide-react';
 import { TrackerItem, useTrackerStore } from '../store/trackerStore';
+import { getAssetUrl } from '@/lib/config';
 
 interface TrackerStatusCardProps {
   item: TrackerItem;
@@ -72,7 +73,7 @@ export function TrackerStatusCard({ item, onClick }: TrackerStatusCardProps) {
       {showCoverPhoto && item.coverPhoto && (
         <div
           className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-luminosity transition-opacity group-hover:opacity-60"
-          style={{ backgroundImage: `url(${item.coverPhoto})` }}
+          style={{ backgroundImage: `url(${getAssetUrl(item.coverPhoto)})` }}
         />
       )}
 

@@ -27,8 +27,13 @@
     - Remover imports de `useAuthStore` e `chatService`.
     - Excluir variáveis de estado do chat (`isInputOpen`, `inputValue`, `isLoading`).
     - Desconectar `handleClick` e `handleOutside` de chamadas a `setEffectiveOpen` e modais externos.
-- [x] **3.2 Alteração no MascotCenter.tsx**: Remover props de recebimento e envio do modal de autenticação.
-- [x] **3.3 Alteração no LandingClient.tsx**: Limpar imports e states redundantes do `useAuthStore`, invocando o `<MascotCenter />` de forma totalmente pura e declarativa.
+- [x] **3.2 Alteração no MascotCenter.tsx**: 
+- [x] Status
+- [x] Removed App Settings page, keeping only `/settings/profile`
+- [x] Lab 2.0 shortcuts/calculator focus
+- [x] Voice Recognition `not-allowed` error
+- [x] Enforce `TrackerOverlay` for all registrations
+- [x] Fix accessibility: add id/name to form inputs and remove duplicate IDs in NotificationsModal redundantes do `useAuthStore`, invocando o `<MascotCenter />` de forma totalmente pura e declarativa.
 
 ### Fase 4: Finalização (Heartbeat)
 - [x] **4.1 Verificação de Saúde**: Executar `npx tsc --noEmit` para assegurar integridade absoluta do compilador (100% de Sucesso).

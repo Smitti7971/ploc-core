@@ -23,9 +23,11 @@ interface PlocLimbsProps {
   appearance?: PlocAppearance;
   size?: number;
   dragX?: any;
+  isSick?: boolean;
+  hungerLevel?: number;
 }
 
-export function PlocLimbs({ limbColor, limbShadow, appearance, size = 120, dragX }: PlocLimbsProps) {
+export function PlocLimbs({ limbColor, limbShadow, appearance, size = 120, dragX, isSick = false, hungerLevel }: PlocLimbsProps) {
   const scale = size / 120;
   
   // Guarantee activeDragX is a MotionValue to prevent type mismatches
@@ -59,24 +61,50 @@ export function PlocLimbs({ limbColor, limbShadow, appearance, size = 120, dragX
       {[-1, 1].map((side) => {
         const zIndexVal = side === -1 ? leftZIndexRounded : rightZIndexRounded;
         const armXVal = side === -1 ? leftArmX : rightArmX;
+        const isHungry = hungerLevel !== undefined && hungerLevel < 40;
+        const isRubbingBelly = isHungry && side === -1;
 
         return (
           <motion.div
-            key={`stick-arm-${side}`}
-            animate={{ rotate: [side * 20, side * 40, side * 20] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            key={`stick-arm-wrapper-${side}`}
             className={`absolute top-1/2 ${side === -1 ? 'left-[-19%]' : 'right-[-19%]'}`}
-            style={{
-              background: limbColor,
-              boxShadow: limbShadow,
-              transformOrigin: side === -1 ? 'right center' : 'left center',
-              width: `${20 * scale}px`,
-              height: `${6 * scale}px`,
-              borderRadius: `${3 * scale}px`,
-              x: armXVal,
-              zIndex: zIndexVal as any,
+            style={{ zIndex: (isRubbingBelly ? 30 : zIndexVal) as any }}
+            initial={false}
+            animate={isRubbingBelly ? {
+              x: [35 * scale, 45 * scale, 35 * scale, 25 * scale, 35 * scale],
+              y: [15 * scale, 25 * scale, 35 * scale, 25 * scale, 15 * scale],
+            } : {
+              x: 0,
+              y: 0,
             }}
+            transition={isRubbingBelly 
+              ? { duration: 1.5, repeat: Infinity, ease: "linear" } 
+              : { duration: 0.5, ease: "easeInOut" }
+            }
           >
+            <motion.div
+              key={`stick-arm-${side}`}
+              animate={{ 
+                rotate: isSick 
+                  ? [side * 65, side * 75, side * 65] 
+                  : (isRubbingBelly ? [-130, -110, -130] : [side * 20, side * 40, side * 20])
+              }}
+              transition={{ 
+                duration: isSick ? 3 : (isRubbingBelly ? 1.5 : 2), 
+                repeat: Infinity, 
+                ease: isRubbingBelly ? "linear" : "easeInOut" 
+              }}
+              style={{
+                background: limbColor,
+                boxShadow: limbShadow,
+                transformOrigin: side === -1 ? 'right center' : 'left center',
+                width: `${20 * scale}px`,
+                height: `${6 * scale}px`,
+                borderRadius: `${3 * scale}px`,
+                x: armXVal,
+                transition: 'background 1.5s ease, box-shadow 1.5s ease',
+              }}
+            >
             {/* Mãozinhas Redondas */}
             <div
               className="absolute rounded-full"
@@ -88,7 +116,8 @@ export function PlocLimbs({ limbColor, limbShadow, appearance, size = 120, dragX
                 height: `${10 * scale}px`,
                 left: side === -1 ? `${-8 * scale}px` : undefined,
                 right: side === 1 ? `${-8 * scale}px` : undefined,
-                overflow: 'hidden'
+                overflow: 'hidden',
+                transition: 'background 1.5s ease, box-shadow 1.5s ease',
               }}
             >
               <motion.div className="absolute inset-0 bg-black pointer-events-none" style={{ opacity: side === -1 ? leftDarkness : rightDarkness }} />
@@ -103,6 +132,7 @@ export function PlocLimbs({ limbColor, limbShadow, appearance, size = 120, dragX
                 borderRadius: `${3 * scale}px`,
               }} 
             />
+            </motion.div>
           </motion.div>
         );
       })}
@@ -134,6 +164,7 @@ export function PlocLimbs({ limbColor, limbShadow, appearance, size = 120, dragX
               borderRadius: `${4 * scale}px`,
               x: legXVal,
               zIndex: zIndexVal as any,
+              transition: 'background 1.5s ease, box-shadow 1.5s ease',
             }}
           >
             {/* Sapatos */}

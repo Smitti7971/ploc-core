@@ -88,6 +88,11 @@ class AuthService {
                     let itemType = 'food';
                     if (inv.inventoryItem?.slug === 'water') itemType = 'water';
                     if (inv.inventoryItem?.slug === 'medicine') itemType = 'medicine';
+                    if (inv.inventoryItem?.slug === 'immunity_food') itemType = 'immunity_food';
+                    if (inv.inventoryItem?.slug === 'immunity_water') itemType = 'immunity_water';
+                    if (inv.inventoryItem?.slug === 'hot_chocolate') itemType = 'warm_drink';
+                    if (inv.inventoryItem?.slug === 'dices') itemType = 'toy';
+                    if (inv.inventoryItem?.slug === 'toy') itemType = 'mission_item';
 
                     newInventory.push({
                         id: `${inv.id}-${i}`,

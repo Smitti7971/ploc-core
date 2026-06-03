@@ -35,19 +35,32 @@ export const getAssetUrl = (url?: string | null) => {
   
   const backendRoot = config.api.baseUrl.replace(/\/api\/?$/, '');
 
+  let result = url;
+
   // Se já for uma URL completa
   if (url.startsWith('http://') || url.startsWith('https://')) {
     if (url.includes('localhost:') && typeof window !== 'undefined') {
-      return url.replace(/^https?:\/\/localhost:\d+/, backendRoot);
+      result = url.replace(/^https?:\/\/localhost:\d+/, backendRoot);
+    } else if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
+      // Proteção automática contra Mixed Content para imagens da CDN:
+      result = url.replace('http://', 'https://');
     }
-    // Proteção automática contra Mixed Content para imagens da CDN:
-    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
-      return url.replace('http://', 'https://');
+  } else {
+    // Se for caminho relativo (ex: /uploads/...)
+    const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+    
+    // Se for imagem local do frontend, não usa o backendRoot
+    if (cleanUrl.startsWith('/images/')) {
+      result = cleanUrl;
+    } else {
+      result = `${backendRoot}${cleanUrl}`;
     }
-    return url;
   }
 
-  // Se for caminho relativo (ex: /uploads/...)
-  const cleanUrl = url.startsWith('/') ? url : `/${url}`;
-  return `${backendRoot}${cleanUrl}`;
+  // DEBUG 404
+  if (url.includes('uploads')) {
+    console.log(`[getAssetUrl] input: ${url} | output: ${result}`);
+  }
+
+  return result;
 };

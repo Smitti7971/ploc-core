@@ -33,7 +33,7 @@ export function PlocBubbles() {
           animate={{
             y: [0, -30 * sizeMultiplier, 0],
             x: [0, Math.cos(b) * 15 * sizeMultiplier, 0],
-            opacity: [0.2, 0.5, 0.2],
+            opacity: [.2, 0.5, 0.2],
           }}
           transition={{
             duration: 5 + b,
@@ -46,7 +46,7 @@ export function PlocBubbles() {
             left: `${15 + (b % 3) * 20}%`,
             width: `${(6 + b * 2) * sizeMultiplier}px`,
             height: `${(6 + b * 2) * sizeMultiplier}px`,
-            background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.1) 70%)',
+            // background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.1) 70%)',
           }}
         />
       ))}

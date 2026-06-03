@@ -29,6 +29,14 @@ class AttributeEngine {
 
   constructor() {
     this.init();
+    
+    if (typeof window !== 'undefined') {
+      blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_EXPLODED, () => {
+        if (!this.isDemoMode) {
+          this.updateScore(1);
+        }
+      });
+    }
   }
 
   private init() {

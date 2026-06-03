@@ -82,31 +82,49 @@ export const AuthModal: React.FC = () => {
 
             <form onSubmit={handleAuthSubmit} className="flex flex-col gap-4">
               {!isLogin && (
-                <input
-                  type="text"
-                  placeholder="NOME"
-                  value={authName}
-                  required
-                  onChange={(e) => setAuthName(e.target.value)}
-                  className="bg-white/5 border border-[var(--ploc-border)] rounded-[var(--radius-input)] p-4 text-white text-sm outline-none transition-all placeholder:text-white/20 focus:border-[var(--ploc-primary)]/50 focus:bg-white/10"
-                />
+                <div>
+                  <label htmlFor="auth-name" style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0 }}>Nome</label>
+                  <input
+                    id="auth-name"
+                    name="name"
+                    type="text"
+                    autoComplete="name"
+                    placeholder="NOME"
+                    value={authName}
+                    required
+                    onChange={(e) => setAuthName(e.target.value)}
+                    className="bg-white/5 border border-[var(--ploc-border)] rounded-[var(--radius-input)] p-4 text-white text-sm outline-none transition-all placeholder:text-white/20 focus:border-[var(--ploc-primary)]/50 focus:bg-white/10 w-full"
+                  />
+                </div>
               )}
-              <input
-                type="email"
-                placeholder="E-MAIL"
-                value={authEmail}
-                required
-                onChange={(e) => setAuthEmail(e.target.value)}
-                className="bg-white/5 border border-[var(--ploc-border)] rounded-[var(--radius-input)] p-4 text-white text-sm outline-none transition-all placeholder:text-white/20 focus:border-[var(--ploc-primary)]/50 focus:bg-white/10"
-              />
-              <input
-                type="password"
-                placeholder="SENHA"
-                value={authPass}
-                required
-                onChange={(e) => setAuthPass(e.target.value)}
-                className="bg-white/5 border border-[var(--ploc-border)] rounded-[var(--radius-input)] p-4 text-white text-sm outline-none transition-all placeholder:text-white/20 focus:border-[var(--ploc-primary)]/50 focus:bg-white/10"
-              />
+              <div>
+                <label htmlFor="auth-email" style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0 }}>E-mail</label>
+                <input
+                  id="auth-email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="E-MAIL"
+                  value={authEmail}
+                  required
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                  className="bg-white/5 border border-[var(--ploc-border)] rounded-[var(--radius-input)] p-4 text-white text-sm outline-none transition-all placeholder:text-white/20 focus:border-[var(--ploc-primary)]/50 focus:bg-white/10 w-full"
+                />
+              </div>
+              <div>
+                <label htmlFor="auth-password" style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0 }}>Senha</label>
+                <input
+                  id="auth-password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="SENHA"
+                  value={authPass}
+                  required
+                  onChange={(e) => setAuthPass(e.target.value)}
+                  className="bg-white/5 border border-[var(--ploc-border)] rounded-[var(--radius-input)] p-4 text-white text-sm outline-none transition-all placeholder:text-white/20 focus:border-[var(--ploc-primary)]/50 focus:bg-white/10 w-full"
+                />
+              </div>
 
               {authError && (
                 <p className="text-[var(--ploc-danger)] text-[10px] m-0 text-center font-bold">

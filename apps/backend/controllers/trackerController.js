@@ -213,6 +213,26 @@ exports.createTrackerLog = async (req, res) => {
       });
     }
 
+    // UPDATE START DATE ATOMICALLY FOR VICES
+    if (type === 'consumption') {
+      const item = await prisma.trackerItem.findUnique({ where: { id: finalTrackerItemId } });
+      if (item && item.type === 'vice' && item.config) {
+        // Prisma JSONB returns as object
+        const config = typeof item.config === 'string' ? JSON.parse(item.config) : item.config;
+        if (config.mode === 'diminua') {
+          // Update the startDate to the log's timestamp and remove regretStart
+          delete config.regretStart;
+          await prisma.trackerItem.update({
+            where: { id: finalTrackerItemId },
+            data: {
+              startDate: new Date(Number(timestamp)),
+              config: config
+            }
+          });
+        }
+      }
+    }
+
     // BigInt cant be directly JSON stringified
     const logObj = { ...log, timestamp: log.timestamp.toString() };
 

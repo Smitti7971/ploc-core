@@ -1,9 +1,83 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { X, Camera, Link as LinkIcon, Loader2, Trash2, Check, EyeOff, Eye, Clock, Edit2, TrendingDown, Activity, ListChecks, CheckSquare, PlusCircle } from 'lucide-react';
+import { X, Camera, Link as LinkIcon, Loader2, Trash2, Check, EyeOff, Eye, Clock, Edit2, TrendingDown, Activity, ListChecks, CheckSquare, PlusCircle, Map, Bell, BellOff } from 'lucide-react';
 import { TrackerItem, useTrackerStore } from '../store/trackerStore';
 import { apiService } from '@/services/api';
+import { getAssetUrl } from '@/lib/config';
+import { MissionAntitabagismoModal } from '@/modules/missions';
+import { useCorrelationGating } from '../hooks/useCorrelationGating';
+import { CorrelationGatingModal } from './CorrelationGatingModal';
+import { DateEditModal } from './modals/DateEditModal';
+import { StageEditModal } from './modals/StageEditModal';
+import { AddConditionModal } from './modals/AddConditionModal';
+import { EditLogModal } from './modals/EditLogModal';
+import { LogHistory } from './LogHistory';
+import { NewLogArea } from './NewLogArea';
+
+function WheelPicker({ options, value, onChange, label }: { options: number[], value: number, onChange: (val: number) => void, label: string }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout>();
+  const isScrollingRef = useRef(false);
+
+  const handleScroll = () => {
+    isScrollingRef.current = true;
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      isScrollingRef.current = false;
+      if (!scrollRef.current) return;
+      const index = Math.round(scrollRef.current.scrollTop / 40);
+      if (options[index] !== undefined && options[index] !== value) {
+        onChange(options[index]);
+      }
+    }, 150);
+  };
+
+  useEffect(() => {
+    if (scrollRef.current && !isScrollingRef.current) {
+      const idx = options.indexOf(value);
+      if (idx !== -1) {
+        const targetScroll = idx * 40;
+        if (Math.abs(scrollRef.current.scrollTop - targetScroll) > 10) {
+          scrollRef.current.scrollTop = targetScroll;
+        }
+      }
+    }
+  }, [value, options]);
+
+  return (
+    <div className="flex-1 flex flex-col items-center bg-black/40 border border-white/10 rounded-xl py-2 relative overflow-hidden">
+      <label className="text-[8px] text-white/50 uppercase font-bold px-1 z-10">{label}</label>
+      
+      <div className="relative w-full h-[120px] mt-1">
+        <div className="absolute top-[40px] left-0 right-0 h-[40px] bg-white/5 border-y border-white/10 pointer-events-none" />
+
+        <div 
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="h-full w-full overflow-y-scroll snap-y snap-mandatory relative z-10"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          <div className="h-[40px]" />
+          {options.map((opt) => (
+            <div 
+              key={opt} 
+              className={`h-[40px] flex items-center justify-center text-lg snap-center transition-all duration-200 ${value === opt ? 'text-white font-bold scale-110' : 'text-white/40 scale-100'}`}
+            >
+              {opt.toString().padStart(2, '0')}
+            </div>
+          ))}
+          <div className="h-[40px]" />
+        </div>
+      </div>
+      <style>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+    </div>
+  );
+}
 
 interface TrackerOverlayProps {
   itemId: string;
@@ -20,12 +94,24 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
   const [name, setName] = useState(item?.name || '');
   const [description, setDescription] = useState(item?.description || '');
   const [stage, setStage] = useState(item?.config?.stage || '');
+  const [activeTab, setActiveTab] = useState<'looping' | 'condicoes' | 'correlacoes' | 'estrategia' | 'custos' | null>(null);
 
   const initialStartDateStr = item?.startDate ? new Date(item.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
   const [startDateStr, setStartDateStr] = useState(initialStartDateStr);
 
   const initialEndDateStr = item?.endDate ? new Date(item.endDate).toISOString().split('T')[0] : '';
   const [endDateStr, setEndDateStr] = useState(initialEndDateStr);
+
+  // Modais de edição de período e etapas
+  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+  const [tempStartDateStr, setTempStartDateStr] = useState('');
+  const [tempEndDateStr, setTempEndDateStr] = useState('');
+  const [tempExpectedTime, setTempExpectedTime] = useState('');
+
+  const [isStageModalOpen, setIsStageModalOpen] = useState(false);
+  const [tempStageName, setTempStageName] = useState('');
+  const [tempStageStartDateStr, setTempStageStartDateStr] = useState('');
+  const [tempStageEndDateStr, setTempStageEndDateStr] = useState('');
 
   const activeMarkers = item?.config?.activeMarkers || ['elapsed', 'stage', 'remaining'];
   const [showMarkersMenu, setShowMarkersMenu] = useState(false);
@@ -50,6 +136,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
   const [showCorrelations, setShowCorrelations] = useState(false);
 
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
+  const [editingLogTitle, setEditingLogTitle] = useState('');
   const [editingLogInfo, setEditingLogInfo] = useState('');
   const [editingLogPhoto, setEditingLogPhoto] = useState<string | null>(null);
   const [isUploadingLogPhoto, setIsUploadingLogPhoto] = useState(false);
@@ -58,6 +145,10 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
   const showCoverPhoto = item?.config?.showCoverPhoto !== false;
 
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+
+  const [showTabuleiro, setShowTabuleiro] = useState(false);
+
+  const { pendingCorrelations, originalItem, requestAddLog, confirmAndBypass, cancelRequest } = useCorrelationGating();
 
   const [checkedConditions, setCheckedConditions] = useState<Record<string, boolean>>({});
   const [conditionPhotos, setConditionPhotos] = useState<Record<string, string>>({});
@@ -101,7 +192,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
       status: 'ACTIVE',
       config: { showCoverPhoto: true },
       startDate: Date.now(),
-      correlations: { [item.id]: 'linked' },
+      correlations: {},
       isConsuming: false,
       defaultTimer: 300,
       userId: (item as any).userId || 'test-user',
@@ -165,6 +256,44 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
     }
   };
 
+  const handleSaveDates = (newStartStr: string, newEndStr: string, newTimeStr: string) => {
+    let newStartDate = item.startDate;
+    if (newStartStr) {
+      const [year, month, day] = newStartStr.split('-').map(Number);
+      newStartDate = new Date(year, month - 1, day, 0, 0, 0).getTime();
+    }
+
+    let newEndDate: number | undefined = undefined;
+    if (newEndStr) {
+      const [year, month, day] = newEndStr.split('-').map(Number);
+      newEndDate = new Date(year, month - 1, day, 23, 59, 59).getTime();
+    }
+
+    updateItem({
+      ...item,
+      startDate: newStartDate,
+      endDate: newEndDate,
+      config: { ...item.config, expectedTime: newTimeStr || undefined }
+    });
+
+    setStartDateStr(newStartStr);
+    setEndDateStr(newEndStr);
+    setTempExpectedTime(newTimeStr);
+  };
+
+  const handleSaveStage = (name: string, startStr: string, endStr: string) => {
+    updateItem({
+      ...item,
+      config: {
+        ...(item.config || {}),
+        stage: name,
+        stageStartDate: startStr,
+        stageEndDate: endStr
+      }
+    });
+    setStage(name);
+  };
+
   const handleDelete = () => {
     if (confirm('Tem certeza que deseja apagar este acompanhamento? Todas as bolhas e dados serão perdidos.')) {
       deleteItem(item.id);
@@ -180,6 +309,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
 
   const handleEditLog = (logId: string, currentInfo: string = '', currentPhoto?: string, currentMetadata?: any) => {
     setEditingLogId(logId);
+    setEditingLogTitle(currentMetadata?.title || '');
     setEditingLogInfo(currentInfo);
     setEditingLogPhoto(currentPhoto || null);
     setEditingLogCheckedConditions(currentMetadata?.checkedConditions || {});
@@ -195,6 +325,8 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
       info: editingLogInfo, 
       photoUrl: editingLogPhoto || undefined,
       metadata: {
+        ...(useTrackerStore.getState().logs.find(l => l.id === logId)?.metadata || {}),
+        title: editingLogTitle,
         checkedConditions: editingLogCheckedConditions,
         conditionPhotos: editingLogConditionPhotos,
         totalConditions,
@@ -245,18 +377,13 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
     if (!targetItem) return;
 
     const newCorrelations = { ...item.correlations };
-    const newTargetCorrelations = { ...(targetItem.correlations || {}) };
-    
     if (newCorrelations[targetId]) {
       delete newCorrelations[targetId];
-      delete newTargetCorrelations[item.id];
     } else {
       newCorrelations[targetId] = 'linked';
-      newTargetCorrelations[item.id] = 'linked';
     }
-    
+
     updateItem({ ...item, correlations: newCorrelations });
-    updateItem({ ...targetItem, correlations: newTargetCorrelations });
   };
 
   const isNameDirty = name !== item?.name;
@@ -280,6 +407,22 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
   const otherItems = Object.values(items).filter(t => t.id !== item?.id && t.status === 'ACTIVE');
 
   const itemLogs = logs.filter(l => l.trackerItemId === itemId).sort((a, b) => b.timestamp - a.timestamp);
+
+  const notificationsEnabled = item?.config?.notificationsEnabled ?? (item?.type !== 'vice');
+
+  const toggleNotifications = () => {
+    if (!item) return;
+    if (!notificationsEnabled && item.type === 'vice') {
+      alert("Aviso: As notificações geralmente ficam desativadas para vícios para não servirem de gatilho. Você pode manter ativado se for o seu interesse.");
+    }
+    updateItem({
+      ...item,
+      config: {
+        ...(item.config || {}),
+        notificationsEnabled: !notificationsEnabled
+      }
+    });
+  };
 
   if (!item || !mounted) return null;
 
@@ -307,6 +450,9 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
 
             {/* Hidden file input for log photos */}
             <input
+              id={`${item.id}-log-file-input`}
+              name="logFileInput"
+              aria-label="Upload de foto do registro"
               type="file"
               accept="image/*,application/pdf"
               className="hidden"
@@ -319,7 +465,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
               {showCoverPhoto && item.coverPhoto && (
                 <div
                   className="absolute inset-0 bg-cover bg-center opacity-50"
-                  style={{ backgroundImage: `url(${item.coverPhoto})` }}
+                  style={{ backgroundImage: `url(${getAssetUrl(item.coverPhoto)})` }}
                 />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-[#0a0c0a] via-[#0a0c0a]/40 to-transparent pointer-events-none" />
@@ -330,6 +476,9 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 <input
+                  id={`${item.id}-cover-photo-input`}
+                  name="coverPhotoInput"
+                  aria-label="Upload da foto de capa"
                   type="file"
                   accept="image/*"
                   className="hidden"
@@ -337,6 +486,9 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                   onChange={handleUploadPhoto}
                 />
                 <input
+                  id={`${item.id}-condition-photo-input`}
+                  name="conditionPhotoInput"
+                  aria-label="Upload de foto da condição"
                   type="file"
                   accept="image/*"
                   className="hidden"
@@ -353,12 +505,30 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                 </button>
 
                 <button
+                  onClick={toggleNotifications}
+                  className={`w-9 h-9 flex items-center justify-center rounded-full transition-colors ${!notificationsEnabled ? 'bg-black/50 text-white/50 hover:text-white hover:bg-black/80' : 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/40'}`}
+                  title={notificationsEnabled ? "Notificações Ativadas (Clique para silenciar)" : "Notificações Silenciadas (Clique para ativar)"}
+                >
+                  {notificationsEnabled ? <Bell size={16} /> : <BellOff size={16} />}
+                </button>
+
+                <button
                   onClick={() => toggleCoverPhoto(item.id)}
                   className={`w-9 h-9 flex items-center justify-center rounded-full transition-colors ${showCoverPhoto ? 'bg-black/50 text-white/50 hover:text-white hover:bg-black/80' : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/40'}`}
                   title={showCoverPhoto ? "Ocultar Foto na Bolha" : "Mostrar Foto na Bolha"}
                 >
                   {showCoverPhoto ? <Eye size={16} /> : <EyeOff size={16} />}
                 </button>
+
+                {item.config?.isMission && (
+                  <button
+                    onClick={() => setShowTabuleiro(true)}
+                    className="w-9 h-9 flex items-center justify-center rounded-full bg-yellow-500/20 text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/40 transition-colors"
+                    title="Abrir Tabuleiro"
+                  >
+                    <Map size={16} />
+                  </button>
+                )}
 
                 <button
                   onClick={onClose}
@@ -369,42 +539,102 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                 </button>
               </div>
 
-              <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-col pt-4">
-                <select
-                  value={item.type}
-                  onChange={(e) => updateItem({ ...item, type: e.target.value })}
-                  className="bg-transparent text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-1 block focus:outline-none cursor-pointer appearance-none"
-                  style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
+              <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-row flex-nowrap gap-1.5 overflow-x-auto custom-scrollbar pb-2 pt-4 px-2 box-border">
+                <div
+                  onClick={() => {
+                    setTempStartDateStr(startDateStr);
+                    setTempEndDateStr(endDateStr);
+                    setTempExpectedTime(item.config?.expectedTime || '');
+                    setIsDateModalOpen(true);
+                  }}
+                  className="w-[64px] h-[64px] shrink-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md border border-white/10 rounded-xl relative group cursor-pointer hover:bg-white/5 hover:border-emerald-500/30 transition-colors"
                 >
-                  <option value="acompanhe" style={{ background: '#0a0c0a' }}>Acompanhe</option>
-                  <option value="medicine" style={{ background: '#0a0c0a' }}>Medicamento</option>
-                  <option value="vice" style={{ background: '#0a0c0a' }}>Libertesse</option>
-                  <option value="hidratesse" style={{ background: '#0a0c0a' }}>Hidratesse</option>
-                  <option value="jejue" style={{ background: '#0a0c0a' }}>Jejue</option>
-                  <option value="viaje" style={{ background: '#0a0c0a' }}>Viaje</option>
-                </select>
+                  <span className="text-[7.5px] text-white/50 uppercase tracking-widest mb-0.5 text-center leading-tight">Início</span>
+                  <span className="text-[9px] font-bold text-white text-center px-1 leading-tight">
+                    {startDateStr.split('-').reverse().join('/')}
+                  </span>
+                  {endDateStr && (
+                    <span className="text-[6.5px] text-emerald-400 font-bold mt-0.5 text-center leading-none scale-[0.85]">
+                      Até {endDateStr.split('-').reverse().join('/')}
+                    </span>
+                  )}
+                </div>
 
-                <div className="flex items-center gap-3">
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    placeholder="NOME"
-                    className={`w-full bg-transparent font-black text-white uppercase tracking-tight leading-none border-b border-transparent hover:border-white/20 focus:border-emerald-500/50 focus:outline-none transition-colors ${!name ? 'text-3xl' : 'text-2xl'}`}
-                  />
+                {activeMarkers.includes('elapsed') && (
+                  <div className="w-[64px] h-[64px] shrink-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md border border-white/10 rounded-xl relative">
+                    <span className="text-[7.5px] text-white/50 uppercase tracking-widest mb-0.5 text-center leading-tight">Dias</span>
+                    <span className="text-sm font-black text-white">{calculateDays()}</span>
+                  </div>
+                )}
+                
+                {activeMarkers.includes('stage') && (
+                  <div
+                    onClick={() => {
+                      setTempStageName(stage);
+                      setTempStageStartDateStr(item.config?.stageStartDate || '');
+                      setTempStageEndDateStr(item.config?.stageEndDate || '');
+                      setIsStageModalOpen(true);
+                    }}
+                    className="w-[64px] h-[64px] shrink-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md border border-white/10 rounded-xl relative group cursor-pointer hover:bg-white/5 hover:border-emerald-500/30 transition-colors"
+                  >
+                    <span className="text-[7.5px] text-white/50 uppercase tracking-widest mb-0.5 text-center leading-tight">Etapa</span>
+                    <span className="text-[9px] font-bold text-white text-center px-1 truncate w-full leading-tight">
+                      {stage || 'NOME'}
+                    </span>
+                    {item.config?.stageStartDate && (
+                      <span className="text-[6.5px] text-emerald-400 font-bold mt-0.5 text-center leading-none scale-[0.85]">
+                        {item.config.stageStartDate.split('-').reverse().join('/')}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {activeMarkers.includes('remaining') && endDateStr && (
+                  <div
+                    onClick={() => {
+                      setTempStartDateStr(startDateStr);
+                      setTempEndDateStr(endDateStr);
+                      setTempExpectedTime(item.config?.expectedTime || '');
+                      setIsDateModalOpen(true);
+                    }}
+                    className="w-[64px] h-[64px] shrink-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md border border-white/10 rounded-xl relative group cursor-pointer hover:bg-white/5 hover:border-emerald-500/30 transition-colors"
+                  >
+                    <span className="text-[7.5px] text-white/50 uppercase tracking-widest mb-0.5 text-center leading-tight">Falta</span>
+                    <span className="text-[9px] font-black text-emerald-400">{calculateRemaining()}</span>
+                  </div>
+                )}
+
+                <div className="relative shrink-0 flex items-center justify-center w-[64px] h-[64px]">
+                  <button
+                    onClick={() => setShowMarkersMenu(!showMarkersMenu)}
+                    className="w-full h-full flex flex-col items-center justify-center bg-white/5 hover:bg-white/10 border border-white/5 border-dashed rounded-xl transition-colors group"
+                  >
+                    <span className="text-white/30 group-hover:text-white/60 text-lg font-light mb-0.5">+</span>
+                    <span className="text-[7.5px] font-bold text-white/30 group-hover:text-white/60 uppercase tracking-widest">Marcador</span>
+                  </button>
                   <AnimatePresence>
-                    {isNameDirty && (
-                      <motion.button
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        onClick={() => handleSaveField('name', name)}
-                        className="w-8 h-8 shrink-0 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center hover:bg-emerald-500/40 transition-colors"
-                        title="Salvar Nome"
+                    {showMarkersMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute left-0 bottom-full mb-2 w-48 bg-[#111311] border border-white/10 rounded-xl p-2 z-20 shadow-2xl flex flex-col gap-1"
                       >
-                        <Check size={16} />
-                      </motion.button>
+                        {[
+                          { id: 'elapsed', label: 'Dias Corridos' },
+                          { id: 'stage', label: 'Etapa / Dias da Etapa' },
+                          { id: 'remaining', label: 'Dias para finalizar' }
+                        ].map(m => (
+                          <button
+                            key={m.id}
+                            onClick={() => toggleMarker(m.id)}
+                            className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-left text-[10px] font-bold transition-colors ${activeMarkers.includes(m.id) ? 'bg-emerald-500/20 text-emerald-400' : 'hover:bg-white/5 text-white/50'}`}
+                          >
+                            {m.label}
+                            {activeMarkers.includes(m.id) && <Check size={12} />}
+                          </button>
+                        ))}
+                      </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
@@ -417,135 +647,71 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
             >
               <div className="max-w-2xl mx-auto flex flex-col gap-6 pb-12">
 
-                <div className="flex items-center flex-wrap gap-2 text-[10px] font-bold uppercase tracking-wider text-white/50 relative">
-                  {activeMarkers.includes('elapsed') && (
-                    <div className="flex items-center gap-1 bg-white/5 px-2 py-1 rounded">
-                      <span>Dias corridos:</span>
-                      <span className="text-white">{calculateDays()}</span>
-                    </div>
-                  )}
-                  {activeMarkers.includes('stage') && (
-                    <div className="flex items-center gap-1 bg-white/5 px-2 py-1 rounded relative group">
-                      <span>Etapa:</span>
+                {/* Subcontainer agrupando Tipo, Título e Descrição com espaçamento bem apertado */}
+                <div className="flex flex-col gap-3.5">
+                  {/* Title and Type */}
+                    <div className="flex flex-col">
+                      <label htmlFor={`${item.id}-item-type-select`} className="sr-only" style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0 }}>Tipo de item</label>
+                      <select
+                        id={`${item.id}-item-type-select`}
+                        name="itemTypeSelect"
+                        value={item.type}
+                        onChange={(e) => updateItem({ ...item, type: e.target.value })}
+                        className="bg-transparent text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-0.5 block focus:outline-none cursor-pointer appearance-none w-max"
+                        style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
+                      >
+                        <option value="acompanhe" style={{ background: '#0a0c0a' }}>Acompanhe</option>
+                        <option value="aprenda" style={{ background: '#0a0c0a' }}>Aprenda</option>
+                        <option value="viaje" style={{ background: '#0a0c0a' }}>Viaje</option>
+                        <option value="poupe" style={{ background: '#0a0c0a' }}>Poupe</option>
+                        <option value="planeje" style={{ background: '#0a0c0a' }}>Planeje</option>
+                        <option value="jejue" style={{ background: '#0a0c0a' }}>Jejue</option>
+                        <option value="hidrate-se" style={{ background: '#0a0c0a' }}>Hidrate-se</option>
+                        <option value="vice" style={{ background: '#0a0c0a' }}>Libertesse</option>
+                        <option value="medicine" style={{ background: '#0a0c0a' }}>Medicamento</option>
+                      </select>
+
+                      <div className="flex items-center gap-3">
                       <input
+                        id={`${item.id}-goal-name`} autoComplete="off"
+                        name="goalName"
+                        aria-label="Nome da Rotina"
                         type="text"
-                        value={stage}
-                        onChange={(e) => setStage(e.target.value)}
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        onPointerDown={(e) => e.stopPropagation()}
                         placeholder="NOME"
-                        className="w-16 bg-transparent text-white focus:outline-none placeholder-white/20"
+                        className="w-full bg-transparent font-black text-white uppercase tracking-tight leading-none border-b border-transparent hover:border-white/20 focus:border-emerald-500/50 focus:outline-none transition-colors text-3xl"
                       />
                       <AnimatePresence>
-                        {isStageDirty && (
+                        {isNameDirty && (
                           <motion.button
                             initial={{ scale: 0, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0, opacity: 0 }}
-                            onClick={() => handleSaveField('stage', stage)}
-                            className="w-4 h-4 shrink-0 absolute right-1 rounded-full bg-emerald-500 text-black flex items-center justify-center hover:bg-emerald-400 transition-colors"
+                            onClick={() => handleSaveField('name', name)}
+                            className="w-8 h-8 shrink-0 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center hover:bg-emerald-500/40 transition-colors"
+                            title="Salvar Nome"
                           >
-                            <Check size={10} />
+                            <Check size={16} />
                           </motion.button>
                         )}
                       </AnimatePresence>
                     </div>
-                  )}
-                  {activeMarkers.includes('remaining') && (
-                    <div className="flex items-center gap-1 bg-white/5 px-2 py-1 rounded relative group">
-                      <span>Falta:</span>
-                      {endDateStr ? (
-                        <span className="text-emerald-400">{calculateRemaining()}</span>
-                      ) : (
-                        <span className="text-white/30">∞</span>
-                      )}
-                      <input
-                        type="date"
-                        value={endDateStr}
-                        onChange={(e) => setEndDateStr(e.target.value)}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label htmlFor={`${item.id}-goal-desc`} className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-1 block">Descrição / Finalidade</label>
+                    <div className="relative">
+                      <textarea
+                        id={`${item.id}-goal-desc`} autoComplete="off"
+                        name="goalDesc"
+                        value={description || ""}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Descreva a finalidade..."
+                        className="w-full bg-transparent p-2 text-[11px] font-medium text-white/80 focus:outline-none focus:bg-white/[0.02] resize-none h-10 transition-colors custom-scrollbar"
                       />
-                      <AnimatePresence>
-                        {isEndDirty && (
-                          <motion.button
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0, opacity: 0 }}
-                            onClick={() => handleSaveField('endDateStr', endDateStr)}
-                            className="w-4 h-4 shrink-0 absolute right-1 rounded-full bg-emerald-500 text-black flex items-center justify-center z-10 hover:bg-emerald-400 transition-colors"
-                          >
-                            <Check size={10} />
-                          </motion.button>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-1 bg-white/5 px-2 py-1 rounded relative group cursor-pointer">
-                    <span>Início:</span>
-                    <span className="text-white">{startDateStr.split('-').reverse().join('/')}</span>
-                    <input
-                      type="date"
-                      value={startDateStr}
-                      onChange={(e) => setStartDateStr(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                    <AnimatePresence>
-                      {isStartDirty && (
-                        <motion.button
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0, opacity: 0 }}
-                          onClick={() => handleSaveField('startDate', new Date(startDateStr).getTime())}
-                          className="w-4 h-4 shrink-0 absolute right-1 rounded-full bg-emerald-500 text-black flex items-center justify-center z-10 hover:bg-emerald-400 transition-colors"
-                        >
-                          <Check size={10} />
-                        </motion.button>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  <div className="relative ml-auto">
-                    <button
-                      onClick={() => setShowMarkersMenu(!showMarkersMenu)}
-                      className="text-[9px] bg-white/10 text-white/50 hover:text-white px-2 py-1 rounded font-bold uppercase transition-colors"
-                    >
-                      + Marcador
-                    </button>
-                    <AnimatePresence>
-                      {showMarkersMenu && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                          className="absolute right-0 top-full mt-2 w-48 bg-[#111311] border border-white/10 rounded-xl p-2 z-20 shadow-2xl flex flex-col gap-1"
-                        >
-                          {[
-                            { id: 'elapsed', label: 'Dias Corridos' },
-                            { id: 'stage', label: 'Etapa / Dias da Etapa' },
-                            { id: 'remaining', label: 'Dias para finalizar' }
-                          ].map(m => (
-                            <button
-                              key={m.id}
-                              onClick={() => toggleMarker(m.id)}
-                              className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-left text-[10px] font-bold transition-colors ${activeMarkers.includes(m.id) ? 'bg-emerald-500/20 text-emerald-400' : 'hover:bg-white/5 text-white/50'}`}
-                            >
-                              {m.label}
-                              {activeMarkers.includes(m.id) && <Check size={12} />}
-                            </button>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-2 block">Descrição / Finalidade</label>
-                  <div className="relative">
-                    <textarea
-                      value={description || ""}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Descreva a finalidade..."
-                      className="w-full bg-transparent p-2 text-[11px] font-medium text-white/80 focus:outline-none focus:bg-white/[0.02] resize-none h-10 transition-colors custom-scrollbar"
-                    />
                     <AnimatePresence>
                       {isDescDirty && (
                         <motion.button
@@ -560,371 +726,487 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                         </motion.button>
                       )}
                     </AnimatePresence>
+                    </div>
                   </div>
                 </div>
+                {/* Tabs Navigation */}
+                <div className="flex flex-wrap bg-white/5 border-y border-white/10 p-1 mt-1 mb-2 rounded-xl gap-1">
+                  {[
+                    { id: 'looping', label: 'LOOPING', icon: Activity, color: 'emerald' },
+                    { id: 'condicoes', label: 'CONDIÇÕES', icon: CheckSquare, color: 'emerald' },
+                    { id: 'correlacoes', label: 'CORRELAÇÕES', icon: LinkIcon, color: 'indigo' },
+                    ...(item.type === 'vice' ? [{ id: 'estrategia', label: 'ESTRATÉGIA', icon: TrendingDown, color: 'yellow' }] : []),
+                    ...(item.type === 'vice' ? [{ id: 'custos', label: 'CUSTOS', icon: Activity, color: 'emerald' }] : [])
+                  ].map(tab => {
+                    const isActive = activeTab === tab.id;
+                    const colorClasses = {
+                      emerald: isActive ? 'bg-emerald-400/20 text-emerald-400' : 'text-white/50 hover:text-white/80 hover:bg-white/5',
+                      indigo: isActive ? 'bg-indigo-400/20 text-indigo-400' : 'text-white/50 hover:text-white/80 hover:bg-white/5',
+                      yellow: isActive ? 'bg-yellow-400/20 text-yellow-400' : 'text-white/50 hover:text-white/80 hover:bg-white/5',
+                    }[tab.color];
 
-                <div className="py-2 mb-2 border-t border-white/5 pt-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <CheckSquare size={14} className="text-emerald-400" />
-                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Condições</span>
-                    </div>
-                    <button 
-                      onClick={() => {
-                        setEditingConditionIndex(null);
-                        setNewConditionTitle('');
-                        setIsAddConditionModalOpen(true);
-                      }}
-                      className="w-5 h-5 flex items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
-                      title="Adicionar Condição"
-                    >
-                      <PlusCircle size={12} />
-                    </button>
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-2">
-                    {conditions.length === 0 ? (
-                      <p className="text-[10px] text-white/30 font-medium">Nenhuma condição definida.</p>
-                    ) : (
-                      conditions.map((cond, idx) => (
-                        <div key={idx} className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-300 px-2.5 py-1 text-[10px] font-bold rounded-md border border-emerald-500/20">
-                          <span className="cursor-pointer hover:underline" onClick={() => {
-                            setEditingConditionIndex(idx);
-                            setNewConditionTitle(cond);
-                            setIsAddConditionModalOpen(true);
-                          }}>{cond}</span>
-                          <button onClick={() => removeCondition(idx)} className="text-emerald-400/50 hover:text-emerald-300">
-                            <X size={10} />
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(prev => prev === tab.id ? null : tab.id as any)}
+                        className={`flex-1 min-w-[30%] py-2 text-[9px] sm:text-[10px] font-bold tracking-wider rounded-lg transition-colors flex items-center justify-center gap-1.5 uppercase ${colorClasses}`}
+                      >
+                        <tab.icon size={12} />
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <AnimatePresence mode="wait">
+                  {/* Looping Diário */}
+                  {activeTab === 'looping' && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                      <div className="py-2 mb-2 bg-black/20 rounded-xl p-3 border border-white/5">
+                        <div className="flex flex-col gap-2">
+                          {item.type === 'vice' ? (
+                            <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest block flex items-center gap-2">
+                              <Activity size={12} className="text-emerald-400" />
+                              Looping Diário
+                            </span>
+                          ) : (
+                            <label htmlFor={`${item.id}-goal-type`} className="text-[9px] font-bold text-white/30 uppercase tracking-widest block flex items-center gap-2">
+                              <Activity size={12} className="text-emerald-400" />
+                              Looping Diário
+                            </label>
+                          )}
+                          <div className="flex items-center gap-3">
+                            {item.type === 'vice' ? (
+                              <div className="flex-1 bg-black/40 border border-white/10 rounded-xl p-2 text-[12px] text-white/50 cursor-not-allowed">
+                                Infinitas Vezes (Contínuo)
+                              </div>
+                            ) : (
+                              <div className="flex-1 flex gap-2">
+                                <select
+                                  id={`${item.id}-goal-type`}
+                                  name="goalType"
+                                  value={item.config?.dailyGoalType || 'count'}
+                                  onChange={(e) => updateItem({ ...item, config: { ...item.config, dailyGoalType: e.target.value } })}
+                                  className="bg-black/40 border border-white/10 rounded-xl p-2 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 appearance-none flex-1"
+                                >
+                                  <option value="count">Por qtd de vezes</option>
+                                  <option value="time">Por tempo (minutos)</option>
+                                </select>
+
+                                {item.config?.dailyGoalType === 'time' ? (
+                                  <input
+                                    id={`${item.id}-goal-time`} autoComplete="off"
+                                    name="goalTime"
+                                    aria-label="Minutos"
+                                    type="number"
+                                    min="1"
+                                    placeholder="Ex: 30"
+                                    value={item.config?.dailyTimeGoalMinutes || ''}
+                                    onChange={(e) => updateItem({ ...item, config: { ...item.config, dailyTimeGoalMinutes: parseInt(e.target.value) || 0 } })}
+                                    className="w-16 bg-black/40 border border-white/10 rounded-xl p-2 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 text-center"
+                                  />
+                                ) : (
+                                  <select
+                                    id={`${item.id}-goal-loops`}
+                                    name="goalLoops"
+                                    aria-label="Repetições"
+                                    value={item.config?.dailyLoops ?? 1}
+                                    onChange={(e) => {
+                                      const val = e.target.value === 'infinite' ? 'infinite' : parseInt(e.target.value) || 1;
+                                      updateItem({ ...item, config: { ...item.config, dailyLoops: val } });
+                                    }}
+                                    className="w-max bg-black/40 border border-white/10 rounded-xl p-2 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 appearance-none"
+                                  >
+                                    <option value="1">1x/dia</option>
+                                    <option value="2">2x/dia</option>
+                                    <option value="3">3x/dia</option>
+                                    <option value="4">4x/dia</option>
+                                    <option value="5">5x/dia</option>
+                                    <option value="infinite">Infinitas</option>
+                                  </select>
+                                )}
+                              </div>
+                            )}
+                            <span className="text-[10px] text-white/40 leading-tight w-1/3">
+                              Meta para sair da lista de Pendentes.
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Horário Específico */}
+                        <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-white/5">
+                          <label htmlFor={`${item.id}-expected-time`} className="text-[9px] font-bold text-white/30 uppercase tracking-widest block flex items-center gap-2">
+                            <Clock size={12} className="text-emerald-400" />
+                            Horário Específico (Opcional)
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              id={`${item.id}-expected-time`}
+                              type="time"
+                              value={item.config?.expectedTime || ''}
+                              onChange={(e) => updateItem({ ...item, config: { ...item.config, expectedTime: e.target.value } })}
+                              className="bg-black/40 border border-white/10 rounded-xl p-2 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50"
+                            />
+                            <span className="text-[10px] text-white/40 leading-tight flex-1">
+                              A tarefa só ficará pendente quando chegar neste horário.
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Condições */}
+                  {activeTab === 'condicoes' && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                      <div className="py-2 mb-2 bg-black/20 rounded-xl p-3 border border-white/5">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <CheckSquare size={14} className="text-emerald-400" />
+                            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Condições</span>
+                          </div>
+                          <button 
+                            onClick={() => {
+                              setEditingConditionIndex(null);
+                              setNewConditionTitle('');
+                              setIsAddConditionModalOpen(true);
+                            }}
+                            className="w-5 h-5 flex items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
+                            title="Adicionar Condição"
+                          >
+                            <PlusCircle size={12} />
                           </button>
                         </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                <div className="py-2">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <LinkIcon size={14} className="text-indigo-400" />
-                      <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Correlações Ativas</span>
-                    </div>
-                    <button
-                      onClick={() => setShowCorrelations(!showCorrelations)}
-                      className="text-[9px] bg-indigo-500/10 text-indigo-300 px-2 py-1 rounded hover:bg-indigo-500/20 font-bold uppercase transition-colors"
-                    >
-                      {showCorrelations ? 'Ocultar' : '+ Adicionar'}
-                    </button>
-                  </div>
-
-                  {Object.keys(item.correlations || {}).length === 0 ? (
-                    <p className="text-[10px] text-white/30 font-medium">
-                      Nenhuma tarefa vinculada.
-                    </p>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {Object.keys(item.correlations || {}).map(cId => {
-                        const cItem = items[cId];
-                        if (!cItem) return null;
-                        return (
-                          <div key={cId} className="flex items-center gap-1.5 bg-indigo-500/10 text-indigo-300 px-2.5 py-1 text-[10px] font-bold rounded-md border border-indigo-500/20">
-                            {cItem.name || cItem.id.substring(0, 8)}
-                            <button onClick={() => toggleCorrelation(cId)} className="text-indigo-400/50 hover:text-indigo-300">
-                              <X size={10} />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
+                        
+                        <div className="flex flex-wrap gap-2">
+                          {conditions.length === 0 ? (
+                            <p className="text-[10px] text-white/30 font-medium">Nenhuma condição definida.</p>
+                          ) : (
+                            conditions.map((cond, idx) => (
+                              <div key={idx} className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-300 px-2.5 py-1 text-[10px] font-bold rounded-md border border-emerald-500/20">
+                                <span className="cursor-pointer hover:underline" onClick={() => {
+                                  setEditingConditionIndex(idx);
+                                  setNewConditionTitle(cond);
+                                  setIsAddConditionModalOpen(true);
+                                }}>{cond}</span>
+                                <button onClick={() => removeCondition(idx)} className="text-emerald-400/50 hover:text-emerald-300">
+                                  <X size={10} />
+                                </button>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
                   )}
 
-                  <AnimatePresence>
-                    {showCorrelations && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="mt-3 pt-3 border-t border-indigo-500/10 flex flex-col gap-1 overflow-hidden"
-                      >
-                        <span className="text-[9px] text-white/30 uppercase font-bold tracking-wider mb-1">Selecione para vincular:</span>
-                        {otherItems.length === 0 ? (
-                          <p className="text-[10px] text-white/30">Nenhuma outra tarefa ativa encontrada.</p>
+                  {/* Correlações */}
+                  {activeTab === 'correlacoes' && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                      <div className="py-2 mb-2 bg-black/20 rounded-xl p-3 border border-white/5">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <LinkIcon size={14} className="text-indigo-400" />
+                            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Correlações Ativas</span>
+                          </div>
+                          <button
+                            onClick={() => setShowCorrelations(!showCorrelations)}
+                            className="text-[9px] bg-indigo-500/10 text-indigo-300 px-2 py-1 rounded hover:bg-indigo-500/20 font-bold uppercase transition-colors"
+                          >
+                            {showCorrelations ? 'Ocultar' : '+ Adicionar'}
+                          </button>
+                        </div>
+
+                        {Object.keys(item.correlations || {}).length === 0 ? (
+                          <p className="text-[10px] text-white/30 font-medium">
+                            Nenhuma tarefa vinculada.
+                          </p>
                         ) : (
-                          otherItems.map(other => {
-                            const isLinked = !!item.correlations?.[other.id];
+                          <div className="flex flex-wrap gap-2">
+                            {Object.keys(item.correlations || {}).map(cId => {
+                              const cItem = items[cId];
+                              if (!cItem) return null;
+                              const isLibertesse = cItem.type === 'vice';
+                              return (
+                                <div key={cId} 
+                                     className={`flex items-center gap-2 px-2.5 py-1.5 text-[10px] font-bold rounded-md border border-l-4 ${isLibertesse ? 'bg-yellow-500/5 text-yellow-300 border-yellow-500/20 border-l-yellow-500' : 'bg-emerald-500/5 text-emerald-300 border-emerald-500/20 border-l-emerald-500'}`}
+                                     style={cItem.coverPhoto ? { backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.85), rgba(0,0,0,0.65)), url(${getAssetUrl(cItem.coverPhoto)})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+                                >
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className={`text-[7px] tracking-widest uppercase font-black ${isLibertesse ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                                      {isLibertesse ? 'Libertesse' : 'Acompanhe'}
+                                    </span>
+                                    <span 
+                                      className="cursor-pointer hover:underline truncate max-w-[150px] text-white"
+                                      onClick={() => openCorrelatedItem(cId)}
+                                    >
+                                      {cItem.name || cItem.id.substring(0, 8)}
+                                    </span>
+                                  </div>
+                                  <button onClick={() => toggleCorrelation(cId)} className={`hover:text-white transition-colors ml-1 ${isLibertesse ? 'text-yellow-400/50' : 'text-emerald-400/50'}`}>
+                                    <X size={10} />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        <AnimatePresence>
+                          {showCorrelations && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="mt-3 pt-3 border-t border-indigo-500/10 flex flex-col gap-1 overflow-hidden"
+                            >
+                              <span className="text-[9px] text-white/30 uppercase font-bold tracking-wider mb-1">Selecione para vincular:</span>
+                              {otherItems.length === 0 ? (
+                                <p className="text-[10px] text-white/30">Nenhuma outra tarefa ativa encontrada.</p>
+                              ) : (
+                                otherItems.map(other => {
+                                  const isLinked = !!item.correlations?.[other.id];
+                                  const isLibertesse = other.type === 'vice';
+                                  const borderLeftColor = isLibertesse ? 'border-l-yellow-500' : 'border-l-emerald-500';
+                                  const subtextColor = isLibertesse ? 'text-yellow-400' : 'text-emerald-400';
+                                  const hoverColor = isLibertesse ? 'hover:border-yellow-500/30 hover:bg-yellow-500/[0.02]' : 'hover:border-emerald-500/30 hover:bg-emerald-500/[0.02]';
+                                  
+                                  return (
+                                    <div
+                                      key={other.id}
+                                      onClick={() => { toggleCorrelation(other.id); setShowCorrelations(false); }}
+                                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer border border-l-4 border-white/5 transition-all ${borderLeftColor} ${hoverColor} ${isLinked ? (isLibertesse ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-emerald-500/10 border-emerald-500/30') : 'bg-white/[0.02]'}`}
+                                      style={other.coverPhoto ? { backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.9), rgba(0,0,0,0.65)), url(${getAssetUrl(other.coverPhoto)})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+                                    >
+                                      <div className="flex flex-col gap-0.5">
+                                        <span className={`text-[7px] tracking-widest uppercase font-black ${subtextColor}`}>
+                                          {isLibertesse ? 'Libertesse' : 'Acompanhe'}
+                                        </span>
+                                        <span className={`text-[11px] font-bold ${isLinked ? 'text-white' : 'text-white/70'}`}>
+                                          {other.name || other.id.substring(0, 8)}
+                                        </span>
+                                      </div>
+                                      {isLinked ? (
+                                        <Check size={12} className={isLibertesse ? 'text-yellow-400' : 'text-emerald-400'} />
+                                      ) : (
+                                        <span className="text-[14px] text-white/20 font-light pr-1">+</span>
+                                      )}
+                                    </div>
+                                  );
+                                })
+                              )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Estratégia Libertesse */}
+                  {activeTab === 'estrategia' && item.type === 'vice' && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                      <div className="py-2 mb-2 bg-black/20 rounded-xl p-3 border border-white/5">
+                        <div className="flex items-center gap-2 mb-3">
+                          <TrendingDown size={14} className="text-yellow-400" />
+                          <span className="text-[10px] font-bold text-yellow-400 uppercase tracking-wider">Estratégia Libertesse</span>
+                        </div>
+                        
+                        <div className="flex flex-col gap-3">
+                          <label htmlFor={`${item.id}-libertesse-mode-select`} className="sr-only" style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0 }}>Modo Libertesse</label>
+                          <select
+                            id={`${item.id}-libertesse-mode-select`}
+                            name="libertesseModeSelect"
+                            value={item.config?.mode || 'acompanhe'}
+                            onChange={(e) => updateItem({ ...item, config: { ...item.config, mode: e.target.value } })}
+                            className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-[12px] text-white/80 focus:outline-none focus:border-yellow-500/50 appearance-none cursor-pointer"
+                            style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
+                          >
+                            <option value="acompanhe" style={{background: '#0a0c0a'}}>SE CONHEÇA - Apenas Acompanhar</option>
+                            <option value="diminua" style={{background: '#0a0c0a'}}>DIMINUA - Definir Metas de Redução e Jejum</option>
+                          </select>
+
+                          {item.config?.isMission && (
+                            <div className="bg-yellow-950/30 border border-yellow-500/30 rounded-xl p-3 flex items-center justify-between shadow-[0_0_15px_rgba(234,179,8,0.05)]">
+                              <div className="flex items-center gap-2">
+                                <Activity size={16} className="text-yellow-400 animate-pulse" />
+                                <span className="text-yellow-400 text-xs font-black tracking-widest uppercase">MISSÃO ATIVA</span>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-slate-400 text-[0.6rem] font-bold tracking-widest uppercase block mb-0.5">Progresso</span>
+                                <span className="text-yellow-400 text-xs font-extrabold">Estágio {Math.min(10, (item.config?.antitabagismoLevel ?? 0) + 1)}/10</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {item.config?.mode === 'diminua' && (() => {
+                            const seconds = item.config?.timerLimitSeconds || 0;
+                            const d = Math.floor(seconds / 86400);
+                            const h = Math.floor((seconds % 86400) / 3600);
+                            const m = Math.floor((seconds % 3600) / 60);
+
                             return (
-                              <div
-                                key={other.id}
-                                onClick={() => toggleCorrelation(other.id)}
-                                className={`flex items-center justify-between p-2 rounded-lg cursor-pointer border transition-colors ${isLinked ? 'bg-indigo-500/10 border-indigo-500/20' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05]'}`}
-                              >
-                                <span className={`text-[11px] font-bold ${isLinked ? 'text-indigo-300' : 'text-white/60'}`}>
-                                  {other.name || other.id.substring(0, 8)}
-                                </span>
-                                {isLinked && <Check size={12} className="text-indigo-400" />}
+                              <div className="flex flex-col gap-2">
+                                <label className="text-[9px] font-bold text-white/30 uppercase tracking-widest block">Meta de Jejum (Tempo de Espera)</label>
+                                <div className="flex gap-2">
+                                  <WheelPicker 
+                                    label="Dias" 
+                                    options={Array.from({length: 31}, (_, i) => i)} 
+                                    value={d} 
+                                    onChange={(newD) => {
+                                      const total = (newD * 86400) + (h * 3600) + (m * 60);
+                                      updateItem({ ...item, config: { ...item.config, timerLimitSeconds: total } });
+                                    }} 
+                                  />
+                                  <WheelPicker 
+                                    label="Horas" 
+                                    options={Array.from({length: 24}, (_, i) => i)} 
+                                    value={h} 
+                                    onChange={(newH) => {
+                                      const total = (d * 86400) + (newH * 3600) + (m * 60);
+                                      updateItem({ ...item, config: { ...item.config, timerLimitSeconds: total } });
+                                    }} 
+                                  />
+                                  <WheelPicker 
+                                    label="Minutos" 
+                                    options={Array.from({length: 60}, (_, i) => i)} 
+                                    value={m} 
+                                    onChange={(newM) => {
+                                      const total = (d * 86400) + (h * 3600) + (newM * 60);
+                                      updateItem({ ...item, config: { ...item.config, timerLimitSeconds: total } });
+                                    }} 
+                                  />
+                                </div>
                               </div>
                             );
-                          })
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-                
-                {/* Libertesse Specific Settings */}
-                {item.type === 'vice' && (
-                  <div className="py-2 mb-4 border-t border-white/5 pt-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <TrendingDown size={14} className="text-yellow-400" />
-                      <span className="text-[10px] font-bold text-yellow-400 uppercase tracking-wider">Estratégia Libertesse</span>
-                    </div>
-                    
-                    <div className="flex flex-col gap-3">
-                      <select
-                        value={item.config?.mode || 'acompanhe'}
-                        onChange={(e) => updateItem({ ...item, config: { ...item.config, mode: e.target.value } })}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-[12px] text-white/80 focus:outline-none focus:border-yellow-500/50 appearance-none cursor-pointer"
-                        style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
-                      >
-                        <option value="acompanhe" style={{background: '#0a0c0a'}}>SE CONHEÇA - Apenas Acompanhar</option>
-                        <option value="diminua" style={{background: '#0a0c0a'}}>DIMINUA - Definir Metas de Redução e Jejum</option>
-                        <option value="missao-antitabagismo" style={{background: '#0a0c0a'}}>MISSÃO - Desafio Guiado</option>
-                      </select>
-
-                      {item.config?.mode === 'missao-antitabagismo' && (
-                        <div className="bg-yellow-950/30 border border-yellow-500/30 rounded-xl p-3 flex items-center justify-between shadow-[0_0_15px_rgba(234,179,8,0.05)]">
-                          <div className="flex items-center gap-2">
-                            <Activity size={16} className="text-yellow-400 animate-pulse" />
-                            <span className="text-yellow-400 text-xs font-black tracking-widest uppercase">MISSÃO ATIVA</span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-slate-400 text-[0.6rem] font-bold tracking-widest uppercase block mb-0.5">Progresso</span>
-                            <span className="text-yellow-400 text-xs font-extrabold">Estágio {Math.min(10, (item.config?.antitabagismoLevel ?? 0) + 1)}/10</span>
-                          </div>
+                          })()}
                         </div>
-                      )}
-
-                      {item.config?.mode === 'diminua' && (
-                        <div className="flex flex-col gap-2">
-                          <label className="text-[9px] font-bold text-white/30 uppercase tracking-widest block">Meta de Tempo sem usar (Jejum em Segundos)</label>
-                          <input
-                            type="number"
-                            value={item.config?.timerLimitSeconds || 0}
-                            onChange={(e) => updateItem({ ...item, config: { ...item.config, timerLimitSeconds: parseInt(e.target.value) || 0 } })}
-                            className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-[12px] text-white/80 focus:outline-none focus:border-yellow-500/50"
-                          />
-                        </div>
-                      )}
-
-                      <div className="flex flex-col gap-2 mt-2">
-                        <label className="text-[9px] font-bold text-white/30 uppercase tracking-widest block">Custo por Uso (R$)</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={item.config?.costPerUse || ''}
-                          onChange={(e) => updateItem({ ...item, config: { ...item.config, costPerUse: parseFloat(e.target.value) || undefined } })}
-                          placeholder="Ex: 0.50"
-                          className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-[12px] text-white/80 focus:outline-none focus:border-red-500/50"
-                        />
                       </div>
-                    </div>
-                  </div>
-                )}
+                    </motion.div>
+                  )}
+
+                  {/* Custos */}
+                  {activeTab === 'custos' && item.type === 'vice' && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                      <div className="py-2 mb-2 bg-black/20 rounded-xl p-3 border border-white/5">
+                        {(() => {
+                          const legacyCost = item.config?.costPerUse || 0;
+                          const displayPriceNum = item.config?.costItemPrice !== undefined ? item.config.costItemPrice : (legacyCost > 0 ? legacyCost : '');
+                          const displayQty = item.config?.costItemQuantity !== undefined ? item.config.costItemQuantity : (legacyCost > 0 ? 1 : '');
+
+                          return (
+                            <div className="flex flex-col gap-3">
+                              <label className="text-[9px] font-bold text-white/30 uppercase tracking-widest block">Mapeamento de Custo</label>
+                              <div className="flex flex-col gap-2">
+                                <input
+                                  type="text"
+                                  value={item.config?.costItemName || ''}
+                                  onChange={(e) => updateItem({ ...item, config: { ...item.config, costItemName: e.target.value } })}
+                                  className="bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-white placeholder-white/20 text-sm outline-none focus:border-white/20 transition-colors w-full"
+                                  placeholder="O que você costuma comprar? (ex: Maço de cigarro)"
+                                />
+                                <div className="flex gap-2">
+                                  <div className="flex-1">
+                                    <label className="text-[8px] text-white/50 uppercase font-bold px-1 block mb-1">Preço Pago (R$)</label>
+                                    <input
+                                      type="text"
+                                      inputMode="decimal"
+                                      value={item.config?.costItemPriceRaw !== undefined ? item.config.costItemPriceRaw : (displayPriceNum ? displayPriceNum.toString().replace('.', ',') : '')}
+                                      onChange={(e) => {
+                                        const rawValue = e.target.value.replace(/[^0-9,.]/g, '');
+                                        // Replace comma with dot for parsing
+                                        const parsedString = rawValue.replace(',', '.');
+                                        const price = parseFloat(parsedString) || 0;
+                                        const qty = item.config?.costItemQuantity !== undefined ? item.config.costItemQuantity : (legacyCost > 0 ? 1 : 1);
+                                        updateItem({ 
+                                          ...item, 
+                                          config: { 
+                                            ...item.config,
+                                            costItemPriceRaw: rawValue,
+                                            costItemPrice: price,
+                                            costItemQuantity: qty,
+                                            costPerUse: qty > 0 ? price / qty : 0
+                                          } 
+                                        });
+                                      }}
+                                      className="bg-black/40 border border-white/5 rounded-xl px-3 py-2 text-white placeholder-white/20 text-sm outline-none focus:border-white/20 transition-colors w-full"
+                                      placeholder="0,00"
+                                    />
+                                  </div>
+                                  <div className="flex-1">
+                                    <label className="text-[8px] text-white/50 uppercase font-bold px-1 block mb-1">Quantidade que vem</label>
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      value={item.config?.costItemQuantityRaw !== undefined ? item.config.costItemQuantityRaw : (item.config?.costItemQuantity !== undefined ? item.config.costItemQuantity : 1)}
+                                      onChange={(e) => {
+                                        const rawVal = e.target.value;
+                                        const qty = rawVal === '' ? 1 : (parseInt(rawVal) || 1);
+                                        const price = item.config?.costItemPrice !== undefined ? item.config.costItemPrice : (legacyCost > 0 ? legacyCost : 0);
+                                        updateItem({ 
+                                          ...item, 
+                                          config: { 
+                                            ...item.config,
+                                            costItemQuantityRaw: rawVal,
+                                            costItemQuantity: qty,
+                                            costPerUse: qty > 0 ? price / qty : 0
+                                          } 
+                                        });
+                                      }}
+                                      className="bg-black/40 border border-white/5 rounded-xl px-3 py-2 text-white placeholder-white/20 text-sm outline-none focus:border-white/20 transition-colors w-full"
+                                      placeholder="ex: 1"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              {item.config?.costPerUse > 0 && (
+                                <div className="text-[10px] text-emerald-400/80 font-mono tracking-wider text-right px-1">
+                                  Custo calculado por uso: {item.config.costPerUse.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Nova Área de Adicionar Registro */}
-                <div className="py-2 mb-4 border-t border-white/5 pt-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <CheckSquare size={14} className="text-sky-400" />
-                    <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider">Novo Registro</span>
-                  </div>
-                  
-                  <input type="file" ref={conditionPhotoInputRef} className="hidden" accept="image/*" onChange={handleUploadConditionPhoto} />
-
-                  {(conditions.length > 0 || Object.keys(item.correlations || {}).length > 0) && (
-                    <div className="flex flex-col gap-2 mb-4">
-                      {conditions.map((cond, idx) => {
-                        const addCondPhoto = (cKey: string) => {
-                          setUploadingConditionKey(cKey);
-                          setTimeout(() => conditionPhotoInputRef.current?.click(), 0);
-                        };
-
-                        return (
-                          <div key={idx} className="flex flex-col gap-1 p-2 rounded-xl bg-black/40 border border-white/5 group">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[11px] text-white/80 flex-1">{cond}</span>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => transformConditionToAcompanhe(cond, idx)}
-                                  title="Transformar em Acompanhe"
-                                  className="text-white/20 hover:text-amber-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  <PlusCircle size={14} />
-                                </button>
-                                <button
-                                  onClick={() => addCondPhoto(`cond-${idx}`)}
-                                  title="Anexar Foto"
-                                  className={`p-1 rounded-full hover:bg-white/10 transition-colors ${conditionPhotos[`cond-${idx}`] ? 'text-emerald-400' : 'text-white/30'}`}
-                                >
-                                  <Camera size={14} />
-                                </button>
-                                <button 
-                                  onClick={() => setCheckedConditions(prev => ({...prev, [`cond-${idx}`]: !prev[`cond-${idx}`]}))}
-                                  className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors ${checkedConditions[`cond-${idx}`] ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-white/5 border-white/20 text-transparent'}`}
-                                >
-                                  <Check size={12} />
-                                </button>
-                              </div>
-                            </div>
-                            {conditionPhotos[`cond-${idx}`] && (
-                              <div className="h-16 w-16 mt-1 rounded-lg overflow-hidden border border-white/10 relative">
-                                <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${conditionPhotos[`cond-${idx}`]})` }} />
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                      
-                      {Object.keys(item.correlations || {}).map(cId => {
-                        const cItem = items[cId];
-                        if (!cItem) return null;
-                        const addCondPhoto = (cKey: string) => {
-                          setUploadingConditionKey(cKey);
-                          setTimeout(() => conditionPhotoInputRef.current?.click(), 0);
-                        };
-                        
-                        return (
-                          <div key={cId} className="flex flex-col gap-1 p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 group">
-                            <div className="flex items-center justify-between">
-                              <span 
-                                className="text-[11px] text-indigo-300 font-bold flex-1 cursor-pointer hover:underline"
-                                onClick={() => openCorrelatedItem(cId)}
-                              >
-                                {cItem.name || cItem.id.substring(0, 8)}
-                              </span>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => addCondPhoto(`corr-${cId}`)}
-                                  title="Anexar Foto"
-                                  className={`p-1 rounded-full hover:bg-white/10 transition-colors ${conditionPhotos[`corr-${cId}`] ? 'text-emerald-400' : 'text-white/30'}`}
-                                >
-                                  <Camera size={14} />
-                                </button>
-                                <button 
-                                  onClick={() => setCheckedConditions(prev => ({...prev, [`corr-${cId}`]: !prev[`corr-${cId}`]}))}
-                                  className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors ${checkedConditions[`corr-${cId}`] ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-white/5 border-white/20 text-transparent'}`}
-                                >
-                                  <Check size={12} />
-                                </button>
-                              </div>
-                            </div>
-                            {conditionPhotos[`corr-${cId}`] && (
-                              <div className="h-16 w-16 mt-1 rounded-lg overflow-hidden border border-white/10 relative">
-                                <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${conditionPhotos[`corr-${cId}`]})` }} />
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  <button
-                    onClick={() => {
-                      const totalConditions = conditions.length + Object.keys(item.correlations || {}).length;
-                      const metCount = Object.values(checkedConditions).filter(Boolean).length;
-                      const allMet = totalConditions > 0 && metCount === totalConditions;
-
-                      useTrackerStore.getState().addLog({
-                        trackerItemId: itemId,
-                        type: 'consumption',
-                        info: '',
-                        value: 1,
-                        metadata: {
-                          checkedConditions,
-                          conditionPhotos,
-                          totalConditions,
-                          allConditionsMet: allMet
-                        }
-                      });
-                      setCheckedConditions({});
-                      setConditionPhotos({});
-                    }}
-                    className="w-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 font-black uppercase tracking-widest text-xs py-3 rounded-xl transition-colors shadow-[0_0_15px_rgba(16,185,129,0.1)]"
-                  >
-                    Gravar Registro
-                  </button>
-                </div>
+                <NewLogArea
+                  item={item}
+                  conditions={conditions}
+                  conditionPhotoInputRef={conditionPhotoInputRef}
+                  handleUploadConditionPhoto={handleUploadConditionPhoto}
+                  setUploadingConditionKey={setUploadingConditionKey}
+                  transformConditionToAcompanhe={transformConditionToAcompanhe}
+                  conditionPhotos={conditionPhotos}
+                  checkedConditions={checkedConditions}
+                  setCheckedConditions={setCheckedConditions}
+                  items={items}
+                  openCorrelatedItem={(id) => {
+                    const el = document.getElementById(`item-${id}`);
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      setTimeout(() => {
+                        el.classList.add('ring-2', 'ring-emerald-500', 'ring-offset-2', 'ring-offset-black', 'transition-all', 'duration-500');
+                        setTimeout(() => {
+                          el.classList.remove('ring-2', 'ring-emerald-500', 'ring-offset-2', 'ring-offset-black');
+                        }, 2000);
+                      }, 500);
+                    }
+                  }}
+                  requestAddLog={requestAddLog}
+                  itemId={itemId}
+                  setConditionPhotos={setConditionPhotos}
+                  handleEditLog={handleEditLog}
+                />
 
                 {/* Histórico de Registros */}
-                <div className="py-2">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <Clock size={14} className="text-white/40" />
-                      <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider">Histórico de Registros</span>
-                    </div>
-                  </div>
-
-                  {itemLogs.length === 0 ? (
-                    <p className="text-[10px] text-white/30 font-medium text-center py-2">Nenhum registro encontrado.</p>
-                  ) : (
-                    <div className="flex flex-col gap-3">
-                      {itemLogs.map(log => {
-                        const dateObj = new Date(log.timestamp);
-                        const dateStr = dateObj.toLocaleDateString('pt-BR');
-                        const timeStr = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                        const isEditing = editingLogId === log.id;
-
-                        let visualClass = "border-white/5 bg-zinc-900/30";
-                        if (log.metadata && log.metadata.totalConditions > 0) {
-                          if (log.metadata.allConditionsMet) {
-                            visualClass = "border-emerald-500/50 bg-emerald-950/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]";
-                          } else {
-                            visualClass = "border-rose-500/50 bg-rose-950/20 shadow-[0_0_15px_rgba(244,63,94,0.1)]";
-                          }
-                        }
-
-                        return (
-                          <div
-                            key={log.id}
-                            onClick={() => handleEditLog(log.id, log.info, log.photoUrl, log.metadata)}
-                            className={`py-3 px-3 flex flex-col gap-2 relative overflow-hidden rounded-xl border cursor-pointer transition-colors ${visualClass}`}
-                          >
-                            {log.photoUrl && (
-                              <>
-                                <div
-                                  className="absolute inset-0 bg-cover bg-center opacity-60 pointer-events-none mix-blend-screen"
-                                  style={{ backgroundImage: `url(${log.photoUrl})` }}
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0c0a] via-[#0a0c0a]/60 to-transparent pointer-events-none" />
-                              </>
-                            )}
-                            <div className="flex items-center justify-between relative z-10 pointer-events-none">
-                              <span className="text-[9px] font-black uppercase text-emerald-500 tracking-widest bg-black/40 px-2 py-1 rounded">
-                                {log.type === 'start' ? '🟢 Início' :
-                                  log.type === 'end' ? '🔴 Fim' :
-                                    log.type === 'consumption' ? '✅ Registro' : log.type}
-                              </span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-[9px] text-white/30 font-bold">{dateStr} às {timeStr}</span>
-                              </div>
-                            </div>
-
-                            {log.info && (
-                              <p className="text-[11px] text-white/90 leading-relaxed relative z-10 font-medium pointer-events-none">
-                                {log.info}
-                              </p>
-                            )}
-
-                            {log.durationSeconds !== undefined && log.durationSeconds > 0 && (
-                              <div className="text-[9px] font-bold text-white/50 relative z-10 pointer-events-none">
-                                Duração: {Math.floor(log.durationSeconds / 60)}m {log.durationSeconds % 60}s
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                <LogHistory
+                  itemLogs={itemLogs}
+                  editingLogId={editingLogId}
+                  handleEditLog={handleEditLog}
+                />
 
                 {/* Delete Area */}
                 <div className="pt-8 flex justify-center">
@@ -971,226 +1253,85 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
       </AnimatePresence>
 
       {/* Add Condition Modal */}
-      <AnimatePresence>
-        {isAddConditionModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[1000010] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-zinc-900 border border-white/10 rounded-3xl p-5 w-full max-w-sm flex flex-col gap-4 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                <span className="text-[12px] font-bold text-emerald-400 uppercase tracking-widest">
-                  {editingConditionIndex !== null ? 'Editar Condição' : 'Adicionar Condição'}
-                </span>
-                <button
-                  onClick={() => {
-                    setIsAddConditionModalOpen(false);
-                    setNewConditionTitle('');
-                    setEditingConditionIndex(null);
-                  }}
-                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-
-              <input
-                value={newConditionTitle}
-                onChange={(e) => setNewConditionTitle(e.target.value)}
-                placeholder="Título da Condição..."
-                className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-[13px] text-white focus:outline-none focus:border-emerald-500/50"
-                autoFocus
-              />
-
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => {
-                    if (!newConditionTitle.trim()) return;
-                    const newConditions = [...conditions];
-                    if (editingConditionIndex !== null) {
-                      newConditions[editingConditionIndex] = newConditionTitle.trim();
-                    } else {
-                      newConditions.push(newConditionTitle.trim());
-                    }
-                    updateItem({ ...item, config: { ...item.config, conditions: newConditions } });
-                    setIsAddConditionModalOpen(false);
-                    setNewConditionTitle('');
-                    setEditingConditionIndex(null);
-                  }}
-                  className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-[11px] uppercase tracking-wider transition-colors"
-                >
-                  {editingConditionIndex !== null ? 'Salvar Edição' : 'Adicionar Condição Simples'}
-                </button>
-                <button
-                  onClick={() => {
-                    if (!newConditionTitle.trim()) return;
-                    const newItemId = crypto.randomUUID();
-                    updateItem({
-                      id: newItemId,
-                      type: 'acompanhe', // We use 'acompanhe' as default
-                      name: newConditionTitle.trim(),
-                      status: 'ACTIVE',
-                      config: { showCoverPhoto: true },
-                      startDate: Date.now(),
-                      correlations: { [item.id]: 'linked' },
-                      isConsuming: false,
-                      defaultTimer: 300,
-                      userId: (item as any).userId || 'test-user',
-                      createdAt: new Date(),
-                      updatedAt: new Date()
-                    } as any);
-
-                    const newConditions = [...conditions];
-                    if (editingConditionIndex !== null) {
-                      newConditions.splice(editingConditionIndex, 1);
-                    }
-
-                    updateItem({
-                      ...item,
-                      config: { ...item.config, conditions: newConditions },
-                      correlations: { ...item.correlations, [newItemId]: 'linked' }
-                    });
-
-                    setIsAddConditionModalOpen(false);
-                    setNewConditionTitle('');
-                    setEditingConditionIndex(null);
-                  }}
-                  className="w-full py-3 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
-                >
-                  Tornar Condição em Tarefa
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <AddConditionModal
+        isOpen={isAddConditionModalOpen}
+        onClose={() => setIsAddConditionModalOpen(false)}
+        itemId={item.id}
+        item={item}
+        updateItem={updateItem}
+        newConditionTitle={newConditionTitle}
+        setNewConditionTitle={setNewConditionTitle}
+        editingConditionIndex={editingConditionIndex}
+        setEditingConditionIndex={setEditingConditionIndex}
+        conditions={conditions}
+      />
 
       {/* Edit Log Modal */}
-      <AnimatePresence>
-        {editingLogId && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[1000010] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-zinc-900 border border-white/10 rounded-3xl p-5 w-full max-w-sm flex flex-col shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {(() => {
-                const currentLog = itemLogs.find(l => l.id === editingLogId);
-                const logTime = currentLog ? new Date(currentLog.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
-                const logTitle = `REGISTRO - ${logTime}`;
+      <EditLogModal
+        editingLogId={editingLogId}
+        setEditingLogId={setEditingLogId}
+        itemLogs={itemLogs}
+        editingLogTitle={editingLogTitle}
+        setEditingLogTitle={setEditingLogTitle}
+        handleDeleteLog={handleDeleteLog}
+        saveLogEdit={saveLogEdit}
+        logFileInputRef={logFileInputRef}
+        editingLogPhoto={editingLogPhoto}
+        isUploadingLogPhoto={isUploadingLogPhoto}
+        editingLogInfo={editingLogInfo}
+        setEditingLogInfo={setEditingLogInfo}
+        conditions={conditions}
+        item={item}
+        setUploadingConditionKey={setUploadingConditionKey}
+        conditionPhotoInputRef={conditionPhotoInputRef}
+        editingLogConditionPhotos={editingLogConditionPhotos}
+        editingLogCheckedConditions={editingLogCheckedConditions}
+        setEditingLogCheckedConditions={setEditingLogCheckedConditions}
+        items={items}
+        openCorrelatedItem={openCorrelatedItem}
+      />
 
-                return (
-                  <>
-                    <div className="flex items-center justify-between pb-4">
-                      <span className="text-[12px] font-black text-white/50 uppercase tracking-widest">{logTitle}</span>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => editingLogId && handleDeleteLog(editingLogId)} className="w-8 h-8 flex items-center justify-center rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"><Trash2 size={14} /></button>
-                        <button onClick={() => setEditingLogId(null)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors"><X size={14} /></button>
-                        <button onClick={() => editingLogId && saveLogEdit(editingLogId)} className="w-8 h-8 flex items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors shadow-[0_0_15px_rgba(16,185,129,0.1)]"><Check size={14} /></button>
-                      </div>
-                    </div>
+      {/* Modal de Período (Início e Fim) */}
+      <DateEditModal
+        isOpen={isDateModalOpen}
+        onClose={() => setIsDateModalOpen(false)}
+        itemId={item.id}
+        tempStartDateStr={tempStartDateStr}
+        setTempStartDateStr={setTempStartDateStr}
+        tempEndDateStr={tempEndDateStr}
+        setTempEndDateStr={setTempEndDateStr}
+        tempExpectedTime={tempExpectedTime}
+        setTempExpectedTime={setTempExpectedTime}
+        handleSaveDates={handleSaveDates}
+      />
 
-                    <div className="flex flex-col gap-4 mt-2">
-                      <div className="flex gap-3">
-                        <div 
-                          onClick={() => logFileInputRef.current?.click()}
-                          className={`w-20 h-20 shrink-0 rounded-2xl flex items-center justify-center border transition-colors cursor-pointer relative overflow-hidden group ${editingLogPhoto ? 'border-white/10' : 'border-dashed border-white/20 bg-black/40 hover:bg-white/5 hover:border-white/30'}`}
-                        >
-                          {editingLogPhoto ? (
-                            <>
-                              <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${editingLogPhoto})` }} />
-                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <Camera size={14} className="text-white" />
-                              </div>
-                            </>
-                          ) : (
-                            isUploadingLogPhoto ? <Loader2 size={16} className="animate-spin text-white/50" /> : <Camera size={16} className="text-white/30 group-hover:text-white/60" />
-                          )}
-                        </div>
+      {/* Modal de Etapa */}
+      <StageEditModal
+        isOpen={isStageModalOpen}
+        onClose={() => setIsStageModalOpen(false)}
+        itemId={item.id}
+        tempStageName={tempStageName}
+        setTempStageName={setTempStageName}
+        tempStageStartDateStr={tempStageStartDateStr}
+        setTempStageStartDateStr={setTempStageStartDateStr}
+        tempStageEndDateStr={tempStageEndDateStr}
+        setTempStageEndDateStr={setTempStageEndDateStr}
+        handleSaveStage={handleSaveStage}
+      />
 
-                        <textarea
-                          value={editingLogInfo || ""}
-                          onChange={(e) => setEditingLogInfo(e.target.value)}
-                          className="flex-1 bg-black/40 border border-white/10 rounded-2xl p-3 text-[12px] text-white/80 focus:outline-none focus:border-white/30 resize-none h-20 custom-scrollbar"
-                          placeholder="Anotação..."
-                        />
-                      </div>
+      <MissionAntitabagismoModal isOpen={showTabuleiro} onClose={() => setShowTabuleiro(false)} />
 
-                      {(conditions.length > 0 || Object.keys(item.correlations || {}).length > 0) && (
-                        <div className="flex flex-col gap-2 pt-2 border-t border-white/5">
-                          {conditions.map((cond, idx) => {
-                            const cKey = `cond-${idx}`;
-                            const addCondPhoto = () => {
-                              setUploadingConditionKey(cKey);
-                              setTimeout(() => conditionPhotoInputRef.current?.click(), 0);
-                            };
-                            return (
-                              <div key={idx} className="flex flex-col gap-1 p-2 rounded-xl bg-black/40 border border-white/5">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[11px] text-white/80 flex-1">{cond}</span>
-                                  <div className="flex items-center gap-2">
-                                    <button onClick={addCondPhoto} className={`p-1 rounded-full hover:bg-white/10 transition-colors ${editingLogConditionPhotos[cKey] ? 'text-emerald-400' : 'text-white/30'}`}><Camera size={14} /></button>
-                                    <button onClick={() => setEditingLogCheckedConditions(p => ({...p, [cKey]: !p[cKey]}))} className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors ${editingLogCheckedConditions[cKey] ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-white/5 border-white/20 text-transparent'}`}><Check size={12} /></button>
-                                  </div>
-                                </div>
-                                {editingLogConditionPhotos[cKey] && (
-                                  <div className="h-12 w-12 mt-1 rounded-lg overflow-hidden border border-white/10 relative">
-                                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${editingLogConditionPhotos[cKey]})` }} />
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                          {Object.keys(item.correlations || {}).map(cId => {
-                            const cItem = items[cId];
-                            if (!cItem) return null;
-                            const cKey = `corr-${cId}`;
-                            const addCondPhoto = () => {
-                              setUploadingConditionKey(cKey);
-                              setTimeout(() => conditionPhotoInputRef.current?.click(), 0);
-                            };
-                            return (
-                              <div key={cId} className="flex flex-col gap-1 p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[11px] text-indigo-300 font-bold flex-1">{cItem.name || cItem.id.substring(0, 8)}</span>
-                                  <div className="flex items-center gap-2">
-                                    <button onClick={addCondPhoto} className={`p-1 rounded-full hover:bg-white/10 transition-colors ${editingLogConditionPhotos[cKey] ? 'text-emerald-400' : 'text-white/30'}`}><Camera size={14} /></button>
-                                    <button onClick={() => setEditingLogCheckedConditions(p => ({...p, [cKey]: !p[cKey]}))} className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors ${editingLogCheckedConditions[cKey] ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-white/5 border-white/20 text-transparent'}`}><Check size={12} /></button>
-                                  </div>
-                                </div>
-                                {editingLogConditionPhotos[cKey] && (
-                                  <div className="h-12 w-12 mt-1 rounded-lg overflow-hidden border border-white/10 relative">
-                                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${editingLogConditionPhotos[cKey]})` }} />
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </>
-                );
-              })()}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <CorrelationGatingModal
+        isOpen={pendingCorrelations.length > 0}
+        pendingItems={pendingCorrelations}
+        originalItemName={originalItem?.name}
+        onRegistrar={(cid) => {
+          cancelRequest();
+          openCorrelatedItem(cid);
+        }}
+        onLembrarMaisTarde={cancelRequest}
+        onIgnorar={confirmAndBypass}
+      />
     </React.Fragment>,
     document.body
   );

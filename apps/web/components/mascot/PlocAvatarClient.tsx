@@ -14,6 +14,7 @@
  */
 
 import dynamic from 'next/dynamic';
+import { PlocToast } from './PlocToast';
 
 const PlocAvatarInner = dynamic(
   () => import('./PlocAvatar'),
@@ -27,5 +28,10 @@ export function PlocAvatarClient({
   draggable?: boolean;
   emotion?: 'calm' | 'happy' | 'stressed' | 'pissed' | 'sleeping' | 'dizzy';
 }) {
-  return <PlocAvatarInner draggable={draggable} emotion={emotion} />;
+  return (
+    <>
+      <PlocToast />
+      <PlocAvatarInner draggable={draggable} emotion={emotion} />
+    </>
+  );
 }

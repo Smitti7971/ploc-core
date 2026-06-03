@@ -26,8 +26,11 @@ export interface TrackerItem {
   config: {
     conditions?: string[];
     expectedFrequency?: string;
+    expectedTime?: string;
     target?: number;
     showCoverPhoto?: boolean;
+    isMission?: boolean;
+    missionTemplate?: string;
     stages?: {
       id: string;
       name: string;
@@ -62,7 +65,7 @@ interface TrackerStore {
   endConsumption: (itemId: string, actualSecondsUsed: number, info?: string, photoUrl?: string) => void;
   cancelConsumption: (itemId: string) => void;
   
-  addLog: (log: Omit<TrackerLog, 'id' | 'timestamp'>) => void;
+  addLog: (log: Omit<TrackerLog, 'id' | 'timestamp'>) => string;
   updateLog: (logId: string, updates: Partial<TrackerLog>) => void;
   deleteLog: (logId: string) => void;
   toggleCoverPhoto: (itemId: string) => void;
@@ -95,6 +98,9 @@ const syncLogToBackend = async (log: TrackerLog) => {
   }
 };
 
+let lastFetchTime = 0;
+const FETCH_COOLDOWN = 3000;
+
 export const useTrackerStore = create<TrackerStore>()(
   persist(
     (set, get) => ({
@@ -103,6 +109,10 @@ export const useTrackerStore = create<TrackerStore>()(
 
       fetchItems: async () => {
         if (!hasAuthToken()) return;
+        const now = Date.now();
+        if (now - lastFetchTime < FETCH_COOLDOWN) return;
+        lastFetchTime = now;
+        
         try {
           // Busca os itens e logs do servidor
           const [itemsData, logsData] = await Promise.all([
@@ -220,17 +230,44 @@ export const useTrackerStore = create<TrackerStore>()(
 
       addLog: (logData) => {
         let createdLog: TrackerLog | null = null;
+        let itemToSync: TrackerItem | null = null;
+        
         set((state) => {
           createdLog = {
             ...logData,
             id: crypto.randomUUID(),
             timestamp: Date.now()
           };
+          
+          let newItems = state.items;
+          const item = state.items[logData.trackerItemId];
+          
+          // Reinicia o startDate (timer) para vícios (Libertesse) quando houver consumo
+          if (item && item.type === 'vice' && item.config?.mode !== 'acompanhe' && logData.type === 'consumption') {
+            const updatedItem = {
+               ...item,
+               startDate: createdLog.timestamp, // Reinicia o contador para o momento do log
+               config: {
+                 ...item.config,
+                 regretStart: undefined // Caso estivesse em arrependimento, limpa
+               }
+            };
+            newItems = {
+               ...state.items,
+               [item.id]: updatedItem
+            };
+            itemToSync = updatedItem;
+          }
+
           return {
-            logs: [createdLog, ...state.logs]
+            logs: [createdLog, ...state.logs],
+            items: newItems
           };
         });
+        
+        if (itemToSync) syncItemToBackend(itemToSync);
         if (createdLog) syncLogToBackend(createdLog);
+        return createdLog!.id;
       },
 
       updateLog: (logId, updates) => {

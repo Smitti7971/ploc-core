@@ -374,5 +374,31 @@
       "role": "assistant",
       "content": "Você não veio aqui para trocar ideias, certo? Vamos ao que interessa. O que precisa fazer hoje?"
     }
+  ],
+  "c88a0963-b1c5-4f41-8a75-3f6cada878a5:2026-05-30": [
+    {
+      "role": "user",
+      "content": "Oi PLOC tudo bem?"
+    }
+  ],
+  "c88a0963-b1c5-4f41-8a75-3f6cada878a5:2026-05-31": [
+    {
+      "role": "user",
+      "content": "oi, por que está assim?"
+    },
+    {
+      "role": "user",
+      "content": "oi, por que está assim?"
+    }
+  ],
+  "c88a0963-b1c5-4f41-8a75-3f6cada878a5:2026-06-01": [
+    {
+      "role": "user",
+      "content": "ola"
+    },
+    {
+      "role": "user",
+      "content": "ola"
+    }
   ]
 }

@@ -26,6 +26,11 @@ interface PlocFaceProps {
   isHit?: boolean;
   isPositiveHit?: boolean;
   isDizzy?: boolean;
+  isSick?: boolean;
+  isFat?: boolean;
+  isThin?: boolean;
+  coldLevel?: number;
+  humorLevel?: number;
 }
 
 // Componente que renderiza SVGs animados representando o rosto do personagem
@@ -39,11 +44,16 @@ export function PlocFace({
   isHit = false,
   isPositiveHit = false,
   isDizzy = false,
+  isSick = false,
+  isFat = false,
+  isThin = false,
+  coldLevel = 100,
+  humorLevel = 100,
 }: PlocFaceProps) {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     // Adia a primeira verificação para evitar renderização em cascata síncrona
     const timer = setTimeout(() => {
       setIsMobile(window.innerWidth < 768);
@@ -96,12 +106,18 @@ export function PlocFace({
     activeMouth = 'none';
   } else if (isEating) {
     activeMouth = 'eating';
+  } else if (coldLevel < 30) {
+    activeMouth = 'wavy';
   } else if (isDizzy) {
     activeMouth = 'wavy';
-  } else if (isHurt || isHit) {
+  } else if (isHurt || isHit || humorLevel < 30) {
     activeMouth = 'sad';
   } else if (isPositiveHit) {
     activeMouth = 'smile';
+  } else if (isSick) {
+    activeMouth = 'tired';
+  } else if (isFat) {
+    activeMouth = 'fat';
   } else {
     if (isPissed) {
       activeMouth = 'rage';
@@ -148,6 +164,9 @@ export function PlocFace({
   } else if (isPissed) {
     eyebrowY = 9.5;
     eyebrowRotate = 35; // Extremo furioso
+  } else if (isSick || humorLevel < 30) {
+    eyebrowY = 4;
+    eyebrowRotate = -6; // Olhar caído/cansado/apático
   } else {
     eyebrowY = 0;
     eyebrowRotate = 0;
@@ -311,46 +330,65 @@ export function PlocFace({
           </svg>
         );
       case 'smile':
+      case 'sad':
+      case 'straight':
+      case 'wavy':
+      case 'tired':
+      case 'rage':
+      case 'fat':
+        // Path dinâmico unificado para transições suaves entre estados de boca
+        const baseType = style === 'fat' || style === 'tired' || style === 'rage' ? 'straight' : style;
+
+        const paths: Record<string, Record<string, string>> = {
+          smile: {
+            normal: "M 22 25 Q 40 46 58 25 Q 58 25 58 25",
+            fat: "M 15 25 Q 40 55 65 25 Q 65 25 65 25",
+            thin: "M 28 25 Q 40 40 52 25 Q 52 25 52 25"
+          },
+          sad: {
+            normal: "M 22 40 Q 40 20 58 40 Q 58 40 58 40",
+            fat: "M 15 45 Q 40 15 65 45 Q 65 45 65 45",
+            thin: "M 28 35 Q 40 25 52 35 Q 52 35 52 35"
+          },
+          straight: {
+            normal: "M 25 30 Q 40 32 55 30 Q 55 30 55 30",
+            fat: "M 15 30 Q 40 34 65 30 Q 65 30 65 30",
+            thin: "M 30 30 Q 40 31 50 30 Q 50 30 50 30"
+          },
+          wavy: {
+            // 2 curvas para simular tremendo
+            normal: "M 20 30 Q 30 20 40 30 Q 50 40 60 30",
+            fat: "M 12 30 Q 26 15 40 30 Q 54 45 68 30",
+            thin: "M 28 30 Q 34 25 40 30 Q 46 35 52 30"
+          }
+        };
+
+        const currentGroup = paths[baseType] || paths.straight;
+        const currentPath = isFat ? currentGroup.fat : (isThin ? currentGroup.thin : currentGroup.normal);
+
+        // Path de animação de fala (boca abre e fecha)
+        let speakPath = currentPath;
+        if (baseType === 'smile' || baseType === 'straight') {
+          speakPath = isFat ? "M 15 25 Q 40 65 65 25 Q 65 25 65 25"
+            : (isThin ? "M 28 25 Q 40 45 52 25 Q 52 25 52 25"
+              : "M 22 25 Q 40 56 58 25 Q 58 25 58 25");
+        } else if (baseType === 'sad' || baseType === 'wavy') {
+          speakPath = isFat ? "M 15 45 Q 40 5 65 45 Q 65 45 65 45"
+            : (isThin ? "M 28 35 Q 40 15 52 35 Q 52 35 52 35"
+              : "M 22 40 Q 40 10 58 40 Q 58 40 58 40");
+        }
+
         return (
           <svg width="100%" height="100%" viewBox="0 0 80 60" fill="none" className="overflow-visible">
             <motion.path
-              d="M 22 25 Q 40 46 58 25"
+              d={currentPath}
+              initial={{ d: currentPath }}
+              animate={isSpeaking ? { d: [currentPath, speakPath, currentPath] } : { d: currentPath }}
+              transition={isSpeaking ? { duration: 0.3, repeat: Infinity } : { duration: 0.5, type: 'spring', stiffness: 100 }}
               stroke={lashColor}
               strokeWidth="7"
               strokeLinecap="round"
               fill="none"
-              animate={{
-                y: [0, -1.5, 0],
-              }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            />
-          </svg>
-        );
-      case 'sad':
-        return (
-          <svg width="100%" height="100%" viewBox="0 0 80 60" fill="none" className="overflow-visible">
-            <motion.path
-              d="M 22 36 Q 40 18 58 36 Q 40 18 22 36 Z"
-              initial={{ d: "M 22 36 Q 40 18 58 36 Q 40 18 22 36 Z" }}
-              stroke={lashColor}
-              strokeWidth="7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill={isSpeaking ? "#3b0712" : "none"}
-              animate={isSpeaking
-                ? {
-                  d: [
-                    "M 22 36 Q 40 18 58 36 Q 40 18 22 36 Z",
-                    "M 22 36 Q 40 18 58 36 Q 40 46 22 36 Z",
-                    "M 22 36 Q 40 18 58 36 Q 40 18 22 36 Z"
-                  ]
-                }
-                : {
-                  y: [0, 1.5, 0],
-                  d: "M 22 36 Q 40 18 58 36 Q 40 18 22 36 Z",
-                }
-              }
-              transition={isSpeaking ? { duration: 0.45, repeat: Infinity } : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
             />
           </svg>
         );
@@ -406,36 +444,7 @@ export function PlocFace({
             </motion.g>
           </svg>
         );
-      case 'wavy':
-        return (
-          <svg width="100%" height="100%" viewBox="0 0 80 60" fill="none" className="overflow-visible">
-            <motion.path
-              d="M 20 30 Q 27 22 34 30 T 47 30 T 60 30"
-              stroke={lashColor}
-              strokeWidth="7"
-              strokeLinecap="round"
-              fill="none"
-              initial={{ d: "M 20 30 Q 27 22 34 30 T 47 30 T 60 30" }}
-              animate={isSpeaking ? {
-                d: [
-                  "M 20 30 Q 27 22 34 30 T 47 30 T 60 30",
-                  "M 20 30 Q 27 34 34 26 T 47 34 T 60 30",
-                  "M 20 30 Q 27 22 34 30 T 47 30 T 60 30"
-                ],
-                y: [0, -3, 3, 0],
-                scaleY: [1, 1.25, 0.85, 1],
-              } : {
-                y: [0, -2, 0, 2, 0],
-                rotate: [0, -2, 0, 2, 0]
-              }}
-              transition={isSpeaking ? {
-                duration: 0.35,
-                repeat: Infinity,
-                ease: "easeInOut"
-              } : { duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
-            />
-          </svg>
-        );
+
       case 'masculine':
         return (
           <motion.div
@@ -619,13 +628,92 @@ export function PlocFace({
             </svg>
           </motion.div>
         );
+      case 'tired':
+        return (
+          <svg width="100%" height="100%" viewBox="0 0 80 60" fill="none" className="overflow-visible">
+            <motion.ellipse
+              cx="40"
+              cy="34"
+              rx="6"
+              ry="2"
+              fill={isSpeaking ? "#3b0712" : "#3b071288"}
+              stroke={lashColor}
+              strokeWidth="5"
+              animate={isSpeaking ? {
+                scaleY: [1, 3, 1],
+                scaleX: [1, 0.66, 1]
+              } : {
+                scaleY: [0.75, 2.25, 0.75],
+                scaleX: [1, 1.16, 1],
+                y: [0, 1.5, 0]
+              }}
+              transition={{
+                duration: isSpeaking ? 0.3 : 1.8,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+          </svg>
+        );
+      case 'fat':
+        return (
+          <svg width="100%" height="100%" viewBox="0 0 80 60" fill="none" className="overflow-visible">
+            {/* Boca gordinha e esticada (com bochechas grandes) */}
+            <motion.path
+              d="M 30 32 Q 40 38 50 32"
+              stroke={lashColor}
+              strokeWidth="5.5"
+              strokeLinecap="round"
+              fill={isSpeaking ? "#3b0712" : "none"}
+              animate={isSpeaking ? {
+                d: [
+                  "M 30 32 Q 40 38 50 32",
+                  "M 30 30 Q 40 45 50 30",
+                  "M 30 32 Q 40 38 50 32",
+                ]
+              } : {
+                y: [0, 1.5, 0]
+              }}
+              transition={isSpeaking ? { duration: 0.35, repeat: Infinity } : { duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+            />
+            {/* Papada / Queixo duplo */}
+            <motion.path
+              d="M 33 46 Q 40 50 47 46"
+              stroke={lashColor}
+              strokeWidth="4"
+              strokeLinecap="round"
+              fill="none"
+              animate={{ y: [0, 1.5, 0], scaleX: [1, 1.05, 1] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+            />
+            {/* Curvas da Bochecha Cheia */}
+            <motion.path
+              d="M 22 28 Q 26 36 29 32"
+              stroke={lashColor}
+              strokeWidth="3.5"
+              strokeLinecap="round"
+              fill="none"
+              animate={{ y: [0, 1, 0] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <motion.path
+              d="M 58 28 Q 54 36 51 32"
+              stroke={lashColor}
+              strokeWidth="3.5"
+              strokeLinecap="round"
+              fill="none"
+              animate={{ y: [0, 1, 0] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+            />
+          </svg>
+        );
       case 'straight':
       default:
         return (
           <svg width="100%" height="100%" viewBox="0 0 80 60" fill="none">
             <motion.path
-              d="M 28 30 C 28 30, 40 30, 52 30 L 52 30 C 52 30, 40 30, 28 30 Z"
-              initial={{ d: "M 28 30 C 28 30, 40 30, 52 30 L 52 30 C 52 30, 40 30, 28 30 Z" }}
+              d="M 26 28 Q 40 34 54 28 Q 40 34 26 28 Z"
+              initial={{ d: "M 26 28 Q 40 34 54 28 Q 40 34 26 28 Z" }}
               fill={isSpeaking ? "#3b0712" : "none"}
               stroke={lashColor}
               strokeWidth="6"
@@ -634,12 +722,12 @@ export function PlocFace({
               animate={isSpeaking
                 ? {
                   d: [
-                    "M 28 30 C 28 30, 40 30, 52 30 L 52 30 C 52 30, 40 30, 28 30 Z",
-                    "M 28 25 C 28 25, 40 22, 52 25 L 52 35 C 52 35, 40 38, 28 35 Z",
-                    "M 28 30 C 28 30, 40 30, 52 30 L 52 30 C 52 30, 40 30, 28 30 Z"
+                    "M 26 28 Q 40 34 54 28 Q 40 34 26 28 Z",
+                    "M 26 27 Q 40 24 54 27 Q 40 38 26 27 Z",
+                    "M 26 28 Q 40 34 54 28 Q 40 34 26 28 Z"
                   ]
                 }
-                : { d: "M 28 30 C 28 30, 40 30, 52 30 L 52 30 C 52 30, 40 30, 28 30 Z" }
+                : { d: "M 26 28 Q 40 34 54 28 Q 40 34 26 28 Z" }
               }
               transition={isSpeaking ? { duration: 0.4, repeat: Infinity } : {}}
             />
@@ -649,7 +737,7 @@ export function PlocFace({
   };
 
   const isAlertEye = activeEyes === 'cute' || activeEyes === 'anime' || activeEyes === 'sparkle';
-  const escleraScaleY = isSleeping ? 0.05 : (isAlertEye ? 1.25 : 1);
+  const escleraScaleY = isSleeping ? 0.05 : (isSick ? 0.45 : (isAlertEye ? 1.25 : 1));
   const isSpiral = activeEyes === 'spiral';
 
   return (
@@ -663,7 +751,9 @@ export function PlocFace({
         width: '100%',
         height: '100%',
         position: 'relative',
-        zIndex: 2
+        zIndex: 2,
+        opacity: 0.2,
+        // backgroundColor: 'red',
       }}>
         {[0, 1].map((i) => {
           const dx = 14;
@@ -673,17 +763,19 @@ export function PlocFace({
             <div
               key={`eye-group-${i}`}
               style={{
+                display: 'flex',
                 position: 'relative',
                 width: '20%',
                 height: '32%',
-                display: 'flex',
-                alignItems: 'center'
+                alignItems: 'start',
+                // backgroundColor: 'blue',
               }}
             >
               <div style={{ width: '100%', height: '100%', position: 'relative' }}>
                 <svg
                   viewBox="0 0 100 100"
                   style={{
+                    // backgroundColor: 'yellow',
                     width: '100%',
                     height: '100%',
                     overflow: 'visible',
@@ -768,7 +860,7 @@ export function PlocFace({
                     <motion.path
                       d="M 14 64 C 14 64, 50 64, 86 64 C 86 64, 72 76, 50 76 C 28 76, 14 64, 14 64 Z"
                       fill="#000000"
-                      opacity={0.16}
+                      opacity={1}
                       clipPath={`url(#eye-clip-${i})`}
                       animate={{
                         y: isHurt ? 2 : 0,
@@ -782,6 +874,7 @@ export function PlocFace({
                     <motion.path
                       d={`M ${20 + shiftX} 71 Q ${50 + shiftX} 77 ${80 + shiftX} 71 Q ${50 + shiftX} 150 ${20 + shiftX} 71 Z`}
                       fill={`url(#eye-bag-grad-${i})`}
+                      initial={{ opacity: 1 }}
                       animate={{
                         y: isHurt ? 2 : 0,
                         opacity: isSleeping ? 0 : 1,
@@ -797,7 +890,7 @@ export function PlocFace({
                       fill="none"
                       stroke={lashColor}
                       strokeWidth="4.5"
-                      opacity={1.0}
+                      initial={{ opacity: 1.0 }}
                       animate={{
                         y: isHurt ? 2 : (isPissed ? 1 : 0),
                         opacity: isSleeping ? 0 : 1.0,
@@ -809,9 +902,10 @@ export function PlocFace({
                   {/* Cílio Superior 010 */}
                   {!isSpiral && (
                     <motion.path
-                      d={i === 0
-                        ? "M 4 52 C 4 52, 12 42, 50 42 C 88 42, 96 44, 96 44"
-                        : "M 4 44 C 4 44, 12 42, 50 42 C 88 42, 96 52, 96 52"
+                      d={
+                        i === 0
+                          ? "M 4 52 C 4 52, 12 42, 50 42 C 88 42, 96 44, 96 44"
+                          : "M 4 44 C 4 44, 12 42, 50 42 C 88 42, 96 52, 96 52"
                       }
                       fill="none"
                       stroke={lashColor}
@@ -827,7 +921,7 @@ export function PlocFace({
                   )}
 
                   {/* Óculos Nerd */}
-                  {!isSleeping && activeEyes === 'nerd' && (
+                  {!isSleeping && activeEyes === "nerd" && (
                     <g>
                       <circle
                         cx="50"
@@ -838,7 +932,11 @@ export function PlocFace({
                         fill="none"
                       />
                       <path
-                        d={i === 0 ? "M 83 50 Q 94 44 105 50" : "M 17 50 Q 6 44 -5 50"}
+                        d={
+                          i === 0
+                            ? "M 83 50 Q 94 44 105 50"
+                            : "M 17 50 Q 6 44 -5 50"
+                        }
                         stroke="#0f172a"
                         strokeWidth="5.5"
                         fill="none"

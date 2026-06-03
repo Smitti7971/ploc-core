@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { X, CigaretteOff } from 'lucide-react';
 import { MissionPathMap } from './MissionPathMap';
@@ -17,9 +18,9 @@ export function MissionAntitabagismoModal({ isOpen, onClose }: MissionAntitabagi
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[200000] w-screen h-screen bg-zinc-950 flex flex-col overflow-hidden select-none"
+      className="fixed inset-0 z-[2000000] w-screen h-screen bg-zinc-950 flex flex-col overflow-hidden select-none"
       onClick={(e) => e.stopPropagation()}
     >
 
@@ -67,6 +68,7 @@ export function MissionAntitabagismoModal({ isOpen, onClose }: MissionAntitabagi
         <MissionPathMap />
       </div>
 
-    </div>
+    </div>,
+    document.body
   );
 }

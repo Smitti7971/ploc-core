@@ -81,7 +81,7 @@ export const PILLARS_DATA: Record<string, PillarConfig> = {
     options: [
       { id: 'mission-action', title: 'Ação da Missão', desc: 'Um passo rumo ao fim.', image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=400', impacts: [{ pilar: 'proposito', val: 10 }, { pilar: 'liberdade', val: -3 }] },
       { id: 'legacy-build', title: 'Construção de Legado', desc: 'Algo que dura.', image: 'https://images.unsplash.com/photo-1494783367193-149034c05e8f?auto=format&fit=crop&q=80&w=400', impacts: [{ pilar: 'proposito', val: 6 }, { pilar: 'vida', val: -2 }] },
-      { id: 'volunteering', title: 'Voluntariado', desc: 'Ajudar o próximo.', image: 'https://images.unsplash.com/photo-1559027615-cd9d7a915490?auto=format&fit=crop&q=80&w=400', impacts: [{ pilar: 'proposito', val: 5 }, { pilar: 'vida', val: 4 }] }
+      { id: 'volunteering', title: 'Voluntariado', desc: 'Ajudar o próximo.', image: 'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?auto=format&fit=crop&q=80&w=400', impacts: [{ pilar: 'proposito', val: 5 }, { pilar: 'vida', val: 4 }] }
     ]
   }
 };

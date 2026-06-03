@@ -1,5 +1,8 @@
 import { BLACKBOARD_EVENTS, blackboardEventBus } from '../../events/eventBus';
 import { BlackboardBubble, BubbleType } from '../../types/bubbles';
+import { useAuthStore } from '@/store/authStore';
+import { apiService } from '@/services/api';
+
 class BubbleEngine {
   private bubbles: BlackboardBubble[] = [];
   private listeners: ((bubbles: BlackboardBubble[]) => void)[] = [];
@@ -147,6 +150,18 @@ class BubbleEngine {
         reward = 5;
         status = 'success';
         blackboardEventBus.emit(BLACKBOARD_EVENTS.BUBBLE_EXPLODED, bubble);
+        
+        // Dar +1 Foco Coin
+        try {
+          const state = useAuthStore.getState();
+          if (state.user) {
+            const currentCoins = state.user.stats?.focoCoins || 0;
+            state.updateUser({ stats: { ...state.user.stats, focoCoins: currentCoins + 1 } as any });
+            apiService.post('/users/debug/foco-coins', { amount: 1 }).catch(e => console.error(e));
+          }
+        } catch (e) {
+          console.error("Erro ao adicionar foco coin:", e);
+        }
       }
 
       // SALVA NO LOG DE HISTÓRICO

@@ -52,7 +52,7 @@ export function usePlocDragSystem({
   const onDrag = (e: any, info: any) => {
     if (isSleeping) return;
 
-    if (info.delta.x > 0.5) {
+    if (info.delta.x > 0.5) {     //Vira o ploc de lado.
       facingTargetX.set(80);
     } else if (info.delta.x < -0.5) {
       facingTargetX.set(-80);
@@ -85,7 +85,7 @@ export function usePlocDragSystem({
     facingTargetX.set(0);
 
     if (isSleeping) {
-      setIsDragging(false);
+      setIsDragging(true);
       setIsTapped(false);
       setIsHovered(false);
       setTimeout(() => {
@@ -93,7 +93,7 @@ export function usePlocDragSystem({
       }, 150);
       return;
     }
-    
+
     setIsDragging(false);
     setIsTapped(false);
     setIsHovered(false);
@@ -101,7 +101,7 @@ export function usePlocDragSystem({
     if (Math.abs(info.velocity.x) > threshold || Math.abs(info.velocity.y) > threshold) {
       setTimeout(() => { triggerHurt(); }, 150);
     }
-    
+
     if (pathname === '/' && isAuthenticated) {
       blackboardEventBus.emit('PLOC_DRAG_END', { x: x.get(), y: y.get() });
     }

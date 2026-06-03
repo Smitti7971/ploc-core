@@ -12,6 +12,7 @@ interface UsePlocColorStateProps {
   isHurt: boolean;
   isHit: boolean;
   isPositiveHit: boolean;
+  isSick?: boolean;
 }
 
 export function usePlocColorState({
@@ -20,6 +21,7 @@ export function usePlocColorState({
   isHurt,
   isHit,
   isPositiveHit,
+  isSick,
 }: UsePlocColorStateProps) {
   return useMemo(() => {
     let baseR = 14, baseG = 144, baseB = 255;
@@ -36,6 +38,13 @@ export function usePlocColorState({
     if (isHit) { stateR = 255; stateG = 255; stateB = 255; stateAlpha = 0.9; }
     else if (isPositiveHit) { stateR = 134; stateG = 239; stateB = 172; stateAlpha = 0.8; }
     else if (isHurt) { stateR = 153; stateG = 27; stateB = 27; stateAlpha = 0.85; }
+    else if (isSick) {
+      // Mistura a cor base com um tom de verde musgo/amarelado para aparência apática (doente)
+      stateR = Math.floor((baseR + 130) / 2);
+      stateG = Math.floor((baseG + 180) / 2);
+      stateB = Math.floor((baseB + 90) / 2);
+      stateAlpha = 0.4;
+    }
 
     const bodyColor = `rgba(${stateR}, ${stateG}, ${stateB}, ${stateAlpha})`;
     let limbColor = `rgba(${baseR}, ${baseG}, ${baseB}, 0.65)`;
@@ -48,8 +57,9 @@ export function usePlocColorState({
       if (isHit) { limbColor = 'rgba(255,255,255,0.9)'; limbShadow = '0 0 8px rgba(255,255,255,0.6)'; }
       else if (isPositiveHit) { limbColor = 'rgba(134, 239, 172, 0.9)'; limbShadow = '0 0 6px rgba(134, 239, 172, 0.5)'; }
       else if (isHurt) { limbColor = 'rgba(153, 27, 27, 0.8)'; limbShadow = '0 0 5px rgba(153, 27, 27, 0.5)'; }
+      else if (isSick) { limbColor = `rgba(${Math.floor((baseR + 130) / 2)}, ${Math.floor((baseG + 180) / 2)}, ${Math.floor((baseB + 90) / 2)}, 0.65)`; }
     }
 
     return { bodyColor, limbColor, limbShadow, baseR, baseG, baseB, stateR, stateG, stateB, stateAlpha };
-  }, [isHurt, isHit, isPositiveHit, isSleeping, appearance?.bodyColor]);
+  }, [isHurt, isHit, isPositiveHit, isSleeping, isSick, appearance?.bodyColor]);
 }

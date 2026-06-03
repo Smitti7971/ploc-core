@@ -1,83 +1,97 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Store, X, PlusCircle, Cigarette, Wine, EyeOff, Smartphone, Pill, Cookie, Gamepad2, ShoppingBag, Zap, Activity } from 'lucide-react';
-import { useTrackerStore, TrackerItem } from '@/modules/dashboard/components/tracker/store/trackerStore';
+import { Store, X, Apple, Droplet, Pill, Box, Coffee, Dices, Pizza, GlassWater } from 'lucide-react';
+import { usePlocStateStore, ItemType } from '@/modules/mascot/store/plocStateStore';
 import { useAuthStore } from '@/store/authStore';
+import { playPlocSound } from '@/modules/landing/components/bubbles/bubble-pop-sfx';
+import { DynamicIcon } from './DynamicIcon';
 
 interface StoreModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const STORE_ITEMS = [
-  { id: 'acompanhe', label: 'RASTREADOR DE HÁBITO', type: 'acompanhe', icon: Activity, color: '#f59e0b', desc: 'Acompanhe um novo hábito ou rotina', cost: 0 },
-  { id: 'tabagismo', label: 'CIGARRO / VAPE', type: 'vice', icon: Cigarette, color: '#f59e0b', desc: 'Missão de redução passo a passo', cost: 0 },
-  { id: 'alcool', label: 'ÁLCOOL', type: 'vice', icon: Wine, color: '#ef4444', desc: 'Controle sua frequência de consumo', cost: 0 },
-  { id: 'pornografia', label: 'PORNOGRAFIA', type: 'vice', icon: EyeOff, color: '#ec4899', desc: 'Aumente seus intervalos de jejum', cost: 0 },
-  { id: 'redes-sociais', label: 'REDES SOCIAIS', type: 'vice', icon: Smartphone, color: '#3b82f6', desc: 'Recupere seu tempo e atenção', cost: 0 },
-  { id: 'drogas', label: 'DROGAS', type: 'vice', icon: Pill, color: '#a855f7', desc: 'Conheça e controle seu processo', cost: 0 },
-  { id: 'doces', label: 'DOCES / AÇÚCAR', type: 'vice', icon: Cookie, color: '#f97316', desc: 'Reduza o consumo de açúcar', cost: 0 },
-  { id: 'jogos', label: 'JOGOS / APOSTAS', type: 'vice', icon: Gamepad2, color: '#10b981', desc: 'Controle o vício em dopamina', cost: 0 },
-  { id: 'compras', label: 'COMPRAS', type: 'vice', icon: ShoppingBag, color: '#06b6d4', desc: 'Evite compras por impulso', cost: 0 },
-  { id: 'personalizado', label: 'OUTRO (PERSONALIZADO)', type: 'vice', icon: Zap, color: '#64748b', desc: 'Crie seu próprio acompanhamento de vício', cost: 0 }
-];
+// STORE_ITEMS foi removido para usar apenas dbItems
 
 export function StoreModal({ isOpen, onClose }: StoreModalProps) {
   const [mounted, setMounted] = useState(false);
+  const [dbItems, setDbItems] = useState<any[]>([]);
   
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const { setItem } = useTrackerStore();
-  const { user } = useAuthStore();
-  const focoCoins = user?.stats?.focoCoins || 0;
-
-  const handleBuy = (itemDef: typeof STORE_ITEMS[0]) => {
-    // Para simplificar: ao comprar, já instancia o TrackerItem e adiciona ao Dashboard.
-    const newId = `tracker_${Date.now()}`;
-    
-    if (itemDef.type === 'acompanhe') {
-      const newItem: TrackerItem = {
-        id: newId,
-        type: 'acompanhe',
-        name: '',
-        status: 'ACTIVE',
-        config: { showCoverPhoto: true },
-        startDate: Date.now(),
-        correlations: {},
-        isConsuming: false,
-        defaultTimer: 300,
-      };
-      setItem(newItem);
-    } else {
-      const newItem: TrackerItem = {
-        id: newId,
-        type: 'vice',
-        name: itemDef.label,
-        status: 'ACTIVE',
-        startDate: Date.now(),
-        isConsuming: false,
-        defaultTimer: 0,
-        correlations: {},
-        config: {
-          viceId: itemDef.id,
-          mode: itemDef.id === 'tabagismo' ? 'missao-antitabagismo' : 'acompanhe',
-          activeMarkers: ['elapsed', 'remaining']
-        }
-      };
-      setItem(newItem);
+  useEffect(() => {
+    if (isOpen) {
+      // Fetch dynamic items from DB when modal opens
+      import('@/services/api').then(({ apiService }) => {
+        apiService.get('/inventory/items')
+          .then((data: any) => {
+            if (Array.isArray(data)) {
+              const mapped = data.filter(item => item.isAvailableInShop).map(item => ({
+                id: item.slug,
+                label: item.name,
+                type: item.type === 'CONSUMABLE' ? 'food' : 'mission_item', // Default mapping
+                icon: item.imageUrl, // Pass the string directly to be handled by DynamicIcon
+                color: '#8b5cf6', // A purple color for custom items
+                cost: item.priceFoco || 10,
+                isDbItem: true,
+                originalType: item.type
+              }));
+              setDbItems(mapped);
+            }
+          })
+          .catch(console.error);
+      });
     }
+  }, [isOpen]);
 
-    // Em uma versão real, também chamaria a API para debitar os Foco Coins
+  const { user, updateUser } = useAuthStore();
+  const focoCoins = user?.stats?.focoCoins || 0;
+  
+  // Pegamos o inventário para contar os itens que já possuímos
+  const inventory = usePlocStateStore(state => state.inventory);
+  const getOwnedCount = (type: string, label: string) => {
+    return inventory.filter(item => item.type === type && item.name === label).length;
+  };
 
-    onClose();
-    
-    // Dispara evento para o dashboard abrir o tracker overlay do novo item
-    setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('openTracker', { detail: newId }));
-    }, 100);
+  const handleBuy = (itemDef: any) => {
+    if (focoCoins >= itemDef.cost) {
+        // Add item to inventory
+        usePlocStateStore.getState().store({
+            type: itemDef.type,
+            name: itemDef.label
+        });
+        
+        // Deduct coins locally
+        const newStats = { ...user?.stats, focoCoins: focoCoins - itemDef.cost } as any;
+        updateUser({ stats: newStats });
+        
+        // Inform backend
+        import('@/services/api').then(({ apiService }) => {
+           // We use the debug endpoint to subtract coins for now as a mock
+           apiService.post('/users/debug/foco-coins', { amount: -itemDef.cost }).catch(e => console.error(e));
+        });
+        
+        console.log(`[Store] Bought ${itemDef.label} for ${itemDef.cost} Foco Coins`);
+        playPlocSound();
+    } else {
+        alert("Foco Coins insuficientes!");
+    }
+  };
+
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'food': return <Apple size={18} className="text-red-400" />;
+      case 'immunity_food': return <Pizza size={18} className="text-amber-400" />;
+      case 'water': return <Droplet size={18} className="text-blue-400" />;
+      case 'immunity_water': return <GlassWater size={18} className="text-sky-400" />;
+      case 'warm_drink': return <Coffee size={18} className="text-amber-500" />;
+      case 'medicine': return <Pill size={18} className="text-green-400" />;
+      case 'toy': return <Dices size={18} className="text-rose-400" />;
+      default: return <Box size={18} className="text-purple-400" />;
+    }
   };
 
   if (!mounted) return null;
@@ -86,6 +100,7 @@ export function StoreModal({ isOpen, onClose }: StoreModalProps) {
     <AnimatePresence>
       {isOpen && (
         <>
+          {/* Backdrop Overlay to close when clicking outside */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -94,7 +109,7 @@ export function StoreModal({ isOpen, onClose }: StoreModalProps) {
               e.stopPropagation();
               onClose();
             }}
-            className="fixed inset-0 bg-black/30 backdrop-blur-[2px] z-[99999]"
+            className="fixed inset-0 bg-transparent z-[99999]"
           />
 
           <motion.div
@@ -102,11 +117,11 @@ export function StoreModal({ isOpen, onClose }: StoreModalProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed bottom-0 left-0 w-full max-h-[85vh] pb-12 bg-[#0B0F19]/95 backdrop-blur-2xl border-t border-slate-700/50 rounded-t-[40px] shadow-[0_-20px_60px_rgba(0,0,0,0.6)] z-[100000] flex flex-col animate-none"
+            className="fixed bottom-0 left-0 w-full max-h-[85vh] pb-12 bg-[#0B0F19]/95 backdrop-blur-2xl border-t border-slate-700/50 rounded-t-[40px] shadow-[0_-20px_60px_rgba(0,0,0,0.6)] z-[100000] flex flex-col"
             onPointerDown={(e) => e.stopPropagation()}
           >
             {/* Header da Loja */}
-            <div className="p-5 flex justify-between items-center border-b border-white/5 bg-[#16181c]">
+            <div className="flex items-center justify-between px-8 py-5 border-b border-slate-800/40">
               <div className="flex items-center gap-3">
                 <Store size={20} className="text-emerald-400" />
                 <h3 className="text-white font-extrabold tracking-widest text-sm uppercase">
@@ -115,54 +130,73 @@ export function StoreModal({ isOpen, onClose }: StoreModalProps) {
               </div>
               <div className="flex items-center gap-4">
                 {/* Saldo de Foco Coins */}
-                <div className="flex items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full border border-white/10">
-                    <div className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center shadow-[0_0_8px_rgba(16,185,129,0.4)]">
+                <div className="flex items-center gap-1.5 bg-slate-900/50 px-3 py-1 rounded-full border border-slate-700/50">
+                    <div className="w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center shadow-[0_0_8px_rgba(245,158,11,0.4)]">
                         <span className="text-[10px] text-white font-black">F</span>
                     </div>
-                    <span className="text-emerald-400 font-bold text-xs">{focoCoins}</span>
+                    <span className="text-amber-400 font-bold text-xs">{focoCoins}</span>
                 </div>
-                
-                <button 
-                  onClick={onClose}
-                  className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white"
-                >
-                  <X size={16} />
-                </button>
               </div>
             </div>
 
-            {/* Itens à Venda */}
-            <div className="p-5 overflow-y-auto flex flex-col gap-3">
-              {STORE_ITEMS.map((item) => {
-                const Icon = item.icon;
-                
-                return (
-                  <motion.div
-                    key={item.id}
-                    className="w-full border rounded-2xl p-4 flex items-center gap-4 text-left transition-all bg-white/5 border-white/10"
+            {/* Grid de Produtos (Similar ao InventoryModal) */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-4">
+                {dbItems.map((item) => (
+                  <motion.div 
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    key={`store-item-${item.id}`} 
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleBuy(item);
+                    }}
+                    className="group relative aspect-square flex flex-col items-center justify-center cursor-pointer transition-all duration-300 rounded-2xl overflow-hidden"
                   >
+                    {/* Fundo dinâmico com cor do item */}
                     <div 
-                      className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: `${item.color}20`, border: `1px solid ${item.color}40` }}
-                    >
-                      <Icon size={20} color={item.color} />
+                      className="absolute inset-0 transition-colors opacity-20 group-hover:opacity-30" 
+                      style={{ backgroundColor: item.color }} 
+                    />
+                    
+                    {/* Borda base e Borda no hover */}
+                    <div 
+                      className="absolute inset-0 border border-slate-700/30 group-hover:border-slate-600/50 transition-colors" 
+                    />
+
+                    {/* Pequena Label no Topo */}
+                    <div className="absolute top-2 w-full px-1 text-center z-20">
+                      <span className="text-[9px] font-black uppercase tracking-wider text-slate-300 drop-shadow-md truncate block w-full">
+                        {item.label}
+                      </span>
                     </div>
-                    <div className="flex-1">
-                      <h4 className="text-white font-extrabold text-sm mb-1">{item.label}</h4>
-                      <p className="text-slate-400 text-[0.7rem] leading-tight">{item.desc}</p>
+                    
+                    {/* Ícone */}
+                    <div className="relative z-10 drop-shadow-[0_5px_10px_rgba(0,0,0,0.5)] scale-125 mb-2 mt-4 flex items-center justify-center">
+                      {item.isDbItem ? (
+                        <DynamicIcon name={item.icon as string} size={18} color={item.color} />
+                      ) : (
+                        getIcon(item.type)
+                      )}
+                      {getOwnedCount(item.type, item.label) > 0 && (
+                        <div className="absolute -top-3 -right-3 bg-indigo-500/90 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-indigo-300/30">
+                          {getOwnedCount(item.type, item.label)}
+                        </div>
+                      )}
                     </div>
-                    <div className="flex flex-col items-center gap-1">
-                        <span className="text-emerald-400 text-xs font-black">{item.cost} FC</span>
-                        <button 
-                            onClick={() => handleBuy(item)}
-                            className="h-8 px-4 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-white transition-colors flex items-center justify-center font-bold text-xs"
-                        >
-                            Comprar
-                        </button>
+
+                    {/* Preço (Foco Coins) */}
+                    <div className="absolute bottom-1 right-1 px-1.5 py-0.5 text-[10px] font-black bg-slate-900/80 rounded-md border border-amber-500/30 text-amber-400 shadow-sm z-20">
+                      {item.cost}
                     </div>
                   </motion.div>
-                );
-              })}
+                ))}
+              </div>
+              
+              <div className="mt-8 text-center text-slate-500 text-xs font-bold uppercase tracking-widest opacity-50">
+                Toque em um item para comprar
+              </div>
             </div>
           </motion.div>
         </>
@@ -171,3 +205,4 @@ export function StoreModal({ isOpen, onClose }: StoreModalProps) {
     document.body
   );
 }
+

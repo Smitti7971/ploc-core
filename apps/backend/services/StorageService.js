@@ -45,8 +45,9 @@ class StorageService {
                 const filePath = path.join(uploadDir, path.basename(fileName));
                 await fs.writeFile(filePath, processedBuffer);
                 
-                const publicUrl = process.env.STORAGE_PUBLIC_URL || `http://localhost:${process.env.PORT || 3000}`;
-                return `${publicUrl}/uploads/${fileName}`;
+                // Removemos o uso de STORAGE_PUBLIC_URL aqui para retornar caminho relativo
+                // e deixar o frontend (getAssetUrl) montar o link corretamente apontando para a API.
+                return `/uploads/${fileName}`;
 
             } else {
                 // --- MODO S3/MINIO (PADRÃO ONLINE) ---

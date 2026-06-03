@@ -11,6 +11,7 @@ const uploadRoutes = require('./routes/uploadRoutes');
 const authMiddleware = require('./middleware/authMiddleware');
 const healthRoutes = require('./routes/healthRoutes');
 const trackerRoutes = require('./routes/trackerRoutes');
+const inventoryRoutes = require('./routes/inventoryRoutes');
 
 const path = require('path');
 
@@ -85,8 +86,8 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Limite de 10kb para evitar payloads gigantes (DOS)
-app.use(express.json({ limit: '10kb' }));
+// Limite aumentado para 1mb para suportar o Inventário do Ploc que pode crescer
+app.use(express.json({ limit: '1mb' }));
 
 // --- ROTAS DE SAÚDE (Redundância para Coolify) ---
 
@@ -142,6 +143,9 @@ app.use('/api/users', authMiddleware, userRoutes);
 // Rotas de Rastreador Universal (PROTEGIDAS)
 app.use('/api/tracker', authMiddleware, trackerRoutes);
 
+// Rotas de Admin do Inventario
+app.use('/api/inventory', authMiddleware, inventoryRoutes);
+
 // Rotas de IA (Proteção agora é interna por rota)
 app.use('/api/ai', aiRoutes);
 
@@ -154,6 +158,7 @@ console.log('✅ Rota de Upload Registrada em: /api/upload');
 // --- GESTÃO DE ERROS GLOBAL (Rede de Proteção) ---
 app.use((err, req, res, next) => {
   console.error('❌ Erro Não Tratado:', err.stack);
+  require('fs').writeFileSync('global_error.log', err.stack || err.message);
   res.status(500).json({ 
     message: "Ocorreu um erro interno no servidor 😭", 
     error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error'

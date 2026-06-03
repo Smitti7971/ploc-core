@@ -58,20 +58,21 @@ export function UserHeader() {
               style={{ display: 'flex', alignItems: 'center' }}
             >
               {/* Foto / Avatar */}
-              <div style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #38bdf8, #818cf8)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 900,
-                fontSize: '0.7rem',
-                color: '#fff',
-                overflow: 'hidden',
-                flexShrink: 0
-              }}>
+              <div 
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #38bdf8, #818cf8)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 900,
+                  fontSize: '0.7rem',
+                  color: '#fff',
+                  overflow: 'hidden',
+                  flexShrink: 0
+                }}>
                 {user?.profilePhoto && !imgError ? (
                   <img 
                     src={getAssetUrl(user.profilePhoto)} 
@@ -85,14 +86,15 @@ export function UserHeader() {
               </div>
 
               {/* Level e XP */}
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                gap: '2px',
-                marginLeft: '6px',
-                marginRight: '6px'
-              }}>
+              <div 
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  gap: '2px',
+                  marginLeft: '6px',
+                  marginRight: '6px'
+                }}>
                 <span style={{ 
                   fontSize: '0.65rem', 
                   fontWeight: 800, 
@@ -133,7 +135,23 @@ export function UserHeader() {
               exit={{ width: 0, opacity: 0 }}
               style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}
             >
-              {/* SETTINGS (Esquerda: só icone engrenagem em uma capsula) */}
+              {/* PROFILE (Esquerda) */}
+              <Link href="/settings/profile" style={{ 
+                color: '#fff', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                opacity: 0.8, 
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.1)',
+                transition: 'all 0.2s'
+              }}>
+                <User size={15} />
+              </Link>
+
+              {/* SETTINGS (Meio) */}
               <Link href="/settings" style={{ 
                 color: '#fff', 
                 display: 'flex', 
