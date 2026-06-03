@@ -18,6 +18,22 @@ const path = require('path');
 const app = express();
 app.use('/audio', express.static(path.join(__dirname, 'public/audio')));
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+
+// Proxy interno para contornar o erro 503 do MinIO no Coolify
+const http = require('http');
+app.get('/api/minio-proxy/*', (req, res) => {
+  // Pega o caminho depois do /api/minio-proxy/
+  const imagePath = req.url.replace('/api/minio-proxy/', '/');
+  const minioUrl = `http://72.61.63.84:9000${imagePath}`;
+  
+  http.get(minioUrl, (proxyRes) => {
+    res.writeHead(proxyRes.statusCode, proxyRes.headers);
+    proxyRes.pipe(res);
+  }).on('error', (err) => {
+    res.status(500).send('Proxy Error');
+  });
+});
+
 // Fallback para quando a imagem não existir no servidor (evita o erro de CORB)
 app.use('/uploads', (req, res) => {
   res.setHeader('Content-Type', 'image/svg+xml');
