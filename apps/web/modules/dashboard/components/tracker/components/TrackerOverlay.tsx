@@ -17,7 +17,7 @@ import { NewLogArea } from './NewLogArea';
 
 function WheelPicker({ options, value, onChange, label }: { options: number[], value: number, onChange: (val: number) => void, label: string }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isScrollingRef = useRef(false);
 
   const handleScroll = () => {
