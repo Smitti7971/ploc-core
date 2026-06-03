@@ -37,11 +37,16 @@ export const getAssetUrl = (url?: string | null) => {
 
   let result = url;
 
+  // Se for preview local, mantém a URL intocada
+  if (url.startsWith('blob:') || url.startsWith('data:')) {
+    return url;
+  }
+
   // Se já for uma URL completa
-  if (url.startsWith('http://') || url.startsWith('https://')) {
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('storage.midializando.cloud') || url.startsWith('72.61.63.84:9000')) {
     if (url.includes('72.61.63.84:9000') || url.includes('storage.midializando.cloud')) {
       // Proxy access to MinIO to avoid SSL and CORS issues
-      const minioPath = url.replace(/^https?:\/\/(72\.61\.63\.84:9000|storage\.midializando\.cloud)/, '');
+      const minioPath = url.replace(/^(https?:\/\/)?(72\.61\.63\.84:9000|storage\.midializando\.cloud)/, '');
       result = `${backendRoot}/api/minio-proxy${minioPath}`;
     } else if (url.includes('localhost:') && typeof window !== 'undefined') {
       result = url.replace(/^https?:\/\/localhost:\d+/, backendRoot);
