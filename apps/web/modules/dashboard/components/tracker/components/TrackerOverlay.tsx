@@ -321,19 +321,34 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
     const metCount = Object.values(editingLogCheckedConditions).filter(Boolean).length;
     const allMet = totalConditions > 0 && metCount === totalConditions;
 
-    updateLog(logId, { 
-      info: editingLogInfo, 
-      photoUrl: editingLogPhoto || undefined,
-      metadata: {
-        ...(useTrackerStore.getState().logs.find(l => l.id === logId)?.metadata || {}),
-        title: editingLogTitle,
-        checkedConditions: editingLogCheckedConditions,
-        conditionPhotos: editingLogConditionPhotos,
-        totalConditions,
-        allConditionsMet: allMet
-      }
-    });
-    setEditingLogId(null);
+    const metadataToSave = {
+      ...(logId !== 'NEW' ? useTrackerStore.getState().logs.find(l => l.id === logId)?.metadata || {} : {}),
+      title: editingLogTitle,
+      checkedConditions: editingLogCheckedConditions,
+      conditionPhotos: editingLogConditionPhotos,
+      totalConditions,
+      allConditionsMet: allMet
+    };
+
+    if (logId === 'NEW') {
+      requestAddLog({
+        trackerItemId: itemId,
+        type: 'consumption',
+        info: editingLogInfo,
+        photoUrl: editingLogPhoto || undefined,
+        value: 1,
+        metadata: metadataToSave
+      }, undefined, () => {
+        setEditingLogId(null);
+      });
+    } else {
+      updateLog(logId, { 
+        info: editingLogInfo, 
+        photoUrl: editingLogPhoto || undefined,
+        metadata: metadataToSave
+      });
+      setEditingLogId(null);
+    }
   };
 
   const handleDeleteLog = (logId: string) => {

@@ -55,8 +55,8 @@ export function EditLogModal({
   if (!editingLogId) return null;
 
   const currentLog = itemLogs.find(l => l.id === editingLogId);
-  const logTime = currentLog ? new Date(currentLog.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
-  const logTitle = `REGISTRO - ${logTime}`;
+  const logTime = currentLog ? new Date(currentLog.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const logTitle = editingLogId === 'NEW' ? `NOVO REGISTRO - ${logTime}` : `REGISTRO - ${logTime}`;
 
   const hasConditions = conditions.length > 0 || Object.keys(item.correlations || {}).length > 0;
 
@@ -194,16 +194,18 @@ export function EditLogModal({
 
             {/* Action Buttons */}
             <div className="flex gap-2 mt-2">
-              <button 
-                onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true); }} 
-                className="w-1/5 py-3.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center text-red-400 transition-colors shadow-lg shadow-red-500/5"
-                title="Deletar Registro"
-              >
-                <Trash2 size={18} />
-              </button>
+              {editingLogId !== 'NEW' && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true); }} 
+                  className="w-1/5 py-3.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center text-red-400 transition-colors shadow-lg shadow-red-500/5"
+                  title="Deletar Registro"
+                >
+                  <Trash2 size={18} />
+                </button>
+              )}
               <button 
                 onClick={() => saveLogEdit(editingLogId)}
-                className="w-4/5 py-3.5 rounded-xl bg-[#5B79EB] hover:bg-[#4A64C9] text-white font-semibold text-[14px] transition-colors shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+                className={`py-3.5 rounded-xl bg-[#5B79EB] hover:bg-[#4A64C9] text-white font-semibold text-[14px] transition-colors shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 ${editingLogId === 'NEW' ? 'w-full' : 'w-4/5'}`}
               >
                 Salvar Registro
               </button>

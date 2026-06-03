@@ -57,10 +57,7 @@ export const getAssetUrl = (url?: string | null) => {
     }
   }
 
-  // DEBUG 404
-  if (url.includes('uploads')) {
-    console.log(`[getAssetUrl] input: ${url} | output: ${result}`);
-  }
+  // DEBUG 404 removed
 
   return result;
 };

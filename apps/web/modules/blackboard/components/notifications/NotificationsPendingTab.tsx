@@ -1,8 +1,11 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, Shield, Activity, Target } from 'lucide-react';
 import { getAssetUrl } from '@/lib/config';
 import { isFutureForToday } from '../../../dashboard/components/tracker/utils/scheduling';
+
+import { useTrackerStore } from '../../../dashboard/components/tracker/store/trackerStore';
 
 interface NotificationsPendingTabProps {
   trackersToUpdate: any[];
@@ -39,6 +42,45 @@ export function NotificationsPendingTab({
   formatTime,
   isOverdue = false
 }: NotificationsPendingTabProps) {
+  const store = useTrackerStore();
+
+  const [correlationPrompt, setCorrelationPrompt] = React.useState<{
+    mainItemId: string;
+    mainItemName: string;
+    correlationItems: any[];
+    mainLogType: 'milestone' | 'consumption';
+    mainItemType: string;
+  } | null>(null);
+
+  const handleRegisterClick = (e: React.MouseEvent, item: any, logType: 'milestone' | 'consumption') => {
+    e.stopPropagation();
+    
+    let correlatedIds: string[] = [];
+    if (item.correlations?.dependsOn && Array.isArray(item.correlations.dependsOn)) {
+      correlatedIds = item.correlations.dependsOn;
+    } else {
+      correlatedIds = Object.keys(item.correlations || {}).filter(k => k !== 'triggers' && k !== 'dependsOn');
+    }
+
+    const correlations = correlatedIds.map(id => store.items[id]).filter(i => i && i.status === 'ACTIVE');
+
+    if (correlations.length > 0) {
+      setCorrelationPrompt({
+        mainItemId: item.id,
+        mainItemName: item.name,
+        correlationItems: correlations,
+        mainLogType: logType,
+        mainItemType: item.type
+      });
+    } else {
+      addLog({ trackerItemId: item.id, type: logType, timestamp: Date.now() });
+      if (item.type === 'vice' || item.type === 'acompanhe') {
+        setItem({ ...item, startDate: Date.now() });
+      }
+      if (confirmingTracker === item.id) setConfirmingTracker(null);
+      if (confirmingTask === item.id) setConfirmingTask(null);
+    }
+  };
 
   const getBaseSortTime = (item: any) => {
     if (item.config?.expectedTime) {
@@ -177,11 +219,7 @@ export function NotificationsPendingTab({
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addLog({ trackerItemId: tracker.id, type: 'milestone', timestamp: Date.now() });
-                          setConfirmingTracker(null);
-                        }}
+                        onClick={(e) => handleRegisterClick(e, tracker, 'milestone')}
                         className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-2 rounded-xl text-[10px] font-black tracking-widest flex-1 uppercase"
                       >
                         Fazer Registro
@@ -363,12 +401,7 @@ export function NotificationsPendingTab({
 
                 <div className="flex flex-col gap-3 w-full">
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      addLog({ trackerItemId: t.id, type: 'consumption', timestamp: Date.now() });
-                      setItem({ ...t, startDate: Date.now() });
-                      setConfirmingTask(null);
-                    }}
+                    onClick={(e) => handleRegisterClick(e, t, 'consumption')}
                     className={`w-full py-5 rounded-2xl font-black uppercase tracking-widest transition-all ${isResistaPhase
                       ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30 border border-red-500/50 hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]'
                       : 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/50 hover:shadow-[0_0_20px_rgba(52,211,153,0.4)]'
@@ -391,6 +424,90 @@ export function NotificationsPendingTab({
             </motion.div>
           );
         })()}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {correlationPrompt && typeof document !== 'undefined' && createPortal(
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[2000000] flex items-center justify-center p-4"
+          >
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setCorrelationPrompt(null)} />
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="relative w-full max-w-sm bg-zinc-900 border border-white/10 rounded-3xl p-6 shadow-2xl flex flex-col gap-6"
+            >
+              <div className="flex flex-col items-center text-center gap-3">
+                <div className="w-14 h-14 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-2">
+                  <Target size={32} />
+                </div>
+                <h2 className="text-lg font-black text-white">Correlação Encontrada</h2>
+                <p className="text-sm text-white/60 leading-relaxed">
+                  Ao registrar <strong>{correlationPrompt.mainItemName}</strong>, notamos que ele possui correlação com:
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                {correlationPrompt.correlationItems.map(c => (
+                  <div key={c.id} className="p-3 rounded-xl bg-white/5 border border-white/5 text-center text-sm font-bold text-white/90">
+                    {c.name}
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-[13px] text-center font-medium text-white mt-2">
+                Você também realizou estas tarefas?
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    addLog({ trackerItemId: correlationPrompt.mainItemId, type: correlationPrompt.mainLogType, timestamp: Date.now() });
+                    if (correlationPrompt.mainItemType === 'vice' || correlationPrompt.mainItemType === 'acompanhe') {
+                      const itemToUpdate = combinedItems.find(i => i.id === correlationPrompt.mainItemId);
+                      if (itemToUpdate) setItem({ ...itemToUpdate, startDate: Date.now() });
+                    }
+                    setConfirmingTracker(null);
+                    setConfirmingTask(null);
+                    setCorrelationPrompt(null);
+                  }}
+                  className="flex-1 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white font-bold text-xs uppercase tracking-wider transition-colors"
+                >
+                  Não
+                </button>
+                <button
+                  onClick={() => {
+                    const ts = Date.now();
+                    addLog({ trackerItemId: correlationPrompt.mainItemId, type: correlationPrompt.mainLogType, timestamp: ts });
+                    if (correlationPrompt.mainItemType === 'vice' || correlationPrompt.mainItemType === 'acompanhe') {
+                      const itemToUpdate = combinedItems.find(i => i.id === correlationPrompt.mainItemId);
+                      if (itemToUpdate) setItem({ ...itemToUpdate, startDate: ts });
+                    }
+                    
+                    const daysAgo = Math.floor((ts - todayTimestamp) / 86400000);
+                    const daysText = daysAgo > 0 ? `a ${daysAgo} dias atrás` : 'hoje';
+                    const infoText = `Confirmação a partir de "${correlationPrompt.mainItemName}" (${daysText})`;
+
+                    correlationPrompt.correlationItems.forEach(c => {
+                      addLog({ trackerItemId: c.id, type: 'milestone', timestamp: ts, info: infoText });
+                    });
+
+                    setConfirmingTracker(null);
+                    setConfirmingTask(null);
+                    setCorrelationPrompt(null);
+                  }}
+                  className="flex-1 py-3.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 font-bold text-xs uppercase tracking-wider transition-colors shadow-lg shadow-emerald-500/20"
+                >
+                  Sim
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        , document.body)}
       </AnimatePresence>
     </div>
   );

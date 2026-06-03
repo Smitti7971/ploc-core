@@ -171,17 +171,9 @@ export function NewLogArea({
             allConditionsMet: allMet
           };
 
-          requestAddLog({
-            trackerItemId: itemId,
-            type: 'consumption',
-            info: '',
-            value: 1,
-            metadata
-          }, undefined, (newLogId: string) => {
-            setCheckedConditions({});
-            setConditionPhotos({});
-            handleEditLog(newLogId, '', undefined, metadata);
-          });
+          setCheckedConditions({});
+          setConditionPhotos({});
+          handleEditLog('NEW', '', undefined, metadata);
         }}
         className="w-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 font-black uppercase tracking-widest text-xs py-3 rounded-xl transition-colors shadow-[0_0_15px_rgba(16,185,129,0.1)]"
       >
