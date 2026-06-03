@@ -80,7 +80,7 @@ let attempt = 0;
       console.warn("⚠️ Token expirado ou inválido (401). Deslogando usuário...");
       localStorage.removeItem(config.auth.tokenKey);
       localStorage.removeItem('ploc-auth');
-      window.location.href = '/auth';
+      window.location.href = '/';
     }
 
     const errorData = await response.json().catch(() => ({}));
