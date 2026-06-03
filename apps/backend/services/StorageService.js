@@ -9,7 +9,9 @@ const fs = require('fs').promises;
 
 class StorageService {
     constructor() {
-        this.storageType = process.env.STORAGE_TYPE || 's3'; // 's3' ou 'local'
+        // Força o uso de S3 (MinIO) se estiver em produção, caso contrário usa o .env (local ou s3)
+        const isProduction = process.env.NODE_ENV === 'production';
+        this.storageType = isProduction ? 's3' : (process.env.STORAGE_TYPE || 's3'); 
         
         if (this.storageType === 's3') {
             this.s3Client = new S3Client({
