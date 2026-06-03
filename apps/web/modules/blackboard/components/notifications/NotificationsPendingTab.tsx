@@ -75,6 +75,8 @@ export function NotificationsPendingTab({
         mainLogType: logType,
         mainItemType: item.type
       });
+      if (confirmingTracker === item.id) setConfirmingTracker(null);
+      if (confirmingTask === item.id) setConfirmingTask(null);
     } else {
       addLog({ trackerItemId: item.id, type: logType, timestamp: Date.now() });
       if (item.type === 'vice' || item.type === 'acompanhe') {
