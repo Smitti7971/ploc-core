@@ -181,10 +181,6 @@ export default function DashboardPage() {
       {/* DYNAMIC CONTENT AREA */}
       {activeMethod === 'rotinas' && (
         <div className="flex-1 min-h-0 w-full relative flex flex-col pt-2">
-          {/* Label da Tab Atual */}
-          <div className="w-full text-center text-sky-400 font-black text-sm tracking-widest uppercase mb-4 shadow-sky-400/20 drop-shadow-md">
-            {TABS.find(t => t.id === activeTab)?.label}
-          </div>
 
           <DashboardRoutinesCarousel
             TABS={TABS}

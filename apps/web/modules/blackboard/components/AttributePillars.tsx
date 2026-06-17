@@ -14,41 +14,41 @@ import { PillarPage } from '@/modules/routines/components/PillarPage';
 import { useTrackerStore } from '@/modules/dashboard/components/tracker/store/trackerStore';
 
 export const PILLARS_CONFIG = {
-  corpo: { 
-    label: 'CORPO', 
-    color: '#ef4444', 
+  corpo: {
+    label: 'CORPO',
+    color: '#ef4444',
     icon: Dumbbell,
     desc: 'Saúde, sono e energia física. Afetado por exercícios, hidratação e descanso.',
     states: 'Fortalecendo, Recuperando, Esgotado, Instável',
     habits: ['smoking', 'exercise']
   },
-  mente: { 
-    label: 'MENTE', 
-    color: '#38bdf8', 
+  mente: {
+    label: 'MENTE',
+    color: '#38bdf8',
     icon: Brain,
     desc: 'Foco, clareza e aprendizado. Afetado por estudos, reflexão e journaling.',
     states: 'Clareza crescente, Fragmentada, Sobrecarregada, Expandindo',
     habits: ['smoking', 'meditation']
   },
-  vida: { 
-    label: 'VIDA', 
-    color: '#facc15', 
+  vida: {
+    label: 'VIDA',
+    color: '#facc15',
     icon: UsersRound,
     desc: 'Equilíbrio, lazer e relações. Afetado por hobbies, família e novas experiências.',
     states: 'Equilibrada, Vazia, Conectada, Monótona',
     habits: ['exercise']
   },
-  liberdade: { 
-    label: 'LIBERDADE', 
-    color: '#2dd4bf', 
+  liberdade: {
+    label: 'LIBERDADE',
+    color: '#2dd4bf',
     icon: Wallet,
     desc: 'Autonomia e finanças. Afetado por economia, reserva e redução de dependências.',
     states: 'Em construção, Pressionada, Estável, Limitada',
     habits: ['smoking']
   },
-  proposito: { 
-    label: 'PROPÓSITO', 
-    color: '#c084fc', 
+  proposito: {
+    label: 'PROPÓSITO',
+    color: '#c084fc',
     icon: Flag,
     desc: 'Direção e progresso existencial. Afetado por projetos pessoais e metas reais.',
     states: 'Alinhado, Perdido, Despertando, Sem direção',
@@ -73,7 +73,7 @@ export const isPillarProfileFilled = (pillarKey: string) => {
     const keys = PILLAR_PROFILE_KEYS[pillarKey as keyof typeof PILLAR_PROFILE_KEYS];
     if (!keys || keys.length === 0) return false;
     return keys.every(key => profile[key] && profile[key].trim() !== '');
-  } catch(e) {
+  } catch (e) {
     return false;
   }
 };
@@ -85,11 +85,11 @@ interface AttributePillarsProps {
   setActiveTooltip: (tooltip: string | null) => void;
 }
 
-export function AttributePillars({ 
-  attributes, 
-  lastChanges, 
-  activeTooltip, 
-  setActiveTooltip 
+export function AttributePillars({
+  attributes,
+  lastChanges,
+  activeTooltip,
+  setActiveTooltip
 }: AttributePillarsProps) {
 
   const [activePillarOverlay, setActivePillarOverlay] = useState<string | null>(null);
@@ -110,8 +110,8 @@ export function AttributePillars({
   };
 
   return (
-    <div className="relative flex flex-col items-center gap-4 max-w-[100vw] w-full">
-      <div className="flex justify-center items-center gap-1.5 sm:gap-5 px-1 sm:px-2 w-full max-w-full">
+    <div className="relative flex flex-col items-center  gap-2 max-w-[150vw] w-full">
+      <div className="flex justify-between items-center gap-1.5 sm:gap-5 px-1 sm:px-2 w-full max-w-full">
         {(Object.keys(PILLARS_CONFIG) as Array<keyof UserAttributes>).map((key, index) => {
           const config = PILLARS_CONFIG[key];
           const Icon = config.icon;
@@ -122,12 +122,12 @@ export function AttributePillars({
           const hasActiveTasks = getNextTasks(key).length > 0 || (key === 'liberdade' && activeVicesList.length > 0);
           const hasProfileInfo = isPillarProfileFilled(key);
           const showBadge = value === 0 && !hasActiveTasks && !hasProfileInfo;
-          
+
           return (
             <div key={key} className="attribute-bubble" style={{ position: 'relative' }}>
               <motion.div
                 initial={{ scale: 0 }}
-                animate={{ 
+                animate={{
                   scale: 1,
                   y: [0, -10, 0],
                 }}
@@ -215,8 +215,8 @@ export function AttributePillars({
               setActiveTooltip(null);
             }}
           >
-            <h4 
-              style={{ color: getStatusColor(attributes[activeTooltip as keyof UserAttributes], activeConfig.color) }} 
+            <h4
+              style={{ color: getStatusColor(attributes[activeTooltip as keyof UserAttributes], activeConfig.color) }}
               className="m-0 mb-1 text-[0.9rem] font-black"
             >
               {activeConfig.label}
@@ -267,7 +267,7 @@ export function AttributePillars({
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-0 z-[100005] bg-[#0a0c0a] flex flex-col pointer-events-auto"
+              className="fixed inset-0 z-hud bg-[#0a0c0a] flex flex-col pointer-events-auto"
             >
               <div className="absolute top-6 right-6 z-[60]">
                 <button

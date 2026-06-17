@@ -16,7 +16,6 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import { RoutineOption, IMPACT_ICONS } from '@/modules/routines/data/routinesData';
 import { UserAttributes } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
@@ -33,11 +32,11 @@ export function PlocSimulationCard({
   attributes,
 }: PlocSimulationCardProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 15, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 15, scale: 0.9 }}
-      className="absolute bottom-[125%] left-1/2 -translate-x-1/2 w-[260px] bg-slate-950/95 border border-sky-500/30 rounded-2xl p-4 z-[999] backdrop-blur-md flex flex-col gap-3 [box-shadow:0_20px_40px_rgba(0,0,0,0.5),_inset_0_0_15px_rgba(56,189,248,0.1)]"
+    <div
+      
+      
+      
+      className="absolute bottom-[125%] left-1/2 -translate-x-1/2 w-[260px] bg-slate-950/95 border border-sky-500/30 rounded-2xl p-4 z-popover backdrop-blur-md flex flex-col gap-3 [box-shadow:0_20px_40px_rgba(0,0,0,0.5),_inset_0_0_15px_rgba(56,189,248,0.1)]"
     >
       {/* Header */}
       <div className="flex items-center gap-2">
@@ -92,6 +91,6 @@ export function PlocSimulationCard({
           })}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

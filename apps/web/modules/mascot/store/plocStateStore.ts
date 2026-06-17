@@ -20,7 +20,6 @@ interface PlocStateStore {
   fatigue: number; // 0 a 100
   cold: number; // 0 a 100
   humor: number; // 0 a 100
-  fatLevel: number; // 0 a 100 (Indica o nível de gordura do Ploc)
   spoiledEatenCount: number;
   lastTickAt: number;
   hungerImmunityUntil?: number; // Timestamp until which hunger won't decay
@@ -34,7 +33,7 @@ interface PlocStateStore {
   toastItem: { id: string, type: ItemType, name: string, action: 'gain' | 'use' } | null;
 
   // Game Loop Actions
-  tick: () => void; // Chamado a cada X minutos para atualizar vitais
+  tick: (skipSync?: boolean) => void; // Chamado a cada X minutos para atualizar vitais
   
   // Interaction Actions
   eat: (item: PlocItem, source: 'direct' | 'stored') => void;
@@ -63,7 +62,6 @@ export const usePlocStateStore = create<PlocStateStore>()(
       fatigue: 100, // 100% = Cheio de energia
       cold: 100, // 100% = Aquecido
       humor: 100, // 100% = Satisfeito/Divertido
-      fatLevel: 50, // 50% = Peso normal (0=Magro, 100=Gordo)
       spoiledEatenCount: 0,
       lastTickAt: Date.now(),
       mood: 'FELIZ',
@@ -86,7 +84,7 @@ export const usePlocStateStore = create<PlocStateStore>()(
         return 'FELIZ';
       },
 
-      tick: () => {
+      tick: (skipSync?: boolean) => {
         const now = Date.now();
         set(state => {
           const lastTick = state.lastTickAt || now;
@@ -105,9 +103,7 @@ export const usePlocStateStore = create<PlocStateStore>()(
           const newCold = Math.max(0, state.cold - decay);
           const newHumor = Math.max(0, state.humor - decay);
           
-          // O peso decai um pouco a cada tick se não comer
-          const newFatLevel = Math.max(0, state.fatLevel - (decay * 0.2));
-          
+
           // Checar validade dos itens
           const updatedInventory = state.inventory.map(item => {
             if (item.type === 'food' && item.state === 'fresh' && item.spoilsAt && now > item.spoilsAt) {
@@ -122,13 +118,12 @@ export const usePlocStateStore = create<PlocStateStore>()(
             fatigue: newFatigue,
             cold: newCold,
             humor: newHumor,
-            fatLevel: newFatLevel,
             inventory: updatedInventory,
             lastTickAt: now,
             mood: get()._calculateMood(newHunger, newThirst, newFatigue, newCold, newHumor, state.spoiledEatenCount)
           };
         });
-        get().syncWithBackend();
+        if (!skipSync) get().syncWithBackend();
       },
 
       eat: (item: PlocItem, source: 'direct' | 'stored') => {
@@ -200,9 +195,7 @@ export const usePlocStateStore = create<PlocStateStore>()(
             newHumor = Math.max(0, Math.min(MAX_NEED, state.humor + 10)); // Também melhora humor um pouco
           }
 
-          // Comer aumenta o nível de gordura
-          const fatIncrease = needChange > 0 ? 5 : 0;
-          
+
           // Se veio do inventário, removemos o item consumido
           const updatedInventory = source === 'stored' 
             ? state.inventory.filter(i => i.id !== item.id)
@@ -213,7 +206,6 @@ export const usePlocStateStore = create<PlocStateStore>()(
             thirst: newThirst,
             cold: newCold,
             humor: newHumor,
-            fatLevel: Math.min(MAX_NEED, state.fatLevel + fatIncrease),
             hungerImmunityUntil: newHungerImmunityUntil,
             thirstImmunityUntil: newThirstImmunityUntil,
             spoiledEatenCount: newSpoiledEatenCount,
@@ -395,8 +387,8 @@ export const usePlocStateStore = create<PlocStateStore>()(
           inventory: parsedData.inventory ?? [],
           lastTickAt: parsedData.lastTickAt ?? Date.now(),
         });
-        // Roda um tick inicial para calcular offline decay imediato
-        get().tick();
+        // Roda um tick inicial para calcular offline decay imediato, mas SEM sincronizar de volta pro backend
+        get().tick(true);
       }
     }),
     {

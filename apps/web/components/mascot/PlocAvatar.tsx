@@ -16,7 +16,7 @@
  * 
  * Principais responsabilidades:
  * - Coleta e distribui hooks de estados físicos (`usePlocState`), fala (`usePlocSpeech`) e chat (`usePlocChat`).
- * - Encapsula e posiciona os subcomponentes (`PlocFace`, `PlocLimbs`, `PlocBubbles`, `TypewriterText`).
+ * - Encapsula e posiciona os subcomponentes (`PlocFace`, `PlocBubbles`, `TypewriterText`).
  * - Controla a física de arrastar e soltar (drag & drop) usando Framer Motion.
  * - Gerencia o portal de chat dark-glassmorphism e o balão de simulação (`PlocSimulationCard`).
  * ============================================================================
@@ -24,51 +24,27 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion';
-import { Backpack, Store, Coins } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { blackboardEventBus } from '@/modules/blackboard/events/eventBus';
 
 import { PlocAvatarProps, PlocAppearance, DEFAULT_PLOC_APPEARANCE } from './types';
 import { usePlocState } from './usePlocState';
-import { usePlocSpeech } from './usePlocSpeech';
-import { usePlocChat } from './usePlocChat';
+import { usePlocSpeech } from '@/modules/chat/hooks/usePlocSpeech';
+import { usePlocChat } from '@/modules/chat/hooks/usePlocChat';
 import { usePlocResponsive } from './usePlocResponsive';
-import { usePlocSpeechRecognition } from './usePlocSpeechRecognition';
-import { usePlocColorState } from './usePlocColorState';
+import { usePlocSpeechRecognition } from '@/modules/chat/hooks/usePlocSpeechRecognition';
+
 
 import { PlocFace } from './PlocFace';
-import { PlocBubbles } from './PlocBubbles';
-import { PlocLimbs } from './PlocLimbs';
-import { PlocSimulationCard } from './PlocSimulationCard';
-import { PlocAchievementToast } from './PlocAchievementToast';
-import { PlocActionMenu } from './PlocActionMenu';
-import { PlocChatOverlay } from './PlocChatOverlay';
-import { PlocSleepParticles } from './PlocSleepParticles';
-import { PlocShockwaveRings } from './PlocShockwaveRings';
-import { PlocAura, PlocHair, PlocHat, PlocClothes } from './PlocCosmetics';
-import { PlocFloatingIndicators } from './PlocFloatingIndicators';
-import { InventoryModal } from './InventoryModal';
-import { StoreModal } from './StoreModal';
+import { PlocSimulationCard } from '@/modules/blackboard/components/PlocSimulationCard';
+import { PlocChatOverlay } from '@/modules/chat/components/PlocChatOverlay';
 import { usePlocStateStore } from '@/modules/mascot/store/plocStateStore';
-import { PlocWaterBody } from './PlocWaterBody';
 
 import { PILLARS_DATA } from '@/modules/routines/data/routinesData';
 import { attributeEngine } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
-import { usePlocParallax } from './usePlocParallax';
-import { usePlocDragSystem } from './usePlocDragSystem';
 
-const containerVariants = {
-  hover: (isSleeping: boolean) => ({
-    scale: isSleeping ? 1.0 : 1.05,
-    transition: { duration: 0.2 }
-  }),
-  tap: (isSleeping: boolean) => ({
-    scale: isSleeping ? 1.0 : 0.98,
-    transition: { duration: 0.1 }
-  })
-};
+
 
 // Componente Root Master do Mascote: controla movimento, vida, cores, voz e drag and drop.
 export default function PlocAvatar({
@@ -85,11 +61,7 @@ export default function PlocAvatar({
 
   const { speak, isSpeaking, isTTSLoading, isSpeakingMouth } = usePlocSpeech();
 
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
 
-  // Parallax transforms for 2D turning effect
-  const { facingTargetX, smoothFacingX, faceX, hatHairX, clothesX, bubblesX, shineX } = usePlocParallax();
 
   // Observa e carrega a customização ativa do Ploc do localStorage (ou prop)
   const [localAppearance, setLocalAppearance] = useState<PlocAppearance>(DEFAULT_PLOC_APPEARANCE);
@@ -116,88 +88,22 @@ export default function PlocAvatar({
 
   const appearance = propAppearance || localAppearance;
 
-  const { SIZE, bounds } = usePlocResponsive(x, y, isLanding);
-
-  useEffect(() => {
-    x.set(0);
-    y.set(0);
-  }, [pathname, x, y]);
+  const { SIZE, bounds } = usePlocResponsive(isLanding);
 
   const {
     isMounted,
-    plocState,
     setPlocState,
     focusedRoutine,
     focusedPillar,
     showSimulation,
-    setFocusedRoutine,
-    setFocusedPillar,
     setShowSimulation,
-    isHovered,
-    setIsHovered,
-    setIsTapped,
-    isDragging,
-    setIsDragging,
     containerRef,
     isSleeping,
-    isPissed,
   } = usePlocState({ emotion, speak, isSpeaking });
 
-  const { hasDraggedRef, onDragStart, onDrag, onDragEnd } = usePlocDragSystem({
-    x, y, facingTargetX, SIZE, pathname, isAuthenticated, isSleeping,
-    setIsDragging, setIsTapped, setIsHovered, triggerHurt: () => { },
-    setFocusedRoutine, setFocusedPillar, setShowSimulation, focusedRoutine
-  });
 
-  // A transição de níveis de irritação (squash & stretch) é gerenciada internamente no PlocShockwaveRings
-  // que nos repassa via callback.
-  const [transitionEffect, setTransitionEffect] = useState<'up' | 'down' | null>(null);
-
-  const [isEating, setIsEating] = useState(false);
-  const [storePop, setStorePop] = useState(false);
-
-  useEffect(() => {
-    const handleEat = () => {
-      setIsEating(true);
-      setTimeout(() => setIsEating(false), 2500);
-    };
-
-    const handleStore = () => {
-      setStorePop(true);
-      setTimeout(() => setStorePop(false), 1000);
-    };
-
-    const unsubEat = blackboardEventBus.subscribe('PLOC_EAT', handleEat);
-    const unsubStore = blackboardEventBus.subscribe('PLOC_STORE_ITEM', handleStore);
-
-    return () => {
-      unsubEat();
-      unsubStore();
-    };
-  }, []);
 
   const [areActionsVisible, setAreActionsVisible] = useState(false);
-  const [isBagOpen, setIsBagOpen] = useState(false);
-  const [isStoreOpen, setIsStoreOpen] = useState(false);
-  const [achievementToast, setAchievementToast] = useState<{ title: string; message: string } | null>(null);
-
-  const focoCoins = user?.stats?.focoCoins || 0;
-  const [focoCoinsPop, setFocoCoinsPop] = useState(false);
-  const prevFocoCoins = useRef(focoCoins);
-  const [addedCoins, setAddedCoins] = useState(0);
-
-  useEffect(() => {
-    if (focoCoins > prevFocoCoins.current) {
-      const diff = focoCoins - prevFocoCoins.current;
-      setAddedCoins(diff);
-      setFocoCoinsPop(true);
-      const timer = setTimeout(() => setFocoCoinsPop(false), 1200);
-      prevFocoCoins.current = focoCoins;
-      return () => clearTimeout(timer);
-    }
-    prevFocoCoins.current = focoCoins;
-  }, [focoCoins]);
-
   const actionsOverlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -219,24 +125,6 @@ export default function PlocAvatar({
     };
   }, [areActionsVisible]);
 
-
-  // Escuta conquistas destravadas globalmente em tempo real
-  useEffect(() => {
-    const handleToast = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      if (customEvent.detail) {
-        setAchievementToast({
-          title: customEvent.detail.title,
-          message: customEvent.detail.message
-        });
-        setTimeout(() => {
-          setAchievementToast(null);
-        }, 4500);
-      }
-    };
-    window.addEventListener('ploc_toast_notification', handleToast);
-    return () => window.removeEventListener('ploc_toast_notification', handleToast);
-  }, []);
 
   // Chat & Minigame centralizado no custom hook usePlocChat
   const {
@@ -339,157 +227,45 @@ export default function PlocAvatar({
   const attributes = attributeEngine.getAttributes();
 
   // Call hook before any early returns (return primitive to avoid infinite loop)
-  const { hunger, thirst, fatigue, cold, humor, fatLevel } = usePlocStateStore();
+  const { hunger, thirst, fatigue } = usePlocStateStore();
   const vitalsAvg = (hunger + thirst + fatigue) / 3;
 
-  const { limbColor, limbShadow, stateR, stateG, stateB, stateAlpha } = usePlocColorState({
-    appearance,
-    isSleeping,
-    isHurt: plocState.isHurt,
-    isHit: plocState.isHit ?? false,
-    isPositiveHit: plocState.isPositiveHit ?? false,
-    isSick: vitalsAvg < 30,
-  });
+  const isSick = vitalsAvg < 30;
+
+  let stateR = 255, stateG = 255, stateB = 255;
+  if (isSick) {
+    stateR = 140; stateG = 160; stateB = 100;
+  } else {
+    switch (appearance?.bodyColor) {
+      case 'rose': stateR = 255; stateG = 180; stateB = 200; break;
+      case 'gold': stateR = 255; stateG = 215; stateB = 0; break;
+      case 'emerald': stateR = 80; stateG = 200; stateB = 120; break;
+      case 'purple': stateR = 147; stateG = 112; stateB = 219; break;
+      case 'lava': stateR = 255; stateG = 69; stateB = 0; break;
+      case 'classic':
+      default:
+        stateR = 255; stateG = 255; stateB = 255; break;
+    }
+  }
 
   if (isHidden) return null;
   if (!isMounted) return null;
 
-  const shouldShake = plocState.isHurt || plocState.isHit;
 
-  let fatorX = 1;
-  let fatorY = 1;
-  let currentBorderRadius = "50%"; // Normal redondinho
-
-  // Peso agora é diretamente ligado à gordura (fatLevel)
-  const isFat = fatLevel > 80;
-  const isThin = fatLevel < 30;
-
-  if (isThin) {
-    fatorX = 0.85;
-    fatorY = 0.95; // Magro, alongado
-    currentBorderRadius = "50% 50% 45% 45% / 40% 40% 55% 55%";
-  } else if (isFat) {
-    // Gordo / Barriguinha
-    fatorX = 1 + ((fatLevel - 80) / 20) * 0.4; // Até 1.4x largura
-    fatorY = 1 + ((fatLevel - 80) / 20) * 0.05;
-    // Formato de "Gota" (pesado embaixo)
-    currentBorderRadius = "50% 50% 50% 50% / 65% 65% 40% 40%";
-  }
-
-  // Dynamic breathing/wobble keyframes based on states for gelatinous effect
-  const breatheScaleX = plocState.isHurt
-    ? [1.08 * fatorX, 1.00 * fatorX, 1.08 * fatorX]
-    : [1.07 * fatorX, 1.03 * fatorX, 1.07 * fatorX];
-
-  const breatheScaleY = plocState.isHurt
-    ? [0.92 * fatorY, 1.00 * fatorY, 0.92 * fatorY]
-    : [0.93 * fatorY, 0.97 * fatorY, 0.93 * fatorY];
-
-  const breatheDuration = plocState.isHurt ? 1.5 : 3.5;
-
-  const breatheX = shouldShake
-    ? [0, -3, 3, -3, 3, 0]
-    : 0;
-
-  // EscalaX e EscalaY dinâmicas reativas a transições de sono e hover
-  const animateScaleX = plocState.isHurt ? [1 * fatorX, 0.9 * fatorX, 1.05 * fatorX, 0.95 * fatorX, 1 * fatorX] : (isSleeping ? [0.95 * fatorX, 0.95 * fatorX, 0.95 * fatorX] : breatheScaleX);
-  const animateScaleY = plocState.isHurt ? [1 * fatorY, 1.1 * fatorY, 0.95 * fatorY, 1.05 * fatorY, 1 * fatorY] : (isSleeping ? [0.95 * fatorY, 0.95 * fatorY, 0.95 * fatorY] : breatheScaleY);
-
-  // Escala dinâmica reativa a transições (squash & stretch) e respiração/dor
-  let animateScale: number | number[] = plocState.isHurt ? 1.08 : (isHovered ? 1.05 : (isSleeping ? 0.95 : 1));
-  if (transitionEffect === 'up') {
-    animateScale = [1, 1.32, 0.85, 1.06, 1];
-  } else if (transitionEffect === 'down') {
-    animateScale = [1, 0.78, 1.12, 0.95, 1];
-  }
-
-  // Rotação dinâmica reativa a transições e raiva/dor (shake)
-  let animateRotate: number | number[] = shouldShake ? [0, -2, 2, -2, 2, 0] : 0;
-  if (transitionEffect === 'up') {
-    animateRotate = [0, -12, 10, -5, 3, 0];
-  } else if (transitionEffect === 'down') {
-    animateRotate = [0, 8, -6, 3, -1, 0];
-  }
-
-  const amoebaBorderRadius = currentBorderRadius;
 
   // Bloco de Renderização Principal do Avatar do Ploc
   return (
     <>
-      {/* Floating Achievement Toast */}
-      <PlocAchievementToast toast={achievementToast} />
 
-      {/* Inventory Bag Modal */}
-      <InventoryModal isOpen={isBagOpen} onClose={() => setIsBagOpen(false)} />
-
-      {/* Store Modal */}
-      <StoreModal isOpen={isStoreOpen} onClose={() => setIsStoreOpen(false)} />
-
-      <motion.div
+      <div
         ref={containerRef}
         id="ploc-singleton-mount"
-        custom={isSleeping}
-        variants={containerVariants}
-        whileHover={isSleeping ? undefined : "hover"}
-        whileTap={isSleeping ? undefined : "tap"}
-        drag={draggable}
-        dragConstraints={typeof window !== 'undefined' ? (
-          isLanding ? {
-            left: -window.innerWidth / 2 + ((pathname as string) === '/dashboard' ? 60 : 90),
-            right: window.innerWidth / 2 - ((pathname as string) === '/dashboard' ? 60 : 90),
-            top: -window.innerHeight / 2 + ((pathname as string) === '/dashboard' ? 60 : 90),
-            bottom: window.innerHeight / 2 - ((pathname as string) === '/dashboard' ? 60 : 90),
-          } : (
-            (pathname === '/' && isAuthenticated) ? {
-              left: -(250 - (SIZE / 2)),
-              right: (250 - (SIZE / 2)),
-              top: -(250 - (SIZE / 2)),
-              bottom: (250 - (SIZE / 2)),
-            } : {
-              left: -window.innerWidth + 100,
-              right: 30,
-              top: -window.innerHeight + 150,
-              bottom: 30,
-            }
-          )
-        ) : false}
-        dragElastic={0.2}
-        dragTransition={{ bounceStiffness: 600, bounceDamping: 20 }}
-        onDragStart={onDragStart}
-        onDrag={onDrag}
-        onDragEnd={onDragEnd}
-        onMouseEnter={() => !isSleeping && setIsHovered(true)}
-        onMouseLeave={() => !isSleeping && setIsHovered(false)}
-        initial={{
-          opacity: 0,
-          scale: 0.85
-        }}
-        animate={{
-          opacity: isSleeping ? 0.6 : 1,
-          scale: 1,
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 80,
-          damping: 15,
-          opacity: { duration: 2.2, ease: "easeInOut" },
-          scale: { duration: 2.2, ease: "easeInOut" }
-        }}
-        className={`relative select-none touch-none ${isSleeping ? 'cursor-default' : 'cursor-grab'}`}
         style={{
           width: SIZE,
           height: SIZE,
-          zIndex: isLanding ? 20 : 999999,
-          x,
-          y,
+          zIndex: isLanding ? 20 : 'var(--z-index-mascot)',
         }}
         onClick={(e) => {
-          if (hasDraggedRef.current) return; // BLOQUEIA clique se acabou de arrastar!
-
-          // Reseta estados físicos na hora para prevenir qualquer efeito residual "gordo" ou "circular"
-          setIsTapped(false);
-          setIsHovered(false);
-
           if (isSleeping) {
             setPlocState(prev => ({
               ...prev,
@@ -498,274 +274,53 @@ export default function PlocAvatar({
             return;
           }
 
-          // Alterna a visibilidade das ações acima da cabeça
-          const nextActionsVisible = !areActionsVisible;
-          setAreActionsVisible(nextActionsVisible);
-
-          // Se ocultar as ações, esconde também a caixa de digitação
-          if (!nextActionsVisible) {
-            setIsChatInputVisible(false);
-            if (isLanding) {
-              blackboardEventBus.emit('OPEN_LANDING_CHAT', false);
-            }
+          const nextVisible = !isChatInputVisible;
+          setIsChatInputVisible(nextVisible);
+          setIsChatOpen(nextVisible);
+          if (isLanding) {
+            blackboardEventBus.emit('OPEN_LANDING_CHAT', nextVisible);
           }
+          setShowSimulation(false);
         }}
       >
         {/* Balão de Simulação de Rotina */}
-        <AnimatePresence>
-          {showSimulation && focusedRoutine && focusedPillar && (
-            <PlocSimulationCard
-              focusedRoutine={focusedRoutine}
-              focusedPillar={focusedPillar}
-              attributes={attributes}
-            />
-          )}
-        </AnimatePresence>
+        {showSimulation && focusedRoutine && focusedPillar && (
+          <PlocSimulationCard
+            focusedRoutine={focusedRoutine}
+            focusedPillar={focusedPillar}
+            attributes={attributes}
+          />
+        )}
 
-        {/* Ações Superiores (Microfone, Chat, Sono) */}
-        <PlocActionMenu
-          ref={actionsOverlayRef}
-          isVisible={areActionsVisible}
-          isSleeping={isSleeping}
-          isListening={isListening}
-          isChatInputVisible={isChatInputVisible}
-          onToggleListening={toggleListening}
-          onToggleChat={() => {
-            const nextVisible = !isChatInputVisible;
-            setIsChatInputVisible(nextVisible);
-            setIsChatOpen(nextVisible);
-            if (isLanding) {
-              blackboardEventBus.emit('OPEN_LANDING_CHAT', nextVisible);
-            }
-            setShowSimulation(false);
-          }}
-          onSleep={() => {
-            setPlocState(prev => ({ ...prev, mode: 'sleeping' }));
-            setAreActionsVisible(false);
-          }}
-        />
 
-        {/* Shockwave Rings (Onda de choque HSL-reativa de transição) */}
-        <PlocShockwaveRings setTransitionEffect={setTransitionEffect} />
+
+        {/* Shockwave Rings removed */}
 
         {/* Camada Interna para Flutuar e Respirar (Separada do Drag) */}
-        <motion.div
-          animate={{
-            y: [6, -6, 6],
-            x: breatheX,
-            rotate: animateRotate,
-            scaleX: animateScaleX,
-            scaleY: animateScaleY,
-            scale: animateScale,
-            borderRadius: amoebaBorderRadius,
-          }}
-          transition={{
-            y: { duration: 3, repeat: Infinity, ease: "easeInOut" },
-            x: shouldShake ? { duration: 0.35, repeat: Infinity, ease: "linear" } : { type: "spring", stiffness: 200, damping: 15 },
-            rotate: transitionEffect
-              ? { duration: 0.8, ease: "easeInOut" }
-              : (shouldShake ? { duration: 0.35, repeat: Infinity, ease: "linear" } : { type: "spring", stiffness: 200, damping: 15 }),
-            scaleX: { duration: breatheDuration, repeat: Infinity, ease: "easeInOut" },
-            scaleY: { duration: breatheDuration, repeat: Infinity, ease: "easeInOut" },
-            scale: transitionEffect
-              ? { duration: 0.8, ease: "easeOut" }
-              : plocState.isHurt
-                ? { type: "spring", stiffness: 240, damping: 9 }
-                : { duration: 0.6, ease: "easeInOut" },
-            borderRadius: { duration: 1.5, ease: "easeInOut" }
-          }}
+        <div
+
+
           className="w-full h-full relative"
           style={{ zIndex: 10 }}
         >
-          {/* Corpo (Fundo de Vidro) separado para permitir Z-Index das costas */}
-          <motion.div
-            className="absolute inset-0 border-[1.5px] border-white/20"
-            animate={{
-              background: `radial-gradient(circle at 30% 30%, rgba(${stateR}, ${stateG}, ${stateB}, ${stateAlpha}) 0%, rgba(${stateR}, ${stateG}, ${stateB}, ${stateAlpha * 0.57}) 60%, rgba(${stateR}, ${stateG}, ${stateB}, ${stateAlpha * 0.23}) 100%)`,
-              boxShadow: shouldShake
-                ? `0 0 25px rgba(${stateR}, ${stateG}, ${stateB}, 0.5), inset 0 0 16px rgba(255, 255, 255, 0.4)`
-                : `0 15px 35px rgba(${stateR}, ${stateG}, ${stateB}, 0.15), inset 0 0 16px rgba(255, 255, 255, 0.4)`,
-            }}
-            transition={{
-              duration: 1.5,
-              ease: "easeInOut"
-            }}
-            style={{
-              borderRadius: 'inherit',
-              zIndex: 10
-            }}
-          />
-          {/* Indicadores Flutuantes Dinâmicos (+1 / -1) */}
-          <PlocFloatingIndicators gameMode={gameMode} onboardingStage={onboardingStage} />
-
-          {/* Aura Traseira */}
-          {(appearance.aura !== 'none') && (
-            <div className="absolute inset-0 pointer-events-none z-0 flex items-center justify-center">
-              <PlocAura aura={appearance.aura} />
-            </div>
-          )}
-
-          {/* Cabelo (Sticks out above head) */}
-          {appearance.hair !== 'none' && (
-            <div className="absolute top-[-22%] left-1/2 -translate-x-1/2 w-full h-[40%] z-20 pointer-events-none flex items-end justify-center">
-              <motion.div style={{ x: hatHairX }} className="w-full h-full flex items-end justify-center">
-                <PlocHair hair={appearance.hair} />
-              </motion.div>
-            </div>
-          )}
-
-          {/* Chapéu (Sticks out above head/hair) */}
-          {appearance.hat !== 'none' && (
-            <div className="absolute top-[-38%] left-1/2 -translate-x-1/2 w-full h-[45%] z-30 pointer-events-none flex items-end justify-center">
-              <motion.div style={{ x: hatHairX }} className="w-full h-full flex items-end justify-center">
-                <PlocHat hat={appearance.hat} />
-              </motion.div>
-            </div>
-          )}
-
-          {/* Partículas de Sono (Zzz...) */}
-          <PlocSleepParticles isSleeping={isSleeping} />
-
-
-
-          {/* 1. Máscara Circular para elementos internos que precisam de recorte (Brilhos, Roupas, Bolhas internas) */}
+          {/* Corpo Sólido (Sem vidro ou transparência) */}
           <div
-            className="absolute inset-0 overflow-hidden pointer-events-none z-10"
+            className="absolute inset-0"
             style={{
               borderRadius: '50%',
-              transform: 'translateZ(0)'
+              zIndex: 10,
+              backgroundColor: `rgb(${stateR}, ${stateG}, ${stateB})`,
             }}
-          >
-            {/* Fundo do vidro (precisa da margem negativa para não criar listras nas bordas) */}
-            <motion.div style={{ x: shineX }} className="absolute -inset-4 pointer-events-none z-[2]">
-              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/35 pointer-events-none" />
-            </motion.div>
-
-            {/* Água da Sede (PlocWaterBody) - Fica no fundo do corpo */}
-            <PlocWaterBody thirstLevel={thirst} />
-
-            {/* Brilhos 3D Especulares (Testa e reflexo inferior) ancorados perfeitamente no corpo */}
-            <motion.div style={{ x: shineX }} className="absolute inset-0 pointer-events-none z-[2]">
-              <div className="absolute top-[8%] left-[12%] w-[22%] h-[12%] bg-white/70 rounded-full blur-[0.5px] transform -rotate-12 pointer-events-none" />
-              <div className="absolute bottom-[6%] right-[16%] w-[15%] h-[8%] bg-white/25 rounded-full blur-[1.5px] transform rotate-45 pointer-events-none" />
-            </motion.div>
-
-            {/* Bolhas 3D Internas (Parallax inside gelatinous shell) */}
-            <motion.div style={{ x: bubblesX }} className="absolute inset-0 pointer-events-none z-[3]">
-              <PlocBubbles />
-            </motion.div>
-
-            {/* Roupas do Ploc (Inside gelatin body so it stretches & rotates together) */}
-            {appearance.clothes !== 'none' && (
-              <div className="absolute bottom-0 left-0 right-0 h-[40%] z-10 pointer-events-none flex items-center justify-center">
-                <motion.div style={{ x: clothesX }} className="w-full h-full flex items-center justify-center">
-                  <PlocClothes clothes={appearance.clothes} />
-                </motion.div>
-              </div>
-            )}
-          </div>
-
-          {/* 2. Elementos Faciais (Olhos, Expressões, Acessórios) — Não recortados para evitar cortes de chapéus/cílios */}
-          <motion.div style={{ x: faceX }} className="absolute inset-0 pointer-events-none z-20">
-            <PlocFace
-              isSleeping={isSleeping}
-              isPissed={isPissed}
-              isHurt={plocState.isHurt}
-              isSpeaking={isSpeakingMouth}
-              isEating={isEating}
-              appearance={appearance}
-              isHit={plocState.isHit}
-              isPositiveHit={plocState.isPositiveHit}
-              isDizzy={emotion === 'dizzy' || plocState.mode === 'dizzy'}
-              isSick={vitalsAvg < 30}
-              isFat={isFat}
-              isThin={isThin}
-              coldLevel={cold}
-              humorLevel={humor}
-            />
-          </motion.div>
-
-          <PlocLimbs
-            limbColor={limbColor}
-            limbShadow={limbShadow}
-            appearance={appearance}
-            size={SIZE}
-            dragX={smoothFacingX}
-            isSick={vitalsAvg < 30}
-            hungerLevel={hunger}
           />
-        </motion.div>
-      </motion.div>
 
-      {/* Botão Fixo de Mochila (Inventário) no Canto Inferior Esquerdo (acima da Navbar) apenas no Blackboard */}
-      {!isHidden && !isLanding && pathname === '/' && typeof document !== 'undefined' && createPortal(
-        <div className="fixed bottom-[90px] left-0 w-full px-[25px] z-[99999] pointer-events-none flex justify-between items-end">
-
-          <div className="flex flex-col gap-3 pointer-events-auto">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsBagOpen(!isBagOpen);
-              }}
-              className={`w-12 h-12 rounded-2xl border flex items-center justify-center cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 backdrop-blur-md group relative ${storePop
-                ? 'bg-emerald-500/80 border-emerald-400 text-white scale-110'
-                : 'bg-black/40 border-white/10 hover:scale-110 hover:bg-white/10 text-orange-400'
-                }`}
-              title="Inventário (Mochila)"
-            >
-              <Backpack size={22} className="group-hover:scale-110 transition-transform" />
-              <AnimatePresence>
-                {storePop && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.5 }}
-                    animate={{ opacity: 1, y: -25, scale: 1.2 }}
-                    exit={{ opacity: 0, y: -35 }}
-                    className="absolute text-emerald-300 font-black text-[13px] drop-shadow-md"
-                  >
-                    +1
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </button>
+          {/* 2. Elementos Faciais (Olhos, Expressões, Acessórios) */}
+          <div className="absolute inset-0 pointer-events-none z-20">
+            <PlocFace />
           </div>
 
-          <div className="flex flex-col gap-3 pointer-events-auto items-end">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsStoreOpen(!isStoreOpen);
-              }}
-              className="w-12 h-12 rounded-2xl border flex items-center justify-center cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 backdrop-blur-md group relative bg-black/40 border-white/10 hover:scale-110 hover:bg-white/10 text-emerald-400"
-              title="Lojinha"
-            >
-              <Store size={22} className="group-hover:scale-110 transition-transform" />
-            </button>
-
-            {/* Foco Coins Display */}
-            <div
-              className="flex items-center justify-center gap-1.5 px-3 h-12 rounded-2xl border shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 backdrop-blur-md relative bg-black/40 border-yellow-500/30 text-yellow-400 font-bold"
-              title="Foco Coins"
-            >
-              <Coins size={20} />
-              <span className="text-sm">{focoCoins}</span>
-              <AnimatePresence>
-                {focoCoinsPop && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.5 }}
-                    animate={{ opacity: 1, y: -30, scale: 1.2 }}
-                    exit={{ opacity: 0, y: -45 }}
-                    className="absolute left-1/2 -translate-x-1/2 text-yellow-300 font-black text-[14px] drop-shadow-md pointer-events-none"
-                  >
-                    +{addedCoins}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-
-        </div>,
-        document.body
-      )}
+          {/* Limbs removed per user request */}
+        </div>
+      </div>
 
       {/* Portal React independente com AnimatePresence próprio para a interface de chat desacoplada. */}
       <PlocChatOverlay

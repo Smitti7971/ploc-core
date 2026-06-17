@@ -11,7 +11,6 @@ interface BlackboardMinimapProps {
   mapY: MotionValue<number>;
   mapScale: MotionValue<number>;
   minScale: number;
-  bubbles: any[];
 }
 
 export function BlackboardMinimap({
@@ -22,15 +21,14 @@ export function BlackboardMinimap({
   mapX,
   mapY,
   mapScale,
-  minScale,
-  bubbles
+  minScale
 }: BlackboardMinimapProps) {
   const miniDotX = useTransform(mapX, [-1500, 1500], [-50, 50]);
   const miniDotY = useTransform(mapY, [-1500, 1500], [-50, 50]);
   const miniViewportSize = useTransform(mapScale, [1.5, minScale], [24, 8]);
 
   return (
-    <div className="fixed top-[80px] left-[25px] flex flex-col items-start gap-3 z-[100001] pointer-events-none">
+    <div className="fixed top-[80px] left-[25px] flex flex-col items-start gap-3 z-hud pointer-events-none">
       <AnimatePresence>
         {showMinimap && (
           <motion.div
@@ -84,20 +82,6 @@ export function BlackboardMinimap({
                 }}
               />
 
-              {/* Indicadores de Itens no Minimapa */}
-              {bubbles.map(b => (
-                <div
-                  key={b.id}
-                  className="absolute w-1.5 h-1.5 rounded-full shadow-sm"
-                  style={{
-                    left: `calc(50% + ${(b.x / 3000) * 100}%)`,
-                    top: `calc(50% + ${(b.y / 3000) * 100}%)`,
-                    backgroundColor: b.type === 'food' ? '#ef4444' : b.type === 'water' ? '#3b82f6' : '#22c55e',
-                    transform: 'translate(-50%, -50%)'
-                  }}
-                  title={b.name}
-                />
-              ))}
             </div>
           </motion.div>
         )}

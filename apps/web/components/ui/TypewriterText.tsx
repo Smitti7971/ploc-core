@@ -15,27 +15,26 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { usePlocSpeech } from './usePlocSpeech';
+import { usePlocSpeech } from '@/modules/chat/hooks/usePlocSpeech';
 import './typewriter.css';
 
 // 1. Componente dos três pontinhos pulsantes [ ... ] (Pensamento)
 export function ThinkingDots() {
   return (
     <div className="flex justify-center gap-1.5 items-center h-[27px]">
-      <motion.span
-        animate={{ y: [0, -8, 0] }}
-        transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+      <span
+        
+        
         className="w-2.5 h-2.5 bg-white rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
       />
-      <motion.span
-        animate={{ y: [0, -8, 0] }}
-        transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+      <span
+        
+        
         className="w-2.5 h-2.5 bg-white rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
       />
-      <motion.span
-        animate={{ y: [0, -8, 0] }}
-        transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+      <span
+        
+        
         className="w-2.5 h-2.5 bg-white rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
       />
     </div>

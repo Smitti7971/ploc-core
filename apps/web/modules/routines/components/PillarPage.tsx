@@ -153,7 +153,7 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
         filter: 'blur(150px)',
         opacity: 0.08,
         transition: 'background 0.5s ease',
-        zIndex: 0
+        zIndex: 0 /* base */
       }} />
 
       {/* Header: Resumo do Atributo com Gauge */}
@@ -165,7 +165,7 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
       />
 
       {/* Seção: Informações Base (Formulário) */}
-      <div style={{ zIndex: 1 }} className="flex flex-col gap-4">
+      <div style={{ zIndex: 0 /* base */ /* base */ }} className="flex flex-col gap-4">
         <h3 style={{ color: '#fff', fontSize: '0.7rem', fontWeight: 900, letterSpacing: '2px', opacity: 0.5, margin: 0, textAlign: 'center' }}>
           CADASTRO DE INFORMAÇÕES BASE
         </h3>

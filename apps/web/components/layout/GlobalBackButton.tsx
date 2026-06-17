@@ -13,7 +13,7 @@ export const GlobalBackButton: React.FC = () => {
   if (pathname === '/') return null;
 
   return (
-    <div className="absolute top-[25px] left-[25px] z-[9999] pointer-events-auto">
+    <div className="absolute top-[25px] left-[25px] z-fixed pointer-events-auto">
       <motion.button
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}

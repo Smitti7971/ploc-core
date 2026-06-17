@@ -194,7 +194,7 @@ export function MissionPathMap() {
             left: `${activeNode.x}%`,
             top: `${activeNode.y}%`,
             transform: 'translate(-50%, -108%)',
-            zIndex: 100,
+            zIndex: 0 /* base */ /* base */,
             pointerEvents: 'none'
           }}
           className="w-24 h-24 transition-all duration-1000 ease-out flex items-center justify-center filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.7)]"
@@ -250,7 +250,7 @@ export function MissionPathMap() {
                 left: `${node.x}%`,
                 top: `${node.y}%`,
                 transform: 'translate(-50%, -50%)',
-                zIndex: 20,
+                zIndex: 0 /* base */ /* base */,
                 width: node.isTrophy ? '76px' : '58px',
                 height: node.isTrophy ? '76px' : '58px',
               }}

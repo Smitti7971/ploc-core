@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { useAuth } from '@/modules/auth/hooks/useAuth';
 import { apiService as api } from '@/services/api';
-import { StoreModal } from '@/components/mascot/StoreModal';
-import { InventoryModal } from '@/components/mascot/InventoryModal';
+import { StoreModal } from '@/modules/store/components/StoreModal';
+import { InventoryModal } from '@/modules/inventory/components/InventoryModal';
 
 import { LabStatsPanel } from '@/modules/lab/components/LabStatsPanel';
 import { LabItemEditor } from '@/modules/lab/components/LabItemEditor';

@@ -72,6 +72,10 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
     const handleClickOutside = (event: MouseEvent) => {
       if (showAntitabagismo) return; // Não fecha se o modal sobreposto estiver aberto
 
+      // Se o clique for dentro do modal de correlação (que é renderizado em um portal), ignorar
+      const target = event.target as HTMLElement;
+      if (target.closest('.correlation-portal-modal')) return;
+
       // Ignora se o clique for no botão de sino (que tem um ID ou classe específica, mas vamos usar o ref)
       if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
         onClose();
@@ -87,24 +91,79 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, showAntitabagismo, onClose, inline]);
 
-  const vices = Object.values(trackerItems || {}).filter(t => t.type === 'vice' && t.status === 'ACTIVE');
+  const vices = Object.values(trackerItems || {}).filter(t => t.type === 'vice' && t.status === 'ACTIVE' && (!t.endDate || t.endDate > Date.now()));
 
   const isMission = (v: any) => v.config?.isMission || v.config?.mode === 'missao-antitabagismo';
 
   const tarefas = vices.filter(v => !isMission(v) && !v.config?.isVulnerability);
-  const activeTrackers = Object.values(trackerItems || {}).filter(t => t.status === 'ACTIVE' && t.type !== 'vice');
+  const activeTrackers = Object.values(trackerItems || {}).filter(t => t.status === 'ACTIVE' && t.type !== 'vice' && (!t.endDate || t.endDate > Date.now()));
   
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const todayTimestamp = todayStart.getTime();
 
   const trackersToUpdate = activeTrackers.filter(t => {
+    // Check if it's a monthly task and if today is one of the days
+    if (t.config?.loopMode === 'monthly' && t.config?.monthlyDays) {
+      const todayDate = new Date().getDate();
+      if (!t.config.monthlyDays.includes(todayDate)) {
+        return false;
+      }
+    }
+
     const logsToday = trackerLogs?.filter(l => 
        l.trackerItemId === t.id && 
        l.timestamp >= todayTimestamp && 
        (l.type === 'consumption' || l.type === 'milestone')
     ) || [];
-    return logsToday.length === 0;
+    const isTimeGoal = t.config?.dailyGoalType === 'time';
+    if (isTimeGoal) {
+      const totalMinutes = logsToday.reduce((sum: number, log: any) => sum + ((log.durationSeconds || 0) / 60), 0);
+      const targetMinutes = t.config?.dailyTimeGoalMinutes || 0;
+      if (totalMinutes < targetMinutes) return true;
+    } else {
+      const loops = t.config?.dailyLoops ?? 1;
+      if (loops === 'infinite') return true;
+      const targetLoops = typeof loops === 'number' ? loops : 1;
+      if (logsToday.length < targetLoops) return true;
+      
+      const hasConditions = t.config?.conditions && t.config.conditions.length > 0;
+      if (hasConditions) {
+        const logsWithConditionsMet = logsToday.filter(l => l.metadata?.allConditionsMet === true);
+        if (logsWithConditionsMet.length < targetLoops) return true;
+      }
+    }
+
+    const correlationIds = Object.keys(t.correlations || {});
+    if (correlationIds.length > 0) {
+      let allCorrelationsMet = true;
+      for (const cId of correlationIds) {
+        const cItem = activeTrackers.find(x => x.id === cId);
+        if (cItem) {
+          const cLogsToday = trackerLogs?.filter(l => 
+            l.trackerItemId === cId && 
+            l.timestamp >= todayTimestamp && 
+            (l.type === 'consumption' || l.type === 'milestone')
+          ) || [];
+          const cLoops = cItem.config?.dailyLoops ?? 1;
+          const cTargetLoops = cLoops === 'infinite' ? 1 : (typeof cLoops === 'number' ? cLoops : 1);
+          
+          let validCLogs = cLogsToday;
+          const hasCConditions = cItem.config?.conditions && cItem.config.conditions.length > 0;
+          if (hasCConditions) {
+            validCLogs = cLogsToday.filter(l => l.metadata?.allConditionsMet === true);
+          }
+
+          if (validCLogs.length < cTargetLoops) {
+            allCorrelationsMet = false;
+            break;
+          }
+        }
+      }
+      if (!allCorrelationsMet) return true;
+    }
+
+    return false;
   });
 
   const missoes = vices.filter(v => isMission(v) && !v.config?.isVulnerability);
@@ -138,7 +197,7 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className={inline ? "w-full pointer-events-auto" : "fixed inset-0 z-[100002] flex items-start justify-center pt-[180px] pointer-events-none px-4"}>
+        <div className={inline ? "w-full pointer-events-auto" : "fixed inset-0 z-hud flex items-start justify-center pt-[180px] pointer-events-none px-4"}>
           <motion.div
             ref={modalRef}
             initial={inline ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -20, scale: 0.95 }}

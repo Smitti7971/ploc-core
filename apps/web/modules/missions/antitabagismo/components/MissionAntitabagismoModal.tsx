@@ -20,7 +20,7 @@ export function MissionAntitabagismoModal({ isOpen, onClose }: MissionAntitabagi
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[2000000] w-screen h-screen bg-zinc-950 flex flex-col overflow-hidden select-none"
+      className="fixed inset-0 z-modal w-screen h-screen bg-zinc-950 flex flex-col overflow-hidden select-none"
       onClick={(e) => e.stopPropagation()}
     >
 

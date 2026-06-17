@@ -449,7 +449,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[1000005] flex flex-col bg-[#0a0c0a]"
+          className="fixed inset-0 z-modal flex flex-col bg-[#0a0c0a]"
         >
           <motion.div
             initial={{ opacity: 0, y: 100 }}
@@ -461,7 +461,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
             dragElastic={0.2}
             className="flex-1 w-full flex flex-col relative bg-[#0a0c0a] overflow-hidden"
           >
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-white/20 rounded-full z-[1000006]" />
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-white/20 rounded-full z-modal" />
 
             {/* Hidden file input for log photos */}
             <input
@@ -487,7 +487,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
 
               {/* Top Right Controls */}
               <div
-                className="absolute top-6 right-4 flex items-center gap-2 z-[100]"
+                className="absolute top-6 right-4 flex items-center gap-2 z-base"
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 <input
@@ -747,7 +747,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                 {/* Tabs Navigation */}
                 <div className="flex flex-wrap bg-white/5 border-y border-white/10 p-1 mt-1 mb-2 rounded-xl gap-1">
                   {[
-                    { id: 'looping', label: 'LOOPING', icon: Activity, color: 'emerald' },
+                    { id: 'looping', label: 'HORÁRIOS', icon: Clock, color: 'emerald' },
                     { id: 'condicoes', label: 'CONDIÇÕES', icon: CheckSquare, color: 'emerald' },
                     { id: 'correlacoes', label: 'CORRELAÇÕES', icon: LinkIcon, color: 'indigo' },
                     ...(item.type === 'vice' ? [{ id: 'estrategia', label: 'ESTRATÉGIA', icon: TrendingDown, color: 'yellow' }] : []),
@@ -774,99 +774,178 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                 </div>
 
                 <AnimatePresence mode="wait">
-                  {/* Looping Diário */}
+                  {/* Horários */}
                   {activeTab === 'looping' && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                      <div className="py-2 mb-2 bg-black/20 rounded-xl p-3 border border-white/5">
+                      <div className="py-2 mb-2 flex flex-col gap-5">
+                        
+                        {/* Término */}
                         <div className="flex flex-col gap-2">
-                          {item.type === 'vice' ? (
-                            <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest block flex items-center gap-2">
-                              <Activity size={12} className="text-emerald-400" />
-                              Looping Diário
-                            </span>
-                          ) : (
-                            <label htmlFor={`${item.id}-goal-type`} className="text-[9px] font-bold text-white/30 uppercase tracking-widest block flex items-center gap-2">
-                              <Activity size={12} className="text-emerald-400" />
-                              Looping Diário
-                            </label>
-                          )}
-                          <div className="flex items-center gap-3">
-                            {item.type === 'vice' ? (
-                              <div className="flex-1 bg-black/40 border border-white/10 rounded-xl p-2 text-[12px] text-white/50 cursor-not-allowed">
-                                Infinitas Vezes (Contínuo)
-                              </div>
-                            ) : (
-                              <div className="flex-1 flex gap-2">
-                                <select
-                                  id={`${item.id}-goal-type`}
-                                  name="goalType"
-                                  value={item.config?.dailyGoalType || 'count'}
-                                  onChange={(e) => updateItem({ ...item, config: { ...item.config, dailyGoalType: e.target.value } })}
-                                  className="bg-black/40 border border-white/10 rounded-xl p-2 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 appearance-none flex-1"
-                                >
-                                  <option value="count">Por qtd de vezes</option>
-                                  <option value="time">Por tempo (minutos)</option>
-                                </select>
-
-                                {item.config?.dailyGoalType === 'time' ? (
-                                  <input
-                                    id={`${item.id}-goal-time`} autoComplete="off"
-                                    name="goalTime"
-                                    aria-label="Minutos"
-                                    type="number"
-                                    min="1"
-                                    placeholder="Ex: 30"
-                                    value={item.config?.dailyTimeGoalMinutes || ''}
-                                    onChange={(e) => updateItem({ ...item, config: { ...item.config, dailyTimeGoalMinutes: parseInt(e.target.value) || 0 } })}
-                                    className="w-16 bg-black/40 border border-white/10 rounded-xl p-2 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 text-center"
-                                  />
-                                ) : (
-                                  <select
-                                    id={`${item.id}-goal-loops`}
-                                    name="goalLoops"
-                                    aria-label="Repetições"
-                                    value={item.config?.dailyLoops ?? 1}
-                                    onChange={(e) => {
-                                      const val = e.target.value === 'infinite' ? 'infinite' : parseInt(e.target.value) || 1;
-                                      updateItem({ ...item, config: { ...item.config, dailyLoops: val } });
-                                    }}
-                                    className="w-max bg-black/40 border border-white/10 rounded-xl p-2 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 appearance-none"
-                                  >
-                                    <option value="1">1x/dia</option>
-                                    <option value="2">2x/dia</option>
-                                    <option value="3">3x/dia</option>
-                                    <option value="4">4x/dia</option>
-                                    <option value="5">5x/dia</option>
-                                    <option value="infinite">Infinitas</option>
-                                  </select>
-                                )}
-                              </div>
-                            )}
-                            <span className="text-[10px] text-white/40 leading-tight w-1/3">
-                              Meta para sair da lista de Pendentes.
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Horário Específico */}
-                        <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-white/5">
-                          <label htmlFor={`${item.id}-expected-time`} className="text-[9px] font-bold text-white/30 uppercase tracking-widest block flex items-center gap-2">
-                            <Clock size={12} className="text-emerald-400" />
-                            Horário Específico (Opcional)
-                          </label>
+                          <span className="text-[10px] font-medium text-white/50 flex items-center gap-1.5">
+                            <Clock size={12} /> Término (Opcional)
+                          </span>
+                          
                           <div className="flex items-center gap-2">
                             <input
-                              id={`${item.id}-expected-time`}
-                              type="time"
-                              value={item.config?.expectedTime || ''}
-                              onChange={(e) => updateItem({ ...item, config: { ...item.config, expectedTime: e.target.value } })}
-                              className="bg-black/40 border border-white/10 rounded-xl p-2 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50"
+                              id={`${item.id}-endDateInput`}
+                              name="endDateInput"
+                              aria-label="Término Opcional"
+                              type="date"
+                              value={item.endDate ? new Date(item.endDate).toISOString().split('T')[0] : ''}
+                              onChange={(e) => {
+                                if (!e.target.value) {
+                                  updateItem({ ...item, endDate: undefined });
+                                } else {
+                                  const d = new Date(e.target.value);
+                                  d.setHours(23, 59, 59, 999);
+                                  updateItem({ ...item, endDate: d.getTime() });
+                                }
+                              }}
+                              className="flex-1 bg-white/5 border border-white/5 rounded-lg p-2 text-[12px] text-white/80 focus:outline-none focus:border-white/10"
                             />
-                            <span className="text-[10px] text-white/40 leading-tight flex-1">
-                              A tarefa só ficará pendente quando chegar neste horário.
-                            </span>
+                            <div className="flex items-center gap-1 bg-white/5 border border-white/5 rounded-lg p-1.5">
+                              <span className="text-[10px] text-white/30 px-1">+</span>
+                              <input
+                                id={`${item.id}-endDateAddNumber`}
+                                name="endDateAddNumber"
+                                aria-label="Adicionar número"
+                                type="number"
+                                placeholder="0"
+                                min="1"
+                                className="w-8 bg-transparent text-center text-[12px] text-white focus:outline-none"
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value);
+                                  if (!val) return;
+                                  const select = e.target.nextElementSibling as HTMLSelectElement;
+                                  const unit = select.value;
+                                  const now = new Date();
+                                  if (unit === 'days') now.setDate(now.getDate() + val);
+                                  if (unit === 'months') now.setMonth(now.getMonth() + val);
+                                  updateItem({ ...item, endDate: now.getTime() });
+                                }}
+                              />
+                              <select 
+                                id={`${item.id}-endDateAddUnit`}
+                                name="endDateAddUnit"
+                                aria-label="Adicionar unidade de tempo"
+                                className="bg-transparent text-[11px] text-white/50 focus:outline-none"
+                                onChange={(e) => {
+                                  const input = e.target.previousElementSibling as HTMLInputElement;
+                                  const val = parseInt(input.value);
+                                  if (!val) return;
+                                  const unit = e.target.value;
+                                  const now = new Date();
+                                  if (unit === 'days') now.setDate(now.getDate() + val);
+                                  if (unit === 'months') now.setMonth(now.getMonth() + val);
+                                  updateItem({ ...item, endDate: now.getTime() });
+                                }}
+                              >
+                                <option value="days">dias</option>
+                                <option value="months">meses</option>
+                              </select>
+                            </div>
+                          </div>
+                          {item.endDate && (
+                            <div className="text-[10px] text-emerald-400/80 flex justify-between items-center px-1">
+                              <span>Até {new Date(item.endDate).toLocaleDateString('pt-BR')}</span>
+                              <button onClick={() => updateItem({ ...item, endDate: undefined })} className="text-white/30 hover:text-white/80 transition-colors">Remover</button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Frequência */}
+                        <div className="flex flex-col gap-2">
+                          <span className="text-[10px] font-medium text-white/50 flex items-center gap-1.5">
+                            <Activity size={12} /> Frequência
+                          </span>
+                          
+                          <div className="flex items-center gap-2">
+                            <label htmlFor={`${item.id}-loopModeSelect`} className="sr-only">Frequência</label>
+                            <select
+                              id={`${item.id}-loopModeSelect`}
+                              name="loopModeSelect"
+                              value={item.config?.loopMode || 'daily'}
+                              onChange={(e) => updateItem({ ...item, config: { ...item.config, loopMode: e.target.value } })}
+                              className="flex-1 bg-white/5 border border-white/5 rounded-lg p-2.5 text-[12px] text-white/80 focus:outline-none focus:border-white/10"
+                            >
+                              <option value="daily">Diário</option>
+                              <option value="monthly">Mensal</option>
+                            </select>
+
+                            <div className="w-16 h-12 relative bg-white/5 border border-white/5 rounded-lg overflow-hidden flex items-center justify-center">
+                              <WheelPicker
+                                label="x"
+                                options={[1,2,3,4,5,6,7,8,9,10,15,20,30]}
+                                value={typeof item.config?.dailyLoops === 'number' ? item.config.dailyLoops : 1}
+                                onChange={(val) => {
+                                  let newLoopTimes = item.config?.loopTimes || [];
+                                  if (newLoopTimes.length < val) {
+                                    newLoopTimes = [...newLoopTimes, ...Array(val - newLoopTimes.length).fill('')];
+                                  } else {
+                                    newLoopTimes = newLoopTimes.slice(0, val);
+                                  }
+                                  let newMonthlyDays = item.config?.monthlyDays || [];
+                                  if (newMonthlyDays.length < val) {
+                                    newMonthlyDays = [...newMonthlyDays, ...Array(val - newMonthlyDays.length).fill(1)];
+                                  } else {
+                                    newMonthlyDays = newMonthlyDays.slice(0, val);
+                                  }
+                                  updateItem({ ...item, config: { ...item.config, dailyLoops: val, loopTimes: newLoopTimes, monthlyDays: newMonthlyDays } });
+                                }}
+                              />
+                            </div>
                           </div>
                         </div>
+
+                        {/* Horários */}
+                        {(typeof item.config?.dailyLoops === 'number' && item.config.dailyLoops > 0) && (
+                          <div className="flex flex-col gap-2">
+                            <span className="text-[10px] font-medium text-white/50 flex items-center gap-1.5">
+                              <Clock size={12} /> Horários
+                            </span>
+                            <div className="flex flex-col gap-1.5">
+                              {Array.from({ length: item.config.dailyLoops }).map((_, i) => (
+                                <div key={i} className="flex items-center gap-2">
+                                  <span className="text-[10px] text-white/30 w-4">{i + 1}</span>
+                                  
+                                  {item.config?.loopMode === 'monthly' && (
+                                    <div className="flex items-center gap-1 bg-white/5 border border-white/5 rounded-lg px-2">
+                                      <span className="text-[10px] text-white/40">Dia</span>
+                                      <input
+                                        id={`${item.id}-monthlyDay-${i}`}
+                                        name={`monthlyDay-${i}`}
+                                        aria-label="Dia do mês"
+                                        type="number"
+                                        min="1" max="31"
+                                        value={item.config?.monthlyDays?.[i] || ''}
+                                        onChange={(e) => {
+                                          const newDays = [...(item.config?.monthlyDays || Array(item.config?.dailyLoops || 1).fill(1))];
+                                          newDays[i] = parseInt(e.target.value) || 1;
+                                          updateItem({ ...item, config: { ...item.config, monthlyDays: newDays } });
+                                        }}
+                                        className="w-8 bg-transparent p-1.5 text-[12px] text-white/80 focus:outline-none text-center"
+                                      />
+                                    </div>
+                                  )}
+
+                                  <input
+                                    id={`${item.id}-loopTime-${i}`}
+                                    name={`loopTime-${i}`}
+                                    aria-label="Horário"
+                                    type="time"
+                                    value={item.config?.loopTimes?.[i] || ''}
+                                    onChange={(e) => {
+                                      const newTimes = [...(item.config?.loopTimes || Array(item.config?.dailyLoops || 1).fill(''))];
+                                      newTimes[i] = e.target.value;
+                                      updateItem({ ...item, config: { ...item.config, loopTimes: newTimes } });
+                                    }}
+                                    className="flex-1 bg-white/5 border border-white/5 rounded-lg p-2 text-[12px] text-white/80 focus:outline-none focus:border-white/10"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   )}
@@ -1112,7 +1191,10 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                             <div className="flex flex-col gap-3">
                               <label className="text-[9px] font-bold text-white/30 uppercase tracking-widest block">Mapeamento de Custo</label>
                               <div className="flex flex-col gap-2">
+                                <label htmlFor={`${item.id}-costItemName`} className="sr-only">Item de custo</label>
                                 <input
+                                  id={`${item.id}-costItemName`}
+                                  name="costItemName"
                                   type="text"
                                   value={item.config?.costItemName || ''}
                                   onChange={(e) => updateItem({ ...item, config: { ...item.config, costItemName: e.target.value } })}
@@ -1123,6 +1205,9 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                                   <div className="flex-1">
                                     <label className="text-[8px] text-white/50 uppercase font-bold px-1 block mb-1">Preço Pago (R$)</label>
                                     <input
+                                      id={`${item.id}-costItemPrice`}
+                                      name="costItemPrice"
+                                      aria-label="Preço Pago"
                                       type="text"
                                       inputMode="decimal"
                                       value={item.config?.costItemPriceRaw !== undefined ? item.config.costItemPriceRaw : (displayPriceNum ? displayPriceNum.toString().replace('.', ',') : '')}
@@ -1150,6 +1235,9 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                                   <div className="flex-1">
                                     <label className="text-[8px] text-white/50 uppercase font-bold px-1 block mb-1">Quantidade que vem</label>
                                     <input
+                                      id={`${item.id}-costItemQuantity`}
+                                      name="costItemQuantity"
+                                      aria-label="Quantidade que vem"
                                       type="number"
                                       min="1"
                                       value={item.config?.costItemQuantityRaw !== undefined ? item.config.costItemQuantityRaw : (item.config?.costItemQuantity !== undefined ? item.config.costItemQuantity : 1)}
@@ -1218,6 +1306,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
 
                 {/* Histórico de Registros */}
                 <LogHistory
+                  item={item}
                   itemLogs={itemLogs}
                   editingLogId={editingLogId}
                   handleEditLog={handleEditLog}

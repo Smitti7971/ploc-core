@@ -48,7 +48,7 @@ export function CorrelationGatingModal({
   if (!isOpen || !mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[2000000] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-modal flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onLembrarMaisTarde} />
       
       <AnimatePresence mode="wait">
@@ -129,8 +129,10 @@ export function CorrelationGatingModal({
               </p>
             </div>
 
-            <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+            <label htmlFor="dontShowAgain" className="flex items-center gap-3 cursor-pointer p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
               <input 
+                id="dontShowAgain"
+                name="dontShowAgain"
                 type="checkbox" 
                 checked={dontShowAgain}
                 onChange={(e) => setDontShowAgain(e.target.checked)}

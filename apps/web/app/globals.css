@@ -2,6 +2,19 @@
 
 @theme {
   --font-outfit: 'Outfit', sans-serif;
+
+  /* Z-Index Design Tokens */
+  --z-index-base: 0;
+  --z-index-dropdown: 100;
+  --z-index-sticky: 200;
+  --z-index-fixed: 300;
+  --z-index-hud: 400;
+  --z-index-mascot: 500;
+  --z-index-modal-bg: 600;
+  --z-index-modal: 700;
+  --z-index-popover: 800;
+  --z-index-toast: 900;
+  --z-index-tooltip: 1000;
 }
 
 :root {

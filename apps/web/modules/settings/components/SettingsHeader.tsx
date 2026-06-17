@@ -16,7 +16,7 @@ export function SettingsHeader({ title }: SettingsHeaderProps) {
       top: 0,
       background: 'rgba(2, 6, 23, 0.7)',
       backdropFilter: 'blur(30px)',
-      zIndex: 1000,
+      zIndex: 200 /* sticky */,
       padding: '16px 20px',
       display: 'flex',
       alignItems: 'center',

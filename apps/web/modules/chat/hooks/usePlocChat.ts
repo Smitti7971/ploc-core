@@ -11,16 +11,16 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { chatService } from '@/modules/chat/services/chatService';
-import { usePlocSpeech } from './usePlocSpeech';
+import { usePlocSpeech } from '@/modules/chat/hooks/usePlocSpeech';
 import { blackboardEventBus, BLACKBOARD_EVENTS } from '@/modules/blackboard/events/eventBus';
-import { triggerAchievementUnlock } from './achievements';
+
 import { attributeEngine } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
 import { useAuthStore } from '@/store/authStore';
 import {
   PILLAR_EXPLANATIONS,
   PASSIVE_AGGRESSIVE_QUOTES,
   ONBOARDING_DIALOGUES
-} from './plocPhrases';
+} from '../constants/plocPhrases';
 
 export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleeping: false }) {
   const { speak, isSpeaking } = usePlocSpeech();
@@ -504,7 +504,7 @@ export function usePlocChat({ isSleeping }: { isSleeping: boolean } = { isSleepi
           speak(maxEquilMsg, 16000);
 
           setRewardBoxVisible(true);
-          triggerAchievementUnlock('domador_sabao');
+
           setIsChatOpen(true);
         }
 

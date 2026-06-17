@@ -15,7 +15,7 @@ interface PlocStatsModalProps {
 
 export function PlocStatsModal({ attributes, onClose }: PlocStatsModalProps) {
   return (
-    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-[4px] z-[999999] flex items-center justify-center p-4">
+    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-[4px] z-modal flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}

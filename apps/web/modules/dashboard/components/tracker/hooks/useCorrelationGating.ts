@@ -48,12 +48,8 @@ export function useCorrelationGating() {
       const cItem = store.items[cId];
       if (!cItem || cItem.status !== 'ACTIVE') continue;
 
-      // 1. Está na agenda para hoje?
-      if (!isTaskScheduledForDate(cItem, targetDate)) {
-        continue; // Não precisa validar
-      }
-
-      // 2. Já tem log hoje (que não seja um log marcado como "ignored")?
+      // A correlação precisa ser validada se ainda não foi feita hoje,
+      // independente do agendamento isolado dela.
       // O usuário pediu que possamos ignorar a tarefa. 
       // Se tiver uma flag config.ignoreUntil > targetDate, também passa.
       const hasIgnoreFlag = cItem.config?.ignoreUntil && cItem.config.ignoreUntil >= targetDate;
@@ -65,12 +61,10 @@ export function useCorrelationGating() {
         return lDateStr === dateStr;
       });
 
-      // Se não tem logs ou se o log foi marcado com info "Ignorado", podemos precisar checar?
-      // Pelo feedback, "Não use Logs, use modais... deixar atualizar a tarefa atual... mas ainda será cobrado nos próximos".
-      // Ou seja, não criamos log falso. Apenas passamos reto SE ele clicou ignorar no modal.
-      // O ignorar no modal apenas vai "bypassar" a checagem PARA ESTA execução, ou setar um ignore temporário.
-      
-      if (logsToday.length === 0) {
+      const loops = cItem.config?.dailyLoops ?? 1;
+      const targetLoops = loops === 'infinite' ? 1 : (typeof loops === 'number' ? loops : 1);
+
+      if (logsToday.length < targetLoops) {
         pending.push({ item: cItem, reason: 'depends_on' });
       }
     }

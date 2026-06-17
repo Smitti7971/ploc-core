@@ -60,12 +60,12 @@ export function HealthArea({ hasLeft = true, hasRight = true }: HealthAreaProps)
         filter: 'blur(1px)',
         whiteSpace: 'nowrap',
         userSelect: 'none',
-        zIndex: 0
+        zIndex: 0 /* base */
       }}>
         SAÚDE
       </h2>
 
-      <div style={{ zIndex: 1, width: '100%', maxWidth: '400px' }}>
+      <div style={{ zIndex: 0 /* base */ /* base */, width: '100%', maxWidth: '400px' }}>
         <AnimatePresence mode="wait">
           {!isAnswering ? (
             <motion.div

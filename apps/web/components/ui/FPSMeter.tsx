@@ -69,7 +69,7 @@ export function FPSMeter() {
       onClick={() => setIsFaded(!isFaded)}
       animate={{ opacity: isFaded ? 0.2 : 1 }}
       whileTap={{ scale: 0.95 }}
-      className="fixed bottom-[12%] left-[50%] translate-x-[-50%] translate-y-[-50%] z-[999999] cursor-grab active:cursor-grabbing pointer-events-auto"
+      className="fixed bottom-[12%] left-[50%] translate-x-[-50%] translate-y-[-50%] z-modal cursor-grab active:cursor-grabbing pointer-events-auto"
     >
       <div className="flex flex-col items-center justify-center bg-[#020617]/90 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg px-3 py-1 min-w-[60px]">
         <div className="flex items-center gap-1">

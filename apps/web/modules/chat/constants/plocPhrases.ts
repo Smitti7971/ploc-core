@@ -74,32 +74,7 @@ export const PASSIVE_AGGRESSIVE_QUOTES: Record<string, { positive: string[], neg
   }
 };
 
-export const MASCOT_COLLISION_PHRASES = {
-  annoyed: [
-    "CARA, tô tentando me concentrar aqui! Que ataque de bolhas é esse?",
-    "Ei! Assim você me tira do sério! Estoura essas coisas longe de mim!",
-    "Socorro! Alguém me ajuda a tirar esse sabão todo da minha frente!",
-    "Não dá pra manter a pose com essas bolhas batendo! Me dá um help!"
-  ],
-  negativeHit: [
-    "Putz... essa bolha negativa tirou pontos do nosso status!",
-    "Poxa, perdemos pontos de equilíbrio! Cuidado com hábitos ruins!",
-    "Que droga, fomos atingidos! Nosso equilíbrio caiu um pouco!",
-    "Cuidado! Essas bolhas negativas puxam a gente pro fundo do poço!"
-  ],
-  positiveSuccess: [
-    "Nossa, adorei essa bolha!",
-    "Hum, que energia boa!",
-    "Essa me fez muito bem!",
-    "Oba, ponto pra nós!"
-  ],
-  caboDeGuerra: [
-    "Putz, focou muito em uma coisa e acabou tirando de outra! Foque em outras coisas para equilibrar!",
-    "Ganhamos de um lado, mas perdemos do outro! Lembre-se de balancear os atributos!",
-    "Foco excessivo desgasta outros pilares! Tente espalhar mais os seus pontos!",
-    "Cuidado, focar apenas em um pilar faz outro decair. Tente focar em outras coisas!"
-  ]
-};
+
 
 export const ONBOARDING_DIALOGUES = {
   intro: [

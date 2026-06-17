@@ -128,7 +128,7 @@ export default function TitleBubble({
       className={`relative w-[90px] h-[90px] select-none ${
         isPopped ? 'pointer-events-none' : 'pointer-events-auto cursor-pointer'
       }`}
-      style={{ zIndex: 10 + seqIndex }}
+      style={{ zIndex: 500 /* mascot */ + seqIndex }}
     >
       <AnimatePresence>
         {!isPopped && (
@@ -217,7 +217,7 @@ export default function TitleBubble({
             borderRadius: '50%',
             background: 'rgba(255, 255, 255, 0.95)',
             boxShadow: '0 0 10px rgba(56, 189, 248, 0.8), 0 0 4px rgba(255, 255, 255, 1)',
-            zIndex: 9999
+            zIndex: 300 /* fixed */
           }}
         />
       ))}

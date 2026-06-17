@@ -9,10 +9,8 @@ import {
 import { PlocAppearance, DEFAULT_PLOC_APPEARANCE } from '@/components/mascot/types';
 import { PlocAvatarClient } from '@/components/mascot/PlocAvatarClient';
 import { attributeEngine } from '@/modules/blackboard/engine/attribute-engine/AttributeEngine';
-import { triggerAchievementUnlock } from '@/components/mascot/achievements';
 import { PlocStatsModal } from '@/modules/ploc/components/PlocStatsModal';
-import { PlocAchievementsModal } from '@/modules/ploc/components/PlocAchievementsModal';
-import { PlocCustomizationTabs } from '@/modules/ploc/components/PlocCustomizationTabs';
+
 
 const playEquipSound = () => {
   if (typeof window === 'undefined') return;
@@ -39,7 +37,7 @@ const playEquipSound = () => {
 export default function PlocCentralPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [appearance, setAppearance] = useState<PlocAppearance>(DEFAULT_PLOC_APPEARANCE);
-  const [activeTab, setActiveTab] = useState<'eyes' | 'mouth' | 'hair' | 'clothes' | 'hat' | 'aura' | 'shoes' | 'bodyColor' | null>(null);
+  const [activeTab, setActiveTab] = useState<'bodyColor' | null>(null);
   
   const [showAchievements, setShowAchievements] = useState(false);
   const [showStats, setShowStats] = useState(false);
@@ -76,22 +74,11 @@ export default function PlocCentralPage() {
   if (!isMounted) return null;
 
   const handleEquipItem = (category: keyof PlocAppearance, value: string) => {
-    const updated = { ...appearance, [category]: value };
+    const updated = { ...appearance, [category]: value } as PlocAppearance;
     setAppearance(updated);
     localStorage.setItem('ploc_appearance', JSON.stringify(updated));
     window.dispatchEvent(new Event('storage'));
     playEquipSound();
-
-    if (category === 'aura' && value !== 'none') triggerAchievementUnlock('astronauta_caos');
-    if (
-      (category === 'hair' ? value !== 'none' : updated.hair !== 'none') &&
-      (category === 'clothes' ? value !== 'none' : updated.clothes !== 'none') &&
-      (category === 'hat' ? value !== 'none' : updated.hat !== 'none') &&
-      (category === 'shoes' ? value !== 'none' : updated.shoes !== 'none') &&
-      (category === 'aura' ? value !== 'none' : updated.aura !== 'none')
-    ) {
-      triggerAchievementUnlock('estilista_gel');
-    }
   };
 
   const handleResetAppearance = () => {
@@ -153,12 +140,7 @@ export default function PlocCentralPage() {
               {/* Pedestal Ground */}
               <div className="absolute top-[60%] w-[250px] h-[60px] bg-sky-500/5 rounded-full blur-[10px] transform border border-sky-500/20" />
               
-              <PlocCustomizationTabs 
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                appearance={appearance}
-                onEquipItem={handleEquipItem}
-              />
+
             </div>
 
             {/* IDENTIDADE DO PLOC CARD */}
@@ -188,9 +170,7 @@ export default function PlocCentralPage() {
           {showStats && <PlocStatsModal attributes={attributes} onClose={() => setShowStats(false)} />}
         </AnimatePresence>
 
-        <AnimatePresence>
-          {showAchievements && <PlocAchievementsModal unlockedAchievements={unlockedAchievements} onClose={() => setShowAchievements(false)} />}
-        </AnimatePresence>
+
 
       </div>
     </AppShell>

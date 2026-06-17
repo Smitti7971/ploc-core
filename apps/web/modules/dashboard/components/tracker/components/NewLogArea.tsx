@@ -38,6 +38,8 @@ export function NewLogArea({
   setConditionPhotos,
   handleEditLog
 }: NewLogAreaProps) {
+  const logs = useTrackerStore(state => state.logs);
+
   return (
     <div className="py-2 mb-4 border-t border-white/5 pt-4">
       <div className="flex items-center gap-2 mb-3">
@@ -103,20 +105,43 @@ export function NewLogArea({
           {Object.keys(item.correlations || {}).map(cId => {
             const cItem = items[cId];
             if (!cItem) return null;
+            
+            const todayStr = new Date().toISOString().split('T')[0];
+            const logsToday = logs.filter(l => {
+              if (l.trackerItemId !== cId) return false;
+              const lDateStr = new Date(l.timestamp).toISOString().split('T')[0];
+              return lDateStr === todayStr;
+            });
+            const loops = cItem.config?.dailyLoops ?? 1;
+            const targetLoops = loops === 'infinite' ? 1 : (typeof loops === 'number' ? loops : 1);
+            
+            let validLogs = logsToday;
+            const hasConditions = cItem.config?.conditions && cItem.config.conditions.length > 0;
+            if (hasConditions) {
+              validLogs = logsToday.filter(l => l.metadata?.allConditionsMet === true);
+            }
+            
+            const isCompletedToday = validLogs.length >= targetLoops;
+
             const isLibertesse = cItem.type === 'vice';
             const addCondPhoto = (cKey: string) => {
               setUploadingConditionKey(cKey);
               setTimeout(() => conditionPhotoInputRef.current?.click(), 0);
             };
             
+            const cardBgClass = isCompletedToday 
+              ? 'bg-emerald-500/10 border-emerald-500/30 border-l-emerald-500' 
+              : 'bg-rose-500/10 border-rose-500/30 border-l-rose-500';
+            const textClass = isCompletedToday ? 'text-emerald-300' : 'text-rose-300';
+            
             return (
               <div key={cId} 
-                    className={`flex flex-col gap-1 p-2 rounded-xl border border-l-4 group ${isLibertesse ? 'bg-yellow-500/5 border-yellow-500/20 border-l-yellow-500' : 'bg-emerald-500/5 border-emerald-500/20 border-l-emerald-500'}`}
+                    className={`flex flex-col gap-1 p-2 rounded-xl border border-l-4 group transition-colors ${cardBgClass}`}
                     style={cItem.coverPhoto ? { backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.9), rgba(0,0,0,0.6)), url(${getAssetUrl(cItem.coverPhoto)})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
               >
                 <div className="flex items-center justify-between">
                   <span 
-                    className={`text-[11px] font-bold flex-1 cursor-pointer hover:underline ${isLibertesse ? 'text-yellow-300' : 'text-emerald-300'}`}
+                    className={`text-[11px] font-bold flex-1 cursor-pointer hover:underline ${textClass}`}
                     onClick={() => openCorrelatedItem(cId)}
                   >
                     {cItem.name || cItem.id.substring(0, 8)}
@@ -129,22 +154,11 @@ export function NewLogArea({
                     >
                       <Camera size={14} />
                     </button>
-                    {(() => {
-                      const todayStr = new Date().toISOString().split('T')[0];
-                      const logsToday = useTrackerStore.getState().logs.filter(l => {
-                        if (l.trackerItemId !== cId) return false;
-                        const lDateStr = new Date(l.timestamp).toISOString().split('T')[0];
-                        return lDateStr === todayStr;
-                      });
-                      const isCompletedToday = logsToday.length > 0;
-                      return (
-                        <div 
-                          className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors ${isCompletedToday ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-white/5 border-white/20 text-transparent'}`}
-                        >
-                          <Check size={12} />
-                        </div>
-                      );
-                    })()}
+                    <div 
+                      className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors ${isCompletedToday ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-rose-500/20 border-rose-500/50 text-rose-400'}`}
+                    >
+                      <Check size={12} />
+                    </div>
                   </div>
                 </div>
                 {conditionPhotos[`corr-${cId}`] && (

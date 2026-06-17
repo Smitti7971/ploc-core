@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, X, Check, Camera, Loader2, Image as ImageIcon } from 'lucide-react';
 import { getAssetUrl } from '@/lib/config';
+import { useTrackerStore } from '../../store/trackerStore';
 
 interface EditLogModalProps {
   editingLogId: string | null;
@@ -51,6 +52,7 @@ export function EditLogModal({
   openCorrelatedItem
 }: EditLogModalProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const logs = useTrackerStore(state => state.logs);
 
   if (!editingLogId) return null;
 
@@ -66,7 +68,7 @@ export function EditLogModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[1000010] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+        className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
       >
         <motion.div
           initial={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -113,6 +115,9 @@ export function EditLogModal({
             {/* Title inside image banner */}
             <div className="absolute bottom-0 left-0 w-full p-4 pt-8">
               <input 
+                 id="editLogTitle"
+                 name="editLogTitle"
+                 aria-label="Título do Registro"
                  type="text" 
                  className="text-[26px] font-extrabold text-white bg-transparent outline-none placeholder-white/50 w-full drop-shadow-md"
                  value={editingLogTitle}
@@ -126,6 +131,9 @@ export function EditLogModal({
           {/* Content Area */}
           <div className="p-5 flex flex-col bg-zinc-900">
             <textarea 
+               id="editLogInfo"
+               name="editLogInfo"
+               aria-label="Notas Detalhadas"
                className="text-[16px] text-white/70 bg-transparent outline-none resize-none h-20 w-full leading-relaxed placeholder-white/30 mb-4"
                value={editingLogInfo}
                onChange={(e) => setEditingLogInfo(e.target.value)}
@@ -161,24 +169,48 @@ export function EditLogModal({
                 {Object.keys(item.correlations || {}).map(cId => {
                   const cItem = items[cId];
                   if (!cItem) return null;
+                  
+                  const todayStr = new Date().toISOString().split('T')[0];
+                  const logsToday = logs.filter(l => {
+                    if (l.trackerItemId !== cId) return false;
+                    const lDateStr = new Date(l.timestamp).toISOString().split('T')[0];
+                    return lDateStr === todayStr;
+                  });
+                  const loops = cItem.config?.dailyLoops ?? 1;
+                  const targetLoops = loops === 'infinite' ? 1 : (typeof loops === 'number' ? loops : 1);
+                  
+                  let validLogs = logsToday;
+                  const hasConditions = cItem.config?.conditions && cItem.config.conditions.length > 0;
+                  if (hasConditions) {
+                    validLogs = logsToday.filter(l => l.metadata?.allConditionsMet === true);
+                  }
+                  
+                  const isCompletedToday = validLogs.length >= targetLoops;
+
                   const isLibertesse = cItem.type === 'vice';
                   const cKey = `corr-${cId}`;
                   const addCondPhoto = () => {
                     setUploadingConditionKey(cKey);
                     setTimeout(() => conditionPhotoInputRef.current?.click(), 0);
                   };
+
+                  const cardBgClass = isCompletedToday 
+                    ? 'bg-emerald-500/10 border-emerald-500/30 border-l-emerald-500' 
+                    : 'bg-rose-500/10 border-rose-500/30 border-l-rose-500';
+                  const textClass = isCompletedToday ? 'text-emerald-300' : 'text-rose-300';
+
                   return (
-                    <div key={cId} className={`flex flex-col gap-1 p-2 rounded-xl border border-l-4 ${isLibertesse ? 'bg-yellow-500/5 border-yellow-500/20 border-l-yellow-500' : 'bg-emerald-500/5 border-emerald-500/20 border-l-emerald-500'}`}>
+                    <div key={cId} className={`flex flex-col gap-1 p-2 rounded-xl border border-l-4 transition-colors ${cardBgClass}`}>
                       <div className="flex items-center justify-between">
                         <span 
-                          className={`text-[11px] font-bold flex-1 cursor-pointer hover:underline ${isLibertesse ? 'text-yellow-300' : 'text-emerald-300'}`}
+                          className={`text-[11px] font-bold flex-1 cursor-pointer hover:underline ${textClass}`}
                           onClick={() => openCorrelatedItem(cId)}
                         >
                           {cItem.name || cItem.id.substring(0, 8)}
                         </span>
                         <div className="flex items-center gap-2">
                           <button onClick={addCondPhoto} className={`p-1 rounded-full hover:bg-white/10 transition-colors ${editingLogConditionPhotos[cKey] ? 'text-emerald-400' : 'text-white/20'}`}><Camera size={14} /></button>
-                          <button onClick={() => setEditingLogCheckedConditions(p => ({...p, [cKey]: !p[cKey]}))} className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors ${editingLogCheckedConditions[cKey] ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-white/5 border-white/20 text-transparent'}`}><Check size={12} /></button>
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors ${isCompletedToday ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-rose-500/20 border-rose-500/50 text-rose-400'}`}><Check size={12} /></div>
                         </div>
                       </div>
                       {editingLogConditionPhotos[cKey] && (

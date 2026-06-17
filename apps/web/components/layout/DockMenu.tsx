@@ -82,7 +82,7 @@ export function DockMenu() {
         bottom: 0,
         left: 0,
         width: '100%',
-        zIndex: 999998,
+        zIndex: 300 /* fixed */,
         pointerEvents: 'none',
         transform: isVisible ? 'translateY(0)' : 'translateY(100%)',
         transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',

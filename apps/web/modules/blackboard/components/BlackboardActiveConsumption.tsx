@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTrackerStore } from "../../dashboard/components/tracker/store/trackerStore";
-import { usePlocSpeech } from "../../../components/mascot/usePlocSpeech";
+import { usePlocSpeech } from '@/modules/chat/hooks/usePlocSpeech';
 
 interface BlackboardActiveConsumptionProps {
   activeConsumingVice: any;
@@ -61,7 +61,7 @@ export function BlackboardActiveConsumption({
           }}
         >
           {/* UI DO CONSUMO ATIVO (BOTÃO PARAR E TIMER) */}
-          <div className="absolute -top-[160px] left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-auto z-[400] scale-90">
+          <div className="absolute -top-[160px] left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-auto z-hud scale-90">
             <div className="bg-red-500/10 border border-red-500/30 backdrop-blur-md px-4 py-1.5 rounded-2xl mb-2 flex flex-col items-center justify-center shadow-[0_0_15px_rgba(239,68,68,0.2)] min-w-[140px]">
               <span className="text-[0.5rem] font-bold text-red-400 uppercase tracking-[0.15em] mb-0.5 text-center ml-[0.15em]">
                 TE DESAFIO A FICAR SEM!

@@ -12,7 +12,7 @@ import { motion } from 'framer-motion';
 // Renderiza as esferas de luz que se movem sutilmente ao fundo
 export const AmbientGlowBackground: React.FC = () => {
   return (
-    <div className="absolute inset-0 overflow-hidden z-[10] pointer-events-none">
+    <div className="absolute inset-0 overflow-hidden z-base pointer-events-none">
       {/* Bolha Superior Esquerda */}
       <motion.div
         animate={{

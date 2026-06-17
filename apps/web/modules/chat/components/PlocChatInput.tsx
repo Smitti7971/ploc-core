@@ -4,7 +4,6 @@
  * Permite inserção de texto manual e também dita estado de gravação do microfone.
  */
 
-import { motion, AnimatePresence } from 'framer-motion';
 import { Send } from 'lucide-react';
 
 interface PlocChatInputProps {
@@ -27,14 +26,14 @@ export function PlocChatInput({
   handleSendMessage
 }: PlocChatInputProps) {
   return (
-    <AnimatePresence>
+    <>
       {isChatInputVisible && !isLanding && gameMode !== 'onboarding_game' && (
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 15 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-          className="fixed bottom-[31vh] left-1/2 -translate-x-1/2 w-[90%] max-w-[460px] z-[999999] pointer-events-auto"
+        <div
+          
+          
+          
+          
+          className="fixed bottom-[31vh] left-1/2 -translate-x-1/2 w-[90%] max-w-[460px] z-modal pointer-events-auto"
         >
           <form
             onSubmit={(e) => {
@@ -63,8 +62,8 @@ export function PlocChatInput({
               <Send size={14} />
             </button>
           </form>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

@@ -55,7 +55,7 @@ export function OptimizedBubblesBackground() {
   if (!isMounted) return null;
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-[5]">
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-base">
       <style dangerouslySetInnerHTML={{
         __html: `
           @keyframes optimized-bubble-float {

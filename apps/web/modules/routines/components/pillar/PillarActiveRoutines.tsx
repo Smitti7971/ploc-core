@@ -8,7 +8,7 @@ interface PillarActiveRoutinesProps {
 
 export function PillarActiveRoutines({ pillarId, activeVicesList }: PillarActiveRoutinesProps) {
   return (
-    <div style={{ zIndex: 1, paddingBottom: '2rem' }}>
+    <div style={{ zIndex: 0 /* base */ /* base */, paddingBottom: '2rem' }}>
       <h3 style={{ color: '#fff', fontSize: '0.7rem', fontWeight: 900, letterSpacing: '2px', marginBottom: '1rem', opacity: 0.5 }}>
         ROTINAS ATIVAS
       </h3>

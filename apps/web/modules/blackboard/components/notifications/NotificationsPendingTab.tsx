@@ -57,7 +57,7 @@ export function NotificationsPendingTab({
 
   const handleRegisterClick = (e: React.MouseEvent, item: any, logType: 'milestone' | 'consumption') => {
     e.stopPropagation();
-    
+
     let correlatedIds: string[] = [];
     if (item.correlations?.dependsOn && Array.isArray(item.correlations.dependsOn)) {
       correlatedIds = item.correlations.dependsOn;
@@ -78,7 +78,7 @@ export function NotificationsPendingTab({
       if (confirmingTracker === item.id) setConfirmingTracker(null);
       if (confirmingTask === item.id) setConfirmingTask(null);
     } else {
-      addLog({ trackerItemId: item.id, type: logType, timestamp: Date.now() });
+      addLog({ trackerItemId: item.id, type: logType, timestamp: Date.now(), info: 'Feito registro rápido' });
       if (item.type === 'vice' || item.type === 'acompanhe') {
         setItem({ ...item, startDate: Date.now() });
       }
@@ -87,9 +87,41 @@ export function NotificationsPendingTab({
     }
   };
 
+  const getActiveExpectedTime = (item: any) => {
+    if (item.config?.loopTimes && Array.isArray(item.config.loopTimes) && item.config.loopTimes.length > 0) {
+      const logsToday = trackerLogs?.filter(l =>
+        l.trackerItemId === item.id &&
+        l.timestamp >= todayTimestamp &&
+        (l.type === 'consumption' || l.type === 'milestone')
+      ) || [];
+      const index = logsToday.length;
+      if (index < item.config.loopTimes.length) {
+        return item.config.loopTimes[index];
+      }
+      return item.config.loopTimes[item.config.loopTimes.length - 1];
+    }
+    return item.config?.expectedTime;
+  };
+
+  const checkIsFuture = (item: any, activeTime: string) => {
+    if (!activeTime) return false;
+    const targetDateObj = new Date(now);
+    const [expectedHours, expectedMinutes] = activeTime.split(':').map(Number);
+    if (isNaN(expectedHours) || isNaN(expectedMinutes)) return false;
+    const expectedTimeMs = new Date(
+      targetDateObj.getFullYear(),
+      targetDateObj.getMonth(),
+      targetDateObj.getDate(),
+      expectedHours,
+      expectedMinutes
+    ).getTime();
+    return targetDateObj.getTime() < expectedTimeMs;
+  };
+
   const getBaseSortTime = (item: any) => {
-    if (item.config?.expectedTime) {
-      const [h, m] = item.config.expectedTime.split(':').map(Number);
+    const activeTime = getActiveExpectedTime(item);
+    if (activeTime) {
+      const [h, m] = activeTime.split(':').map(Number);
       if (!isNaN(h) && !isNaN(m)) return h * 60 + m;
     }
     const d = new Date(item.startDate);
@@ -104,17 +136,15 @@ export function NotificationsPendingTab({
 
   const combinedItems = [...trackersToUpdate, ...tarefas]
     .filter(item => {
+      const activeTime = getActiveExpectedTime(item);
       // Se tiver horário específico
-      if (item.config?.expectedTime) {
-        const isFuture = isFutureForToday(item, now);
+      if (activeTime) {
+        const isFuture = checkIsFuture(item, activeTime);
         if (isOverdue) {
           // Atrasados: Tem horário e ele já passou (!isFuture)
           return !isFuture;
         } else {
           // Pendentes: Tem horário, mas não mostramos aqui se ele já passou ou é futuro.
-          // Na verdade, se tem horário e é futuro, vai pra aba "futuras".
-          // Se tem horário e passou, vai pra "atrasados".
-          // Logo, NÃO aparece na aba "pendentes".
           return false;
         }
       } else {
@@ -153,6 +183,27 @@ export function NotificationsPendingTab({
           };
           const rgb = hexToRgb(cardColor);
 
+          const completedToday = (trackerLogs?.filter(l => l.trackerItemId === tracker.id && l.timestamp >= todayTimestamp && (l.type === 'consumption' || l.type === 'milestone')) || []).length;
+          const currentLoopIndex = completedToday + 1;
+          const isMultiPerDay = typeof tracker.config?.dailyLoops === 'number' && tracker.config.dailyLoops > 1;
+
+          const colorClasses = [
+            "bg-blue-500/20 border-blue-500/30 text-white",
+            "bg-purple-500/20 border-purple-500/30 text-white",
+            "bg-emerald-500/20 border-emerald-500/30 text-white",
+            "bg-amber-500/20 border-amber-500/30 text-white",
+            "bg-rose-500/20 border-rose-500/30 text-white",
+            "bg-cyan-500/20 border-cyan-500/30 text-white",
+          ];
+
+          let badgeColor = colorClasses[0];
+          if (isMultiPerDay) {
+            const dayOffset = Math.floor((todayTimestamp - (tracker.startDate || 0)) / 86400000);
+            badgeColor = colorClasses[Math.max(0, dayOffset) % colorClasses.length];
+          } else {
+            badgeColor = colorClasses[new Date().getMonth() % colorClasses.length];
+          }
+
           return (
             <div key={tracker.id} className="flex flex-col gap-1">
               <div
@@ -169,13 +220,22 @@ export function NotificationsPendingTab({
                   borderColor: `rgba(${rgb}, ${isActive ? 0.4 : 0.15})`
                 }}
               >
-                {showCoverPhoto && (
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 border border-white/10 shadow-sm overflow-hidden bg-white/5" style={{ color: cardColor }}>
-                    {tracker.coverPhoto ? (
-                      <img src={getAssetUrl(tracker.coverPhoto)} alt="Capa" className="w-full h-full object-cover" />
-                    ) : (
-                      <Target size={24} />
-                    )}
+                {showCoverPhoto ? (
+                  <div className="relative shrink-0">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center border border-white/10 shadow-sm overflow-hidden bg-white/5" style={{ color: cardColor }}>
+                      {tracker.coverPhoto ? (
+                        <img src={getAssetUrl(tracker.coverPhoto)} alt="Capa" className="w-full h-full object-cover" />
+                      ) : (
+                        <Target size={24} />
+                      )}
+                    </div>
+                    <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center border text-[11px] font-black shadow-lg shadow-black/50 ${badgeColor}`}>
+                      {currentLoopIndex}
+                    </div>
+                  </div>
+                ) : (
+                  <div className={`w-12 h-12 shrink-0 rounded-full flex items-center justify-center border text-[18px] font-black ${badgeColor}`}>
+                    {currentLoopIndex}
                   </div>
                 )}
                 <div className="flex flex-col flex-1 justify-center min-w-0">
@@ -183,7 +243,13 @@ export function NotificationsPendingTab({
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="opacity-70 text-[10px] uppercase tracking-wider font-medium" style={{ color: cardColor }}>{days} dias ativos</span>
                     <span className="w-1 h-1 rounded-full opacity-50" style={{ backgroundColor: cardColor }}></span>
-                    <span className="opacity-70 text-[10px] font-medium" style={{ color: cardColor }}>{logCount} registros</span>
+                    <span className="opacity-70 text-[10px] font-medium" style={{ color: cardColor }}>
+                      {tracker.config?.dailyLoops && typeof tracker.config.dailyLoops === 'number' && tracker.config.dailyLoops > 1
+                        ? `Hoje: ${(trackerLogs?.filter(l => l.trackerItemId === tracker.id && l.timestamp >= todayTimestamp && (l.type === 'consumption' || l.type === 'milestone')) || []).length}/${tracker.config.dailyLoops} | Total: ${logCount}`
+                        : tracker.config?.dailyLoops === 'infinite'
+                          ? `Hoje: ${(trackerLogs?.filter(l => l.trackerItemId === tracker.id && l.timestamp >= todayTimestamp && (l.type === 'consumption' || l.type === 'milestone')) || []).length} | Total: ${logCount}`
+                          : `${logCount} registros`}
+                    </span>
                   </div>
 
                   {lastLog && (
@@ -372,7 +438,7 @@ export function NotificationsPendingTab({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+              className="fixed inset-0 z-hud flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
               onClick={(e) => {
                 e.stopPropagation();
                 setConfirmingTask(null);
@@ -431,90 +497,91 @@ export function NotificationsPendingTab({
         })()}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {mounted && correlationPrompt && typeof document !== 'undefined' && createPortal(
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 flex items-center justify-center p-4"
-            style={{ zIndex: 2147483647 }}
-          >
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setCorrelationPrompt(null)} />
+      {mounted && typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {correlationPrompt && (
             <motion.div
-              initial={{ scale: 0.95 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.95 }}
-              className="relative w-full max-w-sm bg-zinc-900 border border-white/10 rounded-3xl p-6 shadow-2xl flex flex-col gap-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 flex items-center justify-center p-4 correlation-portal-modal"
+              style={{ zIndex: 1000 }}
             >
-              <div className="flex flex-col items-center text-center gap-3">
-                <div className="w-14 h-14 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-2">
-                  <Target size={32} />
-                </div>
-                <h2 className="text-lg font-black text-white">Correlação Encontrada</h2>
-                <p className="text-sm text-white/60 leading-relaxed">
-                  Ao registrar <strong>{correlationPrompt.mainItemName}</strong>, notamos que ele possui correlação com:
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                {correlationPrompt.correlationItems.map(c => (
-                  <div key={c.id} className="p-3 rounded-xl bg-white/5 border border-white/5 text-center text-sm font-bold text-white/90">
-                    {c.name}
+              <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setCorrelationPrompt(null)} />
+              <motion.div
+                initial={{ scale: 0.95 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0.95 }}
+                className="relative w-full max-w-sm bg-zinc-900 border border-white/10 rounded-3xl p-6 shadow-2xl flex flex-col gap-6"
+              >
+                <div className="flex flex-col items-center text-center gap-3">
+                  <div className="w-14 h-14 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-2">
+                    <Target size={32} />
                   </div>
-                ))}
-              </div>
+                  <h2 className="text-lg font-black text-white">Registro com pendências</h2>
+                  <p className="text-md tracking-widest text-yellow-400/100 leading-relaxed">
+                    O Registro de <strong>{correlationPrompt.mainItemName}</strong>, Pede confirmação de:
+                  </p>
+                </div>
+                  <div className="flex flex-col gap-2">
+                    {correlationPrompt.correlationItems.map(c => (
+                      <div key={c.id} className="p-3 rounded-xl bg-white/5 border border-white/5 text-center text-sm font-bold text-white/90">
+                        {c.name}
+                      </div>
+                    ))}
+                  </div>
 
-              <p className="text-[13px] text-center font-medium text-white mt-2">
-                Você também realizou estas tarefas?
-              </p>
+                  <p className="text-[20px] text-center font-medium text-white mt-2 uppercase tracking-widest">
+                    Você realizou estas tarefas?
+                  </p>
 
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    addLog({ trackerItemId: correlationPrompt.mainItemId, type: correlationPrompt.mainLogType, timestamp: Date.now() });
-                    if (correlationPrompt.mainItemType === 'vice' || correlationPrompt.mainItemType === 'acompanhe') {
-                      const itemToUpdate = combinedItems.find(i => i.id === correlationPrompt.mainItemId);
-                      if (itemToUpdate) setItem({ ...itemToUpdate, startDate: Date.now() });
-                    }
-                    setConfirmingTracker(null);
-                    setConfirmingTask(null);
-                    setCorrelationPrompt(null);
-                  }}
-                  className="flex-1 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white font-bold text-xs uppercase tracking-wider transition-colors"
-                >
-                  Não
-                </button>
-                <button
-                  onClick={() => {
-                    const ts = Date.now();
-                    addLog({ trackerItemId: correlationPrompt.mainItemId, type: correlationPrompt.mainLogType, timestamp: ts });
-                    if (correlationPrompt.mainItemType === 'vice' || correlationPrompt.mainItemType === 'acompanhe') {
-                      const itemToUpdate = combinedItems.find(i => i.id === correlationPrompt.mainItemId);
-                      if (itemToUpdate) setItem({ ...itemToUpdate, startDate: ts });
-                    }
-                    
-                    const daysAgo = Math.floor((ts - todayTimestamp) / 86400000);
-                    const daysText = daysAgo > 0 ? `a ${daysAgo} dias atrás` : 'hoje';
-                    const infoText = `Confirmação a partir de "${correlationPrompt.mainItemName}" (${daysText})`;
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        addLog({ trackerItemId: correlationPrompt.mainItemId, type: correlationPrompt.mainLogType, timestamp: Date.now(), info: 'Feito registro rápido' });
+                        if (correlationPrompt.mainItemType === 'vice' || correlationPrompt.mainItemType === 'acompanhe') {
+                          const itemToUpdate = combinedItems.find(i => i.id === correlationPrompt.mainItemId);
+                          if (itemToUpdate) setItem({ ...itemToUpdate, startDate: Date.now() });
+                        }
+                        setConfirmingTracker(null);
+                        setConfirmingTask(null);
+                        setCorrelationPrompt(null);
+                      }}
+                      className="flex-1 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white font-bold text-xs uppercase tracking-wider transition-colors"
+                    >
+                      Não
+                    </button>
+                    <button
+                      onClick={() => {
+                        const ts = Date.now();
+                        addLog({ trackerItemId: correlationPrompt.mainItemId, type: correlationPrompt.mainLogType, timestamp: ts, info: 'Feito registro rápido' });
+                        if (correlationPrompt.mainItemType === 'vice' || correlationPrompt.mainItemType === 'acompanhe') {
+                          const itemToUpdate = combinedItems.find(i => i.id === correlationPrompt.mainItemId);
+                          if (itemToUpdate) setItem({ ...itemToUpdate, startDate: ts });
+                        }
 
-                    correlationPrompt.correlationItems.forEach(c => {
-                      addLog({ trackerItemId: c.id, type: 'milestone', timestamp: ts, info: infoText });
-                    });
+                        const daysAgo = Math.floor((ts - todayTimestamp) / 86400000);
+                        const daysText = daysAgo > 0 ? `a ${daysAgo} dias atrás` : 'hoje';
+                        const infoText = `Confirmação a partir de "${correlationPrompt.mainItemName}" (${daysText})`;
 
-                    setConfirmingTracker(null);
-                    setConfirmingTask(null);
-                    setCorrelationPrompt(null);
-                  }}
-                  className="flex-1 py-3.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 font-bold text-xs uppercase tracking-wider transition-colors shadow-lg shadow-emerald-500/20"
-                >
-                  Sim
-                </button>
-              </div>
+                        correlationPrompt.correlationItems.forEach(c => {
+                          addLog({ trackerItemId: c.id, type: 'milestone', timestamp: ts, info: infoText });
+                        });
+
+                        setConfirmingTracker(null);
+                        setConfirmingTask(null);
+                        setCorrelationPrompt(null);
+                      }}
+                      className="flex-1 py-3.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 font-bold text-xs uppercase tracking-wider transition-colors shadow-lg shadow-emerald-500/20"
+                    >
+                      Sim
+                    </button>
+                  </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
+          )}
+        </AnimatePresence>
         , document.body)}
-      </AnimatePresence>
     </div>
   );
 }

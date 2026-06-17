@@ -3,7 +3,6 @@
  * @description Barra de humor/status visível que exibe os níveis das necessidades do Ploc.
  */
 
-import { motion } from 'framer-motion';
 
 interface PlocHumorBarProps {
   isSleeping: boolean;
@@ -59,7 +58,7 @@ export function PlocHumorBar({
       : 'from-emerald-400 to-teal-400';
 
   return (
-    <div className="absolute bottom-[-32px] left-1/2 -translate-x-1/2 w-[86px] flex flex-col items-center gap-[3px] z-[999999] pointer-events-none">
+    <div className="absolute bottom-[-32px] left-1/2 -translate-x-1/2 w-[86px] flex flex-col items-center gap-[3px] z-modal pointer-events-none">
       <span
         className={`text-[7px] font-black tracking-wider uppercase font-mono px-1.5 py-[1.5px] rounded-full leading-none whitespace-nowrap border ${
           isFurious
@@ -74,33 +73,33 @@ export function PlocHumorBar({
 
       {isFurious ? (
         // Nivel 5: cronometro pulsante vermelho
-        <motion.span
-          animate={{ opacity: [1, 0.4, 1] }}
-          transition={{ duration: 0.8, repeat: Infinity }}
+        <span
+          
+          
           className="text-[8px] font-black text-red-400 font-mono"
         >
           {levelLockTimer}s
-        </motion.span>
+        </span>
       ) : hasTimer ? (
         // Niveis 1-4 com timer de estado ativo
         <div className="flex flex-col items-center gap-[2px] w-full">
           <span className="text-[8px] font-black text-amber-400 font-mono leading-none">{levelLockTimer}s</span>
           {/* Barra de progresso para cliques (retrocede com inatividade) */}
           <div className="w-full h-1 bg-slate-950/85 border border-white/10 rounded-full overflow-hidden p-[0.5px] shadow-lg flex items-center">
-            <motion.div
+            <div
               className={`h-full rounded-full bg-gradient-to-r ${barColor}`}
-              animate={{ width: `${angerPercentage}%` }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
+              
+              
             />
           </div>
         </div>
       ) : (
         // Barra de progresso padrão
         <div className="w-full h-1.5 bg-slate-950/85 border border-white/10 rounded-full overflow-hidden p-[0.5px] shadow-lg flex items-center">
-          <motion.div
+          <div
             className={`h-full rounded-full bg-gradient-to-r ${barColor}`}
-            animate={{ width: `${angerPercentage}%` }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
+            
+            
           />
         </div>
       )}

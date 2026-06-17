@@ -59,7 +59,7 @@ export function AttributeMonitor(props: AttributeMonitorProps) {
         flexDirection: 'column',
         alignItems: 'center',
         gap: '20px',
-        zIndex: 100,
+        zIndex: 0 /* base */ /* base */,
       }}>
       <AttributePillars 
         attributes={attributes}

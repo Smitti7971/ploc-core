@@ -1,6 +1,6 @@
 import React from 'react';
 import { Database } from 'lucide-react';
-import { DynamicIcon } from '@/components/mascot/DynamicIcon';
+import { DynamicIcon } from '@/components/ui/DynamicIcon';
 
 interface LabItemEditorProps {
   editingItemId: string | null;

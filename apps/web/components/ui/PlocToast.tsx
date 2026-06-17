@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { usePlocStateStore } from '@/modules/mascot/store/plocStateStore';
 import { Apple, Droplet, Pill, Box, Coffee, Dices, Pizza, GlassWater } from 'lucide-react';
 
@@ -28,15 +27,15 @@ export function PlocToast() {
   if (!mounted) return null;
 
   return createPortal(
-    <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9999999] pointer-events-none flex flex-col items-center justify-center">
-      <AnimatePresence>
+    <div className="fixed top-20 left-1/2 -translate-x-1/2 z-toast pointer-events-none flex flex-col items-center justify-center">
+      <>
         {toastItem && (
-          <motion.div
+          <div
             key={toastItem.id}
-            initial={{ opacity: 0, y: -50, scale: 0.8 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.8 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            
+            
+            
+            
             className="bg-[#0B0F19]/90 backdrop-blur-xl border border-slate-700/50 shadow-[0_10px_40px_rgba(0,0,0,0.5)] rounded-full px-5 py-3 flex items-center gap-3"
           >
             <div className="flex items-center justify-center p-2 bg-slate-800/50 rounded-full border border-slate-600/30">
@@ -50,9 +49,9 @@ export function PlocToast() {
                 <span className="text-green-400 font-bold text-xs">Adicionado a mochila</span>
               )}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
+      </>
     </div>,
     document.body
   );

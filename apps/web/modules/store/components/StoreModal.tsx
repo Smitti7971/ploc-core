@@ -5,7 +5,7 @@ import { Store, X, Apple, Droplet, Pill, Box, Coffee, Dices, Pizza, GlassWater }
 import { usePlocStateStore, ItemType } from '@/modules/mascot/store/plocStateStore';
 import { useAuthStore } from '@/store/authStore';
 import { playPlocSound } from '@/modules/landing/components/bubbles/bubble-pop-sfx';
-import { DynamicIcon } from './DynamicIcon';
+import { DynamicIcon } from '@/components/ui/DynamicIcon';
 
 interface StoreModalProps {
   isOpen: boolean;
@@ -109,7 +109,7 @@ export function StoreModal({ isOpen, onClose }: StoreModalProps) {
               e.stopPropagation();
               onClose();
             }}
-            className="fixed inset-0 bg-transparent z-[99999]"
+            className="fixed inset-0 bg-transparent z-hud"
           />
 
           <motion.div
@@ -117,7 +117,7 @@ export function StoreModal({ isOpen, onClose }: StoreModalProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed bottom-0 left-0 w-full max-h-[85vh] pb-12 bg-[#0B0F19]/95 backdrop-blur-2xl border-t border-slate-700/50 rounded-t-[40px] shadow-[0_-20px_60px_rgba(0,0,0,0.6)] z-[100000] flex flex-col"
+            className="fixed bottom-0 left-0 w-full max-h-[85vh] pb-12 bg-[#0B0F19]/95 backdrop-blur-2xl border-t border-slate-700/50 rounded-t-[40px] shadow-[0_-20px_60px_rgba(0,0,0,0.6)] z-modal flex flex-col"
             onPointerDown={(e) => e.stopPropagation()}
           >
             {/* Header da Loja */}

@@ -10,7 +10,7 @@ interface PillarHeaderProps {
 
 export function PillarHeader({ status, currentLevel, config, Icon }: PillarHeaderProps) {
   return (
-    <div style={{ zIndex: 1 }}>
+    <div style={{ zIndex: 0 /* base */ /* base */ }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', marginBottom: '1.5rem' }}>
         {/* Gauge Circular Simplificado */}
         <div style={{ position: 'relative', width: '80px', height: '80px' }}>

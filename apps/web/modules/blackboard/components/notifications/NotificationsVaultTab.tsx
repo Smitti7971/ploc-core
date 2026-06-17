@@ -38,9 +38,11 @@ export function NotificationsVaultTab({
             Esta área protege tarefas sensíveis de olhares de terceiros (ex: Pornografia, Drogas). Digite o PIN para acessar.
           </p>
           <div className="flex gap-2 w-full px-6">
+            <label htmlFor="vault-pin" className="sr-only">PIN do Cofre</label>
             <input
               id="vault-pin"
               name="vaultPin"
+              aria-label="PIN do Cofre"
               type="password"
               value={pinInput}
               onChange={e => setPinInput(e.target.value)}

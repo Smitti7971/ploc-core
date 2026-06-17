@@ -51,7 +51,7 @@ export const AuthModal: React.FC = () => {
   return (
     <AnimatePresence>
       {isAuthModalOpen && (
-        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-5">
+        <div className="fixed inset-0 z-modal flex items-center justify-center p-5">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -67,7 +67,7 @@ export const AuthModal: React.FC = () => {
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             className={cn(
-              "relative w-full max-w-[340px] p-10 flex flex-col gap-6 z-[1]",
+              "relative w-full max-w-[340px] p-10 flex flex-col gap-6 z-base",
               "bg-[var(--ploc-glass)] backdrop-blur-[40px]",
               "rounded-[var(--radius-card)] border border-[var(--ploc-border)]",
               "shadow-[0_30px_60px_rgba(0,0,0,0.8)] text-[var(--ploc-foreground)]"

@@ -14,7 +14,7 @@
  */
 
 import dynamic from 'next/dynamic';
-import { PlocToast } from './PlocToast';
+import { PlocToast } from '@/components/ui/PlocToast';
 
 const PlocAvatarInner = dynamic(
   () => import('./PlocAvatar'),

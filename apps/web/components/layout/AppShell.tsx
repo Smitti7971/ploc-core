@@ -105,7 +105,7 @@ return (
           alignItems: pathname === '/' ? 'center' : 'flex-end',
           paddingBottom: pathname === '/' ? 0 : '110px',
           paddingRight: pathname === '/' ? 0 : '30px',
-          zIndex: 1000,
+          zIndex: 200 /* sticky */,
           pointerEvents: 'none'
         }}>
           <div style={{ pointerEvents: 'all' }}>

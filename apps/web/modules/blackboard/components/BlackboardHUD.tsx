@@ -24,7 +24,7 @@ export function BlackboardHUD({
   userClosedMinimap,
 }: BlackboardHUDProps) {
   return (
-    <div className="fixed top-[25px] left-0 w-full px-6 flex justify-between items-start z-[100001] pointer-events-none">
+    <div className="fixed top-[25px] left-0 w-full px-6 flex justify-between items-start z-hud pointer-events-none">
       {/* Botões à esquerda */}
       <div className="flex items-center bg-black/40 border border-white/10 backdrop-blur-md rounded-full p-1 shadow-[0_4px_20px_rgba(0,0,0,0.5)] pointer-events-auto gap-1 h-[46px]">
         <motion.button

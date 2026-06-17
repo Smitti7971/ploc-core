@@ -41,10 +41,7 @@ import {
 import { DockMenu } from "@/components/layout/DockMenu";
 
 // Removido import estático do AttributeMonitor
-import { bubbleEngine } from "../engine/bubble-engine/BubbleEngine";
-import { BlackboardBubble } from "../types/bubbles";
 import { blackboardEventBus, BLACKBOARD_EVENTS } from "../events/eventBus";
-import { ViceBubble } from "../../dashboard/components/libertesse/components/ViceBubble";
 import {
   attributeEngine,
   UserAttributes,
@@ -63,16 +60,15 @@ const AttributeMonitor = dynamic(
   { ssr: false }
 );
 
-import { ResourceLayer } from "./ResourceLayer";
-import { OffScreenIndicators } from "./OffScreenIndicators";
-import { resourceEngine } from "../engine/resource-engine/ResourceEngine";
+
 
 import { AmbientGlowBackground } from "../../landing/particles/AmbientGlowBackground";
 import { Vignette } from "../../landing/particles/Vignette";
 import { useTrackerStore } from "../../dashboard/components/tracker/store/trackerStore";
-import { usePlocSpeech } from "../../../components/mascot/usePlocSpeech";
+import { usePlocSpeech } from '@/modules/chat/hooks/usePlocSpeech';
 import { usePlocStateStore } from "../../mascot/store/plocStateStore";
 import { BlackboardHUD } from "./BlackboardHUD";
+import { BlackboardBottomHUD } from "./BlackboardBottomHUD";
 import { BlackboardActiveConsumption } from "./BlackboardActiveConsumption";
 import { BlackboardMinimap } from "./BlackboardMinimap";
 
@@ -128,7 +124,6 @@ export default function BlackboardPage() {
   const [showAttributes, setShowAttributes] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [bubbles, setBubbles] = useState<any[]>([]); // Items from ResourceEngine
   const scale = 1; // Constante mantida para compatibilidade visual dos filhos
   const [plocReaction, setPlocReaction] = useState<
     "idle" | "happy" | "stressed" | "dizzy"
@@ -244,20 +239,12 @@ export default function BlackboardPage() {
     // Atualiza a flag de pendências
     const checkPendingPillars = () => {
       const attributes = attributeEngine.getAttributes();
-      const activeBubbles = bubbleEngine.getActiveBubbles();
       const vices = Object.values(useTrackerStore.getState().items).filter(v => v.type === 'vice' && v.status === 'ACTIVE');
 
       const pending = (
         Object.keys(PILLARS_CONFIG) as Array<keyof UserAttributes>
       ).some((key) => {
         if (attributes[key] > 0) return false;
-        const config = PILLARS_CONFIG[key];
-        const tasks = activeBubbles.filter((b) =>
-          config.habits.includes(
-            (b.metadata as { habit?: string })?.habit || "",
-          ),
-        );
-        if (tasks.length > 0) return false;
         if (key === "liberdade" && vices.length > 0) return false;
         if (isPillarProfileFilled(key)) return false;
         return true;
@@ -265,23 +252,12 @@ export default function BlackboardPage() {
       setHasPendingPillars(pending);
     };
 
-    const unsubscribeBubble = bubbleEngine.subscribe(() => {
-      checkPendingPillars();
-    });
-
-    const unsubscribeResource = resourceEngine.subscribe(() => {
-      setBubbles([...resourceEngine.getBubbles()]);
-    });
-
     checkPendingPillars();
-    setBubbles(resourceEngine.getBubbles());
 
     const interval = setInterval(checkPendingPillars, 1000);
 
     return () => {
       clearInterval(interval);
-      if (unsubscribeBubble) unsubscribeBubble();
-      if (unsubscribeResource) unsubscribeResource();
     };
   }, []);
   const { speak } = usePlocSpeech();
@@ -380,7 +356,7 @@ export default function BlackboardPage() {
     // Reações do Ploc a eventos das bolhas
     const unsubscribeTimeout = blackboardEventBus.subscribe(
       BLACKBOARD_EVENTS.BUBBLE_TIMEOUT,
-      (bubble: BlackboardBubble) => {
+      (bubble: any) => {
         setPlocReaction("dizzy");
         setTimeout(() => setPlocReaction("idle"), 2000);
       },
@@ -388,7 +364,7 @@ export default function BlackboardPage() {
 
     const unsubscribeExplosion = blackboardEventBus.subscribe(
       BLACKBOARD_EVENTS.BUBBLE_EXPLODED,
-      (bubble: BlackboardBubble & { collided?: boolean; value?: string }) => {
+      (bubble: any & { collided?: boolean; value?: string }) => {
         if (bubble?.collided) return;
         const isNegative = bubble && bubble.value === "negative";
         setPlocReaction(isNegative ? "dizzy" : "happy");
@@ -410,30 +386,7 @@ export default function BlackboardPage() {
     }
   }, [user]);
 
-  // Bubble Engine Subscription & Event Listeners
   useEffect(() => {
-    const unsubscribe = bubbleEngine.subscribe(() => { });
-
-    const onExplode = (
-      bubble: BlackboardBubble & { collided?: boolean; value?: string },
-    ) => {
-      if (bubble?.collided) return;
-      setPlocReaction("happy");
-      setTimeout(() => {
-        setPlocReaction("idle");
-      }, 3000);
-    };
-
-    const onTimeout = () => {
-      setPlocReaction("dizzy");
-      setTimeout(() => {
-        setPlocReaction("idle");
-      }, 3000);
-    };
-
-    blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_EXPLODED, onExplode);
-    blackboardEventBus.subscribe(BLACKBOARD_EVENTS.BUBBLE_TIMEOUT, onTimeout);
-
     const unsubReaction = blackboardEventBus.subscribe(
       BLACKBOARD_EVENTS.PLOC_REACTION,
       (data: { message?: string }) => {
@@ -445,7 +398,6 @@ export default function BlackboardPage() {
     );
 
     return () => {
-      unsubscribe();
       unsubReaction();
     };
   }, []);
@@ -458,7 +410,7 @@ export default function BlackboardPage() {
       <AmbientGlowBackground />
       <Vignette />
       
-      <OffScreenIndicators bubbles={bubbles} mapX={mapX} mapY={mapY} mapScale={mapScale} />
+
 
       <div
         id="blackboard-canvas"
@@ -476,7 +428,7 @@ export default function BlackboardPage() {
           dragMomentum={true}
           style={{ x: mapX, y: mapY }}
           whileTap={{ cursor: "grabbing" }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[3000px] h-[3000px] cursor-grab active:cursor-grabbing touch-none z-[2]"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[3000px] h-[3000px] cursor-grab active:cursor-grabbing touch-none z-base"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -546,10 +498,7 @@ export default function BlackboardPage() {
                     </span>
                   </motion.div>
 
-                  {/* RESOURCE LAYER (GAMIFICATION BUBBLES) */}
-                  <div className="pointer-events-auto z-0 absolute inset-0">
-                    <ResourceLayer />
-                  </div>
+
 
                   {/* PLOC AVATAR */}
                   <div className="pointer-events-auto z-10">
@@ -571,7 +520,7 @@ export default function BlackboardPage() {
                       initial={{ opacity: 0, y: 20, scale: 0.8, x: "-50%" }}
                       animate={{ opacity: 1, y: -110, scale: 1, x: "-50%" }}
                       exit={{ opacity: 0, scale: 0.8, x: "-50%" }}
-                      className="absolute left-0 w-max max-w-[280px] bg-slate-900/90 backdrop-blur-xl px-5 py-3 rounded-3xl text-white text-[0.85rem] font-extrabold text-center shadow-[0_20px_40px_rgba(0,0,0,0.4)] border border-sky-400/30 z-[300] pointer-events-none"
+                      className="absolute left-0 w-max max-w-[280px] bg-slate-900/90 backdrop-blur-xl px-5 py-3 rounded-3xl text-white text-[0.85rem] font-extrabold text-center shadow-[0_20px_40px_rgba(0,0,0,0.4)] border border-sky-400/30 z-hud pointer-events-none"
                     >
                       {plocMessage}
                       {/* Triângulo do Balão (Seta) */}
@@ -579,27 +528,7 @@ export default function BlackboardPage() {
                     </motion.div>
                   )}
                 </AnimatePresence>
-
-                {/* Bolhas de Pensamento do Libertesse/Tracker (Controle de Hábitos e Vícios) */}
-                {Object.values(items)
-                  .filter(
-                    (v) =>
-                      v.status === 'ACTIVE' &&
-                      v.config?.showCoverPhoto !== false &&
-                      !v.config?.isHidden &&
-                      !v.config?.isVulnerability,
-                  )
-                  .map((vice, index, array) => (
-                    <ViceBubble
-                      key={vice.id}
-                      viceId={vice.id}
-                      canvasScale={scale}
-                      index={index}
-                      total={array.length}
-                    />
-                  ))}
               </div>
-              {/* Bolhas da Wave removidas para otimização de performance */}
             </div>
           </motion.div>
         </motion.div>
@@ -617,7 +546,7 @@ export default function BlackboardPage() {
       />
 
       {/* Dropdown de Status (Pilares + Modal de Tarefas) */}
-      <div className="pointer-events-none fixed inset-0 z-[100002]">
+      <div className="pointer-events-none fixed inset-0 z-hud">
         <AnimatePresence>
           {showStatusMenu && (
             <>
@@ -674,8 +603,9 @@ export default function BlackboardPage() {
         mapY={mapY}
         mapScale={mapScale}
         minScale={minScale}
-        bubbles={bubbles}
       />
+
+      <BlackboardBottomHUD />
 
       {/* ── Menu de Navegação Global (Dock) ────────────────── */}
       <DockMenu />

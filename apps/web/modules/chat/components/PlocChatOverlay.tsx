@@ -3,7 +3,6 @@
  * @description Overlay principal do chat, agregando controles, input e balões de fala do mascote.
  */
 
-import { AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { PlocSpeechBubble } from './PlocSpeechBubble';
 import { PlocChatInput } from './PlocChatInput';
@@ -38,11 +37,11 @@ export function PlocChatOverlay({
   if (typeof window === 'undefined') return null;
 
   return createPortal(
-    <AnimatePresence>
+    <>
       {(isChatOpen || isChatInputVisible || !!currentSpokenText || isPending || isTTSLoading) && (
         <>
           {/* Top section: Ploc's spoken text and onboarding UI */}
-          <div className="fixed top-[6vh] sm:top-[12vh] left-1/2 -translate-x-1/2 w-[88%] sm:w-[68%] max-w-[680px] z-[999999] pointer-events-none flex flex-col items-center gap-4 sm:gap-6">
+          <div className="fixed top-[6vh] sm:top-[12vh] left-1/2 -translate-x-1/2 w-[88%] sm:w-[68%] max-w-[680px] z-modal pointer-events-none flex flex-col items-center gap-4 sm:gap-6">
             <PlocSpeechBubble
               currentSpokenText={currentSpokenText}
               isPending={isPending}
@@ -64,7 +63,7 @@ export function PlocChatOverlay({
           />
         </>
       )}
-    </AnimatePresence>,
+    </>,
     document.body
   );
 }

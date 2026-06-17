@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useMotionValue } from 'framer-motion';
 import { Flame, Wine, WineOff, Pill, Eye, EyeOff, Check, Cigarette, CigaretteOff, X, RotateCcw, History } from 'lucide-react';
 import { useTrackerStore } from '../../tracker/store/trackerStore';
 import { blackboardEventBus, BLACKBOARD_EVENTS } from '@/modules/blackboard/events/eventBus';
-import { usePlocSpeech } from '@/components/mascot/usePlocSpeech';
+import { usePlocSpeech } from '@/modules/chat/hooks/usePlocSpeech';
 import { ViceBubbleModal } from './ViceBubbleModal';
 
 const VICE_ICONS_OFF: Record<string, React.ElementType> = {
