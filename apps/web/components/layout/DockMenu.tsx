@@ -47,10 +47,14 @@ export function DockMenu() {
     }
 
     const handleScroll = (e: Event) => {
-      const target = e.target as HTMLElement;
-      if (!target || typeof target.scrollTop !== 'number') return;
+      let currentScrollY = window.scrollY;
       
-      const currentScrollY = target.scrollTop;
+      const target = e.target as HTMLElement;
+      if (target && target.tagName && target.tagName !== 'HTML' && target.tagName !== 'BODY' && target !== document as any) {
+        // Ignorar eventos de scroll de elementos pequenos (ex: popups, dropdowns, AuthCapsule)
+        if (target.clientHeight < window.innerHeight * 0.5) return;
+        currentScrollY = target.scrollTop;
+      }
       
       // Ignorar scrolls muito curtos ou no topo da página
       if (currentScrollY < 10) {

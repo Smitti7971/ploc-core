@@ -31,170 +31,85 @@ export function UserHeader() {
     <div
       ref={headerRef}
       onClick={() => setIsOpen(!isOpen)}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        padding: '4px',
-        gap: isOpen ? '10px' : '0px',
-        cursor: 'pointer',
-        background: 'rgba(255, 255, 255, 0.05)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderRadius: '50px',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-        transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-        minHeight: '36px',
-        pointerEvents: 'all'
-      }}
+      className={`flex items-center p-1 cursor-pointer bg-white/5 backdrop-blur-[20px] rounded-full border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.3)] transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] h-[46px] pointer-events-auto ${isOpen ? 'gap-[10px]' : 'gap-0'}`}
     >
-        <AnimatePresence mode="wait">
-          {!isOpen ? (
-            <motion.div 
-              key="profile"
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 'auto', opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              style={{ display: 'flex', alignItems: 'center' }}
+        {/* PROFILE SECTION */}
+        <motion.div 
+          initial={false}
+          animate={{ 
+            width: !isOpen ? 'auto' : 0, 
+            opacity: !isOpen ? 1 : 0,
+            marginRight: !isOpen ? 0 : -10 // Compensate for gap when closed
+          }}
+          className="flex items-center overflow-hidden"
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {/* Foto / Avatar */}
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-sky-400 to-indigo-400 flex items-center justify-center font-black text-[0.7rem] text-white overflow-hidden shrink-0">
+            {user?.profilePhoto && !imgError ? (
+              <img 
+                src={getAssetUrl(user.profilePhoto)} 
+                onError={() => setImgError(true)}
+                className="w-full h-full object-cover"
+                alt="Profile"
+              />
+            ) : (
+              (user?.name || 'U').charAt(0).toUpperCase()
+            )}
+          </div>
+
+          {/* Level e XP */}
+          <div className="flex flex-col justify-center gap-[2px] mx-[6px] shrink-0">
+            <span className="text-[0.65rem] font-extrabold text-white/90 tracking-[0.3px] whitespace-nowrap max-w-[80px] overflow-hidden text-ellipsis">
+              {user?.name?.split(' ')[0] || 'Usuário'}
+            </span>
+            <div className="w-[40px] h-[3px] bg-white/10 rounded-full overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${(user?.stats?.xp || 0) % 100}%` }}
+                className="h-full bg-gradient-to-r from-sky-400 to-indigo-400 rounded-full"
+              />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ACTIONS SECTION */}
+        <motion.div 
+          initial={false}
+          animate={{ 
+            width: isOpen ? 'auto' : 0, 
+            opacity: isOpen ? 1 : 0 
+          }}
+          className="flex items-center overflow-hidden"
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div className={`flex items-center gap-2 ${isOpen ? 'pl-1' : 'pl-0'}`}>
+            {/* PROFILE (Esquerda) */}
+            <Link href="/settings/profile" className="text-white flex items-center justify-center opacity-80 w-7 h-7 rounded-full bg-white/10 transition-all duration-200 hover:opacity-100 shrink-0">
+              <User size={15} />
+            </Link>
+
+            {/* SETTINGS (Meio) */}
+            <Link href="/settings" className="text-white flex items-center justify-center opacity-80 w-7 h-7 rounded-full bg-white/10 transition-all duration-200 hover:opacity-100 shrink-0">
+              <Settings size={15} />
+            </Link>
+
+            <div className="w-[1px] h-4 bg-white/10 shrink-0" />
+
+            {/* SAIR (Direita: capsula vermelha, texto branco, sem icone) */}
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                logout();
+                router.push('/');
+              }} 
+              className="bg-red-500 border-none text-white cursor-pointer flex items-center justify-center rounded-full px-6 h-7 shrink-0"
             >
-              {/* Foto / Avatar */}
-              <div 
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #38bdf8, #818cf8)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 900,
-                  fontSize: '0.7rem',
-                  color: '#fff',
-                  overflow: 'hidden',
-                  flexShrink: 0
-                }}>
-                {user?.profilePhoto && !imgError ? (
-                  <img 
-                    src={getAssetUrl(user.profilePhoto)} 
-                    onError={() => setImgError(true)}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                    alt="Profile"
-                  />
-                ) : (
-                  (user?.name || 'U').charAt(0).toUpperCase()
-                )}
-              </div>
-
-              {/* Level e XP */}
-              <div 
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  gap: '2px',
-                  marginLeft: '6px',
-                  marginRight: '6px'
-                }}>
-                <span style={{ 
-                  fontSize: '0.65rem', 
-                  fontWeight: 800, 
-                  color: '#fff', 
-                  opacity: 0.9,
-                  letterSpacing: '0.3px',
-                  whiteSpace: 'nowrap',
-                  maxWidth: '80px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
-                  {user?.name?.split(' ')[0] || 'Usuário'}
-                </span>
-                <div style={{ 
-                  width: '40px', 
-                  height: '3px', 
-                  background: 'rgba(255,255,255,0.1)', 
-                  borderRadius: '10px',
-                  overflow: 'hidden' 
-                }}>
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(user?.stats?.xp || 0) % 100}%` }}
-                    style={{ 
-                      height: '100%', 
-                      background: 'linear-gradient(90deg, #38bdf8, #818cf8)',
-                      borderRadius: '10px'
-                    }} 
-                  />
-                </div>
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div 
-              key="actions"
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 'auto', opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}
-            >
-              {/* PROFILE (Esquerda) */}
-              <Link href="/settings/profile" style={{ 
-                color: '#fff', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                opacity: 0.8, 
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                background: 'rgba(255,255,255,0.1)',
-                transition: 'all 0.2s'
-              }}>
-                <User size={15} />
-              </Link>
-
-              {/* SETTINGS (Meio) */}
-              <Link href="/settings" style={{ 
-                color: '#fff', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                opacity: 0.8, 
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                background: 'rgba(255,255,255,0.1)',
-                transition: 'all 0.2s'
-              }}>
-                <Settings size={15} />
-              </Link>
-
-              <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.1)' }} />
-
-              {/* SAIR (Direita: capsula vermelha, texto branco, sem icone) */}
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  logout();
-                  router.push('/');
-                }} 
-                style={{ 
-                  background: '#ef4444', 
-                  border: 'none', 
-                  color: '#fff', 
-                  cursor: 'pointer', 
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '50px',
-                  padding: '4px 24px',
-                  height: '28px'
-                }}
-              >
-                <span style={{ fontSize: '0.65rem', fontWeight: 900, letterSpacing: '1px' }}>SAIR</span>
-              </motion.button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <span className="text-[0.65rem] font-black tracking-[1px]">SAIR</span>
+            </motion.button>
+          </div>
+        </motion.div>
       </div>
   );
 }

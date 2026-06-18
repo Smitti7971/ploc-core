@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, Check, PlusCircle, CheckSquare } from 'lucide-react';
+import { Camera, Check, PlusCircle, CheckSquare, Trash2 } from 'lucide-react';
 import { getAssetUrl } from '@/lib/config';
 import { useTrackerStore } from '../store/trackerStore';
 
@@ -16,9 +16,8 @@ interface NewLogAreaProps {
   items: Record<string, any>;
   openCorrelatedItem: (id: string) => void;
   requestAddLog: (params: any, opts?: any, cb?: (id: string) => void) => void;
-  itemId: string;
-  setConditionPhotos: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   handleEditLog: (id: string, info: string, photoUrl: string | undefined, metadata: any) => void;
+  removeCorrelation?: (cId: string) => void;
 }
 
 export function NewLogArea({
@@ -36,16 +35,20 @@ export function NewLogArea({
   requestAddLog,
   itemId,
   setConditionPhotos,
-  handleEditLog
-}: NewLogAreaProps) {
+  handleEditLog,
+  removeCorrelation
+}: NewLogAreaProps & { itemId?: string; setConditionPhotos?: any }) {
   const logs = useTrackerStore(state => state.logs);
+  const hasPendencies = conditions.length > 0 || Object.keys(item.correlations || {}).length > 0;
 
   return (
     <div className="py-2 mb-4 border-t border-white/5 pt-4">
-      <div className="flex items-center gap-2 mb-3">
-        <CheckSquare size={14} className="text-sky-400" />
-        <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider">Novo Registro</span>
-      </div>
+      {hasPendencies && (
+        <div className="flex items-center gap-2 mb-3">
+          <CheckSquare size={14} className="text-sky-400" />
+          <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider">Pendências</span>
+        </div>
+      )}
       
       <input 
         id={`${item.id}-add-condition-photo`}
@@ -55,6 +58,7 @@ export function NewLogArea({
         ref={conditionPhotoInputRef} 
         className="hidden" 
         accept="image/*" 
+        capture="environment"
         onChange={handleUploadConditionPhoto} 
       />
 
@@ -95,7 +99,7 @@ export function NewLogArea({
                 </div>
                 {conditionPhotos[`cond-${idx}`] && (
                   <div className="h-16 w-16 mt-1 rounded-lg overflow-hidden border border-white/10 relative">
-                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${getAssetUrl(conditionPhotos[`cond-${idx}`])})` }} />
+                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${getAssetUrl(conditionPhotos[`cond-${idx}`])})`, imageOrientation: 'from-image' }} />
                   </div>
                 )}
               </div>
@@ -134,31 +138,48 @@ export function NewLogArea({
               : 'bg-rose-500/10 border-rose-500/30 border-l-rose-500';
             const textClass = isCompletedToday ? 'text-emerald-300' : 'text-rose-300';
             
+            const isItemCompleted = cItem.status === 'COMPLETED';
+            
             return (
               <div key={cId} 
-                    className={`flex flex-col gap-1 p-2 rounded-xl border border-l-4 group transition-colors ${cardBgClass}`}
-                    style={cItem.coverPhoto ? { backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.9), rgba(0,0,0,0.6)), url(${getAssetUrl(cItem.coverPhoto)})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+                    className={`flex flex-col gap-1 p-2 rounded-xl border border-l-4 group transition-colors cursor-pointer ${cardBgClass}`}
+                    onClick={() => openCorrelatedItem(cId)}
+                    style={cItem.coverPhoto ? { backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.9), rgba(0,0,0,0.6)), url(${getAssetUrl(cItem.coverPhoto)})`, backgroundSize: 'cover', backgroundPosition: 'center', imageOrientation: 'from-image' } : {}}
               >
                 <div className="flex items-center justify-between">
-                  <span 
-                    className={`text-[11px] font-bold flex-1 cursor-pointer hover:underline ${textClass}`}
-                    onClick={() => openCorrelatedItem(cId)}
-                  >
-                    {cItem.name || cItem.id.substring(0, 8)}
-                  </span>
+                  <div className="flex flex-col flex-1">
+                    <span className={`text-[11px] font-bold group-hover:underline ${textClass}`}>
+                      {cItem.name || cItem.id.substring(0, 8)}
+                    </span>
+                    {isItemCompleted && (
+                      <span className="text-[9px] font-bold text-zinc-400 mt-0.5 uppercase">
+                        Tarefa Concluída
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2">
+                    {removeCorrelation && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeCorrelation(cId);
+                        }}
+                        title="Desativar Correlação"
+                        className="p-1 rounded-full text-white/20 hover:bg-rose-500/20 hover:text-rose-400 transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                     <button
-                      onClick={() => addCondPhoto(`corr-${cId}`)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addCondPhoto(`corr-${cId}`);
+                      }}
                       title="Anexar Foto"
                       className={`p-1 rounded-full hover:bg-white/10 transition-colors ${conditionPhotos[`corr-${cId}`] ? 'text-emerald-400' : 'text-white/30'}`}
                     >
                       <Camera size={14} />
                     </button>
-                    <div 
-                      className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors ${isCompletedToday ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-rose-500/20 border-rose-500/50 text-rose-400'}`}
-                    >
-                      <Check size={12} />
-                    </div>
                   </div>
                 </div>
                 {conditionPhotos[`corr-${cId}`] && (

@@ -409,7 +409,7 @@ export default function BlackboardPage() {
     >
       <AmbientGlowBackground />
       <Vignette />
-      
+
 
 
       <div
@@ -475,28 +475,7 @@ export default function BlackboardPage() {
                     x: { duration: 0.4 },
                   }}
                 >
-                  {/* A BOLHA DO PLOC (SONAR DE 500px) - Otimizada para Celular */}
-                  <motion.div
-                    animate={
-                      !activeConsumingVice?.isConsuming
-                        ? {
-                          scale: [1, 1.02, 0.98, 1],
-                        }
-                        : {
-                          scale: 1,
-                        }
-                    }
-                    transition={{
-                      duration: 6,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                    className="absolute w-[500px] h-[500px] rounded-full border border-sky-400/15 bg-sky-400/10 flex items-center justify-center pointer-events-none z-0"
-                  >
-                    <span className="absolute top-[25px] text-[15px] font-bold text-sky-400/40 uppercase tracking-[0.25em]">
-                      BOLHA PADRÃO
-                    </span>
-                  </motion.div>
+
 
 
 

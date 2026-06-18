@@ -38,33 +38,38 @@ export const AuthCapsule: React.FC = () => {
   };
 
   return (
-    <div className="absolute top-4 right-4 md:top-[25px] md:right-[25px] z-fixed flex items-center justify-end gap-3 pointer-events-auto max-w-[calc(100vw-32px)]">
-      <div id="blackboard-portal-target" className="flex items-center gap-2 md:gap-3 flex-wrap justify-end" />
-      {mounted && (
-        isAuthenticated ? (
-          <UserHeader />
-        ) : (
-          <>
-            <Link href="/dashboard" onClick={handleEnterClick}>
-              <motion.div
-                initial={{ opacity: 0.9 }}
-                whileHover={{ scale: 1.05 }}
-                className={cn(
-                  "bg-gradient-to-r from-[var(--ploc-primary)] to-[var(--ploc-secondary)]",
-                  "backdrop-blur-xl px-4 py-1.5 rounded-full border border-white/15",
-                  "cursor-pointer shadow-lg shadow-[var(--ploc-primary)]/10 hover:shadow-[var(--ploc-primary)]/30",
-                  "flex items-center justify-center transition-all min-h-[36px]"
-                )}
-              >
-                <span className="text-white text-[12px] font-black tracking-[1.5px] font-display">
-                  ENTRAR
-                </span>
-              </motion.div>
-            </Link>
-            <AuthModal />
-          </>
-        )
-      )}
-    </div>
+    <header className="fixed top-0 left-0 right-0 w-full z-fixed pointer-events-none p-4 md:p-6 flex items-start justify-between">
+      {/* Lado Esquerdo: Área onde o HUD será inserido via Portal */}
+      <div id="blackboard-portal-target" className="pointer-events-auto flex items-center gap-2 md:gap-3" />
+
+      {/* Lado Direito: Cápsula de Login e Perfil */}
+      <div className="pointer-events-auto flex items-center justify-end gap-3">
+        {mounted && (
+          isAuthenticated ? (
+            <UserHeader />
+          ) : (
+            <>
+              <Link href="/dashboard" onClick={handleEnterClick}>
+                <motion.div
+                  initial={{ opacity: 0.9 }}
+                  whileHover={{ scale: 1.05 }}
+                  className={cn(
+                    "bg-gradient-to-r from-[var(--ploc-primary)] to-[var(--ploc-secondary)]",
+                    "backdrop-blur-xl px-4 py-1.5 rounded-full border border-white/15",
+                    "cursor-pointer shadow-lg shadow-[var(--ploc-primary)]/10 hover:shadow-[var(--ploc-primary)]/30",
+                    "flex items-center justify-center transition-all h-[46px]"
+                  )}
+                >
+                  <span className="text-white text-[12px] font-black tracking-[1.5px] font-display">
+                    ENTRAR
+                  </span>
+                </motion.div>
+              </Link>
+              <AuthModal />
+            </>
+          )
+        )}
+      </div>
+    </header>
   );
 };

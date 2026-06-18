@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Edit2, Trash2, Calendar, Clock, Tag } from 'lucide-react';
 import { CalendarTask } from '../../store/calendarStore';
 import { useCalendarData } from '../../hooks/useCalendarData';
+import { ConfirmActionModal } from '@/modules/dashboard/components/tracker/components/modals/ConfirmActionModal';
 
 interface TaskDetailModalProps {
   isOpen: boolean;
@@ -27,11 +28,10 @@ export function TaskDetailModal({ isOpen, onClose, task, onEdit }: TaskDetailMod
 
   const colorClass = task.color || CATEGORY_COLORS[task.category] || 'text-white bg-white/10';
 
+  const [showConfirmModal, setShowConfirmModal] = React.useState(false);
+
   const handleDelete = () => {
-    if (window.confirm('Tem certeza que deseja excluir esta tarefa?')) {
-      deleteTask(task.id);
-      onClose();
-    }
+    setShowConfirmModal(true);
   };
 
   return (
@@ -121,6 +121,18 @@ export function TaskDetailModal({ isOpen, onClose, task, onEdit }: TaskDetailMod
           </div>
         </motion.div>
       </motion.div>
+      <ConfirmActionModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={() => {
+          deleteTask(task.id);
+          onClose();
+        }}
+        title="Excluir Tarefa"
+        description="Tem certeza que deseja excluir esta tarefa?"
+        actionStyle="danger"
+        confirmText="Excluir"
+      />
     </AnimatePresence>
   );
 }

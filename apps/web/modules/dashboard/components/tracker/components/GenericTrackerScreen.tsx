@@ -10,8 +10,9 @@ interface GenericTrackerScreenProps {
 }
 
 export function GenericTrackerScreen({ methodId }: GenericTrackerScreenProps) {
-  const { items, fetchItems, setItem } = useTrackerStore();
+  const { items, fetchItems, setItem, reparentItem } = useTrackerStore();
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -23,7 +24,23 @@ export function GenericTrackerScreen({ methodId }: GenericTrackerScreenProps) {
     return () => window.removeEventListener('openTracker', handleOpenTracker);
   }, [fetchItems]);
 
-  const trackedItems = Object.values(items).filter(item => item.type === methodId);
+  const allCorrelations = new Set<string>();
+  Object.values(items).forEach(i => {
+    if (i.status !== 'COMPLETED') {
+      Object.keys(i.correlations || {}).forEach(cId => allCorrelations.add(cId));
+    }
+  });
+
+  const sortActiveTop = (a: any, b: any) => {
+    if (a.status === 'COMPLETED' && b.status !== 'COMPLETED') return 1;
+    if (a.status !== 'COMPLETED' && b.status === 'COMPLETED') return -1;
+    if (a.status === 'COMPLETED' && b.status === 'COMPLETED') return (b.updatedAt || 0) - (a.updatedAt || 0);
+    return (b.createdAt || 0) - (a.createdAt || 0);
+  };
+
+  const trackedItems = Object.values(items)
+    .filter(item => item.type === methodId && !allCorrelations.has(item.id))
+    .sort(sortActiveTop);
 
   const handleCreateNew = () => {
     const newItemId = crypto.randomUUID();
@@ -57,8 +74,32 @@ export function GenericTrackerScreen({ methodId }: GenericTrackerScreenProps) {
 
   const colorClass = getColorClasses();
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const childId = e.dataTransfer.getData('application/tracker-id');
+    if (childId) {
+      reparentItem(childId, null);
+    }
+  };
+
   return (
-    <div className="w-full flex flex-col px-4 pb-24 h-full overflow-y-auto">
+    <div 
+      className={`w-full flex flex-col px-4 pb-24 h-full overflow-y-auto transition-colors ${isDragOver ? 'bg-amber-500/5' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}

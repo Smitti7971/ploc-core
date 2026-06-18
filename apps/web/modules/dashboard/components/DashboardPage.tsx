@@ -43,6 +43,9 @@ import { DashboardRoutinesCarousel } from './DashboardRoutinesCarousel';
 import { DashboardPillarsRow } from './DashboardPillarsRow';
 import { DashboardMethodSelector } from './DashboardMethodSelector';
 
+import { TrackerStatusCard } from '../components/tracker/components/TrackerStatusCard';
+import { DndContext, useSensors, useSensor, MouseSensor, TouchSensor, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
+
 const allRoutines = Object.values(PILLARS_DATA).flatMap(pillar =>
   pillar.options.map(opt => ({
     ...opt,
@@ -65,6 +68,7 @@ const METHODS = [
 
 const TABS = [
   { id: 'ativas', label: 'ROTINAS ATIVAS', icon: Activity },
+  { id: 'concluidas', label: 'CONCLUÍDAS', icon: Trophy },
   { id: 'adote', label: 'ADOTE UMA ROTINA', icon: PlusCircle },
   { id: 'favoritas', label: 'FAVORITAS', icon: Heart },
   { id: 'ranking', label: 'RANKING', icon: Trophy },
@@ -77,8 +81,60 @@ export default function DashboardPage() {
   const [activeMethod, setActiveMethod] = useState('rotinas');
   const [activeTab, setActiveTab] = useState(TABS[0].id);
   const trackerItems = useTrackerStore(state => state.items);
-  const activeVicesList = Object.values(trackerItems || {}).filter(t => t.status === 'ACTIVE' && t.type === 'vice');
-  const activeTrackers = Object.values(trackerItems || {}).filter(t => t.status === 'ACTIVE' && t.type !== 'vice');
+  const reparentItem = useTrackerStore(state => state.reparentItem);
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 10,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 300,
+        tolerance: 10,
+      },
+    })
+  );
+
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveDragId(String(event.active.id));
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveDragId(null);
+    const { active, over } = event;
+    if (active.id && over?.id) {
+      if (over.id === 'root-dropzone' || over.id === 'root-dropzone-acompanhe') {
+        reparentItem(String(active.id), null);
+      } else if (active.id !== over.id) {
+        reparentItem(String(active.id), String(over.id));
+      }
+    }
+  };
+
+  const allCorrelations = new Set<string>();
+  Object.values(trackerItems || {}).forEach(i => {
+    if (i.status !== 'COMPLETED') {
+      Object.keys(i.correlations || {}).forEach(cId => allCorrelations.add(cId));
+    }
+  });
+
+  const allTopLevel = Object.values(trackerItems || {}).filter(t => !allCorrelations.has(t.id));
+
+  // Sort function: Active (and Paused/Late) on top sorted by creation date
+  const sortActive = (a: any, b: any) => (b.createdAt || 0) - (a.createdAt || 0);
+  const sortCompleted = (a: any, b: any) => (b.updatedAt || 0) - (a.updatedAt || 0);
+
+  const activeVicesList = allTopLevel.filter(t => t.type === 'vice' && t.status !== 'COMPLETED').sort(sortActive);
+  const activeTrackers = allTopLevel.filter(t => t.type !== 'vice' && t.status !== 'COMPLETED').sort(sortActive);
+
+  const completedVicesList = allTopLevel.filter(t => t.type === 'vice' && t.status === 'COMPLETED').sort(sortCompleted);
+  const completedTrackers = allTopLevel.filter(t => t.type !== 'vice' && t.status === 'COMPLETED').sort(sortCompleted);
+
+  const favoriteItems = allTopLevel.filter(t => t.config?.isFavorite).sort(sortActive);
 
   const [selectedTrackerId, setSelectedTrackerId] = useState<string | null>(null);
   const [attributes, setAttributes] = useState<Record<string, number>>({});
@@ -153,7 +209,8 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="w-full h-[100dvh] bg-black text-white flex flex-col relative overflow-x-hidden overflow-y-auto pb-6 pt-20">
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <div className="w-full h-[100dvh] bg-black text-white flex flex-col relative overflow-x-hidden overflow-y-auto pb-6 pt-20">
       <style>{`
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
@@ -190,6 +247,9 @@ export default function DashboardPage() {
             handleScroll={handleScroll}
             activeVicesList={activeVicesList}
             activeTrackers={activeTrackers}
+            completedVicesList={completedVicesList}
+            completedTrackers={completedTrackers}
+            favoriteItems={favoriteItems}
             setSelectedTrackerId={setSelectedTrackerId}
             allRoutines={allRoutines}
           />
@@ -254,6 +314,20 @@ export default function DashboardPage() {
           onClose={() => setSelectedTrackerId(null)}
         />
       )}
+
+      <DragOverlay dropAnimation={null}>
+        {activeDragId && trackerItems && trackerItems[activeDragId] ? (
+          <div className="w-[calc(100vw-32px)] md:w-[calc(50vw-24px)] lg:w-[calc(33vw-24px)]">
+            <TrackerStatusCard
+              item={trackerItems[activeDragId]}
+              onClick={() => {}}
+              isOverlay={true}
+              isChild={!!trackerItems[activeDragId].parentId}
+            />
+          </div>
+        ) : null}
+      </DragOverlay>
     </div>
+    </DndContext>
   );
 }

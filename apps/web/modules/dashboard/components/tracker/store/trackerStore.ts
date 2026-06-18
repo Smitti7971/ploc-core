@@ -9,7 +9,8 @@ export interface TrackerLog {
   trackerItemId: string;
   type: 'consumption' | 'expense' | 'start' | 'end' | 'milestone';
   timestamp: number;
-  photoUrl?: string;
+  photoUrl?: string; // Mantido para compatibilidade legado
+  photoUrls?: string[]; // Suporte a múltiplas fotos
   info?: string;
   durationSeconds?: number;
   value?: number;
@@ -69,6 +70,7 @@ interface TrackerStore {
   updateLog: (logId: string, updates: Partial<TrackerLog>) => void;
   deleteLog: (logId: string) => void;
   toggleCoverPhoto: (itemId: string) => void;
+  reparentItem: (childId: string, newParentId: string | null) => void;
 }
 
 const hasAuthToken = () => {
@@ -123,8 +125,19 @@ export const useTrackerStore = create<TrackerStore>()(
           if (Array.isArray(itemsData)) {
             const itemsRecord: Record<string, TrackerItem> = {};
             itemsData.forEach((item: any) => {
+              let parsedConfig = item.config || {};
+              if (typeof parsedConfig === 'string') {
+                try { parsedConfig = JSON.parse(parsedConfig); } catch (e) {}
+              }
+              let parsedCorrelations = item.correlations || {};
+              if (typeof parsedCorrelations === 'string') {
+                try { parsedCorrelations = JSON.parse(parsedCorrelations); } catch (e) {}
+              }
+
               itemsRecord[item.id] = {
                 ...item,
+                config: parsedConfig,
+                correlations: parsedCorrelations,
                 startDate: new Date(item.startDate).getTime(),
                 endDate: item.endDate ? new Date(item.endDate).getTime() : undefined,
                 consumptionStart: item.consumptionStart ? Number(item.consumptionStart) : undefined,
@@ -307,6 +320,65 @@ export const useTrackerStore = create<TrackerStore>()(
           };
         });
         syncItemToBackend(get().items[itemId]);
+      },
+
+      reparentItem: (childId, newParentId) => {
+        set((state) => {
+          const childItem = state.items[childId];
+          if (!childItem) return state;
+          if (childId === newParentId) return state; // Can't be parent of itself
+
+          // Check for cycles (prevent child from becoming parent of its own ancestor)
+          if (newParentId) {
+            let currentCheckId: string | null = newParentId;
+            let cycleFound = false;
+            // A simple way to check cycles in a small tree is to iterate up the parents
+            // But correlations only point downwards. We have to see if newParentId is a descendant of childId.
+            const isDescendant = (potentialDescendant: string, ancestor: string, visited = new Set<string>()): boolean => {
+              if (visited.has(ancestor)) return false;
+              visited.add(ancestor);
+              if (potentialDescendant === ancestor) return true;
+              const ancestorItem = state.items[ancestor];
+              if (!ancestorItem?.correlations) return false;
+              
+              for (const corrId of Object.keys(ancestorItem.correlations)) {
+                if (isDescendant(potentialDescendant, corrId, visited)) return true;
+              }
+              return false;
+            };
+
+            if (isDescendant(newParentId, childId)) {
+              console.warn("DND Reparent Cycle Detected. Aborting reparent.");
+              return state;
+            }
+          }
+
+          const newItems = { ...state.items };
+          const itemsToSync: TrackerItem[] = [];
+
+          // 1. Remove childId from any existing parent's correlations
+          Object.values(newItems).forEach(item => {
+            if (item.correlations && item.correlations[childId]) {
+              const newCorrelations = { ...item.correlations };
+              delete newCorrelations[childId];
+              newItems[item.id] = { ...item, correlations: newCorrelations };
+              itemsToSync.push(newItems[item.id]);
+            }
+          });
+
+          // 2. Add childId to newParentId's correlations
+          if (newParentId && newItems[newParentId]) {
+            const parent = newItems[newParentId];
+            const newCorrelations = { ...parent.correlations, [childId]: true };
+            newItems[newParentId] = { ...parent, correlations: newCorrelations };
+            itemsToSync.push(newItems[newParentId]);
+          }
+
+          // Trigger syncs outside the set function using setTimeout or just relying on itemsToSync return
+          setTimeout(() => itemsToSync.forEach(i => syncItemToBackend(i)), 0);
+
+          return { items: newItems };
+        });
       }
     }),
     {

@@ -324,12 +324,13 @@ export function NotificationsPendingTab({
           // Tarefas Padrão (Libertesse)
           const t = item;
           const elapsedSeconds = Math.floor((now - t.startDate) / 1000);
-          const isCountUp = t.config?.timerLimitSeconds ? elapsedSeconds >= t.config.timerLimitSeconds : true;
-          const isAcompanhe = t.config?.mode === 'acompanhe';
-          const isResistaPhase = !isAcompanhe && !isCountUp;
+          const limit = t.config?.timerLimitSeconds || t.defaultTimer || 0;
+          const isCountUp = limit > 0 ? elapsedSeconds >= limit : true;
+          const isAcompanhe = t.config?.mode === 'acompanhe' || t.type === 'acompanhe';
+          const isResistaPhase = (!isAcompanhe) && !isCountUp;
 
-          const displayedSeconds = t.config?.timerLimitSeconds
-            ? (isCountUp ? elapsedSeconds - t.config.timerLimitSeconds : t.config.timerLimitSeconds - elapsedSeconds)
+          const displayedSeconds = limit > 0
+            ? (isCountUp ? elapsedSeconds - limit : limit - elapsedSeconds)
             : elapsedSeconds;
 
           const timeString = formatTime(displayedSeconds);
@@ -418,84 +419,89 @@ export function NotificationsPendingTab({
         }
       })}
 
-      <AnimatePresence>
-        {confirmingTask && (() => {
-          const t = combinedItems.find(i => i.id === confirmingTask);
-          if (!t || t.type !== 'vice') return null;
+      {mounted && typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {confirmingTask && (() => {
+            const t = combinedItems.find(i => i.id === confirmingTask);
+            if (!t || t.type !== 'vice') return null;
 
-          const elapsedSeconds = Math.floor((now - t.startDate) / 1000);
-          const isCountUp = t.config?.timerLimitSeconds ? elapsedSeconds >= t.config.timerLimitSeconds : true;
-          const isResistaPhase = t.config?.mode === 'diminua' && !isCountUp;
+            const elapsedSeconds = Math.floor((now - t.startDate) / 1000);
+            const limit = t.config?.timerLimitSeconds || t.defaultTimer || 0;
+            const isCountUp = limit > 0 ? elapsedSeconds >= limit : true;
+            const isAcompanhe = t.config?.mode === 'acompanhe' || t.type === 'acompanhe';
+            const isResistaPhase = (!isAcompanhe) && !isCountUp;
 
-          const displayedSeconds = t.config?.timerLimitSeconds
-            ? (isCountUp ? elapsedSeconds - t.config.timerLimitSeconds : t.config.timerLimitSeconds - elapsedSeconds)
-            : elapsedSeconds;
+            const displayedSeconds = limit > 0
+              ? (isCountUp ? elapsedSeconds - limit : limit - elapsedSeconds)
+              : elapsedSeconds;
 
-          const timeString = formatTime(displayedSeconds);
+            const timeString = formatTime(displayedSeconds);
 
-          return (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-hud flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setConfirmingTask(null);
-              }}
-            >
+            return (
               <motion.div
-                initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                className={`w-full max-w-sm rounded-[2rem] p-8 flex flex-col items-center text-center border shadow-2xl relative overflow-hidden ${isResistaPhase ? 'bg-[#150a0a] border-red-500/50 shadow-red-500/20' : 'bg-[#06120b] border-emerald-500/50 shadow-emerald-500/20'
-                  }`}
-                onClick={(e) => e.stopPropagation()}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm z-[9999]"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmingTask(null);
+                }}
               >
-                <button
-                  onClick={() => setConfirmingTask(null)}
-                  className="absolute top-4 right-4 text-white/50 hover:text-white"
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                  className={`w-full max-w-sm rounded-[2rem] p-8 flex flex-col items-center text-center border shadow-2xl relative overflow-hidden ${isResistaPhase ? 'bg-[#150a0a] border-red-500/50 shadow-red-500/20' : 'bg-[#06120b] border-emerald-500/50 shadow-emerald-500/20'
+                    }`}
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
-
-                <h2 className={`text-2xl font-black tracking-widest uppercase mb-8 leading-tight ${isResistaPhase ? 'text-red-400' : 'text-emerald-400'}`}>
-                  {isResistaPhase ? (
-                    <>
-                      <span className="text-sm opacity-80 block mb-2">AINDA FALTA ESPERAR</span>
-                      <span className="text-4xl text-white block mt-2 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">{timeString}</span>
-                    </>
-                  ) : (
-                    'PARABÉNS VOCÊ ESTÁ EM FOCO.'
-                  )}
-                </h2>
-
-                <div className="flex flex-col gap-3 w-full">
                   <button
-                    onClick={(e) => handleRegisterClick(e, t, 'consumption')}
-                    className={`w-full py-5 rounded-2xl font-black uppercase tracking-widest transition-all ${isResistaPhase
-                      ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30 border border-red-500/50 hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]'
-                      : 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/50 hover:shadow-[0_0_20px_rgba(52,211,153,0.4)]'
-                      }`}
+                    onClick={() => setConfirmingTask(null)}
+                    className="absolute top-4 right-4 text-white/50 hover:text-white"
                   >
-                    {isResistaPhase ? 'REGISTRAR MESMO ASSIM!' : 'REGISTRO RÁPIDO'}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                   </button>
 
-                  <button
-                    onClick={() => {
-                      setDetailedTrackerId(t.id);
-                      setConfirmingTask(null);
-                    }}
-                    className="w-full py-4 rounded-xl font-bold text-xs uppercase tracking-widest text-white/50 hover:text-white hover:bg-white/5 transition-colors mt-2"
-                  >
-                    Abrir Tarefa Completa
-                  </button>
-                </div>
+                  <h2 className={`text-2xl font-black tracking-widest uppercase mb-8 leading-tight ${isResistaPhase ? 'text-red-400' : 'text-emerald-400'}`}>
+                    {isResistaPhase ? (
+                      <>
+                        <span className="text-sm opacity-80 block mb-2">AINDA FALTA ESPERAR</span>
+                        <span className="text-4xl text-white block mt-2 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">{timeString}</span>
+                      </>
+                    ) : (
+                      'PARABÉNS VOCÊ ESTÁ EM FOCO.'
+                    )}
+                  </h2>
+
+                  <div className="flex flex-col gap-3 w-full">
+                    <button
+                      onClick={(e) => handleRegisterClick(e, t, 'consumption')}
+                      className={`w-full py-5 rounded-2xl font-black uppercase tracking-widest transition-all ${isResistaPhase
+                        ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30 border border-red-500/50 hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]'
+                        : 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/50 hover:shadow-[0_0_20px_rgba(52,211,153,0.4)]'
+                        }`}
+                    >
+                      {isResistaPhase ? 'REGISTRAR MESMO ASSIM!' : 'REGISTRO RÁPIDO'}
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setDetailedTrackerId(t.id);
+                        setConfirmingTask(null);
+                      }}
+                      className="w-full py-4 rounded-xl font-bold text-xs uppercase tracking-widest text-white/50 hover:text-white hover:bg-white/5 transition-colors mt-2"
+                    >
+                      Abrir Tarefa Completa
+                    </button>
+                  </div>
+                </motion.div>
               </motion.div>
-            </motion.div>
-          );
-        })()}
-      </AnimatePresence>
+            );
+          })()}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {mounted && typeof document !== 'undefined' && createPortal(
         <AnimatePresence>

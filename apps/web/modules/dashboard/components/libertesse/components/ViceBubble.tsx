@@ -219,12 +219,14 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
 
   if (!activeVice) return null;
 
-  const isCountUp = activeVice?.config?.timerLimitSeconds
-    ? elapsed >= activeVice.config.timerLimitSeconds
+  const limit = activeVice?.config?.timerLimitSeconds || activeVice.defaultTimer || 0;
+  const isCountUp = limit > 0
+    ? elapsed >= limit
     : true;
 
   // Decide qual ícone usar com base no modo e fase (resista vs meta atingida)
-  const isResistaPhase = activeVice.config?.mode === 'diminua' && !isCountUp;
+  const isAcompanhe = activeVice.config?.mode === 'acompanhe' || activeVice.type === 'acompanhe';
+  const isResistaPhase = (!isAcompanhe) && !isCountUp;
   const Icon = isResistaPhase ? (VICE_ICONS_OFF[activeVice.config?.viceId] || Flame) : (VICE_ICONS_ON[activeVice.config?.viceId] || Flame);
   const color = VICE_COLORS[activeVice.config?.viceId] || '#ef4444';
 
@@ -239,8 +241,8 @@ export function ViceBubble({ viceId, index = 0, total = 1, canvasScale = 1 }: Vi
     return `${m}m ${s}s`;
   };
 
-  const displayedSeconds = activeVice?.config?.timerLimitSeconds
-    ? (isCountUp ? elapsed - activeVice.config.timerLimitSeconds : activeVice.config.timerLimitSeconds - elapsed)
+  const displayedSeconds = limit > 0
+    ? (isCountUp ? elapsed - limit : limit - elapsed)
     : elapsed;
 
   const handleBubbleClick = () => {

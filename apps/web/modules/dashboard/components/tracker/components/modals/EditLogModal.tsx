@@ -14,7 +14,13 @@ interface EditLogModalProps {
   saveLogEdit: (id: string) => void;
   logFileInputRef: React.RefObject<HTMLInputElement | null>;
   editingLogPhoto: string | null;
+  setEditingLogPhoto: (val: string | null) => void;
+  editingLogPhotos: string[];
+  setEditingLogPhotos: React.Dispatch<React.SetStateAction<string[]>>;
+  editingLogTimestamp: number;
+  setEditingLogTimestamp: (val: number) => void;
   isUploadingLogPhoto: boolean;
+  setIsUploadingLogPhoto: (val: boolean) => void;
   editingLogInfo: string;
   setEditingLogInfo: (val: string) => void;
   conditions: string[];
@@ -26,6 +32,7 @@ interface EditLogModalProps {
   setEditingLogCheckedConditions: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   items: Record<string, any>;
   openCorrelatedItem: (id: string) => void;
+  removeCorrelation?: (cId: string) => void;
 }
 
 export function EditLogModal({
@@ -38,7 +45,13 @@ export function EditLogModal({
   saveLogEdit,
   logFileInputRef,
   editingLogPhoto,
+  setEditingLogPhoto,
+  editingLogPhotos,
+  setEditingLogPhotos,
+  editingLogTimestamp,
+  setEditingLogTimestamp,
   isUploadingLogPhoto,
+  setIsUploadingLogPhoto,
   editingLogInfo,
   setEditingLogInfo,
   conditions,
@@ -49,18 +62,36 @@ export function EditLogModal({
   editingLogCheckedConditions,
   setEditingLogCheckedConditions,
   items,
-  openCorrelatedItem
+  openCorrelatedItem,
+  removeCorrelation
 }: EditLogModalProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePhotoIndex, setDeletePhotoIndex] = useState<number | null>(null);
   const logs = useTrackerStore(state => state.logs);
 
   if (!editingLogId) return null;
 
   const currentLog = itemLogs.find(l => l.id === editingLogId);
-  const logTime = currentLog ? new Date(currentLog.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  const logTitle = editingLogId === 'NEW' ? `NOVO REGISTRO - ${logTime}` : `REGISTRO - ${logTime}`;
+  
+  // Format local time for the time input
+  const dateObj = new Date(editingLogTimestamp);
+  const hours = String(dateObj.getHours()).padStart(2, '0');
+  const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+  const timeString = `${hours}:${minutes}`;
+
+  const logTitle = editingLogId === 'NEW' ? `NOVO REGISTRO` : `REGISTRO`;
+
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const [h, m] = e.target.value.split(':');
+    if (h !== undefined && m !== undefined) {
+      const newDate = new Date(editingLogTimestamp);
+      newDate.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0);
+      setEditingLogTimestamp(newDate.getTime());
+    }
+  };
 
   const hasConditions = conditions.length > 0 || Object.keys(item.correlations || {}).length > 0;
+  const displayPhotos = editingLogPhotos.length > 0 ? editingLogPhotos : (editingLogPhoto ? [editingLogPhoto] : []);
 
   return (
     <AnimatePresence>
@@ -77,13 +108,13 @@ export function EditLogModal({
           className="bg-zinc-900 border border-white/10 rounded-[28px] w-full max-w-[340px] flex flex-col shadow-2xl overflow-hidden relative"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Top Image Banner */}
+          {/* Top Image Banner (First Photo or Placeholder) */}
           <div 
             onClick={() => logFileInputRef.current?.click()}
             className="w-full h-48 bg-black/40 relative cursor-pointer group flex items-center justify-center border-b border-white/10"
           >
-            {editingLogPhoto ? (
-              <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${getAssetUrl(editingLogPhoto)})` }} />
+            {displayPhotos[0] ? (
+              <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${getAssetUrl(displayPhotos[0])})` }} />
             ) : (
               isUploadingLogPhoto ? (
                 <Loader2 size={32} className="animate-spin text-white/20" />
@@ -97,6 +128,18 @@ export function EditLogModal({
 
             {/* Top Overlay Buttons */}
             <div className="absolute top-3 right-3 flex gap-2 z-10">
+              {displayPhotos.length === 1 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeletePhotoIndex(0);
+                  }}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-rose-500/80 text-white hover:bg-rose-600 transition-colors"
+                  title="Remover Foto"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
               <button 
                 onClick={(e) => { e.stopPropagation(); setEditingLogId(null); }} 
                 className="w-8 h-8 flex items-center justify-center rounded-full bg-black/40 text-white/70 hover:bg-black/60 transition-colors"
@@ -108,12 +151,21 @@ export function EditLogModal({
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center rounded-full p-2">
                <div className="bg-black/60 backdrop-blur-sm text-white/90 font-medium text-[11px] px-3 py-1.5 rounded-full flex items-center gap-2 border border-white/10 opacity-80 group-hover:opacity-100 transition-opacity">
                  <Camera size={14} />
-                 {editingLogPhoto ? "Trocar Foto" : "Adicionar Foto"}
+                 Adicionar Foto
                </div>
             </div>
 
             {/* Title inside image banner */}
             <div className="absolute bottom-0 left-0 w-full p-4 pt-8">
+              <div className="flex items-center gap-2 mb-1 drop-shadow-md">
+                <input 
+                  type="time" 
+                  value={timeString}
+                  onChange={handleTimeChange}
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-black/40 text-white/90 text-sm font-bold rounded-md px-2 py-1 outline-none border border-white/20 focus:border-white/50"
+                />
+              </div>
               <input 
                  id="editLogTitle"
                  name="editLogTitle"
@@ -130,6 +182,26 @@ export function EditLogModal({
 
           {/* Content Area */}
           <div className="p-5 flex flex-col bg-zinc-900">
+            {/* Gallery Area */}
+            {displayPhotos.length > 1 && (
+              <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar mb-4 pb-2 border-b border-white/5">
+                {displayPhotos.map((photo, i) => (
+                  <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-white/10 group">
+                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${getAssetUrl(photo)})` }} />
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeletePhotoIndex(i);
+                      }}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <textarea 
                id="editLogInfo"
                name="editLogInfo"
@@ -199,18 +271,47 @@ export function EditLogModal({
                     : 'bg-rose-500/10 border-rose-500/30 border-l-rose-500';
                   const textClass = isCompletedToday ? 'text-emerald-300' : 'text-rose-300';
 
+                  const isItemCompleted = cItem.status === 'COMPLETED';
+
                   return (
-                    <div key={cId} className={`flex flex-col gap-1 p-2 rounded-xl border border-l-4 transition-colors ${cardBgClass}`}>
+                    <div 
+                      key={cId} 
+                      className={`flex flex-col gap-1 p-2 rounded-xl border border-l-4 group transition-colors cursor-pointer ${cardBgClass}`}
+                      onClick={() => openCorrelatedItem(cId)}
+                    >
                       <div className="flex items-center justify-between">
-                        <span 
-                          className={`text-[11px] font-bold flex-1 cursor-pointer hover:underline ${textClass}`}
-                          onClick={() => openCorrelatedItem(cId)}
-                        >
-                          {cItem.name || cItem.id.substring(0, 8)}
-                        </span>
+                        <div className="flex flex-col flex-1">
+                          <span className={`text-[11px] font-bold group-hover:underline ${textClass}`}>
+                            {cItem.name || cItem.id.substring(0, 8)}
+                          </span>
+                          {isItemCompleted && (
+                            <span className="text-[9px] font-bold text-zinc-400 mt-0.5 uppercase">
+                              Tarefa Concluída
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-2">
-                          <button onClick={addCondPhoto} className={`p-1 rounded-full hover:bg-white/10 transition-colors ${editingLogConditionPhotos[cKey] ? 'text-emerald-400' : 'text-white/20'}`}><Camera size={14} /></button>
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors ${isCompletedToday ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-rose-500/20 border-rose-500/50 text-rose-400'}`}><Check size={12} /></div>
+                          {removeCorrelation && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeCorrelation(cId);
+                              }}
+                              title="Desativar Correlação"
+                              className="p-1 rounded-full text-white/20 hover:bg-rose-500/20 hover:text-rose-400 transition-colors"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              addCondPhoto();
+                            }} 
+                            className={`p-1 rounded-full hover:bg-white/10 transition-colors ${editingLogConditionPhotos[cKey] ? 'text-emerald-400' : 'text-white/20'}`}
+                          >
+                            <Camera size={14} />
+                          </button>
                         </div>
                       </div>
                       {editingLogConditionPhotos[cKey] && (
@@ -273,6 +374,39 @@ export function EditLogModal({
                   className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-[13px] font-medium transition-colors shadow-lg shadow-red-500/20"
                 >
                   Sim, apagar
+                </button>
+              </div>
+            </motion.div>
+          )}
+          {deletePhotoIndex !== null && (
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: -20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: -20 }}
+              className="bg-zinc-900 border border-red-500/30 w-full max-w-[340px] p-4 rounded-[24px] shadow-2xl flex flex-col gap-3"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center text-white/90 text-[14px] font-medium">
+                Remover esta foto do registro?
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setDeletePhotoIndex(null)}
+                  className="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[13px] font-medium transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={() => {
+                    const newPhotos = [...displayPhotos];
+                    newPhotos.splice(deletePhotoIndex, 1);
+                    setEditingLogPhotos(newPhotos);
+                    if (deletePhotoIndex === 0) setEditingLogPhoto(newPhotos[0] || null);
+                    setDeletePhotoIndex(null);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-[13px] font-medium transition-colors shadow-lg shadow-red-500/20"
+                >
+                  Sim, remover
                 </button>
               </div>
             </motion.div>

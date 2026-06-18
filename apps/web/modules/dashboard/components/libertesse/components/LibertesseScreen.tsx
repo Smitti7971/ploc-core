@@ -20,8 +20,9 @@ export const VICES = [
 
 export function LibertesseScreen() {
   const [selectedTrackerId, setSelectedTrackerId] = useState<string | null>(null);
-  const { items, setItem, fetchItems } = useTrackerStore();
+  const { items, setItem, fetchItems, reparentItem } = useTrackerStore();
   const [now, setNow] = useState<number | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   React.useEffect(() => {
     fetchItems();
@@ -41,7 +42,21 @@ export function LibertesseScreen() {
     };
   }, [fetchItems]);
 
-  const activeVices = Object.values(items).filter(t => t.type === 'vice' && t.status === 'ACTIVE');
+  const allCorrelations = new Set<string>();
+  Object.values(items).forEach(i => {
+    Object.keys(i.correlations || {}).forEach(cId => allCorrelations.add(cId));
+  });
+
+  const sortActiveTop = (a: any, b: any) => {
+    if (a.status === 'COMPLETED' && b.status !== 'COMPLETED') return 1;
+    if (a.status !== 'COMPLETED' && b.status === 'COMPLETED') return -1;
+    if (a.status === 'COMPLETED' && b.status === 'COMPLETED') return (b.updatedAt || 0) - (a.updatedAt || 0);
+    return (b.createdAt || 0) - (a.createdAt || 0);
+  };
+
+  const activeVices = Object.values(items)
+    .filter(t => t.type === 'vice' && !allCorrelations.has(t.id))
+    .sort(sortActiveTop);
 
   const getTimeActiveText = (item: TrackerItem) => {
     if (!now || !item.startDate) return null;
@@ -72,8 +87,32 @@ export function LibertesseScreen() {
     setSelectedTrackerId(newItemId);
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const childId = e.dataTransfer.getData('application/tracker-id');
+    if (childId) {
+      reparentItem(childId, null);
+    }
+  };
+
   return (
-    <div className="w-full px-4 pb-24 h-full overflow-y-auto">
+    <div 
+      className={`w-full px-4 pb-24 h-full overflow-y-auto transition-colors ${isDragOver ? 'bg-amber-500/5' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
         {/* Botão Criar Novo (Primeiro) */}

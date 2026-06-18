@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { X, Camera, Link as LinkIcon, Loader2, Trash2, Check, EyeOff, Eye, Clock, Edit2, TrendingDown, Activity, ListChecks, CheckSquare, PlusCircle, Map, Bell, BellOff } from 'lucide-react';
+import { X, Camera, Link as LinkIcon, Loader2, Trash2, Check, EyeOff, Eye, Clock, Edit2, TrendingDown, Activity, ListChecks, CheckSquare, PlusCircle, Map, Bell, BellOff, Settings } from 'lucide-react';
 import { TrackerItem, useTrackerStore } from '../store/trackerStore';
 import { apiService } from '@/services/api';
 import { getAssetUrl } from '@/lib/config';
@@ -12,6 +12,9 @@ import { DateEditModal } from './modals/DateEditModal';
 import { StageEditModal } from './modals/StageEditModal';
 import { AddConditionModal } from './modals/AddConditionModal';
 import { EditLogModal } from './modals/EditLogModal';
+import { CardSettingsModal } from './modals/CardSettingsModal';
+import { ConfirmDeletePhotoModal } from './modals/ConfirmDeletePhotoModal';
+import { ConfirmActionModal, ConfirmActionStyle } from './modals/ConfirmActionModal';
 import { LogHistory } from './LogHistory';
 import { NewLogArea } from './NewLogArea';
 
@@ -114,7 +117,14 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
   const [tempStageEndDateStr, setTempStageEndDateStr] = useState('');
 
   const activeMarkers = item?.config?.activeMarkers || ['elapsed', 'stage', 'remaining'];
-  const [showMarkersMenu, setShowMarkersMenu] = useState(false);
+  const showMarkersMenuState = useState(false);
+  const showMarkersMenu = showMarkersMenuState[0];
+  const setShowMarkersMenu = showMarkersMenuState[1];
+
+  const showStartDate = !!item?.config?.showStartDate;
+  const showDaysTarget = !!item?.config?.showDaysTarget;
+  const showStage = !!item?.config?.showStage;
+  const showMarkers = !!item?.config?.showMarkers;
 
   const [isAddConditionModalOpen, setIsAddConditionModalOpen] = useState(false);
   const [newConditionTitle, setNewConditionTitle] = useState('');
@@ -139,12 +149,17 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
   const [editingLogTitle, setEditingLogTitle] = useState('');
   const [editingLogInfo, setEditingLogInfo] = useState('');
   const [editingLogPhoto, setEditingLogPhoto] = useState<string | null>(null);
+  const [editingLogPhotos, setEditingLogPhotos] = useState<string[]>([]);
+  const [editingLogTimestamp, setEditingLogTimestamp] = useState<number>(Date.now());
   const [isUploadingLogPhoto, setIsUploadingLogPhoto] = useState(false);
   const logFileInputRef = useRef<HTMLInputElement>(null);
 
   const showCoverPhoto = item?.config?.showCoverPhoto !== false;
 
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [confirmModalConfig, setConfirmModalConfig] = useState<{ isOpen: boolean; title: string; description: string; actionStyle: ConfirmActionStyle; onConfirm: () => void; confirmText?: string; }>({ isOpen: false, title: '', description: '', actionStyle: 'danger', onConfirm: () => {} });
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isDeleteCoverModalOpen, setIsDeleteCoverModalOpen] = useState(false);
 
   const [showTabuleiro, setShowTabuleiro] = useState(false);
 
@@ -294,11 +309,54 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
     setStage(name);
   };
 
+  const handleReactivate = () => {
+    setConfirmModalConfig({
+      isOpen: true,
+      title: 'Reativar Tarefa',
+      description: 'Deseja reativar esta tarefa? Ela voltará a aparecer nas suas rotinas.',
+      actionStyle: 'warning',
+      confirmText: 'Reativar',
+      onConfirm: () => {
+        updateItem({
+          ...item,
+          status: 'ACTIVE',
+          endDate: undefined
+        });
+        onClose();
+      }
+    });
+  };
+
+  const markTaskAsCompleted = () => {
+    setConfirmModalConfig({
+      isOpen: true,
+      title: 'Concluir Tarefa',
+      description: 'Deseja realmente marcar esta tarefa como concluída?',
+      actionStyle: 'success',
+      confirmText: 'Concluir',
+      onConfirm: () => {
+        updateItem({
+          ...item,
+          status: 'COMPLETED',
+          endDate: Date.now()
+        });
+        onClose();
+      }
+    });
+  };
+
   const handleDelete = () => {
-    if (confirm('Tem certeza que deseja apagar este acompanhamento? Todas as bolhas e dados serão perdidos.')) {
-      deleteItem(item.id);
-      onClose();
-    }
+    setConfirmModalConfig({
+      isOpen: true,
+      title: 'Deletar Tarefa',
+      description: 'Tem certeza que deseja apagar este acompanhamento? Todas as bolhas e dados serão perdidos.',
+      actionStyle: 'danger',
+      confirmText: 'Deletar',
+      onConfirm: () => {
+        deleteItem(item.id);
+        onClose();
+      }
+    });
   };
 
   const handleDragEnd = (event: any, info: PanInfo) => {
@@ -312,6 +370,19 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
     setEditingLogTitle(currentMetadata?.title || '');
     setEditingLogInfo(currentInfo);
     setEditingLogPhoto(currentPhoto || null);
+    
+    // Suporte para nova estrutura de múltiplas fotos (se log.photoUrls existir usa ele, senão converte o atual)
+    if (logId !== 'NEW') {
+      const log = useTrackerStore.getState().logs.find(l => l.id === logId);
+      if (log) {
+        setEditingLogPhotos(log.photoUrls || (currentPhoto ? [currentPhoto] : []));
+        setEditingLogTimestamp(log.timestamp || Date.now());
+      }
+    } else {
+      setEditingLogPhotos([]);
+      setEditingLogTimestamp(Date.now());
+    }
+
     setEditingLogCheckedConditions(currentMetadata?.checkedConditions || {});
     setEditingLogConditionPhotos(currentMetadata?.conditionPhotos || {});
   };
@@ -335,7 +406,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
         trackerItemId: itemId,
         type: 'consumption',
         info: editingLogInfo,
-        photoUrl: editingLogPhoto || undefined,
+        photoUrls: editingLogPhotos,
         value: 1,
         metadata: metadataToSave
       }, undefined, () => {
@@ -344,7 +415,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
     } else {
       updateLog(logId, { 
         info: editingLogInfo, 
-        photoUrl: editingLogPhoto || undefined,
+        photoUrls: editingLogPhotos,
         metadata: metadataToSave
       });
       setEditingLogId(null);
@@ -367,7 +438,8 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
     try {
       const res = await apiService.upload<{ url: string }>('/upload?type=tracker', formData);
       if (res.url) {
-        setEditingLogPhoto(res.url);
+        setEditingLogPhoto(res.url); // Keep for backwards compatibility if needed
+        setEditingLogPhotos(prev => [...prev, res.url]);
       }
     } catch (e) {
       console.error('Erro ao subir foto do registro', e);
@@ -470,6 +542,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
               aria-label="Upload de foto do registro"
               type="file"
               accept="image/*,application/pdf"
+              capture="environment"
               className="hidden"
               ref={logFileInputRef}
               onChange={handleUploadLogPhoto}
@@ -496,6 +569,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                   aria-label="Upload da foto de capa"
                   type="file"
                   accept="image/*"
+                  capture="environment"
                   className="hidden"
                   ref={fileInputRef}
                   onChange={handleUploadPhoto}
@@ -506,6 +580,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                   aria-label="Upload de foto da condição"
                   type="file"
                   accept="image/*"
+                  capture="environment"
                   className="hidden"
                   ref={conditionPhotoInputRef}
                   onChange={handleUploadConditionPhoto}
@@ -520,19 +595,11 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                 </button>
 
                 <button
-                  onClick={toggleNotifications}
-                  className={`w-9 h-9 flex items-center justify-center rounded-full transition-colors ${!notificationsEnabled ? 'bg-black/50 text-white/50 hover:text-white hover:bg-black/80' : 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/40'}`}
-                  title={notificationsEnabled ? "Notificações Ativadas (Clique para silenciar)" : "Notificações Silenciadas (Clique para ativar)"}
+                  onClick={() => setIsSettingsModalOpen(true)}
+                  className="w-9 h-9 flex items-center justify-center rounded-full bg-black/50 text-white/50 hover:text-white hover:bg-black/80 transition-colors"
+                  title="Configurações do Card"
                 >
-                  {notificationsEnabled ? <Bell size={16} /> : <BellOff size={16} />}
-                </button>
-
-                <button
-                  onClick={() => toggleCoverPhoto(item.id)}
-                  className={`w-9 h-9 flex items-center justify-center rounded-full transition-colors ${showCoverPhoto ? 'bg-black/50 text-white/50 hover:text-white hover:bg-black/80' : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/40'}`}
-                  title={showCoverPhoto ? "Ocultar Foto na Bolha" : "Mostrar Foto na Bolha"}
-                >
-                  {showCoverPhoto ? <Eye size={16} /> : <EyeOff size={16} />}
+                  <Settings size={16} />
                 </button>
 
                 {item.config?.isMission && (
@@ -555,34 +622,36 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
               </div>
 
               <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-row flex-nowrap gap-1.5 overflow-x-auto custom-scrollbar pb-2 pt-4 px-2 box-border">
-                <div
-                  onClick={() => {
-                    setTempStartDateStr(startDateStr);
-                    setTempEndDateStr(endDateStr);
-                    setTempExpectedTime(item.config?.expectedTime || '');
-                    setIsDateModalOpen(true);
-                  }}
-                  className="w-[64px] h-[64px] shrink-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md border border-white/10 rounded-xl relative group cursor-pointer hover:bg-white/5 hover:border-emerald-500/30 transition-colors"
-                >
-                  <span className="text-[7.5px] text-white/50 uppercase tracking-widest mb-0.5 text-center leading-tight">Início</span>
-                  <span className="text-[9px] font-bold text-white text-center px-1 leading-tight">
-                    {startDateStr.split('-').reverse().join('/')}
-                  </span>
-                  {endDateStr && (
-                    <span className="text-[6.5px] text-emerald-400 font-bold mt-0.5 text-center leading-none scale-[0.85]">
-                      Até {endDateStr.split('-').reverse().join('/')}
+                {showStartDate && (
+                  <div
+                    onClick={() => {
+                      setTempStartDateStr(startDateStr);
+                      setTempEndDateStr(endDateStr);
+                      setTempExpectedTime(item.config?.expectedTime || '');
+                      setIsDateModalOpen(true);
+                    }}
+                    className="w-[64px] h-[64px] shrink-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md border border-white/10 rounded-xl relative group cursor-pointer hover:bg-white/5 hover:border-emerald-500/30 transition-colors"
+                  >
+                    <span className="text-[7.5px] text-white/50 uppercase tracking-widest mb-0.5 text-center leading-tight">Início</span>
+                    <span className="text-[9px] font-bold text-white text-center px-1 leading-tight">
+                      {startDateStr.split('-').reverse().join('/')}
                     </span>
-                  )}
-                </div>
+                    {endDateStr && (
+                      <span className="text-[6.5px] text-emerald-400 font-bold mt-0.5 text-center leading-none scale-[0.85]">
+                        Até {endDateStr.split('-').reverse().join('/')}
+                      </span>
+                    )}
+                  </div>
+                )}
 
-                {activeMarkers.includes('elapsed') && (
+                {showDaysTarget && activeMarkers.includes('elapsed') && (
                   <div className="w-[64px] h-[64px] shrink-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md border border-white/10 rounded-xl relative">
                     <span className="text-[7.5px] text-white/50 uppercase tracking-widest mb-0.5 text-center leading-tight">Dias</span>
                     <span className="text-sm font-black text-white">{calculateDays()}</span>
                   </div>
                 )}
                 
-                {activeMarkers.includes('stage') && (
+                {showStage && activeMarkers.includes('stage') && (
                   <div
                     onClick={() => {
                       setTempStageName(stage);
@@ -604,7 +673,7 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                   </div>
                 )}
 
-                {activeMarkers.includes('remaining') && endDateStr && (
+                {showDaysTarget && activeMarkers.includes('remaining') && endDateStr && (
                   <div
                     onClick={() => {
                       setTempStartDateStr(startDateStr);
@@ -619,40 +688,42 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                   </div>
                 )}
 
-                <div className="relative shrink-0 flex items-center justify-center w-[64px] h-[64px]">
-                  <button
-                    onClick={() => setShowMarkersMenu(!showMarkersMenu)}
-                    className="w-full h-full flex flex-col items-center justify-center bg-white/5 hover:bg-white/10 border border-white/5 border-dashed rounded-xl transition-colors group"
-                  >
-                    <span className="text-white/30 group-hover:text-white/60 text-lg font-light mb-0.5">+</span>
-                    <span className="text-[7.5px] font-bold text-white/30 group-hover:text-white/60 uppercase tracking-widest">Marcador</span>
-                  </button>
-                  <AnimatePresence>
-                    {showMarkersMenu && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute left-0 bottom-full mb-2 w-48 bg-[#111311] border border-white/10 rounded-xl p-2 z-20 shadow-2xl flex flex-col gap-1"
-                      >
-                        {[
-                          { id: 'elapsed', label: 'Dias Corridos' },
-                          { id: 'stage', label: 'Etapa / Dias da Etapa' },
-                          { id: 'remaining', label: 'Dias para finalizar' }
-                        ].map(m => (
-                          <button
-                            key={m.id}
-                            onClick={() => toggleMarker(m.id)}
-                            className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-left text-[10px] font-bold transition-colors ${activeMarkers.includes(m.id) ? 'bg-emerald-500/20 text-emerald-400' : 'hover:bg-white/5 text-white/50'}`}
-                          >
-                            {m.label}
-                            {activeMarkers.includes(m.id) && <Check size={12} />}
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                {showMarkers && (
+                  <div className="relative shrink-0 flex items-center justify-center w-[64px] h-[64px]">
+                    <button
+                      onClick={() => setShowMarkersMenu(!showMarkersMenu)}
+                      className="w-full h-full flex flex-col items-center justify-center bg-white/5 hover:bg-white/10 border border-white/5 border-dashed rounded-xl transition-colors group"
+                    >
+                      <span className="text-white/30 group-hover:text-white/60 text-lg font-light mb-0.5">+</span>
+                      <span className="text-[7.5px] font-bold text-white/30 group-hover:text-white/60 uppercase tracking-widest">Marcador</span>
+                    </button>
+                    <AnimatePresence>
+                      {showMarkersMenu && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          className="absolute left-0 bottom-full mb-2 w-48 bg-[#111311] border border-white/10 rounded-xl p-2 z-20 shadow-2xl flex flex-col gap-1"
+                        >
+                          {[
+                            { id: 'elapsed', label: 'Dias Corridos' },
+                            { id: 'stage', label: 'Etapa / Dias da Etapa' },
+                            { id: 'remaining', label: 'Dias para finalizar' }
+                          ].map(m => (
+                            <button
+                              key={m.id}
+                              onClick={() => toggleMarker(m.id)}
+                              className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-left text-[10px] font-bold transition-colors ${activeMarkers.includes(m.id) ? 'bg-emerald-500/20 text-emerald-400' : 'hover:bg-white/5 text-white/50'}`}
+                            >
+                              {m.label}
+                              {activeMarkers.includes(m.id) && <Check size={12} />}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -717,7 +788,6 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
 
                   {/* Description */}
                   <div>
-                    <label htmlFor={`${item.id}-goal-desc`} className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-1 block">Descrição / Finalidade</label>
                     <div className="relative">
                       <textarea
                         id={`${item.id}-goal-desc`} autoComplete="off"
@@ -741,6 +811,26 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                         </motion.button>
                       )}
                     </AnimatePresence>
+                    </div>
+
+                    <div className="flex justify-center mt-3">
+                      {item.status === 'COMPLETED' ? (
+                        <button
+                          onClick={handleReactivate}
+                          className="flex items-center justify-center gap-2 text-[10px] font-bold text-yellow-400/70 hover:text-yellow-400 bg-white/[0.02] hover:bg-yellow-500/10 px-4 py-2 rounded-full transition-colors uppercase tracking-wider w-max"
+                        >
+                          <Activity size={14} />
+                          Reativar Tarefa
+                        </button>
+                      ) : (
+                        <button
+                          onClick={markTaskAsCompleted}
+                          className="flex items-center justify-center gap-2 text-[10px] font-bold text-emerald-400/70 hover:text-emerald-400 bg-white/[0.02] hover:bg-emerald-500/10 px-4 py-2 rounded-full transition-colors uppercase tracking-wider w-max"
+                        >
+                          <CheckSquare size={14} />
+                          Marcar como Concluída
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1312,12 +1402,12 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
                   handleEditLog={handleEditLog}
                 />
 
-                {/* Delete Area */}
-                <div className="pt-8 flex justify-center">
+                {/* Action Area */}
+                <div className="pt-8 flex flex-col gap-3 justify-center">
                   {!isConfirmingDelete ? (
                     <button
                       onClick={() => setIsConfirmingDelete(true)}
-                      className="flex items-center gap-2 text-[10px] font-bold text-white/30 hover:text-red-400 bg-white/[0.02] hover:bg-red-500/10 px-4 py-2 rounded-full transition-colors uppercase tracking-wider"
+                      className="flex items-center justify-center gap-2 text-[10px] font-bold text-white/30 hover:text-red-400 bg-white/[0.02] hover:bg-red-500/10 px-4 py-2 rounded-full transition-colors uppercase tracking-wider mx-auto w-max"
                     >
                       <Trash2 size={14} />
                       Deletar Acompanhamento
@@ -1381,7 +1471,13 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
         saveLogEdit={saveLogEdit}
         logFileInputRef={logFileInputRef}
         editingLogPhoto={editingLogPhoto}
+        setEditingLogPhoto={setEditingLogPhoto}
+        editingLogPhotos={editingLogPhotos}
+        setEditingLogPhotos={setEditingLogPhotos}
+        editingLogTimestamp={editingLogTimestamp}
+        setEditingLogTimestamp={setEditingLogTimestamp}
         isUploadingLogPhoto={isUploadingLogPhoto}
+        setIsUploadingLogPhoto={setIsUploadingLogPhoto}
         editingLogInfo={editingLogInfo}
         setEditingLogInfo={setEditingLogInfo}
         conditions={conditions}
@@ -1435,6 +1531,36 @@ export function TrackerOverlay({ itemId, onClose }: TrackerOverlayProps) {
         }}
         onLembrarMaisTarde={cancelRequest}
         onIgnorar={confirmAndBypass}
+      />
+
+      <CardSettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        item={item}
+        updateItem={updateItem}
+        openDateModal={() => { setIsSettingsModalOpen(false); setIsDateModalOpen(true); }}
+        openStageModal={() => { setIsSettingsModalOpen(false); setIsStageModalOpen(true); }}
+      />
+
+      <ConfirmDeletePhotoModal
+        isOpen={isDeleteCoverModalOpen}
+        onClose={() => setIsDeleteCoverModalOpen(false)}
+        onConfirm={() => {
+          updateItem({ ...item, coverPhoto: undefined });
+          setIsDeleteCoverModalOpen(false);
+        }}
+        title="Deletar Capa"
+        description="Tem certeza que deseja deletar a foto de capa atual?"
+      />
+
+      <ConfirmActionModal
+        isOpen={confirmModalConfig.isOpen}
+        onClose={() => setConfirmModalConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModalConfig.onConfirm}
+        title={confirmModalConfig.title}
+        description={confirmModalConfig.description}
+        actionStyle={confirmModalConfig.actionStyle}
+        confirmText={confirmModalConfig.confirmText}
       />
     </React.Fragment>,
     document.body

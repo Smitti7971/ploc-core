@@ -12,6 +12,7 @@ import { InventoryModal } from '@/modules/inventory/components/InventoryModal';
 import { LabStatsPanel } from '@/modules/lab/components/LabStatsPanel';
 import { LabItemEditor } from '@/modules/lab/components/LabItemEditor';
 import { LabDatabaseList } from '@/modules/lab/components/LabDatabaseList';
+import { ConfirmActionModal } from '@/modules/dashboard/components/tracker/components/modals/ConfirmActionModal';
 
 export default function LabPage() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function LabPage() {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [isBagOpen, setIsBagOpen] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -135,12 +137,18 @@ export default function LabPage() {
   };
 
   const handleDeleteItem = async (id: string) => {
-    if (!confirm('Deletar este item para sempre?')) return;
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
     try {
-      await api.delete(`/inventory/items/${id}`);
+      await api.delete(`/inventory/items/${confirmDeleteId}`);
       loadItems();
     } catch (err) {
       console.error('Erro ao deletar', err);
+    } finally {
+      setConfirmDeleteId(null);
     }
   };
 
@@ -220,6 +228,15 @@ export default function LabPage() {
         </div>
       </div>
 
+      <ConfirmActionModal
+        isOpen={!!confirmDeleteId}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={confirmDelete}
+        title="Deletar Item"
+        description="Deletar este item para sempre?"
+        actionStyle="danger"
+        confirmText="Deletar"
+      />
     </div>
   );
 }

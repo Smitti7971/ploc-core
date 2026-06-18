@@ -4,6 +4,8 @@ import { Search, Filter } from 'lucide-react';
 import { getAssetUrl } from '@/lib/config';
 import { TrackerStatusCard } from './tracker/components/TrackerStatusCard';
 import { IMPACT_ICONS } from '@/modules/routines/data/routinesData';
+import { useTrackerStore } from './tracker/store/trackerStore';
+import { useDroppable } from '@dnd-kit/core';
 
 interface DashboardRoutinesCarouselProps {
   TABS: any[];
@@ -13,6 +15,9 @@ interface DashboardRoutinesCarouselProps {
   handleScroll: (e: React.UIEvent<HTMLDivElement>) => void;
   activeVicesList: any[];
   activeTrackers: any[];
+  completedVicesList: any[];
+  completedTrackers: any[];
+  favoriteItems: any[];
   setSelectedTrackerId: (id: string) => void;
   allRoutines: any[];
 }
@@ -25,9 +30,16 @@ export function DashboardRoutinesCarousel({
   handleScroll,
   activeVicesList,
   activeTrackers,
+  completedVicesList,
+  completedTrackers,
+  favoriteItems,
   setSelectedTrackerId,
   allRoutines
 }: DashboardRoutinesCarouselProps) {
+  const { isOver: isDragOver, setNodeRef } = useDroppable({
+    id: 'root-dropzone',
+  });
+
   return (
     <>
       {/* Label da Tab Atual */}
@@ -68,37 +80,61 @@ export function DashboardRoutinesCarousel({
       </div>
 
       <div
-        ref={carouselRef}
+        ref={(node) => {
+          setNodeRef(node);
+          if (carouselRef) (carouselRef as any).current = node;
+        }}
         onScroll={handleScroll}
-        className="w-full flex overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-hide relative shrink-0"
+        className={`w-full flex overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-hide relative shrink-0 transition-colors ${isDragOver ? 'bg-amber-500/5' : ''}`}
       >
         {/* TELA: ROTINAS ATIVAS */}
         <div className="w-full shrink-0 snap-start px-4 pb-2 flex flex-col relative pt-4">
           {activeVicesList.length > 0 || activeTrackers.length > 0 ? (
-            <>
-              <div className="flex flex-col gap-4">
-                {/* Renderizar Vices */}
-                {activeVicesList.map(activeVice => (
-                  <TrackerStatusCard
-                    key={activeVice.id}
-                    item={activeVice}
-                    onClick={() => setSelectedTrackerId(activeVice.id)}
-                  />
-                ))}
-
-                {/* Renderizar Trackers do Acompanhe */}
-                {activeTrackers.map(tracker => (
-                  <TrackerStatusCard
-                    key={tracker.id}
-                    item={tracker}
-                    onClick={() => setSelectedTrackerId(tracker.id)}
-                  />
-                ))}
-              </div>
-            </>
+            <div className="flex flex-col gap-4">
+              {activeVicesList.map(activeVice => (
+                <TrackerStatusCard
+                  key={activeVice.id}
+                  item={activeVice}
+                  onClick={() => setSelectedTrackerId(activeVice.id)}
+                />
+              ))}
+              {activeTrackers.map(tracker => (
+                <TrackerStatusCard
+                  key={tracker.id}
+                  item={tracker}
+                  onClick={() => setSelectedTrackerId(tracker.id)}
+                />
+              ))}
+            </div>
           ) : (
-            <div className="flex-0 flex items-center justify-center opacity-50">
+            <div className="flex-1 flex items-center justify-center opacity-50 min-h-[200px]">
               <span className="text-slate-400 font-bold text-sm">Nenhuma rotina ativa no momento.</span>
+            </div>
+          )}
+        </div>
+
+        {/* TELA: CONCLUÍDAS */}
+        <div className="w-full shrink-0 snap-start px-4 pb-2 flex flex-col relative pt-4">
+          {completedVicesList.length > 0 || completedTrackers.length > 0 ? (
+            <div className="flex flex-col gap-4">
+              {completedVicesList.map(vice => (
+                <TrackerStatusCard
+                  key={vice.id}
+                  item={vice}
+                  onClick={() => setSelectedTrackerId(vice.id)}
+                />
+              ))}
+              {completedTrackers.map(tracker => (
+                <TrackerStatusCard
+                  key={tracker.id}
+                  item={tracker}
+                  onClick={() => setSelectedTrackerId(tracker.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex-1 flex items-center justify-center opacity-50 min-h-[200px]">
+              <span className="text-slate-400 font-bold text-sm">Nenhuma rotina concluída.</span>
             </div>
           )}
         </div>
@@ -181,8 +217,22 @@ export function DashboardRoutinesCarousel({
         </div>
 
         {/* TELA: FAVORITAS */}
-        <div className="w-full shrink-0 snap-start px-4 pb-2 relative flex flex-col items-center justify-center opacity-50">
-          <span className="text-slate-400 font-bold text-sm">Nenhuma favorita ainda.</span>
+        <div className="w-full shrink-0 snap-start px-4 pb-2 flex flex-col relative pt-4">
+          {favoriteItems.length > 0 ? (
+            <div className="flex flex-col gap-4">
+              {favoriteItems.map(item => (
+                <TrackerStatusCard
+                  key={item.id}
+                  item={item}
+                  onClick={() => setSelectedTrackerId(item.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex-1 flex items-center justify-center opacity-50 min-h-[200px]">
+              <span className="text-slate-400 font-bold text-sm">Nenhuma favorita ainda.</span>
+            </div>
+          )}
         </div>
 
         {/* TELA: RANKING */}

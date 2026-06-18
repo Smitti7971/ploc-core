@@ -7,7 +7,7 @@ interface LogHistoryProps {
   item?: any;
   itemLogs: any[];
   editingLogId: string | null;
-  handleEditLog: (logId: string, info?: string, photoUrl?: string, metadata?: any) => void;
+  handleEditLog: (logId: string, info?: string, photoUrl?: string, metadata?: any, timestamp?: number, photoUrls?: string[]) => void;
 }
 
 export function LogHistory({ item, itemLogs, editingLogId, handleEditLog }: LogHistoryProps) {
@@ -99,18 +99,19 @@ export function LogHistory({ item, itemLogs, editingLogId, handleEditLog }: LogH
             }
 
             const deco = logDecorations[log.id];
+            const displayPhotos = log.photoUrls?.length ? log.photoUrls : (log.photoUrl ? [log.photoUrl] : []);
 
             return (
               <div
                 key={log.id}
-                onClick={() => handleEditLog(log.id, log.info, log.photoUrl, log.metadata)}
+                onClick={() => handleEditLog(log.id, log.info, log.photoUrl, log.metadata, log.timestamp, log.photoUrls)}
                 className={`py-3 px-3 flex gap-3 relative overflow-hidden rounded-xl border cursor-pointer transition-colors ${visualClass}`}
               >
-                {log.photoUrl && (
+                {displayPhotos[0] && (
                   <>
                     <div
                       className="absolute inset-0 bg-cover bg-center opacity-60 pointer-events-none mix-blend-screen"
-                      style={{ backgroundImage: `url(${getAssetUrl(log.photoUrl)})` }}
+                      style={{ backgroundImage: `url(${getAssetUrl(displayPhotos[0])})`, imageOrientation: 'from-image' }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a0c0a] via-[#0a0c0a]/60 to-transparent pointer-events-none" />
                   </>
@@ -139,6 +140,18 @@ export function LogHistory({ item, itemLogs, editingLogId, handleEditLog }: LogH
                     <p className="text-[11px] text-white/90 leading-relaxed relative z-10 font-medium pointer-events-none">
                       {log.info}
                     </p>
+                  )}
+
+                  {displayPhotos.length > 1 && (
+                    <div className="flex gap-2 overflow-x-auto custom-scrollbar relative z-10 mt-1 pb-1">
+                      {displayPhotos.slice(1).map((photo: string, idx: number) => (
+                        <div 
+                          key={idx} 
+                          className="w-12 h-12 rounded-lg border border-white/20 shrink-0 bg-cover bg-center shadow-lg pointer-events-none"
+                          style={{ backgroundImage: `url(${getAssetUrl(photo)})`, imageOrientation: 'from-image' }}
+                        />
+                      ))}
+                    </div>
                   )}
 
                   {log.durationSeconds !== undefined && log.durationSeconds > 0 && (

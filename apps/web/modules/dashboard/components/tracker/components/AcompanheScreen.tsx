@@ -4,10 +4,14 @@ import { PlusCircle, LineChart } from 'lucide-react';
 import { useTrackerStore } from '../store/trackerStore';
 import { TrackerStatusCard } from './TrackerStatusCard';
 import { TrackerOverlay } from './TrackerOverlay';
+import { useDroppable } from '@dnd-kit/core';
 
 export function AcompanheScreen() {
-  const { items, fetchItems, setItem } = useTrackerStore();
+  const { items, fetchItems, setItem, reparentItem } = useTrackerStore();
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const { setNodeRef, isOver: isDragOver } = useDroppable({
+    id: 'root-dropzone-acompanhe',
+  });
 
   useEffect(() => {
     fetchItems();
@@ -19,7 +23,25 @@ export function AcompanheScreen() {
     return () => window.removeEventListener('openTracker', handleOpenTracker);
   }, [fetchItems]);
 
-  const trackedItems = Object.values(items).filter(item => item.type === 'acompanhe');
+  // Unifica todas as rotinas/tarefas que não sejam do tipo 'vice' (que vão para o Libertesse)
+  // E também remove os que são correlações (filhos) de outras tarefas
+  const allCorrelations = new Set<string>();
+  Object.values(items).forEach(i => {
+    if (i.status !== 'COMPLETED') {
+      Object.keys(i.correlations || {}).forEach(cId => allCorrelations.add(cId));
+    }
+  });
+  
+  const sortActiveTop = (a: any, b: any) => {
+    if (a.status === 'COMPLETED' && b.status !== 'COMPLETED') return 1;
+    if (a.status !== 'COMPLETED' && b.status === 'COMPLETED') return -1;
+    if (a.status === 'COMPLETED' && b.status === 'COMPLETED') return (b.updatedAt || 0) - (a.updatedAt || 0);
+    return (b.createdAt || 0) - (a.createdAt || 0);
+  };
+
+  const trackedItems = Object.values(items)
+    .filter(item => item.type !== 'vice' && !allCorrelations.has(item.id))
+    .sort(sortActiveTop);
 
   const handleCreateNew = () => {
     const newItemId = crypto.randomUUID();
@@ -38,7 +60,10 @@ export function AcompanheScreen() {
   };
 
   return (
-    <div className="w-full flex flex-col px-4 pb-24 h-full overflow-y-auto">
+    <div 
+      ref={setNodeRef}
+      className={`w-full flex flex-col px-4 pb-24 h-full overflow-y-auto transition-colors ${isDragOver ? 'bg-amber-500/5' : ''}`}
+    >
       {/* O header grande foi removido conforme solicitação */}
 
       {/* Grid de Cards */}
@@ -49,7 +74,7 @@ export function AcompanheScreen() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           onClick={handleCreateNew}
-          className="w-full h-20 rounded-3xl overflow-hidden cursor-pointer bg-white/5 border border-white/10 flex flex-row items-center justify-center gap-3 group hover:bg-white/10 transition-colors md:col-span-2 md:h-16"
+          className="w-full h-20 rounded-2xl overflow-hidden cursor-pointer bg-white/5 border border-white/10 flex flex-row items-center justify-center gap-3 group hover:bg-white/10 transition-colors md:col-span-2 md:h-16"
         >
           <div className="flex items-center justify-center group-hover:scale-110 transition-transform">
             <PlusCircle size={22} className="text-amber-400" />

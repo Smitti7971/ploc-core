@@ -234,7 +234,7 @@ export default function PlocAvatar({
 
   let stateR = 255, stateG = 255, stateB = 255;
   if (isSick) {
-    stateR = 140; stateG = 160; stateB = 100;
+    stateR = 100; stateG = 150; stateB = 200;
   } else {
     switch (appearance?.bodyColor) {
       case 'rose': stateR = 255; stateG = 180; stateB = 200; break;
