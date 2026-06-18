@@ -241,7 +241,7 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
               {activeTab === 'tarefas' && (
                 <div className="flex flex-col gap-3">
                   {/* Filtros Internos de Tarefas */}
-                  <div className="flex gap-2 p-1 bg-black/40 rounded-xl mb-1">
+                  <div className="sticky top-0 z-20 flex gap-2 p-1 bg-black/80 backdrop-blur-md rounded-xl mb-1">
                     {['pendentes', 'atrasados', 'futuras', 'concluidas'].map(filter => (
                       <button
                         key={filter}
