@@ -322,7 +322,7 @@ export default function DashboardPage() {
               item={trackerItems[activeDragId]}
               onClick={() => {}}
               isOverlay={true}
-              isChild={!!trackerItems[activeDragId].parentId}
+              isChild={allCorrelations.has(activeDragId)}
             />
           </div>
         ) : null}
