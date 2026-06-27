@@ -272,10 +272,8 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
     if (toggled && !toggled.completed) {
       addLog({
         trackerItemId: item.id,
-        title: 'Tarefa Concluída',
-        info: toggled.text,
-        type: 'milestone',
-        timestamp: Date.now()
+        info: `Tarefa Concluída: ${toggled.text}`,
+        type: 'milestone'
       });
     }
 
