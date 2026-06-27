@@ -268,6 +268,17 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
   };
 
   const toggleTodo = (id: string) => {
+    const toggled = todos.find((t: any) => t.id === id);
+    if (toggled && !toggled.completed) {
+      addLog({
+        trackerItemId: item.id,
+        title: 'Tarefa Concluída',
+        info: toggled.text,
+        type: 'milestone',
+        timestamp: Date.now()
+      });
+    }
+
     const updated = todos.map((t: any) => t.id === id ? { ...t, completed: !t.completed } : t);
     updateItem({
       ...item,

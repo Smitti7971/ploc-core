@@ -296,6 +296,7 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
 
                   {tarefaFilter === 'futuras' && (
                       <NotificationsFutureTab
+                        activeTrackers={activeTrackers}
                         trackersToUpdate={trackersToUpdate}
                         tarefas={tarefas}
                         now={now}

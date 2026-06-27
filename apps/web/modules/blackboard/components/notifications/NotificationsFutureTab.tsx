@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { isFutureForToday } from '../../../dashboard/components/tracker/utils/scheduling';
 
 interface NotificationsFutureTabProps {
+  activeTrackers?: any[];
   trackersToUpdate: any[];
   tarefas: any[];
   now: number;
@@ -15,6 +16,7 @@ interface NotificationsFutureTabProps {
 }
 
 export function NotificationsFutureTab({
+  activeTrackers = [],
   trackersToUpdate,
   tarefas,
   now,
@@ -29,9 +31,17 @@ export function NotificationsFutureTab({
   const futureTrackers = trackersToUpdate.filter(t => isFutureForToday(t, now));
   const futureTarefas = tarefas.filter(t => isFutureForToday(t, now));
 
+  const allItemsWithTodos = [...activeTrackers, ...tarefas];
+  const allTodos = allItemsWithTodos.flatMap(t => 
+    (t.config?.todos || []).map((todo: any) => ({ ...todo, trackerName: t.name, trackerId: t.id }))
+  );
+  
+  const todayStr = new Date(now).toISOString().split('T')[0];
+  const futureTodos = allTodos.filter(todo => !todo.completed && todo.date >= todayStr);
+
   return (
     <div className="flex flex-col gap-3">
-      {futureTrackers.length === 0 && futureTarefas.length === 0 && (
+      {futureTrackers.length === 0 && futureTarefas.length === 0 && futureTodos.length === 0 && (
         <p className="text-white/40 text-xs text-center py-4">Nenhuma tarefa futura agendada.</p>
       )}
 
@@ -131,11 +141,52 @@ export function NotificationsFutureTab({
                 >
                   Abrir Tarefa
                 </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ))}
+
+        {futureTodos.map(todo => (
+          <div 
+            key={todo.id} 
+            onClick={() => {
+              if (confirmingTask === todo.id) setConfirmingTask(null);
+              else setConfirmingTask(todo.id);
+            }}
+            className="border border-white/5 bg-white/5 rounded-xl p-3 flex gap-3 opacity-60 hover:opacity-100 transition-opacity cursor-pointer relative overflow-hidden"
+          >
+            <div className="flex flex-col flex-1 min-w-0">
+              <span className="text-sm font-bold truncate text-sky-400">{todo.text}</span>
+              <span className="text-[10px] text-sky-400/50 mt-1 uppercase font-bold tracking-wider">
+                {todo.trackerName} - {new Date(todo.date).toLocaleDateString('pt-BR')}
+              </span>
+            </div>
+
+            <AnimatePresence>
+              {confirmingTask === todo.id && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-black/80 backdrop-blur-md z-10 flex items-center justify-center gap-3 px-3"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDetailedTrackerId(todo.trackerId);
+                      setConfirmingTask(null);
+                    }}
+                    className="bg-white/10 text-white border border-white/20 px-3 py-2 rounded-xl text-[10px] font-black tracking-widest flex-1 uppercase w-full"
+                  >
+                    Abrir {todo.trackerName}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ))}
     </div>
   );
 }
