@@ -151,7 +151,8 @@ export const useTrackerStore = create<TrackerStore>()(
           if (Array.isArray(logsData)) {
             const formattedLogs = logsData.map((log: any) => ({
               ...log,
-              timestamp: Number(log.timestamp)
+              timestamp: Number(log.timestamp),
+              photoUrls: log.photoUrls || log.metadata?.photoUrls || (log.photoUrl ? [log.photoUrl] : undefined)
             }));
             set({ logs: formattedLogs });
           }

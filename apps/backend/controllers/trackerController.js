@@ -151,9 +151,13 @@ exports.deleteTrackerItem = async (req, res) => {
 exports.createTrackerLog = async (req, res) => {
   try {
     const userId = req.user?.id || 'c3dd1b0e-7465-4739-86de-db474c853d8e';
-    const { id, trackerItemId, type, timestamp, photoUrl, info, durationSeconds, value, metadata } = req.body;
+    const { id, trackerItemId, type, timestamp, photoUrl, photoUrls, info, durationSeconds, value, metadata } = req.body;
 
     let finalTrackerItemId = trackerItemId;
+    let finalMetadata = metadata || {};
+    if (photoUrls) {
+      finalMetadata.photoUrls = photoUrls;
+    }
     
     // If trackerItemId is missing or not a UUID, it might be a 'name' passed from frontend. Try to look it up.
     if (!finalTrackerItemId || finalTrackerItemId.length < 10) {
@@ -187,7 +191,7 @@ exports.createTrackerLog = async (req, res) => {
               info,
               durationSeconds,
               value,
-              metadata: metadata || {}
+              metadata: finalMetadata
             }
           });
         }
@@ -208,7 +212,7 @@ exports.createTrackerLog = async (req, res) => {
           info,
           durationSeconds,
           value,
-          metadata: metadata || {}
+          metadata: finalMetadata
         }
       });
     }
