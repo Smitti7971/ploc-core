@@ -104,6 +104,9 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
   const todayTimestamp = todayStart.getTime();
 
   const trackersToUpdate = activeTrackers.filter(t => {
+    const isAcompanhe = t.type === 'acompanhe' || t.config?.mode === 'acompanhe';
+    if (isAcompanhe) return false;
+
     // Check if it's a monthly task and if today is one of the days
     if (t.config?.loopMode === 'monthly' && t.config?.monthlyDays) {
       const todayDate = new Date().getDate();

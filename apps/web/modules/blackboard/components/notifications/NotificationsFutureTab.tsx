@@ -37,7 +37,24 @@ export function NotificationsFutureTab({
   );
   
   const todayStr = new Date(now - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
-  const futureTodos = allTodos.filter(todo => !todo.completed && todo.date > todayStr);
+  const maxDate = new Date(now - new Date().getTimezoneOffset() * 60000 + 7 * 86400000).toISOString().split('T')[0];
+  
+  const futureTodos = allTodos
+    .filter(todo => !todo.completed && todo.date > todayStr && todo.date <= maxDate)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const formatRelativeDate = (dateStr: string) => {
+    const today = new Date(now - new Date().getTimezoneOffset() * 60000);
+    today.setUTCHours(0,0,0,0);
+    
+    const target = new Date(dateStr + 'T00:00:00Z');
+    
+    const diffTime = target.getTime() - today.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return 'Amanhã';
+    return `Em ${diffDays} dias`;
+  };
 
   return (
     <div className="flex flex-col gap-3">
@@ -159,7 +176,7 @@ export function NotificationsFutureTab({
             <div className="flex flex-col flex-1 min-w-0">
               <span className="text-sm font-bold truncate text-sky-400">{todo.text}</span>
               <span className="text-[10px] text-sky-400/50 mt-1 uppercase font-bold tracking-wider">
-                {todo.trackerName} - {new Date(todo.date + 'T12:00:00').toLocaleDateString('pt-BR')}
+                {todo.trackerName} - {formatRelativeDate(todo.date)}
               </span>
             </div>
 
