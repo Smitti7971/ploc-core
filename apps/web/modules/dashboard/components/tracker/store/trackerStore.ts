@@ -40,6 +40,12 @@ export interface TrackerItem {
       endDate?: number;
     }[];
     activeMarkers?: string[];
+    todos?: {
+      id: string;
+      text: string;
+      date: string;
+      completed: boolean;
+    }[];
     [key: string]: any;
   };
   startDate: number;

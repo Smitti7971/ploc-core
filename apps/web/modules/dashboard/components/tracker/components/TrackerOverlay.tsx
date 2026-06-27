@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { X, Camera, Link as LinkIcon, Loader2, Trash2, Check, EyeOff, Eye, Clock, Edit2, TrendingDown, Activity, ListChecks, CheckSquare, PlusCircle, Map, Bell, BellOff, Settings, Save, AlertCircle } from 'lucide-react';
+import { X, Camera, Link as LinkIcon, Loader2, Trash2, Check, EyeOff, Eye, Clock, Edit2, TrendingDown, Activity, ListChecks, CheckSquare, PlusCircle, Map, Bell, BellOff, Settings, Save, AlertCircle, RefreshCw } from 'lucide-react';
 import { TrackerItem, useTrackerStore } from '../store/trackerStore';
 import { apiService } from '@/services/api';
 import { getAssetUrl } from '@/lib/config';
@@ -241,6 +241,11 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
   const todos = item?.config?.todos || [];
   const [newTodoText, setNewTodoText] = useState('');
   const [newTodoDate, setNewTodoDate] = useState('');
+  const [newTodoRecurrence, setNewTodoRecurrence] = useState<string>('none');
+  const [editingTodoId, setEditingTodoId] = useState<string | null>(null);
+  const [editTodoText, setEditTodoText] = useState('');
+  const [editTodoDate, setEditTodoDate] = useState('');
+  const [editTodoRecurrence, setEditTodoRecurrence] = useState<string>('none');
 
   const removeCondition = (index: number) => {
     const updated = [...conditions];
@@ -257,31 +262,94 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
       id: crypto.randomUUID(),
       text: newTodoText.trim(),
       date: newTodoDate || new Date().toISOString().split('T')[0],
-      completed: false
+      completed: false,
+      recurrence: newTodoRecurrence
     };
     updateItem({
       ...item,
-      config: { ...item.config, todos: [...todos, newTodo].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) }
+      config: { ...item.config, todos: [...todos, newTodo].sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime()) }
     });
     setNewTodoText('');
     setNewTodoDate('');
+    setNewTodoRecurrence('none');
+  };
+
+  const startEditTodo = (todo: any) => {
+    setEditingTodoId(todo.id);
+    setEditTodoText(todo.text);
+    setEditTodoDate(todo.date);
+    setEditTodoRecurrence(todo.recurrence || 'none');
+  };
+
+  const saveEditTodo = () => {
+    if (!editTodoText.trim() || !editingTodoId) return;
+    const updated = todos.map((t: any) => t.id === editingTodoId ? { 
+      ...t, 
+      text: editTodoText.trim(), 
+      date: editTodoDate || t.date,
+      recurrence: editTodoRecurrence 
+    } : t);
+    
+    updated.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    updateItem({
+      ...item,
+      config: { ...item.config, todos: updated }
+    });
+    setEditingTodoId(null);
+  };
+
+  const cancelEditTodo = () => {
+    setEditingTodoId(null);
   };
 
   const toggleTodo = (id: string) => {
     const toggled = todos.find((t: any) => t.id === id);
-    if (toggled && !toggled.completed) {
+    if (!toggled) return;
+
+    if (!toggled.completed) {
       addLog({
         trackerItemId: item.id,
         info: `Tarefa Concluída: ${toggled.text}`,
         type: 'milestone'
       });
-    }
 
-    const updated = todos.map((t: any) => t.id === id ? { ...t, completed: !t.completed } : t);
-    updateItem({
-      ...item,
-      config: { ...item.config, todos: updated }
-    });
+      let updated = todos.map((t: any) => t.id === id ? { ...t, completed: true } : t);
+
+      if (toggled.recurrence && toggled.recurrence !== 'none') {
+        const currentDate = new Date(toggled.date + 'T12:00:00');
+        let nextDate = new Date(currentDate);
+        
+        switch (toggled.recurrence) {
+          case 'daily': nextDate.setDate(currentDate.getDate() + 1); break;
+          case 'weekly': nextDate.setDate(currentDate.getDate() + 7); break;
+          case 'biweekly': nextDate.setDate(currentDate.getDate() + 14); break;
+          case 'monthly': nextDate.setMonth(currentDate.getMonth() + 1); break;
+        }
+        
+        const clone = {
+          id: crypto.randomUUID(),
+          text: toggled.text,
+          date: nextDate.toISOString().split('T')[0],
+          completed: false,
+          recurrence: toggled.recurrence
+        };
+        updated.push(clone);
+      }
+
+      updated.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+      updateItem({
+        ...item,
+        config: { ...item.config, todos: updated }
+      });
+    } else {
+      const updated = todos.map((t: any) => t.id === id ? { ...t, completed: false } : t);
+      updateItem({
+        ...item,
+        config: { ...item.config, todos: updated }
+      });
+    }
   };
 
   const deleteTodo = (id: string) => {
@@ -1259,6 +1327,17 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
                                   onChange={(e) => setNewTodoDate(e.target.value)}
                                   className="flex-1 bg-white/5 border border-white/10 rounded-lg p-2 text-[12px] text-white/80 focus:outline-none focus:border-white/20"
                                 />
+                                <select
+                                  value={newTodoRecurrence}
+                                  onChange={(e) => setNewTodoRecurrence(e.target.value)}
+                                  className="flex-1 bg-white/5 border border-white/10 rounded-lg p-2 text-[12px] text-white/80 focus:outline-none focus:border-white/20 appearance-none"
+                                >
+                                  <option value="none">S/ Repetir</option>
+                                  <option value="daily">Diária</option>
+                                  <option value="weekly">Semanal</option>
+                                  <option value="biweekly">Quinzenal</option>
+                                  <option value="monthly">Mensal</option>
+                                </select>
                                 <button 
                                   onClick={addTodo}
                                   disabled={!newTodoText.trim()}
@@ -1274,27 +1353,77 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
                                 <p className="text-[10px] text-white/30 text-center py-2">Nenhuma tarefa cadastrada</p>
                               ) : (
                                 todos.map((todo: any) => (
-                                  <div key={todo.id} className={`flex items-start gap-2 p-2 rounded-lg border ${todo.completed ? 'bg-white/5 border-transparent opacity-60' : 'bg-black/40 border-white/5'} transition-all`}>
-                                    <button 
-                                      onClick={() => toggleTodo(todo.id)}
-                                      className="mt-0.5 text-white/50 hover:text-emerald-400 transition-colors shrink-0"
-                                    >
-                                      {todo.completed ? <CheckSquare size={16} className="text-emerald-400" /> : <div className="w-4 h-4 rounded-sm border border-white/30" />}
-                                    </button>
-                                    <div className="flex-1 flex flex-col min-w-0">
-                                      <span className={`text-[12px] text-white/90 break-words ${todo.completed ? 'line-through text-white/50' : ''}`}>
-                                        {todo.text}
-                                      </span>
-                                      <span className="text-[9px] text-white/40 mt-1 flex items-center gap-1">
-                                        <Clock size={10} /> {new Date(todo.date).toLocaleDateString('pt-BR')}
-                                      </span>
-                                    </div>
-                                    <button 
-                                      onClick={() => deleteTodo(todo.id)}
-                                      className="text-white/30 hover:text-red-400 transition-colors p-1 shrink-0"
-                                    >
-                                      <Trash2 size={14} />
-                                    </button>
+                                  <div key={todo.id} className={`flex flex-col gap-2 p-2 rounded-lg border ${todo.completed ? 'bg-white/5 border-transparent opacity-60' : 'bg-black/40 border-white/5'} transition-all`}>
+                                    {editingTodoId === todo.id ? (
+                                      <div className="flex flex-col gap-2 w-full">
+                                        <input 
+                                          type="text"
+                                          value={editTodoText}
+                                          onChange={(e) => setEditTodoText(e.target.value)}
+                                          className="bg-white/5 border border-emerald-500/30 rounded-lg p-2 text-[12px] text-white focus:outline-none focus:border-emerald-500"
+                                        />
+                                        <div className="flex gap-2">
+                                          <input 
+                                            type="date"
+                                            value={editTodoDate}
+                                            onChange={(e) => setEditTodoDate(e.target.value)}
+                                            className="flex-1 bg-white/5 border border-white/10 rounded-lg p-2 text-[12px] text-white/80 focus:outline-none focus:border-white/20"
+                                          />
+                                          <select
+                                            value={editTodoRecurrence}
+                                            onChange={(e) => setEditTodoRecurrence(e.target.value)}
+                                            className="flex-1 bg-white/5 border border-white/10 rounded-lg p-2 text-[12px] text-white/80 focus:outline-none focus:border-white/20 appearance-none"
+                                          >
+                                            <option value="none">S/ Repetir</option>
+                                            <option value="daily">Diária</option>
+                                            <option value="weekly">Semanal</option>
+                                            <option value="biweekly">Quinzenal</option>
+                                            <option value="monthly">Mensal</option>
+                                          </select>
+                                        </div>
+                                        <div className="flex gap-2 justify-end mt-1">
+                                          <button onClick={cancelEditTodo} className="px-3 py-1.5 text-[10px] uppercase font-bold text-white/50 hover:text-white bg-white/5 rounded-lg transition-colors">Cancelar</button>
+                                          <button onClick={saveEditTodo} className="px-3 py-1.5 text-[10px] uppercase font-bold text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-lg transition-colors">Salvar</button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-start gap-2">
+                                        <button 
+                                          onClick={() => toggleTodo(todo.id)}
+                                          className="mt-0.5 text-white/50 hover:text-emerald-400 transition-colors shrink-0"
+                                        >
+                                          {todo.completed ? <CheckSquare size={16} className="text-emerald-400" /> : <div className="w-4 h-4 rounded-sm border border-white/30" />}
+                                        </button>
+                                        <div className="flex-1 flex flex-col min-w-0">
+                                          <span className={`text-[12px] text-white/90 break-words ${todo.completed ? 'line-through text-white/50' : ''}`}>
+                                            {todo.text}
+                                          </span>
+                                          <div className="flex items-center gap-2 mt-1">
+                                            <span className="text-[9px] text-white/40 flex items-center gap-1">
+                                              <Clock size={10} /> {new Date(todo.date + 'T12:00:00').toLocaleDateString('pt-BR')}
+                                            </span>
+                                            {todo.recurrence && todo.recurrence !== 'none' && (
+                                              <span className="text-[9px] text-sky-400/70 font-bold uppercase tracking-wider flex items-center gap-0.5">
+                                                <RefreshCw size={8} /> 
+                                                {todo.recurrence === 'daily' ? 'Diária' : todo.recurrence === 'weekly' ? 'Semanal' : todo.recurrence === 'biweekly' ? 'Quinzenal' : 'Mensal'}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <button 
+                                          onClick={() => startEditTodo(todo)}
+                                          className="text-white/30 hover:text-sky-400 transition-colors p-1 shrink-0"
+                                        >
+                                          <Edit2 size={12} />
+                                        </button>
+                                        <button 
+                                          onClick={() => deleteTodo(todo.id)}
+                                          className="text-white/30 hover:text-red-400 transition-colors p-1 shrink-0 ml-1"
+                                        >
+                                          <Trash2 size={14} />
+                                        </button>
+                                      </div>
+                                    )}
                                   </div>
                                 ))
                               )}
