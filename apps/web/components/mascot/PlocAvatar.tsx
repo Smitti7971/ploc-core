@@ -16,7 +16,7 @@
  * 
  * Principais responsabilidades:
  * - Coleta e distribui hooks de estados físicos (`usePlocState`), fala (`usePlocSpeech`) e chat (`usePlocChat`).
- * - Encapsula e posiciona os subcomponentes (`PlocFace`, `PlocBubbles`, `TypewriterText`).
+ * - Encapsula e posiciona os subcomponentes (`PlocFace`, `TypewriterText`).
  * - Controla a física de arrastar e soltar (drag & drop) usando Framer Motion.
  * - Gerencia o portal de chat dark-glassmorphism e o balão de simulação (`PlocSimulationCard`).
  * ============================================================================

@@ -34,7 +34,7 @@ export function DraggableTaskCard({ task, onClick }: { task: CalendarTask, onCli
       ref={setNodeRef}
       style={style}
       className={`relative p-4 rounded-2xl transition-colors
-        ${isActive ? 'bg-sky-500 shadow-[0_5px_20px_rgba(14,165,233,0.3)]' : 'bg-[#1a1c23] border border-white/5'}
+        ${isActive ? 'bg-sky-500 shadow-[0_5px_20px_rgba(14,165,233,0.3)]' : 'bg-[#18181b] border border-white/5'}
         ${task.isDraggable ? 'cursor-grab active:cursor-grabbing hover:border-white/20' : 'opacity-80'}`}
       {...attributes}
       {...listeners}

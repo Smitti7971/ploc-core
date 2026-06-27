@@ -30,6 +30,7 @@ export interface TrackerItem {
     expectedTime?: string;
     target?: number;
     showCoverPhoto?: boolean;
+    showStreak?: boolean;
     isMission?: boolean;
     missionTemplate?: string;
     stages?: {
@@ -69,8 +70,9 @@ interface TrackerStore {
   addLog: (log: Omit<TrackerLog, 'id' | 'timestamp'>) => string;
   updateLog: (logId: string, updates: Partial<TrackerLog>) => void;
   deleteLog: (logId: string) => void;
-  toggleCoverPhoto: (itemId: string) => void;
+
   reparentItem: (childId: string, newParentId: string | null) => void;
+  cleanEmptyItems: () => void;
 }
 
 const hasAuthToken = () => {
@@ -307,20 +309,6 @@ export const useTrackerStore = create<TrackerStore>()(
         }
       },
 
-      toggleCoverPhoto: (itemId) => {
-        set((state) => {
-          const item = state.items[itemId];
-          if (!item) return state;
-          
-          const currentConfig = item.config || {};
-          const newConfig = { ...currentConfig, showCoverPhoto: !(currentConfig.showCoverPhoto !== false) };
-
-          return {
-            items: { ...state.items, [itemId]: { ...item, config: newConfig } }
-          };
-        });
-        syncItemToBackend(get().items[itemId]);
-      },
 
       reparentItem: (childId, newParentId) => {
         set((state) => {
@@ -377,6 +365,19 @@ export const useTrackerStore = create<TrackerStore>()(
           // Trigger syncs outside the set function using setTimeout or just relying on itemsToSync return
           setTimeout(() => itemsToSync.forEach(i => syncItemToBackend(i)), 0);
 
+          return { items: newItems };
+        });
+      },
+
+      cleanEmptyItems: () => {
+        set((state) => {
+          const newItems = { ...state.items };
+          Object.keys(newItems).forEach(key => {
+            const item = newItems[key];
+            if (!item.name || item.name.trim() === '') {
+              delete newItems[key];
+            }
+          });
           return { items: newItems };
         });
       }

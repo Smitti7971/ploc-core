@@ -26,6 +26,8 @@ export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const isSettings = pathname === '/settings';
   const isPlocPage = pathname === '/ploc';
+  const isDashboard = pathname === '/dashboard';
+  const hidePloc = isPlocPage || isDashboard;
 
   const [isHydrated, setIsHydrated] = useState(false);
   const [profileSynced, setProfileSynced] = useState(false);
@@ -93,9 +95,9 @@ return (
 
       {/* Header do Usuário movido para AuthCapsule (Global) */}
 
-      {/* Mascote Ploc com posicionamento inteligente - Oculto na página dedicada do Ploc */}
+      {/* Mascote Ploc com posicionamento inteligente - Oculto na página dedicada do Ploc e Dashboard */}
       {/* Usando Flexbox para posicionar ao invés de bottom/right/transform para evitar bugs de pulo no drag do Framer Motion */}
-      {!isPlocPage && (
+      {!hidePloc && (
         <div style={{
           position: 'fixed',
           inset: 0,

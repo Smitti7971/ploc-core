@@ -1,5 +1,5 @@
 /**
- * @module PlocSpeechBubble
+ * @module PlocSpeechBox
  * @description Componente visual responsável por renderizar o balão de fala do mascote Ploc.
  * Lida com o texto sendo digitado/falado gradualmente.
  */
@@ -8,17 +8,17 @@
 
 import { TypewriterText, ThinkingDots } from '@/components/ui/TypewriterText';
 
-interface PlocSpeechBubbleProps {
+interface PlocSpeechBoxProps {
   currentSpokenText: string;
   isPending: boolean;
   isTTSLoading: boolean;
 }
 
-export function PlocSpeechBubble({
+export function PlocSpeechBox({
   currentSpokenText,
   isPending,
   isTTSLoading
-}: PlocSpeechBubbleProps) {
+}: PlocSpeechBoxProps) {
   if (!currentSpokenText && !isPending && !isTTSLoading) return null;
 
   return (

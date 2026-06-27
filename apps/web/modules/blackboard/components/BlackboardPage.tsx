@@ -236,6 +236,16 @@ export default function BlackboardPage() {
   const [hasPendingPillars, setHasPendingPillars] = useState(false);
 
   useEffect(() => {
+    const handleDockMenuClick = () => {
+      setShowStatusMenu(false);
+      setShowNotifications(false);
+      setShowAttributes(false);
+    };
+    window.addEventListener('dock-menu-clicked', handleDockMenuClick as EventListener);
+    return () => window.removeEventListener('dock-menu-clicked', handleDockMenuClick as EventListener);
+  }, []);
+
+  useEffect(() => {
     // Atualiza a flag de pendências
     const checkPendingPillars = () => {
       const attributes = attributeEngine.getAttributes();

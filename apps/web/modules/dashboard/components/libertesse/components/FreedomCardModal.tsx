@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check } from 'lucide-react';
 
-interface ViceBubbleModalProps {
+interface FreedomCardModalProps {
   show: boolean;
   onClose: () => void;
   activeVice: any;
@@ -25,7 +25,7 @@ interface ViceBubbleModalProps {
   setShowConfirmEnd: (show: boolean) => void;
 }
 
-export function ViceBubbleModal({
+export function FreedomCardModal({
   show,
   onClose,
   activeVice,
@@ -45,7 +45,7 @@ export function ViceBubbleModal({
   handleResistMore,
   showConfirmEnd,
   setShowConfirmEnd
-}: ViceBubbleModalProps) {
+}: FreedomCardModalProps) {
   if (!show || typeof document === 'undefined') return null;
 
   return createPortal(

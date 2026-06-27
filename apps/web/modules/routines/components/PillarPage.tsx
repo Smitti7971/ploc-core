@@ -22,6 +22,8 @@ import { useTrackerStore } from '@/modules/dashboard/components/tracker/store/tr
 import { PillarHeader } from './pillar/PillarHeader';
 import { PillarProfileForm } from './pillar/PillarProfileForm';
 import { PillarActiveRoutines } from './pillar/PillarActiveRoutines';
+import { useFitnessProfileStore } from '@/modules/dashboard/components/tracker/store/useFitnessProfileStore';
+import { FitnessProfileSettingsModal } from '@/modules/dashboard/components/tracker/components/FitnessProfileSettingsModal';
 
 export function PillarPage({ pillarId }: { pillarId: string }) {
   const config = PILLARS_DATA[pillarId];
@@ -32,6 +34,8 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const { items } = useTrackerStore();
   const activeVicesList = Object.values(items || {}).filter(t => t.type === 'vice' && t.status === 'ACTIVE');
+  const fitnessStore = useFitnessProfileStore();
+  const [showFitnessModal, setShowFitnessModal] = useState(false);
 
   const [profile, setProfile] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -142,6 +146,12 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
       position: 'relative'
     }}>
 
+      <AnimatePresence>
+        {showFitnessModal && (
+          <FitnessProfileSettingsModal onClose={() => setShowFitnessModal(false)} />
+        )}
+      </AnimatePresence>
+
       {/* Background Decor */}
       <div style={{
         position: 'absolute',
@@ -167,7 +177,7 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
       {/* Seção: Informações Base (Formulário) */}
       <div style={{ zIndex: 0 /* base */ /* base */ }} className="flex flex-col gap-4">
         <h3 style={{ color: '#fff', fontSize: '0.7rem', fontWeight: 900, letterSpacing: '2px', opacity: 0.5, margin: 0, textAlign: 'center' }}>
-          CADASTRO DE INFORMAÇÕES BASE
+          {pillarId === 'corpo' ? 'MEU CORPO E OBJETIVOS' : 'CADASTRO DE INFORMAÇÕES BASE'}
         </h3>
 
         <div style={{
@@ -181,33 +191,66 @@ export function PillarPage({ pillarId }: { pillarId: string }) {
           padding: '1.5rem',
           borderRadius: '24px',
         }}>
-          {renderProfileForm()}
+          {pillarId === 'corpo' ? (
+            <div className="flex flex-col gap-4 text-left">
+              <div className="grid grid-cols-2 gap-3 mb-2">
+                <div className="bg-black/30 p-3 rounded-xl border border-white/5">
+                  <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wider block mb-1">Peso Atual</span>
+                  <span className="text-white font-black text-lg">{fitnessStore.biometrics.weight ? `${fitnessStore.biometrics.weight} kg` : '--'}</span>
+                </div>
+                <div className="bg-black/30 p-3 rounded-xl border border-white/5">
+                  <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wider block mb-1">Objetivo</span>
+                  <span className="text-white font-black text-lg capitalize">{fitnessStore.goals.primaryObjective || '--'}</span>
+                </div>
+                <div className="bg-black/30 p-3 rounded-xl border border-white/5">
+                  <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wider block mb-1">Local</span>
+                  <span className="text-white font-black text-lg capitalize">{fitnessStore.preferences.trainingLocation || '--'}</span>
+                </div>
+                <div className="bg-black/30 p-3 rounded-xl border border-white/5">
+                  <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wider block mb-1">Nível</span>
+                  <span className="text-white font-black text-lg capitalize">{fitnessStore.preferences.experienceLevel || '--'}</span>
+                </div>
+              </div>
 
-          <div className="mt-6 flex justify-center">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={saveProfile}
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm text-white shadow-lg transition-all"
-              style={{
-                background: `linear-gradient(135deg, ${status.color} 0%, rgba(255,255,255,0.05) 100%)`,
-                border: `1px solid ${status.color}10`,
-                boxShadow: `0 10px 20px ${status.color}20`
-              }}
-            >
-              {saveSuccess ? (
-                <>
-                  <Check size={16} />
-                  SALVO COM SUCESSO
-                </>
-              ) : (
-                <>
-                  <Save size={16} />
-                  SALVAR INFORMAÇÕES
-                </>
-              )}
-            </motion.button>
-          </div>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowFitnessModal(true)}
+                className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 p-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+              >
+                Editar Perfil Corporal
+              </motion.button>
+            </div>
+          ) : (
+            <>
+              {renderProfileForm()}
+              <div className="mt-6 flex justify-center">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={saveProfile}
+                  className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm text-white shadow-lg transition-all"
+                  style={{
+                    background: `linear-gradient(135deg, ${status.color} 0%, rgba(255,255,255,0.05) 100%)`,
+                    border: `1px solid ${status.color}10`,
+                    boxShadow: `0 10px 20px ${status.color}20`
+                  }}
+                >
+                  {saveSuccess ? (
+                    <>
+                      <Check size={16} />
+                      SALVO COM SUCESSO
+                    </>
+                  ) : (
+                    <>
+                      <Save size={16} />
+                      SALVAR INFORMAÇÕES
+                    </>
+                  )}
+                </motion.button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

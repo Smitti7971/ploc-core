@@ -20,7 +20,7 @@ export function MonthView({ baseDate, allEvents, onPrevMonth, onNextMonth, onDay
   const dummyWeek = getMonthDays(new Date()).slice(0, 7);
 
   return (
-    <div className="bg-[#1a1c23]/80 backdrop-blur-md border border-white/5 rounded-3xl p-4 mt-4 shadow-xl">
+    <div className="bg-[#18181b]/80 backdrop-blur-md border border-white/5 rounded-3xl p-4 mt-4 shadow-xl">
       {/* Month Header */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-white capitalize">{monthName} <span className="text-white/40 font-normal">{year}</span></h2>

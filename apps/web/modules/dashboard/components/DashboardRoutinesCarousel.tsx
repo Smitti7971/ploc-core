@@ -47,37 +47,7 @@ export function DashboardRoutinesCarousel({
         {TABS.find(t => t.id === activeTab)?.label}
       </div>
 
-      {/* BOTÕES FLUTUANTES DE NAVEGAÇÃO DO CARROSSEL */}
-      <div className="absolute top-1/2 left-2 -translate-y-1/2 z-20">
-        {TABS.findIndex(t => t.id === activeTab) > 0 && (() => {
-          const prevTab = TABS[TABS.findIndex(t => t.id === activeTab) - 1];
-          const Icon = prevTab.icon;
-          return (
-            <button
-              onClick={() => scrollToTab(prevTab.id, TABS.findIndex(t => t.id === activeTab) - 1)}
-              className="w-12 h-12 rounded-full bg-black/60 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/80 hover:border-sky-400/50 hover:text-sky-400 transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)] group"
-              title={`Ir para ${prevTab.label}`}
-            >
-              <Icon size={22} className="group-hover:scale-110 transition-transform" />
-            </button>
-          );
-        })()}
-      </div>
-      <div className="absolute top-1/2 right-2 -translate-y-1/2 z-20">
-        {TABS.findIndex(t => t.id === activeTab) < TABS.length - 1 && (() => {
-          const nextTab = TABS[TABS.findIndex(t => t.id === activeTab) + 1];
-          const Icon = nextTab.icon;
-          return (
-            <button
-              onClick={() => scrollToTab(nextTab.id, TABS.findIndex(t => t.id === activeTab) + 1)}
-              className="w-12 h-12 rounded-full bg-black/60 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/80 hover:border-sky-400/50 hover:text-sky-400 transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)] group"
-              title={`Ir para ${nextTab.label}`}
-            >
-              <Icon size={22} className="group-hover:scale-110 transition-transform" />
-            </button>
-          );
-        })()}
-      </div>
+
 
       <div
         ref={(node) => {

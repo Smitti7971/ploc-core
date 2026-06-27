@@ -74,7 +74,7 @@ export function DayView({ selectedDate, tasks, onOpenTaskModal, onTaskClick, dat
           return (
             <div key={task.id} className="relative pl-10">
               {/* Bolinha da Timeline */}
-              <div className={`absolute left-[-6px] top-4 w-3.5 h-3.5 rounded-full border-2 bg-[#0f1115] z-10 transition-colors
+              <div className={`absolute left-[-6px] top-4 w-3.5 h-3.5 rounded-full border-2 bg-[#0a0c0a] z-10 transition-colors
                 ${isActive ? 'border-sky-400 w-4 h-4 left-[-7px] top-[14px]' : 'border-sky-500/40'}`}>
                 {isActive && <div className="absolute inset-0.5 bg-sky-400 rounded-full animate-pulse" />}
               </div>

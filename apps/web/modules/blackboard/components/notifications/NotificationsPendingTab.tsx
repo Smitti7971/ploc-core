@@ -20,7 +20,7 @@ interface NotificationsPendingTabProps {
   setDetailedTrackerId: (id: string | null) => void;
   addLog: (log: any) => void;
   setItem: (item: any) => void;
-  toggleCoverPhoto: (id: string) => void;
+
   formatTime: (seconds: number) => string;
   isOverdue?: boolean;
 }
@@ -38,7 +38,7 @@ export function NotificationsPendingTab({
   setDetailedTrackerId,
   addLog,
   setItem,
-  toggleCoverPhoto,
+
   formatTime,
   isOverdue = false
 }: NotificationsPendingTabProps) {
@@ -267,18 +267,7 @@ export function NotificationsPendingTab({
                   )}
                 </div>
 
-                <div className="flex items-start shrink-0">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleCoverPhoto(tracker.id);
-                    }}
-                    className="text-white/20 hover:text-white/60 transition-colors p-1"
-                    title={showCoverPhoto ? "Ocultar foto" : "Mostrar foto"}
-                  >
-                    {showCoverPhoto ? <EyeOff size={14} /> : <Eye size={14} />}
-                  </button>
-                </div>
+
 
                 <AnimatePresence>
                   {confirmingTracker === tracker.id && (
@@ -383,21 +372,7 @@ export function NotificationsPendingTab({
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setItem({
-                          ...t,
-                          config: { ...t.config, isHidden: !t.config?.isHidden }
-                        });
-                      }}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${t.config?.isHidden ? 'bg-white/10 text-white/40 hover:text-white' : 'bg-white/20 text-white hover:bg-white/30'}`}
-                      title={t.config?.isHidden ? "Mostrar no mapa" : "Ocultar do mapa"}
-                    >
-                      {t.config?.isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
-                    </button>
-                  </div>
+
                 </motion.div>
 
                 {t.config?.mode === 'diminua' && (

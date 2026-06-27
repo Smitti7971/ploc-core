@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, Activity, Heart, ChevronDown, ChevronUp, Wand2, LineChart, BookOpen, Star } from 'lucide-react';
+import { Play, Pause, Activity, Heart, ChevronDown, ChevronUp, Wand2, LineChart, BookOpen, Star, BicepsFlexed } from 'lucide-react';
 import { TrackerItem, useTrackerStore } from '../store/trackerStore';
 import { getAssetUrl } from '@/lib/config';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
@@ -109,6 +109,9 @@ export function TrackerStatusCard({ item, onClick, isChild = false, visitedIds =
     if (item.type === 'acompanhe' || item.type === 'tracker') {
       return { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-b border-amber-500/20' };
     }
+    if (item.type === 'treine') {
+      return { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-b border-red-500/20' };
+    }
     // Default / Aprenda (sky)
     return { bg: 'bg-sky-500/20', text: 'text-sky-400', border: 'border-b border-sky-500/20' };
   };
@@ -119,6 +122,9 @@ export function TrackerStatusCard({ item, onClick, isChild = false, visitedIds =
     }
     if (item.type === 'acompanhe' || item.type === 'tracker') {
       return 'ACOMPANHE';
+    }
+    if (item.type === 'treine') {
+      return 'TREINE';
     }
     return 'APRENDA';
   };
@@ -148,6 +154,7 @@ export function TrackerStatusCard({ item, onClick, isChild = false, visitedIds =
   const getCategoryIcon = (type: string, size = 12, className = "") => {
     if (type === 'vice') return <Wand2 size={size} className={className} />;
     if (type === 'acompanhe' || type === 'tracker') return <LineChart size={size} className={className} />;
+    if (type === 'treine') return <BicepsFlexed size={size} className={className} />;
     if (type === 'aprenda') return <BookOpen size={size} className={className} />;
     return <Star size={size} className={className} />;
   };
@@ -158,6 +165,7 @@ export function TrackerStatusCard({ item, onClick, isChild = false, visitedIds =
       return 'bg-emerald-500';
     }
     if (type === 'acompanhe' || type === 'tracker') return 'bg-amber-500';
+    if (type === 'treine') return 'bg-red-500';
     if (type === 'aprenda') return 'bg-sky-500';
     return 'bg-zinc-600';
   };

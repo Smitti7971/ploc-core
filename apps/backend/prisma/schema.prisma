@@ -82,6 +82,14 @@ model User {
   statTransactions     StatTransaction[]
   // Mochila (Inventário)
   inventory            UserInventory[]
+
+  // Perfil Corporal e Evolução (Fitness Coach)
+  fitnessProfile       UserFitnessProfile?
+  dailyCheckins        DailyCheckin[]
+  
+  // Treinos
+  workoutPlans         WorkoutPlan[]
+  exerciseSessionLogs  ExerciseSessionLog[]
 }
 
 model UserStats {
@@ -245,5 +253,140 @@ model UserInventory {
   acquiredAt       DateTime @default(now())
 
   @@unique([userId, inventoryItemId]) // Garante que não haja linhas duplicadas pro mesmo item e usuário
+  @@index([userId])
+}
+
+// --- FITNESS PROFILE & COACHING ---
+
+model UserFitnessProfile {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Biometria
+  gender              String?  // 'masculino', 'feminino', 'outro'
+  age                 Int?
+  weight              Float?   // kg
+  height              Float?   // cm
+  targetWeight        Float?   // kg
+  bodyFatPercentage   Float?
+  muscleMass          Float?
+  leanMass            Float?
+  
+  // Medidas Corporais (Chest, Waist, Hips, Arms, etc)
+  measurements        Json?    @default("{}")
+
+  // Objetivos e Nível
+  primaryObjective    String?  // 'emagrecer', 'hipertrofia', 'saude', 'forca'
+  experienceLevel     String?  // 'iniciante', 'intermediario', 'avancado'
+  
+  // Preferências
+  desiredFrequency    Int?     // Dias por semana
+  availableTime       Int?     // Minutos
+  trainingLocation    String?  // 'academia', 'casa'
+  
+  // JSONs Dinâmicos (Para listas)
+  secondaryObjectives Json?    @default("[]")
+  availableEquipment  Json?    @default("[]")
+  injuries            Json?    @default("[]")
+  forbiddenExercises  Json?    @default("[]")
+  medicalRestrictions Json?    @default("[]")
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model DailyCheckin {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date             DateTime @default(now()) // Data do check-in
+  
+  // Avaliação 1 a 5
+  energy           Int
+  sleepQuality     Int
+  mood             Int
+  stressLevel      Int
+  musclePain       Int
+  readinessToTrain Int
+
+  createdAt        DateTime @default(now())
+
+  @@index([userId])
+  @@index([date])
+}
+
+// --- BANCO DE DADOS DE EXERCÍCIOS E EQUIPAMENTOS ---
+
+model Equipment {
+  id               String   @id @default(uuid())
+  slug             String   @unique // ex: 'banco-reto', 'halteres'
+  name             String
+  image            String?
+  isCustom         Boolean  @default(false)
+  userId           String?  // Nulo se for equipamento padrão/global do app
+  deletedAt        DateTime? 
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model ExerciseDefinition {
+  id               String   @id @default(uuid())
+  name             String
+  muscleGroups     Json     // ex: ["chest", "triceps"]
+  requiredEquipment Json    // Array de Slugs de equipamentos
+  image            String?
+  imageType        String?  @default("url")
+  isCustom         Boolean  @default(false)
+  userId           String?  // Nulo se for exercício global
+  deletedAt        DateTime?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@index([userId])
+}
+
+// --- PLANEJAMENTO DE TREINOS ---
+
+model WorkoutPlan {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name             String   // ex: "HIPERTROFIA ACADEMIA PARA AVANÇADO"
+  isActive         Boolean  @default(true)
+  
+  // Guardamos a configuração completa gerada (exercícios, dias, divisões) 
+  // no formato JSON para flexibilidade da Timeline do frontend.
+  exercisesData    Json     
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// --- HISTÓRICO DE ACOMPANHAMENTO (LOGS DE TREINO) ---
+
+model ExerciseSessionLog {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  workoutPlanId    String?  // Referência ao plano atual (se houver)
+  exerciseName     String   // Nome do exercício feito
+  
+  setsData         Json     // Array detalhado: [{ weight: "20kg", reps: 10, completed: true }]
+  comment          String?  // Observações
+
+  timestamp        BigInt   // Data e hora exata
+  
+  createdAt        DateTime @default(now())
+
   @@index([userId])
 }

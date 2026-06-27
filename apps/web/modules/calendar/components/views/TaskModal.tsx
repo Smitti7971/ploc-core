@@ -107,7 +107,7 @@ export function TaskModal({ isOpen, onClose, defaultDateStr, editTask }: TaskMod
             initial={{ scale: 0.95, y: 20 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.95, y: 20 }}
-            className="bg-[#1a1c23] w-full max-w-md rounded-3xl border border-white/10 shadow-2xl my-auto flex flex-col max-h-[90vh]"
+            className="bg-[#18181b] w-full max-w-md rounded-3xl border border-white/10 shadow-2xl my-auto flex flex-col max-h-[90vh]"
           >
             <div className="flex justify-between items-center p-6 border-b border-white/10 shrink-0">
               <h2 className="text-xl font-bold text-white">{editTask ? 'Editar Tarefa' : 'Nova Tarefa'}</h2>
@@ -143,7 +143,7 @@ export function TaskModal({ isOpen, onClose, defaultDateStr, editTask }: TaskMod
                     className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-500 transition-colors appearance-none"
                   >
                     {CATEGORIES.map(c => (
-                      <option key={c} value={c} className="bg-[#1a1c23]">{c}</option>
+                      <option key={c} value={c} className="bg-[#18181b]">{c}</option>
                     ))}
                   </select>
                 </div>
@@ -157,7 +157,7 @@ export function TaskModal({ isOpen, onClose, defaultDateStr, editTask }: TaskMod
                     className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-500 transition-colors appearance-none"
                   >
                     {COLORS.map(c => (
-                      <option key={c.label} value={c.value} className={`bg-[#1a1c23]`}>{c.label}</option>
+                      <option key={c.label} value={c.value} className={`bg-[#18181b]`}>{c.label}</option>
                     ))}
                   </select>
                 </div>

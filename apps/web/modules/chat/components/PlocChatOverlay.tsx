@@ -4,7 +4,7 @@
  */
 
 import { createPortal } from 'react-dom';
-import { PlocSpeechBubble } from './PlocSpeechBubble';
+import { PlocSpeechBox } from './PlocSpeechBox';
 import { PlocChatInput } from './PlocChatInput';
 
 interface PlocChatOverlayProps {
@@ -42,7 +42,7 @@ export function PlocChatOverlay({
         <>
           {/* Top section: Ploc's spoken text and onboarding UI */}
           <div className="fixed top-[6vh] sm:top-[12vh] left-1/2 -translate-x-1/2 w-[88%] sm:w-[68%] max-w-[680px] z-modal pointer-events-none flex flex-col items-center gap-4 sm:gap-6">
-            <PlocSpeechBubble
+            <PlocSpeechBox
               currentSpokenText={currentSpokenText}
               isPending={isPending}
               isTTSLoading={isTTSLoading}

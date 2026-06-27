@@ -4,6 +4,7 @@ import { PlusCircle } from 'lucide-react';
 import { useTrackerStore } from '../store/trackerStore';
 import { TrackerStatusCard } from './TrackerStatusCard';
 import { TrackerOverlay } from './TrackerOverlay';
+import { TreineOverlay } from './TreineOverlay';
 
 interface GenericTrackerScreenProps {
   methodId: string;
@@ -62,6 +63,7 @@ export function GenericTrackerScreen({ methodId }: GenericTrackerScreenProps) {
   const getColorClasses = () => {
     switch (methodId) {
       case 'aprenda': return 'text-emerald-400 group-hover:text-emerald-400';
+      case 'treine': return 'text-red-500 group-hover:text-red-500';
       case 'acompanhe': return 'text-amber-400 group-hover:text-amber-400';
       case 'viaje': return 'text-indigo-400 group-hover:text-indigo-400';
       case 'poupe': return 'text-green-400 group-hover:text-green-400';
@@ -130,12 +132,19 @@ export function GenericTrackerScreen({ methodId }: GenericTrackerScreenProps) {
         ))}
       </div>
 
-      {selectedItemId && (
-        <TrackerOverlay 
+      {selectedItemId && items[selectedItemId]?.type === 'treine' ? (
+        <TreineOverlay 
           itemId={selectedItemId} 
           onClose={() => setSelectedItemId(null)} 
         />
-      )}
+      ) : selectedItemId ? (
+        <TrackerOverlay 
+          itemId={selectedItemId} 
+          onClose={() => setSelectedItemId(null)} 
+          contextItemIds={trackedItems.map(i => i.id)}
+          onSwitchItem={(newId) => setSelectedItemId(newId)}
+        />
+      ) : null}
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { InventoryModal } from '@/modules/inventory/components/InventoryModal';
 import { LabStatsPanel } from '@/modules/lab/components/LabStatsPanel';
 import { LabItemEditor } from '@/modules/lab/components/LabItemEditor';
 import { LabDatabaseList } from '@/modules/lab/components/LabDatabaseList';
+import { ExerciseManagerOverlay } from '@/modules/lab/components/ExerciseManagerOverlay';
 import { ConfirmActionModal } from '@/modules/dashboard/components/tracker/components/modals/ConfirmActionModal';
 
 export default function LabPage() {
@@ -23,7 +24,11 @@ export default function LabPage() {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [isBagOpen, setIsBagOpen] = useState(false);
+  const [isExerciseManagerOpen, setIsExerciseManagerOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  
+  // Navigation State
+  const [activeTab, setActiveTab] = useState<'home' | 'ia' | 'mecanica' | 'gamificacao'>('home');
 
   // Form states
   const [formData, setFormData] = useState({
@@ -177,15 +182,81 @@ export default function LabPage() {
           </h1>
           <p className="text-slate-400 text-sm mt-1">Debug Dashboard & Database Control</p>
         </div>
-        <button 
-          onClick={() => router.push('/dashboard')}
-          className="flex items-center gap-2 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl transition-all"
-        >
-          <ArrowLeft size={16} /> Voltar ao App
-        </button>
+        <div className="flex gap-3">
+          {activeTab !== 'home' && (
+            <button 
+              onClick={() => setActiveTab('home')}
+              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl transition-all font-bold"
+            >
+              <ArrowLeft size={16} /> Voltar ao Menu LAB
+            </button>
+          )}
+          <button 
+            onClick={() => router.push('/dashboard')}
+            className="flex items-center gap-2 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl transition-all"
+          >
+            <ArrowLeft size={16} /> Voltar ao App
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {activeTab === 'home' && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+          <button 
+            onClick={() => setActiveTab('ia')}
+            className="bg-slate-800 hover:bg-slate-700 p-8 rounded-3xl border border-slate-700 flex flex-col items-center justify-center gap-4 transition-all hover:scale-105"
+          >
+            <div className="text-4xl">🤖</div>
+            <h2 className="text-xl font-bold">I.A</h2>
+            <p className="text-slate-400 text-sm text-center">Interações e funções relacionadas a Inteligência Artificial</p>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('mecanica')}
+            className="bg-slate-800 hover:bg-slate-700 p-8 rounded-3xl border border-slate-700 flex flex-col items-center justify-center gap-4 transition-all hover:scale-105"
+          >
+            <div className="text-4xl">⚙️</div>
+            <h2 className="text-xl font-bold">MECÂNICA APP</h2>
+            <p className="text-slate-400 text-sm text-center">Verificar lógicas e inserção de dados do core (ex: Equipamentos)</p>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('gamificacao')}
+            className="bg-slate-800 hover:bg-slate-700 p-8 rounded-3xl border border-slate-700 flex flex-col items-center justify-center gap-4 transition-all hover:scale-105"
+          >
+            <div className="text-4xl">🎮</div>
+            <h2 className="text-xl font-bold">GAMIFICAÇÃO</h2>
+            <p className="text-slate-400 text-sm text-center">Mecânicas de jogo, itens, loja e status do PLOC</p>
+          </button>
+        </div>
+      )}
+
+      {activeTab === 'ia' && (
+        <div className="flex flex-col items-center justify-center mt-20 text-center">
+          <div className="text-6xl mb-4">🤖</div>
+          <h2 className="text-2xl font-bold mb-2">Painel de I.A</h2>
+          <p className="text-slate-400 max-w-md">As funções voltadas a I.A ainda não estão focadas no momento. Elas aparecerão aqui no futuro.</p>
+        </div>
+      )}
+
+      {activeTab === 'mecanica' && (
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <button 
+              onClick={() => setIsExerciseManagerOpen(true)}
+              className="bg-sky-900/30 hover:bg-sky-800/40 border border-sky-500/50 p-6 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all"
+            >
+              <div className="text-3xl">🏋️</div>
+              <h3 className="font-bold text-sky-400">Gerenciar Exercícios</h3>
+              <p className="text-xs text-slate-400 text-center">Cadastre equipamentos e monte a base de exercícios</p>
+            </button>
+            {/* Outros botões de mecânica podem entrar aqui no futuro */}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'gamificacao' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Painel do PLOC */}
         <div className="col-span-1 space-y-6">
@@ -226,7 +297,12 @@ export default function LabPage() {
           />
 
         </div>
-      </div>
+        </div>
+      )}
+
+      {isExerciseManagerOpen && (
+        <ExerciseManagerOverlay onClose={() => setIsExerciseManagerOpen(false)} />
+      )}
 
       <ConfirmActionModal
         isOpen={!!confirmDeleteId}

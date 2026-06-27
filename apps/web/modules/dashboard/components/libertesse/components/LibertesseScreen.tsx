@@ -151,11 +151,12 @@ export function LibertesseScreen() {
           <TrackerOverlay 
             itemId={selectedTrackerId} 
             onClose={() => setSelectedTrackerId(null)} 
+            contextItemIds={activeVices.map(v => v.id)}
+            onSwitchItem={(newId) => setSelectedTrackerId(newId)}
           />
         )}
       </AnimatePresence>
     </div>
   );
 }
-
 

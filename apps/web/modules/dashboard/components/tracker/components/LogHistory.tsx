@@ -1,8 +1,6 @@
 import React from 'react';
 import { Clock } from 'lucide-react';
 import { getAssetUrl } from '@/lib/config';
-import { TrackerComparison } from './TrackerComparison';
-
 interface LogHistoryProps {
   item?: any;
   itemLogs: any[];
@@ -62,8 +60,6 @@ export function LogHistory({ item, itemLogs, editingLogId, handleEditLog }: LogH
 
   return (
     <div className="py-2">
-      <TrackerComparison item={item} logs={itemLogs} />
-
       <div className="flex items-center justify-between mb-4 mt-6">
         <div className="flex items-center gap-2">
           <Clock size={14} className="text-white/40" />

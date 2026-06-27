@@ -46,7 +46,7 @@ export function TaskDetailModal({ isOpen, onClose, task, onEdit }: TaskDetailMod
           initial={{ scale: 0.95, y: 20 }}
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.95, y: 20 }}
-          className="bg-[#1a1c23] w-full max-w-md rounded-3xl border border-white/10 shadow-2xl my-auto flex flex-col max-h-[90vh]"
+          className="bg-[#18181b] w-full max-w-md rounded-3xl border border-white/10 shadow-2xl my-auto flex flex-col max-h-[90vh]"
         >
           <div className="flex justify-between items-center p-6 border-b border-white/10 shrink-0">
             <h2 className="text-xl font-bold text-white">Detalhes da Tarefa</h2>

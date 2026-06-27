@@ -27,7 +27,8 @@ import {
   PiggyBank,
   Map,
   Timer,
-  Droplets
+  Droplets,
+  BicepsFlexed
 } from 'lucide-react';
 import { getAssetUrl } from '@/lib/config';
 import { PillarPage } from '@/modules/routines/components/PillarPage';
@@ -38,7 +39,9 @@ import { AcompanheScreen } from '../components/tracker/components/AcompanheScree
 import { GenericTrackerScreen } from '../components/tracker/components/GenericTrackerScreen';
 import { PlanejeScreen } from '../components/planeje/components/PlanejeScreen';
 import { useTrackerStore } from '../components/tracker/store/trackerStore';
+import { useFitnessProfileStore } from '../components/tracker/store/useFitnessProfileStore';
 import { TrackerOverlay } from '../components/tracker/components/TrackerOverlay';
+import { TreineOverlay } from '../components/tracker/components/TreineOverlay';
 import { DashboardRoutinesCarousel } from './DashboardRoutinesCarousel';
 import { DashboardPillarsRow } from './DashboardPillarsRow';
 import { DashboardMethodSelector } from './DashboardMethodSelector';
@@ -56,7 +59,7 @@ const allRoutines = Object.values(PILLARS_DATA).flatMap(pillar =>
 
 const METHODS = [
   { id: 'rotinas', label: 'ROTINAS', icon: Clock, color: 'white', bg: 'from-white/10 to-transparent', desc: 'Catálogo de rotinas para o seu dia a dia.' },
-  { id: 'libertesse', label: 'LIBERTESSE', icon: Wand2, color: 'sky-500', bg: 'from-sky-500/10 to-sky-900/5', desc: 'Acompanhe, diminua ou pare com vícios que limitam sua liberdade.' },
+  { id: 'treine', label: 'TREINE', icon: BicepsFlexed, color: 'red-500', bg: 'from-red-500/10 to-red-900/5', desc: 'Acompanhe seus treinos, séries e evolução física.' },
   { id: 'aprenda', label: 'APRENDA', icon: BookOpen, color: 'emerald-400', bg: 'from-emerald-500/10 to-teal-900/5', desc: 'Desenvolva novas habilidades, acesse micro-cursos e expanda seu conhecimento.' },
   { id: 'acompanhe', label: 'ACOMPANHE', icon: LineChart, color: 'amber-400', bg: 'from-amber-500/10 to-orange-900/5', desc: 'Monitore métricas, hábitos complexos e visualize seu progresso ao longo do tempo.' },
   { id: 'viaje', label: 'VIAJE', icon: Plane, color: 'indigo-400', bg: 'from-indigo-500/10 to-blue-900/5', desc: 'Planeje destinos, organize roteiros e gerencie suas experiências pelo mundo.' },
@@ -64,6 +67,7 @@ const METHODS = [
   { id: 'planeje', label: 'PLANEJE', icon: Map, color: 'purple-400', bg: 'from-purple-500/10 to-fuchsia-900/5', desc: 'Trace metas de longo prazo, organize projetos e crie planos de ação estruturados.' },
   { id: 'jejue', label: 'JEJUE', icon: Timer, color: 'orange-400', bg: 'from-orange-500/10 to-red-900/5', desc: 'Gerencie protocolos de jejum intermitente e acompanhe os benefícios para sua saúde.' },
   { id: 'hidrate-se', label: 'HIDRATE-SE', icon: Droplets, color: 'cyan-400', bg: 'from-cyan-500/10 to-blue-900/5', desc: 'Controle sua ingestão de água diária e mantenha seu corpo sempre hidratado.' },
+  { id: 'libertesse', label: 'LIBERTESSE', icon: Wand2, color: 'sky-500', bg: 'from-sky-500/10 to-sky-900/5', desc: 'Acompanhe, diminua ou pare com vícios que limitam sua liberdade.' },
 ];
 
 const TABS = [
@@ -74,14 +78,13 @@ const TABS = [
   { id: 'ranking', label: 'RANKING', icon: Trophy },
 ];
 
-
-
 export default function DashboardPage() {
   const [activePillar, setActivePillar] = useState<string | null>(null);
   const [activeMethod, setActiveMethod] = useState('rotinas');
   const [activeTab, setActiveTab] = useState(TABS[0].id);
   const trackerItems = useTrackerStore(state => state.items);
   const reparentItem = useTrackerStore(state => state.reparentItem);
+  const { fetchItems, cleanEmptyItems } = useTrackerStore();
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -139,11 +142,17 @@ export default function DashboardPage() {
   const [selectedTrackerId, setSelectedTrackerId] = useState<string | null>(null);
   const [attributes, setAttributes] = useState<Record<string, number>>({});
 
+  // Fetch e Clean
+  useEffect(() => {
+    fetchItems();
+    cleanEmptyItems();
+    useFitnessProfileStore.getState().syncWithDatabase();
+  }, [fetchItems, cleanEmptyItems]);
+
   useEffect(() => {
     setTimeout(() => {
       setAttributes(attributeEngine.getAttributes() as unknown as Record<string, number>);
     }, 0);
-    useTrackerStore.getState().fetchItems();
 
     const handleOpenTracker = (e: any) => {
       setSelectedTrackerId(e.detail);
@@ -308,10 +317,17 @@ export default function DashboardPage() {
 
 
 
-      {selectedTrackerId && (
+      {selectedTrackerId && trackerItems && trackerItems[selectedTrackerId]?.type === 'treine' ? (
+        <TreineOverlay
+          itemId={selectedTrackerId}
+          onClose={() => setSelectedTrackerId(null)}
+        />
+      ) : selectedTrackerId && (
         <TrackerOverlay
           itemId={selectedTrackerId}
           onClose={() => setSelectedTrackerId(null)}
+          contextItemIds={activeTrackers.map(t => t.id)}
+          onSwitchItem={(newId) => setSelectedTrackerId(newId)}
         />
       )}
 

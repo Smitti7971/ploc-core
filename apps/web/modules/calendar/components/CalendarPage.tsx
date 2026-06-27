@@ -138,10 +138,10 @@ export function CalendarPage() {
   const ActiveIcon = viewMode === 'day' ? AlignJustify : viewMode === 'week' ? LayoutGrid : CalendarIcon;
 
   return (
-    <div className="flex-1 w-full h-full min-h-screen bg-[#0f1115] text-white flex flex-col relative overflow-hidden font-sans">
+    <div className="flex-1 w-full h-full min-h-screen bg-[#0a0c0a] text-white flex flex-col relative overflow-hidden font-sans">
       
       {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#1a1c23] to-[#0a0b0e] z-0" />
+      <div className="absolute inset-0 bg-[#0a0c0a] z-0" />
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-sky-500/10 blur-[120px] rounded-full z-0 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/10 blur-[120px] rounded-full z-0 pointer-events-none" />
 

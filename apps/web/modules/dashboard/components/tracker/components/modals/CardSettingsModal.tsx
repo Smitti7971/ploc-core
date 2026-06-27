@@ -25,6 +25,7 @@ export function CardSettingsModal({
   const hasDaysTarget = !!item.config?.showDaysTarget;
   const hasStage = !!item.config?.showStage;
   const hasMarkers = !!item.config?.showMarkers;
+  const hasStreak = item.config?.showStreak !== false;
 
   const toggleConfig = (key: string, currentValue: boolean) => {
     updateItem({
@@ -62,6 +63,21 @@ export function CardSettingsModal({
 
             <div className="p-4 flex flex-col gap-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
               
+              {/* Streak */}
+              <div className="flex flex-col gap-2 p-3 bg-white/5 rounded-xl border border-white/5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Flag size={14} className="text-white/40" />
+                    <span className="text-xs font-semibold text-white/80">Ofensiva e Estatísticas</span>
+                  </div>
+                  <button
+                    onClick={() => toggleConfig('showStreak', hasStreak)}
+                    className={`w-10 h-5 rounded-full relative transition-colors ${hasStreak ? 'bg-emerald-500' : 'bg-white/10'}`}
+                  >
+                    <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${hasStreak ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+              </div>
               {/* Start Date */}
               <div className="flex flex-col gap-2 p-3 bg-white/5 rounded-xl border border-white/5">
                 <div className="flex items-center justify-between">

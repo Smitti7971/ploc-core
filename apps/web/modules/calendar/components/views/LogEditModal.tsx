@@ -64,7 +64,7 @@ export function LogEditModal({ isOpen, onClose, log }: LogEditModalProps) {
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.95, y: 20 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#1a1c23] w-full max-w-sm rounded-3xl border border-white/10 shadow-2xl overflow-hidden"
+            className="bg-[#18181b] w-full max-w-sm rounded-3xl border border-white/10 shadow-2xl overflow-hidden"
           >
             <div className="flex justify-between items-center p-5 border-b border-white/10">
               <h2 className="text-lg font-bold text-white">Editar Registro</h2>

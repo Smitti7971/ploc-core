@@ -5,6 +5,7 @@ import { Shield, Eye, EyeOff, Zap, LineChart, Lock } from 'lucide-react';
 import { useTrackerStore } from '../../dashboard/components/tracker/store/trackerStore';
 import { MissionAntitabagismoModal } from '@/modules/missions';
 import { TrackerOverlay } from '../../dashboard/components/tracker/components/TrackerOverlay';
+import { TreineOverlay } from '../../dashboard/components/tracker/components/TreineOverlay';
 import { isFutureForToday } from '../../dashboard/components/tracker/utils/scheduling';
 import { AmbientGlowBackground } from '../../landing/particles/AmbientGlowBackground';
 import dynamic from 'next/dynamic';
@@ -44,7 +45,7 @@ interface NotificationsModalProps {
 type TabType = 'tarefas' | 'missoes' | 'cofre';
 
 export function NotificationsModal({ isOpen, onClose, inline = false }: NotificationsModalProps) {
-  const { items: trackerItems, logs: trackerLogs, toggleCoverPhoto, addLog, fetchItems, setItem, startConsumption } = useTrackerStore();
+  const { items: trackerItems, logs: trackerLogs, addLog, fetchItems, setItem, startConsumption } = useTrackerStore();
   const [activeTab, setActiveTab] = useState<TabType>('tarefas');
   const [tarefaFilter, setTarefaFilter] = useState<'pendentes' | 'atrasados' | 'concluidas' | 'futuras'>('pendentes');
   const [showAntitabagismo, setShowAntitabagismo] = useState(false);
@@ -267,7 +268,7 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
                       setDetailedTrackerId={setDetailedTrackerId}
                       addLog={addLog}
                       setItem={setItem}
-                      toggleCoverPhoto={toggleCoverPhoto}
+
                       formatTime={formatTime}
                       isOverdue={false}
                     />
@@ -287,7 +288,7 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
                       setDetailedTrackerId={setDetailedTrackerId}
                       addLog={addLog}
                       setItem={setItem}
-                      toggleCoverPhoto={toggleCoverPhoto}
+
                       formatTime={formatTime}
                       isOverdue={true}
                     />
@@ -352,7 +353,9 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
 
             <MissionAntitabagismoModal isOpen={showAntitabagismo} onClose={() => setShowAntitabagismo(false)} />
           </motion.div>
-          {detailedTrackerId && (
+          {detailedTrackerId && trackerItems?.[detailedTrackerId]?.type === 'treine' ? (
+            <TreineOverlay itemId={detailedTrackerId} onClose={() => setDetailedTrackerId(null)} />
+          ) : detailedTrackerId && (
             <TrackerOverlay itemId={detailedTrackerId} onClose={() => setDetailedTrackerId(null)} />
           )}
         </div>

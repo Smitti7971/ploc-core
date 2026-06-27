@@ -40,7 +40,7 @@ export function AcompanheScreen() {
   };
 
   const trackedItems = Object.values(items)
-    .filter(item => item.type !== 'vice' && !allCorrelations.has(item.id))
+    .filter(item => item.type === 'acompanhe' && !allCorrelations.has(item.id))
     .sort(sortActiveTop);
 
   const handleCreateNew = () => {
@@ -104,6 +104,8 @@ export function AcompanheScreen() {
         <TrackerOverlay 
           itemId={selectedItemId} 
           onClose={() => setSelectedItemId(null)} 
+          contextItemIds={trackedItems.map(i => i.id)}
+          onSwitchItem={(newId) => setSelectedItemId(newId)}
         />
       )}
     </div>

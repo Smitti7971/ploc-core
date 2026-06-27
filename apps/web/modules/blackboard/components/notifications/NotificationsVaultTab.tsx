@@ -76,13 +76,7 @@ export function NotificationsVaultTab({
                 >
                   <Zap size={14} />
                 </button>
-                <button
-                  onClick={() => setItem({ ...v, config: { ...v.config, isHidden: !v.config?.isHidden } })}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${v.config?.isHidden ? 'bg-white/10 text-white/40 hover:text-white' : 'bg-purple-400/20 text-purple-400 hover:bg-purple-400/40'}`}
-                  title={v.config?.isHidden ? "Mostrar no mapa" : "Ocultar do mapa"}
-                >
-                  {v.config?.isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
+
                 <button
                   onClick={() => {
                     setItem({ ...v, config: { ...v.config, isVulnerability: false } });

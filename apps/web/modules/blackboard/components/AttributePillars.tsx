@@ -12,6 +12,7 @@ import { UserAttributes } from '../engine/attribute-engine/AttributeEngine';
 import { bubbleEngine } from '../engine/bubble-engine/BubbleEngine';
 import { PillarPage } from '@/modules/routines/components/PillarPage';
 import { useTrackerStore } from '@/modules/dashboard/components/tracker/store/trackerStore';
+import { useFitnessProfileStore } from '@/modules/dashboard/components/tracker/store/useFitnessProfileStore';
 
 export const PILLARS_CONFIG = {
   corpo: {
@@ -66,6 +67,11 @@ export const PILLAR_PROFILE_KEYS = {
 
 export const isPillarProfileFilled = (pillarKey: string) => {
   if (typeof window === 'undefined') return false;
+  
+  if (pillarKey === 'corpo') {
+    return useFitnessProfileStore.getState().hasCompletedOnboarding;
+  }
+
   try {
     const saved = localStorage.getItem('ploc_pillar_profiles');
     if (!saved) return false;

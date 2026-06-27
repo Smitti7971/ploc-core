@@ -12,6 +12,7 @@ const authMiddleware = require('./middleware/authMiddleware');
 const healthRoutes = require('./routes/healthRoutes');
 const trackerRoutes = require('./routes/trackerRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
+const fitnessProfileRoutes = require('./routes/fitnessProfileRoutes');
 
 const path = require('path');
 
@@ -176,6 +177,9 @@ app.use('/api/users', authMiddleware, userRoutes);
 
 // Rotas de Rastreador Universal (PROTEGIDAS)
 app.use('/api/tracker', authMiddleware, trackerRoutes);
+
+// Rotas do Perfil Corporal (PROTEGIDAS)
+app.use('/api/fitness-profile', authMiddleware, fitnessProfileRoutes);
 
 // Rotas de Admin do Inventario
 app.use('/api/inventory', authMiddleware, inventoryRoutes);

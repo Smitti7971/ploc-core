@@ -25,8 +25,8 @@ interface DockItem {
 // Definição da lista de itens do Dock, contendo ícone, rota de destino, cor tema e rótulo
 const DOCK_ITEMS: DockItem[] = [
   { icon: <Calendar size={20} />, route: '/calendar', color: '#ffffff', label: 'Calendário' },
-  { icon: <Radar size={20} />, route: '/', color: '#ffffff', label: 'Blackboard' },
   { icon: <GalleryHorizontal size={20} />, route: '/dashboard', color: '#ffffff', label: 'Rotinas' },
+  { icon: <Radar size={20} />, route: '/', color: '#ffffff', label: 'Blackboard' },
   { icon: <Ghost size={20} />, route: '/ploc', color: '#ffffff', label: 'Ploc' },
   { icon: <Settings size={20} />, route: '/settings', color: '#ffffff', label: 'Config' },
 ];
@@ -86,7 +86,7 @@ export function DockMenu() {
         bottom: 0,
         left: 0,
         width: '100%',
-        zIndex: 300 /* fixed */,
+        zIndex: 'var(--z-index-dock)',
         pointerEvents: 'none',
         transform: isVisible ? 'translateY(0)' : 'translateY(100%)',
         transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -129,6 +129,11 @@ export function DockMenu() {
                 title={item.label}
                 style={{ textDecoration: 'none' }}
                 onMouseDown={(e) => e.stopPropagation()}
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('dock-menu-clicked'));
+                  }
+                }}
               >
                 <div
                   className="menu-btn"
