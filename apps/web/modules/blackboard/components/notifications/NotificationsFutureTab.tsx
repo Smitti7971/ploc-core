@@ -36,8 +36,8 @@ export function NotificationsFutureTab({
     (t.config?.todos || []).map((todo: any) => ({ ...todo, trackerName: t.name, trackerId: t.id }))
   );
   
-  const todayStr = new Date(now).toISOString().split('T')[0];
-  const futureTodos = allTodos.filter(todo => !todo.completed && todo.date >= todayStr);
+  const todayStr = new Date(now - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+  const futureTodos = allTodos.filter(todo => !todo.completed && todo.date > todayStr);
 
   return (
     <div className="flex flex-col gap-3">
@@ -159,7 +159,7 @@ export function NotificationsFutureTab({
             <div className="flex flex-col flex-1 min-w-0">
               <span className="text-sm font-bold truncate text-sky-400">{todo.text}</span>
               <span className="text-[10px] text-sky-400/50 mt-1 uppercase font-bold tracking-wider">
-                {todo.trackerName} - {new Date(todo.date).toLocaleDateString('pt-BR')}
+                {todo.trackerName} - {new Date(todo.date + 'T12:00:00').toLocaleDateString('pt-BR')}
               </span>
             </div>
 

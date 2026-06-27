@@ -256,6 +256,7 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
 
                   {tarefaFilter === 'pendentes' && (
                     <NotificationsPendingTab
+                      activeTrackers={activeTrackers}
                       trackersToUpdate={trackersToUpdate}
                       tarefas={tarefas}
                       trackerLogs={trackerLogs}
@@ -276,6 +277,7 @@ export function NotificationsModal({ isOpen, onClose, inline = false }: Notifica
 
                   {tarefaFilter === 'atrasados' && (
                     <NotificationsPendingTab
+                      activeTrackers={activeTrackers}
                       trackersToUpdate={trackersToUpdate}
                       tarefas={tarefas}
                       trackerLogs={trackerLogs}

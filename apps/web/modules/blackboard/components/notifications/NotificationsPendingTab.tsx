@@ -8,6 +8,7 @@ import { isFutureForToday } from '../../../dashboard/components/tracker/utils/sc
 import { useTrackerStore } from '../../../dashboard/components/tracker/store/trackerStore';
 
 interface NotificationsPendingTabProps {
+  activeTrackers?: any[];
   trackersToUpdate: any[];
   tarefas: any[];
   trackerLogs: any[];
@@ -26,6 +27,7 @@ interface NotificationsPendingTabProps {
 }
 
 export function NotificationsPendingTab({
+  activeTrackers = [],
   trackersToUpdate,
   tarefas,
   trackerLogs,
@@ -160,9 +162,23 @@ export function NotificationsPendingTab({
     })
     .sort((a, b) => getSortTime(a) - getSortTime(b));
 
+  const allTodos = [...activeTrackers, ...tarefas].flatMap(t => 
+    (t.config?.todos || []).map((todo: any) => ({ ...todo, trackerName: t.name, trackerId: t.id }))
+  );
+  
+  const todayStr = new Date(now - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+  const pendingTodos = allTodos.filter(todo => {
+    if (todo.completed) return false;
+    if (isOverdue) {
+      return todo.date < todayStr;
+    } else {
+      return todo.date === todayStr;
+    }
+  });
+
   return (
     <div className="flex flex-col gap-3">
-      {combinedItems.length === 0 && <p className="text-white/40 text-xs text-center py-4">{isOverdue ? 'Nenhuma tarefa atrasada!' : 'Tudo atualizado por hoje!'}</p>}
+      {combinedItems.length === 0 && pendingTodos.length === 0 && <p className="text-white/40 text-xs text-center py-4">{isOverdue ? 'Nenhuma tarefa atrasada!' : 'Tudo atualizado por hoje!'}</p>}
 
       {combinedItems.map(item => {
         if (item.type !== 'vice') {
@@ -393,6 +409,47 @@ export function NotificationsPendingTab({
           );
         }
       })}
+
+      {pendingTodos.map(todo => (
+        <div 
+          key={todo.id} 
+          onClick={() => {
+            if (confirmingTask === todo.id) setConfirmingTask(null);
+            else setConfirmingTask(todo.id);
+          }}
+          className={`border border-white/5 bg-white/5 rounded-xl p-3 flex gap-3 hover:bg-white/10 transition-colors cursor-pointer relative overflow-hidden ${isOverdue ? 'border-red-500/30 bg-red-500/5' : ''}`}
+        >
+          <div className="flex flex-col flex-1 min-w-0">
+            <span className={`text-sm font-bold truncate ${isOverdue ? 'text-red-400' : 'text-emerald-400'}`}>{todo.text}</span>
+            <span className={`text-[10px] mt-1 uppercase font-bold tracking-wider ${isOverdue ? 'text-red-400/50' : 'text-emerald-400/50'}`}>
+              {todo.trackerName} - {new Date(todo.date + 'T12:00:00').toLocaleDateString('pt-BR')}
+            </span>
+          </div>
+
+          <AnimatePresence>
+            {confirmingTask === todo.id && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-black/80 backdrop-blur-md z-10 flex items-center justify-center gap-3 px-3"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDetailedTrackerId(todo.trackerId);
+                    setConfirmingTask(null);
+                  }}
+                  className="bg-white/10 text-white border border-white/20 px-3 py-2 rounded-xl text-[10px] font-black tracking-widest flex-1 uppercase w-full"
+                >
+                  Abrir {todo.trackerName}
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      ))}
 
       {mounted && typeof document !== 'undefined' && createPortal(
         <AnimatePresence>
