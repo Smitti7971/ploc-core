@@ -107,7 +107,9 @@ export function ExerciseManagerOverlay({ onClose }: { onClose: () => void }) {
         image: equipmentImageOverrides[id] || equipmentImages[name],
         isStatic: true,
         preSelected: false,
-        showAffiliateLink: false
+        showAffiliateLink: false,
+        description: '',
+        deletedAt: undefined
       };
     });
 
@@ -1013,7 +1015,7 @@ export function ExerciseManagerOverlay({ onClose }: { onClose: () => void }) {
                     </div>
                       <button 
                         onClick={() => {
-                          handleAddEx(activeEq.name);
+                          handleAddEx();
                           setEditingExId(null);
                           setShowExFormForEq(null);
                         }}
