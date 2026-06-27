@@ -205,7 +205,7 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
   useEffect(() => setMounted(true), []);
 
   const [stage, setStage] = useState(item?.config?.stage || '');
-  const [activeTab, setActiveTab] = useState<'looping' | 'condicoes' | 'correlacoes' | 'estrategia' | 'custos' | null>(null);
+  const [activeTab, setActiveTab] = useState<'looping' | 'tarefas' | 'condicoes' | 'correlacoes' | 'estrategia' | 'custos' | null>(null);
 
   const initialStartDateStr = item?.startDate ? new Date(item.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
   const [startDateStr, setStartDateStr] = useState(initialStartDateStr);
@@ -238,6 +238,9 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
   const [newConditionTitle, setNewConditionTitle] = useState('');
   const [editingConditionIndex, setEditingConditionIndex] = useState<number | null>(null);
   const conditions = item?.config?.conditions || [];
+  const todos = item?.config?.todos || [];
+  const [newTodoText, setNewTodoText] = useState('');
+  const [newTodoDate, setNewTodoDate] = useState('');
 
   const removeCondition = (index: number) => {
     const updated = [...conditions];
@@ -245,6 +248,38 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
     updateItem({
       ...item,
       config: { ...item.config, conditions: updated }
+    });
+  };
+
+  const addTodo = () => {
+    if (!newTodoText.trim()) return;
+    const newTodo = {
+      id: crypto.randomUUID(),
+      text: newTodoText.trim(),
+      date: newTodoDate || new Date().toISOString().split('T')[0],
+      completed: false
+    };
+    updateItem({
+      ...item,
+      config: { ...item.config, todos: [...todos, newTodo].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) }
+    });
+    setNewTodoText('');
+    setNewTodoDate('');
+  };
+
+  const toggleTodo = (id: string) => {
+    const updated = todos.map((t: any) => t.id === id ? { ...t, completed: !t.completed } : t);
+    updateItem({
+      ...item,
+      config: { ...item.config, todos: updated }
+    });
+  };
+
+  const deleteTodo = (id: string) => {
+    const updated = todos.filter((t: any) => t.id !== id);
+    updateItem({
+      ...item,
+      config: { ...item.config, todos: updated }
     });
   };
 
@@ -986,6 +1021,7 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
                     <div className="flex flex-wrap bg-white/5 border-y border-white/10 p-1 mt-1 mb-2 rounded-xl gap-1">
                       {[
                         { id: 'looping', label: 'HORÁRIOS', icon: Clock, color: 'emerald' },
+                        { id: 'tarefas', label: 'TAREFAS', icon: ListChecks, color: 'emerald' },
                         { id: 'condicoes', label: 'CONDIÇÕES', icon: CheckSquare, color: 'emerald' },
                         { id: 'correlacoes', label: 'CORRELAÇÕES', icon: LinkIcon, color: 'indigo' },
                         ...(item.type === 'vice' ? [{ id: 'estrategia', label: 'ESTRATÉGIA', icon: TrendingDown, color: 'yellow' }] : []),
@@ -1184,6 +1220,76 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
                                 </div>
                               </div>
                             )}
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Tarefas */}
+                      {activeTab === 'tarefas' && (
+                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                          <div className="py-2 mb-2 bg-black/20 rounded-xl p-3 border border-white/5">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <ListChecks size={14} className="text-emerald-400" />
+                                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Tarefas Futuras</span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex flex-col gap-2 mb-4">
+                              <input 
+                                type="text"
+                                placeholder="Descrição da tarefa..."
+                                value={newTodoText}
+                                onChange={(e) => setNewTodoText(e.target.value)}
+                                className="bg-white/5 border border-white/10 rounded-lg p-2 text-[12px] text-white focus:outline-none focus:border-white/20"
+                              />
+                              <div className="flex gap-2">
+                                <input 
+                                  type="date"
+                                  value={newTodoDate}
+                                  onChange={(e) => setNewTodoDate(e.target.value)}
+                                  className="flex-1 bg-white/5 border border-white/10 rounded-lg p-2 text-[12px] text-white/80 focus:outline-none focus:border-white/20"
+                                />
+                                <button 
+                                  onClick={addTodo}
+                                  disabled={!newTodoText.trim()}
+                                  className="bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed p-2 rounded-lg transition-colors flex items-center justify-center min-w-[40px]"
+                                >
+                                  <PlusCircle size={16} />
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                              {todos.length === 0 ? (
+                                <p className="text-[10px] text-white/30 text-center py-2">Nenhuma tarefa cadastrada</p>
+                              ) : (
+                                todos.map((todo: any) => (
+                                  <div key={todo.id} className={`flex items-start gap-2 p-2 rounded-lg border ${todo.completed ? 'bg-white/5 border-transparent opacity-60' : 'bg-black/40 border-white/5'} transition-all`}>
+                                    <button 
+                                      onClick={() => toggleTodo(todo.id)}
+                                      className="mt-0.5 text-white/50 hover:text-emerald-400 transition-colors shrink-0"
+                                    >
+                                      {todo.completed ? <CheckSquare size={16} className="text-emerald-400" /> : <div className="w-4 h-4 rounded-sm border border-white/30" />}
+                                    </button>
+                                    <div className="flex-1 flex flex-col min-w-0">
+                                      <span className={`text-[12px] text-white/90 break-words ${todo.completed ? 'line-through text-white/50' : ''}`}>
+                                        {todo.text}
+                                      </span>
+                                      <span className="text-[9px] text-white/40 mt-1 flex items-center gap-1">
+                                        <Clock size={10} /> {new Date(todo.date).toLocaleDateString('pt-BR')}
+                                      </span>
+                                    </div>
+                                    <button 
+                                      onClick={() => deleteTodo(todo.id)}
+                                      className="text-white/30 hover:text-red-400 transition-colors p-1 shrink-0"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </div>
+                                ))
+                              )}
+                            </div>
                           </div>
                         </motion.div>
                       )}
