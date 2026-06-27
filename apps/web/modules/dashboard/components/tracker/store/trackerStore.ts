@@ -45,6 +45,7 @@ export interface TrackerItem {
       text: string;
       date: string;
       completed: boolean;
+      recurrence?: string;
     }[];
     [key: string]: any;
   };
