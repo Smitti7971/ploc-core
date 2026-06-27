@@ -6,7 +6,7 @@ import { Link, Dumbbell, MoreHorizontal, Plus, Trash2, Edit3, Shield, Layers, Ac
 import { CreateWorkoutModal } from './CreateWorkoutModal';
 import { generateWorkoutPlan } from '../utils/workoutGenerator';
 import { ExerciseLogModal } from './ExerciseLogModal';
-import { getRelativeTimeLabel } from '../utils/timeHelpers';
+
 
 interface WorkoutTimelineProps {
   itemId?: string;
