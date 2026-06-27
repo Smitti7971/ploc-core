@@ -105,7 +105,9 @@ export function ExerciseManagerOverlay({ onClose }: { onClose: () => void }) {
         id,
         name: equipmentNameOverrides[id] || name,
         image: equipmentImageOverrides[id] || equipmentImages[name],
-        isStatic: true
+        isStatic: true,
+        preSelected: false,
+        showAffiliateLink: false
       };
     });
 
