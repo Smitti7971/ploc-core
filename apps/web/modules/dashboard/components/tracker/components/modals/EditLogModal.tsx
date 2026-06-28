@@ -11,7 +11,7 @@ interface EditLogModalProps {
   editingLogTitle: string;
   setEditingLogTitle: (val: string) => void;
   handleDeleteLog: (id: string) => void;
-  saveLogEdit: (id: string) => void;
+  saveLogEdit: (id: string, forcedStatus?: 'completed' | 'pending') => void;
   logFileInputRef: React.RefObject<HTMLInputElement | null>;
   editingLogPhoto: string | null;
   setEditingLogPhoto: (val: string | null) => void;
@@ -34,6 +34,10 @@ interface EditLogModalProps {
   openCorrelatedItem: (id: string) => void;
   removeCorrelation?: (cId: string) => void;
   handleEditLog: (logId: string, info?: string, photoUrl?: string, metadata?: any, timestamp?: number, photoUrls?: string[]) => void;
+  editingLogRecurrence?: string;
+  setEditingLogRecurrence?: (val: string) => void;
+  editingLogRecurrenceDays?: string[];
+  setEditingLogRecurrenceDays?: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 export function EditLogModal({
@@ -65,7 +69,11 @@ export function EditLogModal({
   items,
   openCorrelatedItem,
   removeCorrelation,
-  handleEditLog
+  handleEditLog,
+  editingLogRecurrence = 'none',
+  setEditingLogRecurrence,
+  editingLogRecurrenceDays = [],
+  setEditingLogRecurrenceDays
 }: EditLogModalProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletePhotoIndex, setDeletePhotoIndex] = useState<number | null>(null);
@@ -79,6 +87,7 @@ export function EditLogModal({
   if (!editingLogId) return null;
 
   const currentLog = itemLogs.find(l => l.id === editingLogId);
+  const isPending = currentLog?.metadata?.status === 'pending';
   
   let isDirty = false;
   if (editingLogId === 'NEW') {
@@ -353,6 +362,58 @@ export function EditLogModal({
                placeholder="Adicione notas detalhadas..."
             />
 
+            {/* Recurrence Options for Tasks */}
+            {setEditingLogRecurrence && setEditingLogRecurrenceDays && (
+              <div className="flex flex-col gap-2 mb-4 px-1">
+                <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider">Agendar / Repetir</span>
+                <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 -mx-1 px-1">
+                  {[
+                    { val: 'none', label: 'Única (Sem repetir)' },
+                    { val: 'daily', label: 'Diária' },
+                    { val: 'weekly', label: 'Semanal' },
+                    { val: 'biweekly', label: 'Quinzenal' },
+                    { val: 'monthly', label: 'Mensal' }
+                  ].map(opt => (
+                    <button
+                      key={opt.val}
+                      onClick={(e) => { e.stopPropagation(); setEditingLogRecurrence(opt.val); }}
+                      className={`px-3 py-2 rounded-xl whitespace-nowrap text-[11px] font-bold transition-colors border flex-shrink-0 ${editingLogRecurrence === opt.val ? 'bg-sky-500/20 border-sky-500 text-sky-400 shadow-[0_0_15px_rgba(14,165,233,0.15)]' : 'bg-zinc-800/80 border-white/10 text-white/50 hover:bg-zinc-800 hover:text-white/70'}`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                {editingLogRecurrence === 'weekly' && (
+                  <div className="flex gap-1 mt-1">
+                    {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, idx) => {
+                      const dayValue = idx.toString();
+                      const isSelected = editingLogRecurrenceDays?.includes(dayValue);
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            if (isSelected) {
+                              setEditingLogRecurrenceDays(editingLogRecurrenceDays.filter(d => d !== dayValue));
+                            } else {
+                              setEditingLogRecurrenceDays([...(editingLogRecurrenceDays || []), dayValue]);
+                            }
+                          }}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors ${
+                            isSelected 
+                              ? 'bg-sky-500 text-white shadow-lg' 
+                              : 'bg-white/5 text-white/40 hover:bg-white/10'
+                          }`}
+                        >
+                          {day}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Conditions / Correlations Area (Small scrolling list if they exist) */}
             {hasConditions && (
               <div className="flex flex-col gap-2 max-h-32 overflow-y-auto custom-scrollbar mb-4 border-t border-white/5 pt-3">
@@ -484,6 +545,15 @@ export function EditLogModal({
                   className={`py-3.5 rounded-xl bg-[#5B79EB] hover:bg-[#4A64C9] text-white font-semibold text-[14px] transition-colors shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 ${editingLogId === 'NEW' ? 'w-full' : 'w-4/5'}`}
                 >
                   Salvar Registro
+                </button>
+              )}
+              {!isDirty && isPending && (
+                <button 
+                  onClick={() => saveLogEdit(editingLogId, 'completed')}
+                  className={`py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-[14px] transition-colors shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 w-4/5`}
+                >
+                  <Check size={18} />
+                  Concluir Tarefa
                 </button>
               )}
             </div>

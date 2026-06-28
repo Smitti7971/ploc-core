@@ -24,11 +24,11 @@ interface DockItem {
 
 // Definição da lista de itens do Dock, contendo ícone, rota de destino, cor tema e rótulo
 const DOCK_ITEMS: DockItem[] = [
-  { icon: <Calendar size={20} />, route: '/calendar', color: '#ffffff', label: 'Calendário' },
-  { icon: <GalleryHorizontal size={20} />, route: '/dashboard', color: '#ffffff', label: 'Rotinas' },
-  { icon: <Radar size={20} />, route: '/', color: '#ffffff', label: 'Blackboard' },
-  { icon: <Ghost size={20} />, route: '/ploc', color: '#ffffff', label: 'Ploc' },
-  { icon: <Settings size={20} />, route: '/settings', color: '#ffffff', label: 'Config' },
+  { icon: <Calendar size={20} />, route: '/calendar', color: '#eab308', label: 'Calendário' }, // yellow-500
+  { icon: <GalleryHorizontal size={20} />, route: '/dashboard', color: '#10b981', label: 'Rotinas' }, // emerald-500
+  { icon: <Radar size={20} />, route: '/', color: '#a855f7', label: 'Blackboard' }, // purple-500
+  { icon: <Ghost size={20} />, route: '/ploc', color: '#f43f5e', label: 'Ploc' }, // rose-500
+  { icon: <Settings size={20} />, route: '/settings', color: '#94a3b8', label: 'Config' }, // slate-400
 ];
 
 import { useState, useEffect, useRef } from 'react';
@@ -144,10 +144,10 @@ export function DockMenu() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: item.color,
+                    color: isActive ? item.color : 'rgba(255, 255, 255, 0.4)',
                     background: isActive
                       ? `${item.color}20`
-                      : `${item.color}08`,
+                      : `rgba(255, 255, 255, 0.03)`,
                     border: isActive
                       ? `1px solid ${item.color}44`
                       : `1px solid ${item.color}18`,

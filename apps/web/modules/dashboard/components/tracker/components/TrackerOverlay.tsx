@@ -19,6 +19,7 @@ import { ConfirmSaveModal } from './modals/ConfirmSaveModal';
 import { LogHistory } from './LogHistory';
 import { NewLogArea } from './NewLogArea';
 import { TrackerComparison } from './TrackerComparison';
+import { RelativeDateDisplay } from './RelativeDateDisplay';
 
 function WheelPicker({ options, value, onChange, label }: { options: number[], value: number, onChange: (val: number) => void, label: string }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -93,6 +94,14 @@ interface TrackerOverlayProps {
 
 export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }: TrackerOverlayProps) {
   const { items, logs, setItem: storeUpdateItem, removeItem: deleteItem, addLog, updateLog, deleteLog } = useTrackerStore();
+  
+  const allItemLogs = logs.filter(l => l.trackerItemId === itemId).sort((a, b) => b.timestamp - a.timestamp);
+  
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+  
+  const futureLogs = allItemLogs.filter(l => l.timestamp > todayEnd.getTime());
+  const historyLogs = allItemLogs.filter(l => l.timestamp <= todayEnd.getTime());
   
   const storeItem = items[itemId];
   const [localItem, setLocalItem] = useState<TrackerItem>(
@@ -237,15 +246,105 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
   const [isAddConditionModalOpen, setIsAddConditionModalOpen] = useState(false);
   const [newConditionTitle, setNewConditionTitle] = useState('');
   const [editingConditionIndex, setEditingConditionIndex] = useState<number | null>(null);
+
+  const getNextRecurrenceDate = (timestamp: number, recurrence: string, recurrenceDays?: string[]) => {
+    const date = new Date(timestamp);
+    if (recurrence === 'daily') {
+      date.setDate(date.getDate() + 1);
+    } else if (recurrence === 'weekly' && recurrenceDays && recurrenceDays.length > 0) {
+      let currentDay = date.getDay();
+      let nextDay = currentDay;
+      for (let i = 1; i <= 7; i++) {
+        let testDay = (currentDay + i) % 7;
+        if (recurrenceDays.includes(testDay.toString())) {
+          nextDay = testDay;
+          date.setDate(date.getDate() + i);
+          break;
+        }
+      }
+    } else if (recurrence === 'biweekly') {
+      date.setDate(date.getDate() + 14);
+    } else if (recurrence === 'monthly') {
+      date.setMonth(date.getMonth() + 1);
+    } else {
+      date.setDate(date.getDate() + 1);
+    }
+    return date.getTime();
+  };
+
+  // Processamento automático de tarefas esquecidas
+  useEffect(() => {
+    if (!item || !allItemLogs || allItemLogs.length === 0) return;
+    
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayStartMs = todayStart.getTime();
+
+    // Encontra logs que estavam pendentes e a data já passou (ontem ou antes)
+    const missedLogs = allItemLogs.filter(l => 
+      l.metadata?.status === 'pending' && l.timestamp < todayStartMs
+    );
+
+    if (missedLogs.length > 0) {
+      missedLogs.forEach(missedLog => {
+        // Marca como esquecido
+        updateLog(missedLog.id, {
+          metadata: { ...missedLog.metadata, status: 'missed' }
+        });
+
+        // Se tiver recorrência, gera a próxima tarefa pendente
+        if (missedLog.metadata?.recurrence && missedLog.metadata.recurrence !== 'none') {
+          let nextTimestamp = getNextRecurrenceDate(missedLog.timestamp, missedLog.metadata.recurrence, missedLog.metadata.recurrenceDays);
+          
+          // Avança a data até hoje ou o futuro
+          while (nextTimestamp < todayStartMs) {
+            nextTimestamp = getNextRecurrenceDate(nextTimestamp, missedLog.metadata.recurrence, missedLog.metadata.recurrenceDays);
+          }
+          
+          // Verifica se já não existe uma tarefa pendente para esse dia
+          const nextStart = new Date(nextTimestamp);
+          nextStart.setHours(0,0,0,0);
+          const nextEnd = new Date(nextTimestamp);
+          nextEnd.setHours(23,59,59,999);
+          
+          const alreadyExists = allItemLogs.some(l => 
+            l.metadata?.status === 'pending' && 
+            l.timestamp >= nextStart.getTime() && 
+            l.timestamp <= nextEnd.getTime()
+          );
+
+          if (!alreadyExists) {
+            requestAddLog({
+              trackerItemId: itemId,
+              type: 'consumption',
+              info: '',
+              photoUrls: [],
+              value: 1,
+              metadata: {
+                ...missedLog.metadata,
+                status: 'pending',
+                allConditionsMet: false,
+                checkedConditions: {},
+                conditionPhotos: {}
+              }
+            }, nextTimestamp, () => {});
+          }
+        }
+      });
+    }
+  }, [itemId, allItemLogs.length]);
+
   const conditions = item?.config?.conditions || [];
   const todos = item?.config?.todos || [];
   const [newTodoText, setNewTodoText] = useState('');
   const [newTodoDate, setNewTodoDate] = useState('');
   const [newTodoRecurrence, setNewTodoRecurrence] = useState<string>('none');
+  const [newTodoRecurrenceDays, setNewTodoRecurrenceDays] = useState<string[]>([]);
   const [editingTodoId, setEditingTodoId] = useState<string | null>(null);
   const [editTodoText, setEditTodoText] = useState('');
   const [editTodoDate, setEditTodoDate] = useState('');
   const [editTodoRecurrence, setEditTodoRecurrence] = useState<string>('none');
+  const [editTodoRecurrenceDays, setEditTodoRecurrenceDays] = useState<string[]>([]);
 
   const removeCondition = (index: number) => {
     const updated = [...conditions];
@@ -263,7 +362,8 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
       text: newTodoText.trim(),
       date: newTodoDate || new Date().toISOString().split('T')[0],
       completed: false,
-      recurrence: newTodoRecurrence
+      recurrence: newTodoRecurrence,
+      recurrenceDays: newTodoRecurrence === 'weekly' ? newTodoRecurrenceDays : undefined
     };
     updateItem({
       ...item,
@@ -272,6 +372,7 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
     setNewTodoText('');
     setNewTodoDate('');
     setNewTodoRecurrence('none');
+    setNewTodoRecurrenceDays([]);
   };
 
   const startEditTodo = (todo: any) => {
@@ -279,6 +380,7 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
     setEditTodoText(todo.text);
     setEditTodoDate(todo.date);
     setEditTodoRecurrence(todo.recurrence || 'none');
+    setEditTodoRecurrenceDays(todo.recurrenceDays || []);
   };
 
   const saveEditTodo = () => {
@@ -287,7 +389,8 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
       ...t, 
       text: editTodoText.trim(), 
       date: editTodoDate || t.date,
-      recurrence: editTodoRecurrence 
+      recurrence: editTodoRecurrence,
+      recurrenceDays: editTodoRecurrence === 'weekly' ? editTodoRecurrenceDays : undefined
     } : t);
     
     updated.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -322,7 +425,24 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
         
         switch (toggled.recurrence) {
           case 'daily': nextDate.setDate(currentDate.getDate() + 1); break;
-          case 'weekly': nextDate.setDate(currentDate.getDate() + 7); break;
+          case 'weekly': 
+            if (toggled.recurrenceDays && toggled.recurrenceDays.length > 0) {
+              const daysOfWeek = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+              let currentDayIndex = currentDate.getDay(); // 0 = dom, 6 = sab
+              let foundNext = false;
+              for (let i = 1; i <= 7; i++) {
+                const nextDayIndex = (currentDayIndex + i) % 7;
+                if (toggled.recurrenceDays.includes(daysOfWeek[nextDayIndex])) {
+                  nextDate.setDate(currentDate.getDate() + i);
+                  foundNext = true;
+                  break;
+                }
+              }
+              if (!foundNext) nextDate.setDate(currentDate.getDate() + 7);
+            } else {
+              nextDate.setDate(currentDate.getDate() + 7); 
+            }
+            break;
           case 'biweekly': nextDate.setDate(currentDate.getDate() + 14); break;
           case 'monthly': nextDate.setMonth(currentDate.getMonth() + 1); break;
         }
@@ -332,7 +452,8 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
           text: toggled.text,
           date: nextDate.toISOString().split('T')[0],
           completed: false,
-          recurrence: toggled.recurrence
+          recurrence: toggled.recurrence,
+          recurrenceDays: toggled.recurrenceDays
         };
         updated.push(clone);
       }
@@ -371,6 +492,8 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
   const [editingLogPhoto, setEditingLogPhoto] = useState<string | null>(null);
   const [editingLogPhotos, setEditingLogPhotos] = useState<string[]>([]);
   const [editingLogTimestamp, setEditingLogTimestamp] = useState<number>(Date.now());
+  const [editingLogRecurrence, setEditingLogRecurrence] = useState<string>('none');
+  const [editingLogRecurrenceDays, setEditingLogRecurrenceDays] = useState<string[]>([]);
   const [isUploadingLogPhoto, setIsUploadingLogPhoto] = useState(false);
   const logFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -607,20 +730,49 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
 
     setEditingLogCheckedConditions(currentMetadata?.checkedConditions || {});
     setEditingLogConditionPhotos(currentMetadata?.conditionPhotos || {});
+    setEditingLogRecurrence('none');
+    setEditingLogRecurrenceDays([]);
   };
 
-  const saveLogEdit = (logId: string) => {
+  const openNewLogModal = (metadata?: any) => {
+    setEditingLogId('NEW');
+    setEditingLogTitle('');
+    setEditingLogInfo('');
+    setEditingLogPhoto(null);
+    setEditingLogPhotos([]);
+    setEditingLogTimestamp(Date.now());
+    setEditingLogRecurrence('none');
+    setEditingLogRecurrenceDays([]);
+    
+    setEditingLogCheckedConditions(metadata?.checkedConditions || {});
+    setEditingLogConditionPhotos(metadata?.conditionPhotos || {});
+  };
+
+  const saveLogEdit = (logId: string, forcedStatus?: 'completed' | 'pending') => {
     const totalConditions = conditions.length + Object.keys(item.correlations || {}).length;
     const metCount = Object.values(editingLogCheckedConditions).filter(Boolean).length;
     const allMet = totalConditions > 0 && metCount === totalConditions;
 
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+    const isFuture = editingLogTimestamp > todayEnd.getTime();
+    
+    let defaultStatus = isFuture ? 'pending' : 'completed';
+
+    const existingMetadata = logId !== 'NEW' ? useTrackerStore.getState().logs.find(l => l.id === logId)?.metadata || {} : {};
+    
+    const statusToSave = forcedStatus || existingMetadata.status || defaultStatus;
+
     const metadataToSave = {
-      ...(logId !== 'NEW' ? useTrackerStore.getState().logs.find(l => l.id === logId)?.metadata || {} : {}),
+      ...existingMetadata,
       title: editingLogTitle,
       checkedConditions: editingLogCheckedConditions,
       conditionPhotos: editingLogConditionPhotos,
       totalConditions,
-      allConditionsMet: allMet
+      allConditionsMet: allMet,
+      recurrence: editingLogRecurrence,
+      recurrenceDays: editingLogRecurrence === 'weekly' ? editingLogRecurrenceDays : undefined,
+      status: statusToSave
     };
 
     if (logId === 'NEW') {
@@ -641,6 +793,28 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
         metadata: metadataToSave,
         timestamp: editingLogTimestamp
       });
+
+      // Se concluiu uma tarefa recorrente, gera a próxima
+      if (statusToSave === 'completed' && existingMetadata.status === 'pending' && metadataToSave.recurrence && metadataToSave.recurrence !== 'none') {
+        const nextTimestamp = getNextRecurrenceDate(editingLogTimestamp, metadataToSave.recurrence, metadataToSave.recurrenceDays);
+        if (nextTimestamp > editingLogTimestamp) {
+          requestAddLog({
+            trackerItemId: itemId,
+            type: 'consumption',
+            info: '',
+            photoUrls: [],
+            value: 1,
+            metadata: {
+              ...metadataToSave,
+              status: 'pending',
+              allConditionsMet: false,
+              checkedConditions: {},
+              conditionPhotos: {}
+            }
+          }, nextTimestamp, () => {});
+        }
+      }
+
       setEditingLogId(null);
     }
   };
@@ -714,7 +888,7 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
 
   const otherItems = Object.values(items).filter(t => t.id !== item?.id && t.status === 'ACTIVE');
 
-  const itemLogs = logs.filter(l => l.trackerItemId === itemId).sort((a, b) => b.timestamp - a.timestamp);
+
 
   const notificationsEnabled = item?.config?.notificationsEnabled ?? (item?.type !== 'vice');
 
@@ -899,7 +1073,7 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
 
                   {item.config?.showStreak !== false && (
                     <div className="relative z-10 w-full max-w-2xl mx-auto pt-4">
-                      <TrackerComparison item={item} logs={itemLogs} />
+                      <TrackerComparison item={item} logs={allItemLogs} />
                     </div>
                   )}
                 </div>
@@ -1098,7 +1272,6 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
                     <div className="flex flex-wrap bg-white/5 border-y border-white/10 p-1 mt-1 mb-2 rounded-xl gap-1">
                       {[
                         { id: 'looping', label: 'HORÁRIOS', icon: Clock, color: 'emerald' },
-                        { id: 'tarefas', label: 'TAREFAS', icon: ListChecks, color: 'emerald' },
                         { id: 'condicoes', label: 'CONDIÇÕES', icon: CheckSquare, color: 'emerald' },
                         { id: 'correlacoes', label: 'CORRELAÇÕES', icon: LinkIcon, color: 'indigo' },
                         ...(item.type === 'vice' ? [{ id: 'estrategia', label: 'ESTRATÉGIA', icon: TrendingDown, color: 'yellow' }] : []),
@@ -1297,137 +1470,6 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
                                 </div>
                               </div>
                             )}
-                          </div>
-                        </motion.div>
-                      )}
-
-                      {/* Tarefas */}
-                      {activeTab === 'tarefas' && (
-                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                          <div className="py-2 mb-2 bg-black/20 rounded-xl p-3 border border-white/5">
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-2">
-                                <ListChecks size={14} className="text-emerald-400" />
-                                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Tarefas Futuras</span>
-                              </div>
-                            </div>
-                            
-                            <div className="flex flex-col gap-2 mb-4">
-                              <input 
-                                type="text"
-                                placeholder="Descrição da tarefa..."
-                                value={newTodoText}
-                                onChange={(e) => setNewTodoText(e.target.value)}
-                                className="bg-white/5 border border-white/10 rounded-lg p-2 text-[12px] text-white focus:outline-none focus:border-white/20"
-                              />
-                              <div className="flex gap-2">
-                                <input 
-                                  type="date"
-                                  value={newTodoDate}
-                                  onChange={(e) => setNewTodoDate(e.target.value)}
-                                  className="flex-1 bg-white/5 border border-white/10 rounded-lg p-2 text-[12px] text-white/80 focus:outline-none focus:border-white/20"
-                                />
-                                <select
-                                  value={newTodoRecurrence}
-                                  onChange={(e) => setNewTodoRecurrence(e.target.value)}
-                                  className="flex-1 bg-white/5 border border-white/10 rounded-lg p-2 text-[12px] text-white/80 focus:outline-none focus:border-white/20 appearance-none"
-                                >
-                                  <option value="none">S/ Repetir</option>
-                                  <option value="daily">Diária</option>
-                                  <option value="weekly">Semanal</option>
-                                  <option value="biweekly">Quinzenal</option>
-                                  <option value="monthly">Mensal</option>
-                                </select>
-                                <button 
-                                  onClick={addTodo}
-                                  disabled={!newTodoText.trim()}
-                                  className="bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed p-2 rounded-lg transition-colors flex items-center justify-center min-w-[40px]"
-                                >
-                                  <PlusCircle size={16} />
-                                </button>
-                              </div>
-                            </div>
-
-                            <div className="flex flex-col gap-2">
-                              {todos.length === 0 ? (
-                                <p className="text-[10px] text-white/30 text-center py-2">Nenhuma tarefa cadastrada</p>
-                              ) : (
-                                todos.map((todo: any) => (
-                                  <div key={todo.id} className={`flex flex-col gap-2 p-2 rounded-lg border ${todo.completed ? 'bg-white/5 border-transparent opacity-60' : 'bg-black/40 border-white/5'} transition-all`}>
-                                    {editingTodoId === todo.id ? (
-                                      <div className="flex flex-col gap-2 w-full">
-                                        <input 
-                                          type="text"
-                                          value={editTodoText}
-                                          onChange={(e) => setEditTodoText(e.target.value)}
-                                          className="bg-white/5 border border-emerald-500/30 rounded-lg p-2 text-[12px] text-white focus:outline-none focus:border-emerald-500"
-                                        />
-                                        <div className="flex gap-2">
-                                          <input 
-                                            type="date"
-                                            value={editTodoDate}
-                                            onChange={(e) => setEditTodoDate(e.target.value)}
-                                            className="flex-1 bg-white/5 border border-white/10 rounded-lg p-2 text-[12px] text-white/80 focus:outline-none focus:border-white/20"
-                                          />
-                                          <select
-                                            value={editTodoRecurrence}
-                                            onChange={(e) => setEditTodoRecurrence(e.target.value)}
-                                            className="flex-1 bg-white/5 border border-white/10 rounded-lg p-2 text-[12px] text-white/80 focus:outline-none focus:border-white/20 appearance-none"
-                                          >
-                                            <option value="none">S/ Repetir</option>
-                                            <option value="daily">Diária</option>
-                                            <option value="weekly">Semanal</option>
-                                            <option value="biweekly">Quinzenal</option>
-                                            <option value="monthly">Mensal</option>
-                                          </select>
-                                        </div>
-                                        <div className="flex gap-2 justify-end mt-1">
-                                          <button onClick={cancelEditTodo} className="px-3 py-1.5 text-[10px] uppercase font-bold text-white/50 hover:text-white bg-white/5 rounded-lg transition-colors">Cancelar</button>
-                                          <button onClick={saveEditTodo} className="px-3 py-1.5 text-[10px] uppercase font-bold text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-lg transition-colors">Salvar</button>
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <div className="flex items-start gap-2">
-                                        <button 
-                                          onClick={() => toggleTodo(todo.id)}
-                                          className="mt-0.5 text-white/50 hover:text-emerald-400 transition-colors shrink-0"
-                                        >
-                                          {todo.completed ? <CheckSquare size={16} className="text-emerald-400" /> : <div className="w-4 h-4 rounded-sm border border-white/30" />}
-                                        </button>
-                                        <div className="flex-1 flex flex-col min-w-0">
-                                          <span className={`text-[12px] text-white/90 break-words ${todo.completed ? 'line-through text-white/50' : ''}`}>
-                                            {todo.text}
-                                          </span>
-                                          <div className="flex items-center gap-2 mt-1">
-                                            <span className="text-[9px] text-white/40 flex items-center gap-1">
-                                              <Clock size={10} /> {new Date(todo.date + 'T12:00:00').toLocaleDateString('pt-BR')}
-                                            </span>
-                                            {todo.recurrence && todo.recurrence !== 'none' && (
-                                              <span className="text-[9px] text-sky-400/70 font-bold uppercase tracking-wider flex items-center gap-0.5">
-                                                <RefreshCw size={8} /> 
-                                                {todo.recurrence === 'daily' ? 'Diária' : todo.recurrence === 'weekly' ? 'Semanal' : todo.recurrence === 'biweekly' ? 'Quinzenal' : 'Mensal'}
-                                              </span>
-                                            )}
-                                          </div>
-                                        </div>
-                                        <button 
-                                          onClick={() => startEditTodo(todo)}
-                                          className="text-white/30 hover:text-sky-400 transition-colors p-1 shrink-0"
-                                        >
-                                          <Edit2 size={12} />
-                                        </button>
-                                        <button 
-                                          onClick={() => deleteTodo(todo.id)}
-                                          className="text-white/30 hover:text-red-400 transition-colors p-1 shrink-0 ml-1"
-                                        >
-                                          <Trash2 size={14} />
-                                        </button>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))
-                              )}
-                            </div>
                           </div>
                         </motion.div>
                       )}
@@ -1784,12 +1826,28 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
                       itemId={itemId}
                       setConditionPhotos={setConditionPhotos}
                       handleEditLog={handleEditLog}
+                      openNewLogModal={openNewLogModal}
                     />
+
+                    {/* Tarefas Pendentes */}
+                    {futureLogs.length > 0 && (
+                      <div className="mb-6 bg-sky-950/20 border border-sky-500/20 rounded-xl px-2 py-1 pb-4">
+                        <LogHistory
+                          item={item}
+                          itemLogs={futureLogs}
+                          editingLogId={editingLogId}
+                          handleEditLog={handleEditLog}
+                          title="Tarefas Pendentes"
+                          Icon={ListChecks}
+                          isPending={true}
+                        />
+                      </div>
+                    )}
 
                     {/* Histórico de Registros */}
                     <LogHistory
                       item={item}
-                      itemLogs={itemLogs}
+                      itemLogs={historyLogs}
                       editingLogId={editingLogId}
                       handleEditLog={handleEditLog}
                     />
@@ -1858,7 +1916,7 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
       <EditLogModal
         editingLogId={editingLogId}
         setEditingLogId={setEditingLogId}
-        itemLogs={itemLogs}
+        itemLogs={allItemLogs}
         editingLogTitle={editingLogTitle}
         setEditingLogTitle={setEditingLogTitle}
         handleDeleteLog={handleDeleteLog}
@@ -1884,6 +1942,10 @@ export function TrackerOverlay({ itemId, onClose, contextItemIds, onSwitchItem }
         setEditingLogCheckedConditions={setEditingLogCheckedConditions}
         items={items}
         openCorrelatedItem={openCorrelatedItem}
+        editingLogRecurrence={editingLogRecurrence}
+        setEditingLogRecurrence={setEditingLogRecurrence}
+        editingLogRecurrenceDays={editingLogRecurrenceDays}
+        setEditingLogRecurrenceDays={setEditingLogRecurrenceDays}
       />
 
       <ConfirmSaveModal

@@ -203,9 +203,16 @@ export function TrackerStatusCard({ item, onClick, isChild = false, visitedIds =
             {...(!isOverlay ? listeners : {})}
             className={`relative w-full h-12 rounded-xl overflow-hidden cursor-pointer ${colors.bg} transition-colors group flex items-center justify-between px-4 border ${isDragOver && !isOverlay ? 'border-amber-400 border-2' : colors.border} ${isOverlay ? 'ring-2 ring-amber-400 shadow-2xl scale-105' : ''}`}
           >
-            <h3 className="text-white font-black text-sm tracking-tight uppercase leading-tight truncate flex-1">
-              {item.name || 'Sem nome'}
-            </h3>
+            <div className="flex flex-col flex-1 truncate mr-2">
+              <h3 className="text-white font-black text-sm tracking-tight uppercase leading-tight truncate">
+                {item.name || 'Sem nome'}
+              </h3>
+              {item.startDate && (
+                <span className="text-[9px] text-white/40 mt-0.5 font-medium tracking-wide">
+                  Criado em {new Date(item.startDate).toLocaleDateString('pt-BR')}
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-1.5 z-20">
               <button onClick={toggleFavorite} className="p-1 rounded-full hover:bg-white/10 transition-colors">
                 <Heart size={14} className={isFavorite ? 'fill-red-500 text-red-500' : 'text-white/40'} />
@@ -342,8 +349,14 @@ export function TrackerStatusCard({ item, onClick, isChild = false, visitedIds =
               <h3 className="text-white font-black text-lg tracking-tight uppercase leading-tight truncate">
                 {item.name || 'Sem nome'}
               </h3>
-              <p className="text-white/60 text-xs font-medium mt-1 truncate">
-                {logs.length} registro{logs.length !== 1 ? 's' : ''}
+              <p className="text-white/60 text-xs font-medium mt-1 flex items-center gap-2 truncate">
+                <span>{logs.length} registro{logs.length !== 1 ? 's' : ''}</span>
+                {item.startDate && (
+                  <>
+                    <span className="text-white/20">•</span>
+                    <span>Criado em {new Date(item.startDate).toLocaleDateString('pt-BR')}</span>
+                  </>
+                )}
               </p>
               {(() => {
                 if (item.status === 'COMPLETED') return null;

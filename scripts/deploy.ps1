@@ -14,11 +14,11 @@ git commit -m $msg
 git push origin main
 
 Write-Host "Disparando Deploy no Coolify (Frontend)..." -ForegroundColor Yellow
-$frontUrl = "https://coolify.midializando.cloud/api/v1/deploy?uuid=$($FRONT_UUID)&force=true"
+$frontUrl = "http://72.61.63.84:8000/api/v1/deploy?uuid=$($FRONT_UUID)&force=true"
 curl.exe -k -s -X GET $frontUrl -H "Authorization: Bearer $TOKEN"
 
 Write-Host "Disparando Deploy no Coolify (Backend)..." -ForegroundColor Yellow
-$backUrl = "https://coolify.midializando.cloud/api/v1/deploy?uuid=$($BACK_UUID)&force=true"
+$backUrl = "http://72.61.63.84:8000/api/v1/deploy?uuid=$($BACK_UUID)&force=true"
 curl.exe -k -s -X GET $backUrl -H "Authorization: Bearer $TOKEN"
 
 Write-Host "Processo Finalizado! Verifique o painel do Coolify." -ForegroundColor Green
